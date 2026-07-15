@@ -1,0 +1,13 @@
+.git
+.dart_tool
+build
+.idea
+.vscode
+android
+ios
+linux
+macos
+windows
+test
+*.md
+run_chrome.ps1
