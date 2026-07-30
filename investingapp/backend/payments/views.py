@@ -16,8 +16,17 @@ from engagement.models import Notification
 from finance.models import PaymentOrder, Transaction, Wallet, WalletTransaction
 from kyc.models import KycProfile
 from kyc.service import get_or_create_profile
-from services.providers.cashfree_payments import CashfreePaymentError, create_payment_order, verify_payment_webhook
+from services.providers.cashfree_payments import (
+    CashfreePaymentError,
+    create_payment_order,
+    fetch_order_status,
+    is_order_paid,
+    extract_payment_id,
+    verify_payment_webhook,
+)
 from services.providers.cashfree_payouts import CashfreePayoutError, initiate_payout, verify_payout_webhook
+
+from .deposit_service import credit_payment_order, webhook_indicates_paid
 
 from .models import PayoutRecord
 
@@ -45,6 +54,7 @@ class CreatePaymentView(APIView):
         return_url = serializer.validated_data.get('return_url', '')
 
         user = request.user
+        Wallet.objects.get_or_create(user=user)
         try:
             order = create_payment_order(
                 amount_inr=amount,
@@ -116,16 +126,10 @@ class PaymentWebhookView(APIView):
         except json.JSONDecodeError:
             return Response({'detail': 'Invalid JSON.'}, status=400)
 
-        event_type = payload.get('type', '')
-        data = payload.get('data', {})
-        order = data.get('order', {}) or data
-        order_id = order.get('order_id') or data.get('order_id')
-        payment_status = (order.get('order_status') or data.get('payment_status') or '').upper()
-
+        is_paid, order_id, payment_id = webhook_indicates_paid(payload)
         if not order_id:
             return Response({'status': 'ignored'})
-
-        if payment_status not in ('PAID', 'SUCCESS', 'ACTIVE'):
+        if not is_paid:
             return Response({'status': 'ignored_status'})
 
         try:
@@ -135,27 +139,7 @@ class PaymentWebhookView(APIView):
         except PaymentOrder.DoesNotExist:
             return Response({'status': 'already_processed'})
 
-        wallet = Wallet.objects.select_for_update().get(user=payment_order.user)
-        WalletTransaction.objects.create(
-            wallet=wallet,
-            type=WalletTransaction.TxType.DEPOSIT,
-            amount=payment_order.amount,
-            status=WalletTransaction.Status.COMPLETED,
-        )
-        wallet.balance += payment_order.amount
-        wallet.save(update_fields=['balance'])
-
-        payment_order.payment_id = data.get('cf_payment_id', '') or data.get('payment_id', '')
-        payment_order.status = PaymentOrder.Status.PAID
-        payment_order.paid_at = timezone.now()
-        payment_order.save()
-
-        Notification.objects.create(
-            user=payment_order.user,
-            title='Deposit Successful',
-            message=f'₹{payment_order.amount:,.0f} added to your wallet.',
-            type='wallet',
-        )
+        credit_payment_order(payment_order=payment_order, payment_id=payment_id)
         return Response({'status': 'ok'})
 
 
@@ -240,10 +224,11 @@ class WithdrawView(APIView):
         )
 
         if payout_status == PayoutRecord.Status.COMPLETED:
-            WalletTransaction.objects.filter(
-                wallet=wallet, type=WalletTransaction.TxType.WITHDRAWAL, status=WalletTransaction.Status.PENDING
+            wt = WalletTransaction.objects.filter(
+                wallet=wallet,
+                type=WalletTransaction.TxType.WITHDRAWAL,
+                status=WalletTransaction.Status.PENDING,
             ).order_by('-created_at').first()
-            wt = wallet.transactions.filter(type=WalletTransaction.TxType.WITHDRAWAL).first()
             if wt:
                 wt.status = WalletTransaction.Status.COMPLETED
                 wt.save(update_fields=['status'])
@@ -321,15 +306,92 @@ class PaymentStatusView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, order_id):
+        sync = request.query_params.get('sync', '').lower() in ('1', 'true', 'yes')
         try:
             order = PaymentOrder.objects.get(user=request.user, order_id=order_id)
         except PaymentOrder.DoesNotExist:
             return Response({'detail': 'Order not found.'}, status=404)
+
+        balance = None
+        if sync and order.status == PaymentOrder.Status.CREATED:
+            try:
+                remote = fetch_order_status(order_id)
+                if is_order_paid(remote):
+                    wallet = credit_payment_order(
+                        payment_order=order,
+                        payment_id=extract_payment_id(remote),
+                    )
+                    order.refresh_from_db()
+                    balance = float(wallet.balance)
+            except CashfreePaymentError as exc:
+                return Response({'detail': str(exc)}, status=503)
+
+        if balance is None:
+            wallet, _ = Wallet.objects.get_or_create(user=request.user)
+            balance = float(wallet.balance)
+
         return Response(
             {
                 'orderId': order.order_id,
                 'status': order.status,
                 'amount': float(order.amount),
                 'paidAt': order.paid_at.isoformat() if order.paid_at else None,
+                'balance': balance,
+            }
+        )
+
+
+class VerifyPaymentView(APIView):
+    """Confirm Cashfree payment and credit wallet (mobile fallback when webhook is delayed)."""
+
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def post(self, request):
+        order_id = (request.data.get('orderId') or request.data.get('order_id') or '').strip()
+        if not order_id:
+            return Response({'detail': 'orderId is required.'}, status=400)
+
+        try:
+            order = PaymentOrder.objects.select_for_update().get(user=request.user, order_id=order_id)
+        except PaymentOrder.DoesNotExist:
+            return Response({'detail': 'Order not found.'}, status=404)
+
+        if order.status == PaymentOrder.Status.PAID:
+            wallet, _ = Wallet.objects.get_or_create(user=request.user)
+            return Response(
+                {
+                    'success': True,
+                    'status': order.status,
+                    'amount': float(order.amount),
+                    'balance': float(wallet.balance),
+                }
+            )
+
+        try:
+            remote = fetch_order_status(order_id)
+        except CashfreePaymentError as exc:
+            return Response({'detail': str(exc)}, status=503)
+
+        if not is_order_paid(remote):
+            remote_status = remote.get('order_status') or 'pending'
+            return Response(
+                {
+                    'success': False,
+                    'status': order.status,
+                    'remoteStatus': remote_status,
+                    'detail': 'Payment not completed yet.',
+                },
+                status=409,
+            )
+
+        wallet = credit_payment_order(payment_order=order, payment_id=extract_payment_id(remote))
+        order.refresh_from_db()
+        return Response(
+            {
+                'success': True,
+                'status': order.status,
+                'amount': float(order.amount),
+                'balance': float(wallet.balance),
             }
         )

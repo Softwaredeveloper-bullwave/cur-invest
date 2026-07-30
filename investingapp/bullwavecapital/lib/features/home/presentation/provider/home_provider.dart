@@ -44,7 +44,7 @@ class HomeProvider extends ChangeNotifier {
     if (_monthlyEarnings.isNotEmpty) {
       return _monthlyEarnings.map((e) => e.amount).toList();
     }
-    final base = _portfolio.currentValue > 0 ? _portfolio.currentValue : _portfolio.walletBalance;
+    final base = _portfolio.currentValue;
     if (base <= 0) return const [0, 0, 0, 0, 0, 0];
     final drift = _portfolio.dayPnl;
     return List<double>.generate(8, (i) {

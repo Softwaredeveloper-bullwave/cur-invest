@@ -275,6 +275,7 @@ NotificationModel parseNotification(Map<String, dynamic> json) =>
       date: _date(json['date']),
       isRead: json['isRead'] as bool? ?? false,
       type: json['type'] as String? ?? 'general',
+      referenceId: json['referenceId']?.toString() ?? '',
     );
 
 SupportFaq parseSupportFaq(Map<String, dynamic> json) => SupportFaq(
@@ -287,6 +288,23 @@ SupportTicketModel parseSupportTicket(Map<String, dynamic> json) =>
       id: json['id']?.toString() ?? '',
       subject: json['subject'] as String? ?? '',
       status: json['status'] as String? ?? '',
+      message: json['message'] as String? ?? '',
+      resolutionNote: json['resolutionNote'] as String? ?? '',
+      createdAt: _date(json['createdAt']),
+      updatedAt: _date(json['updatedAt'] ?? json['createdAt']),
+      messageCount: _int(json['messageCount']),
+      messages: (json['messages'] as List<dynamic>? ?? [])
+          .whereType<Map>()
+          .map((row) => parseSupportTicketMessage(Map<String, dynamic>.from(row)))
+          .toList(),
+    );
+
+SupportTicketMessageModel parseSupportTicketMessage(Map<String, dynamic> json) =>
+    SupportTicketMessageModel(
+      id: json['id']?.toString() ?? '',
+      authorRole: json['authorRole'] as String? ?? '',
+      authorName: json['authorName'] as String? ?? '',
+      body: json['body'] as String? ?? '',
       createdAt: _date(json['createdAt']),
     );
 

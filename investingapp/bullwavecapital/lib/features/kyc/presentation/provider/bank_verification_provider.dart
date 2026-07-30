@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/api/api_exception.dart';
 import '../../../../core/api/bullwave_api.dart';
 
-enum BankVerificationStep { details, verify, success }
+enum BankVerificationStep { details, verify, pendingReview, success }
 
 class BankVerificationResult {
   final bool success;
@@ -24,6 +24,7 @@ class BankVerificationResult {
 class BankVerificationProvider extends ChangeNotifier {
   final _api = BullwaveApi.instance;
 
+  bool isEditMode = false;
   String accountHolderName = '';
   String bankName = '';
   String accountNumber = '';
@@ -83,7 +84,7 @@ class BankVerificationProvider extends ChangeNotifier {
       nameMatchResult = data.nameMatchResult;
       panRegisteredName = data.panRegisteredName;
       isVerified = data.isVerified;
-      if (isVerified) {
+      if (isVerified && !isEditMode) {
         step = BankVerificationStep.success;
       }
     } catch (_) {
@@ -144,15 +145,21 @@ class BankVerificationProvider extends ChangeNotifier {
       );
       final result = await _api.verifyBankAccount();
       isVerifying = false;
-      if (result.success) {
-        isVerified = true;
-        nameAtBank = result.nameAtBank ?? nameAtBank;
-        nameMatchResult = result.nameMatchResult ?? nameMatchResult;
-        panRegisteredName = result.panRegisteredName ?? panRegisteredName;
-        if (result.bank != null && result.bank!.isNotEmpty) {
-          bankName = result.bank!;
+      final pendingReview = result.reviewPending;
+      if (result.success && (result.isVerified || pendingReview)) {
+        if (result.isVerified) {
+          isVerified = true;
+          isEditMode = false;
+          nameAtBank = result.nameAtBank ?? nameAtBank;
+          nameMatchResult = result.nameMatchResult ?? nameMatchResult;
+          panRegisteredName = result.panRegisteredName ?? panRegisteredName;
+          if (result.bank != null && result.bank!.isNotEmpty) {
+            bankName = result.bank!;
+          }
+          step = BankVerificationStep.success;
+        } else {
+          step = BankVerificationStep.pendingReview;
         }
-        step = BankVerificationStep.success;
         notifyListeners();
         return BankVerificationResult(
           success: true,
@@ -181,6 +188,21 @@ class BankVerificationProvider extends ChangeNotifier {
   void resetToDetails() {
     step = BankVerificationStep.details;
     lastError = null;
+    notifyListeners();
+  }
+
+  void enterEditMode() {
+    isEditMode = true;
+    step = BankVerificationStep.details;
+    lastError = null;
+    notifyListeners();
+  }
+
+  void exitEditMode() {
+    isEditMode = false;
+    if (isVerified) {
+      step = BankVerificationStep.success;
+    }
     notifyListeners();
   }
 

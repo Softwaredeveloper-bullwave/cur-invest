@@ -138,12 +138,14 @@ class LivePriceBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
+    final liveColor = p.positive;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: ThemeA.positive.withValues(alpha: 0.1),
+        color: liveColor.withValues(alpha: p.isDark ? 0.18 : 0.1),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: ThemeA.positive.withValues(alpha: 0.22)),
+        border: Border.all(color: liveColor.withValues(alpha: p.isDark ? 0.55 : 0.22)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -151,12 +153,23 @@ class LivePriceBadge extends StatelessWidget {
           Container(
             width: 6,
             height: 6,
-            decoration: const BoxDecoration(color: ThemeA.positive, shape: BoxShape.circle),
+            decoration: BoxDecoration(
+              color: liveColor,
+              shape: BoxShape.circle,
+              boxShadow: p.isDark
+                  ? [
+                      BoxShadow(
+                        color: liveColor.withValues(alpha: 0.65),
+                        blurRadius: 6,
+                      ),
+                    ]
+                  : null,
+            ),
           ),
           const SizedBox(width: 6),
           Text(
             'Live',
-            style: ThemeAType.label(size: 11),
+            style: ThemeAType.label(size: 11, color: liveColor),
           ),
         ],
       ),

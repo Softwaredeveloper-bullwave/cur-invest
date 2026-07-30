@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
-from .models import BankAccount, KycDocument, OTPVerification, User
+from .models import BankAccount, EmailOTPVerification, KycDocument, OTPVerification, User
 
 
 @admin.register(User)
@@ -19,5 +19,20 @@ class UserAdmin(BaseUserAdmin):
 
 
 admin.site.register(OTPVerification)
-admin.site.register(BankAccount)
 admin.site.register(KycDocument)
+
+
+@admin.register(BankAccount)
+class BankAccountAdmin(admin.ModelAdmin):
+    list_display = ('user', 'bank_name', 'ifsc', 'verification_status', 'verified_at')
+    list_filter = ('verification_status', 'verification_provider')
+    search_fields = ('user__phone', 'account_holder_name', 'ifsc')
+
+    def get_readonly_fields(self, request, obj=None):
+        return tuple(field.name for field in self.model._meta.fields)
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False

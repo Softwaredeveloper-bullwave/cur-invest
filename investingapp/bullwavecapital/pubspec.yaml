@@ -23,6 +23,8 @@ dependencies:
   dio: ^5.7.0
   shared_preferences: ^2.3.3
   image_picker: ^1.1.2
+  camera: ^0.11.0+2
+  image: ^4.5.4
   url_launcher: ^6.3.1
   share_plus: ^13.2.0
   speech_to_text: ^7.0.0
@@ -32,6 +34,7 @@ dependencies:
   path_provider: ^2.1.5
   phosphoricons_flutter: ^1.0.0
   webview_flutter: ^4.14.1
+  flutter_cashfree_pg_sdk: ^2.4.0
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -44,3 +47,4 @@ flutter:
     - assets/svg/
     - assets/lottie/
     - assets/data/
+    - assets/charts/

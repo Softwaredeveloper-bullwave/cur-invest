@@ -360,6 +360,16 @@ def _send_email(
     raise EmailDeliveryError('All email providers failed. ' + ' | '.join(errors))
 
 
+def send_plain_email(*, to_email: str, subject: str, text_body: str, to_name: str = '') -> str:
+    """Public helper for transactional one-off emails (e.g. login OTP)."""
+    return _send_email(
+        to_email=to_email,
+        subject=subject,
+        text_body=text_body,
+        to_name=to_name,
+    )
+
+
 def _kyc_review_base_url() -> str:
     base = (getattr(settings, 'BACKEND_PUBLIC_URL', '') or '').strip().rstrip('/')
     if base:

@@ -40,9 +40,12 @@ from .serializers import (
 
     SupportFaqSerializer,
 
+    SupportTicketDetailSerializer,
+
     SupportTicketSerializer,
 
 )
+from .support_service import create_ticket_for_user
 
 
 
@@ -136,9 +139,9 @@ class SupportTicketListView(APIView):
 
         serializer.is_valid(raise_exception=True)
 
-        ticket = SupportTicket.objects.create(
+        ticket = create_ticket_for_user(
 
-            user=request.user,
+            request.user,
 
             subject=serializer.validated_data['subject'],
 
@@ -147,6 +150,28 @@ class SupportTicketListView(APIView):
         )
 
         return Response(SupportTicketSerializer(ticket).data, status=201)
+
+
+
+
+
+class SupportTicketDetailView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+
+
+    def get(self, request, ticket_id):
+
+        try:
+
+            ticket = request.user.support_tickets.prefetch_related('messages__author').get(pk=ticket_id)
+
+        except SupportTicket.DoesNotExist:
+
+            return Response({'detail': 'Not found.'}, status=404)
+
+        return Response(SupportTicketDetailSerializer(ticket).data)
 
 
 

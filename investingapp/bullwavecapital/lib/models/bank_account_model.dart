@@ -46,6 +46,8 @@ class BankAccountModel {
 class BankVerificationResponse {
   final bool success;
   final String message;
+  final bool isVerified;
+  final bool reviewPending;
   final String? nameAtBank;
   final String? nameMatchResult;
   final String? panRegisteredName;
@@ -55,6 +57,8 @@ class BankVerificationResponse {
   const BankVerificationResponse({
     required this.success,
     required this.message,
+    this.isVerified = false,
+    this.reviewPending = false,
     this.nameAtBank,
     this.nameMatchResult,
     this.panRegisteredName,
@@ -66,6 +70,8 @@ class BankVerificationResponse {
       BankVerificationResponse(
         success: json['success'] as bool? ?? false,
         message: json['message'] as String? ?? '',
+        isVerified: json['isVerified'] as bool? ?? json['bankVerified'] as bool? ?? false,
+        reviewPending: json['bankReviewStatus'] == 'pending',
         nameAtBank: json['nameAtBank'] as String?,
         nameMatchResult: json['nameMatchResult'] as String?,
         panRegisteredName: json['panRegisteredName'] as String?,

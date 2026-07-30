@@ -28,6 +28,7 @@ from .models import (
     NewsAlert,
     PaperTrade,
     PriceAlert,
+    ScalperOrder,
     SipPlan,
     Stock,
     StockHolding,
@@ -49,6 +50,14 @@ from .option_trading_service import (
     place_option_order,
 )
 from .trading_service import TradingError, list_recent_trades, place_paper_order
+from .scalper_service import (
+    ScalperError,
+    cancel_scalper_order,
+    create_scalper_order,
+    exit_scalper_order,
+    serialize_scalper_order,
+    update_scalper_risk,
+)
 from .portfolio_service import get_stock_portfolio
 from .portfolio_health_service import get_portfolio_health
 from .rebalance_service import analyze_portfolio_rebalance
@@ -78,6 +87,7 @@ from .serializers import (
     StockNewsSerializer,
     StockSerializer,
     ScreenerStockSerializer,
+    ScalperOrderSerializer,
     OptionContractSerializer,
     CreateTraderNoteSerializer,
     TraderNoteSerializer,
@@ -352,7 +362,7 @@ class PriceAlertsView(APIView):
     def get_permissions(self):
         if self.request.method == 'GET':
             return [IsAuthenticated()]
-        return MARKET_TRADE_PERMISSIONS
+        return [p() for p in MARKET_TRADE_PERMISSIONS]
 
     def get(self, request):
         alerts = PriceAlert.objects.filter(user=request.user).select_related('stock')
@@ -404,7 +414,7 @@ class NewsAlertsView(APIView):
     def get_permissions(self):
         if self.request.method == 'GET':
             return [IsAuthenticated()]
-        return MARKET_TRADE_PERMISSIONS
+        return [p() for p in MARKET_TRADE_PERMISSIONS]
 
     def get(self, request):
         alerts = NewsAlert.objects.filter(user=request.user)
@@ -454,7 +464,7 @@ class SipPlansView(APIView):
     def get_permissions(self):
         if self.request.method == 'GET':
             return [IsAuthenticated()]
-        return MARKET_TRADE_PERMISSIONS
+        return [p() for p in MARKET_TRADE_PERMISSIONS]
 
     def get(self, request):
         plans = SipPlan.objects.filter(user=request.user, is_active=True).select_related('stock')
@@ -526,7 +536,7 @@ class OptionChainView(APIView):
 
 
 class PaperTradingOrdersView(APIView):
-    permission_classes = [IsAuthenticated, IsKycVerified, IsFnoVerified]
+    permission_classes = MARKET_TRADE_PERMISSIONS
 
     def get(self, request):
         return Response(list_recent_trades(request.user, limit=50))
@@ -642,7 +652,7 @@ class CommodityOrdersView(APIView):
     def get_permissions(self):
         if self.request.method == 'GET':
             return [IsAuthenticated()]
-        return MARKET_TRADE_PERMISSIONS
+        return [p() for p in MARKET_TRADE_PERMISSIONS]
 
     def get(self, request):
         return Response(camelize({'trades': list_recent_commodity_trades(request.user)}))
@@ -722,7 +732,7 @@ class OptionOrdersView(APIView):
     def get_permissions(self):
         if self.request.method == 'GET':
             return [IsAuthenticated()]
-        return MARKET_TRADE_PERMISSIONS
+        return [p() for p in MARKET_TRADE_PERMISSIONS]
 
     def get(self, request):
         return Response(camelize({'trades': list_recent_option_trades(request.user)}))
@@ -732,11 +742,6 @@ class OptionOrdersView(APIView):
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
         asset_class = (data.get('asset_class') or 'equity_fno').lower()
-        if asset_class == 'equity_fno' and not IsFnoVerified().has_permission(request, self):
-            return Response(
-                {'detail': 'F&O verification required to trade stock/index options.'},
-                status=status.HTTP_403_FORBIDDEN,
-            )
         try:
             payload = place_option_order(
                 request.user,
@@ -758,6 +763,77 @@ class OptionOrdersView(APIView):
             else 'Buy order executed successfully.'
         )
         return Response(camelize(payload), status=201)
+
+
+class ScalperOrdersView(APIView):
+    permission_classes = MARKET_TRADE_PERMISSIONS
+
+    def get(self, request):
+        rows = ScalperOrder.objects.filter(user=request.user).select_related('stock')
+        order_status = str(request.query_params.get('status') or '').lower()
+        instrument_type = str(request.query_params.get('instrument_type') or '').lower()
+        if order_status:
+            rows = rows.filter(status=order_status)
+        if instrument_type:
+            rows = rows.filter(instrument_type=instrument_type)
+        return Response({'orders': [serialize_scalper_order(row) for row in rows[:100]]})
+
+    def post(self, request):
+        serializer = ScalperOrderSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        try:
+            order = create_scalper_order(request.user, **data)
+        except ScalperError as exc:
+            return Response({'detail': str(exc)}, status=400)
+        if order.status == ScalperOrder.Status.FAILED:
+            return Response(
+                {'detail': order.error_message or 'Scalper order could not be executed.'},
+                status=400,
+            )
+        code = 202 if order.status == ScalperOrder.Status.PENDING else 201
+        return Response({'order': serialize_scalper_order(order)}, status=code)
+
+
+class ScalperOrderDetailView(APIView):
+    permission_classes = MARKET_TRADE_PERMISSIONS
+
+    def patch(self, request, order_id):
+        try:
+            order = update_scalper_risk(
+                request.user,
+                order_id,
+                stop_loss=request.data.get('stop_loss', request.data.get('stopLoss')),
+                target_price=request.data.get('target_price', request.data.get('targetPrice')),
+                trailing_stop_percent=request.data.get(
+                    'trailing_stop_percent',
+                    request.data.get('trailingStopPercent'),
+                ),
+            )
+        except (ScalperOrder.DoesNotExist, ScalperError) as exc:
+            return Response({'detail': str(exc) or 'Active scalper order not found.'}, status=400)
+        return Response({'order': serialize_scalper_order(order)})
+
+    def delete(self, request, order_id):
+        try:
+            cancel_scalper_order(request.user, order_id)
+        except ScalperError as exc:
+            return Response({'detail': str(exc)}, status=400)
+        return Response(status=204)
+
+
+class ScalperOrderExitView(APIView):
+    permission_classes = MARKET_TRADE_PERMISSIONS
+
+    def post(self, request, order_id):
+        try:
+            order = ScalperOrder.objects.get(pk=order_id, user=request.user)
+            order = exit_scalper_order(order.id)
+        except ScalperOrder.DoesNotExist:
+            return Response({'detail': 'Scalper position not found.'}, status=404)
+        except (ScalperError, TradingError, OptionTradingError) as exc:
+            return Response({'detail': str(exc)}, status=400)
+        return Response({'order': serialize_scalper_order(order)})
 
 
 class IpoCalendarView(APIView):
@@ -787,7 +863,7 @@ class IpoOrdersView(APIView):
     def get_permissions(self):
         if self.request.method == 'GET':
             return [IsAuthenticated()]
-        return MARKET_TRADE_PERMISSIONS
+        return [p() for p in MARKET_TRADE_PERMISSIONS]
 
     def get(self, request):
         from .ipo_trading_service import list_ipo_trades
@@ -1034,7 +1110,7 @@ class CopySubscriptionsView(APIView):
     def get_permissions(self):
         if self.request.method == 'GET':
             return [IsAuthenticated()]
-        return MARKET_TRADE_PERMISSIONS
+        return [p() for p in MARKET_TRADE_PERMISSIONS]
 
     def get(self, request):
         from .copy_trading_service import list_subscriptions

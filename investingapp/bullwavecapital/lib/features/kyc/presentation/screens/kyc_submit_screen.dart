@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/constants/routes.dart';
+import '../../../../core/navigation/onboarding_flow_navigator.dart';
 import '../../../../core/theme/colors.dart';
 import '../../../../core/widgets/custom_app_bar.dart';
 import '../provider/kyc_flow_provider.dart';
@@ -33,6 +34,19 @@ class _KycSubmitScreenState extends State<KycSubmitScreen> {
   final _dobController = TextEditingController();
   final List<_PickedPhoto> _photos = [];
   final _picker = ImagePicker();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final kyc = context.read<KycFlowProvider>();
+      await kyc.loadStatus();
+      if (!mounted) return;
+      if (kyc.usesAutomatedKyc || kyc.status.panVerified) {
+        OnboardingFlowNavigator.goToNextKycStep(context, kyc);
+      }
+    });
+  }
 
   @override
   void dispose() {

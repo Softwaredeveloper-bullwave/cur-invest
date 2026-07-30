@@ -15,6 +15,7 @@ import '../provider/stock_features_provider.dart';
 import '../provider/stock_market_provider.dart';
 import '../provider/stock_portfolio_provider.dart';
 import 'trade_order_sheets.dart';
+import 'scalper_controls.dart';
 
 /// Dhan-style order pad — Buy/Sell toggle, live price, position & order summary.
 class StockTradingPad extends StatefulWidget {
@@ -34,10 +35,8 @@ class StockTradingPad extends StatefulWidget {
   }) {
     return AppNavigation.showAppBottomSheet<void>(
       context,
-      builder: (_) => StockTradingPad(
-        stock: stock,
-        initialSide: initialSide.toUpperCase(),
-      ),
+      builder: (_) =>
+          StockTradingPad(stock: stock, initialSide: initialSide.toUpperCase()),
     );
   }
 
@@ -49,6 +48,7 @@ class _StockTradingPadState extends State<StockTradingPad> {
   late String _side;
   late final TextEditingController _qtyController;
   bool _isPlacing = false;
+  ScalperOrderConfig _scalper = const ScalperOrderConfig();
 
   @override
   void initState() {
@@ -57,7 +57,9 @@ class _StockTradingPadState extends State<StockTradingPad> {
     _qtyController = TextEditingController(text: '1');
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<StockMarketProvider>().ensureStock(widget.stock.symbol);
-      context.read<StockPortfolioProvider>().loadPortfolio(refreshQuotes: false);
+      context.read<StockPortfolioProvider>().loadPortfolio(
+        refreshQuotes: false,
+      );
       context.read<WalletProvider>().loadData();
     });
   }
@@ -126,6 +128,42 @@ class _StockTradingPadState extends State<StockTradingPad> {
 
     setState(() => _isPlacing = true);
     final features = context.read<StockFeaturesProvider>();
+    if (_scalper.enabled) {
+      final order = await features.placeStockScalperOrder(
+        symbol: stock.symbol,
+        side: _side,
+        quantity: _qty,
+        orderType: _scalper.orderType,
+        referencePrice: stock.ltp,
+        limitPrice: _scalper.limitPrice,
+        stopLoss: _isSell ? null : _scalper.stopLoss,
+        targetPrice: _isSell ? null : _scalper.targetPrice,
+        trailingStopPercent: _isSell ? null : _scalper.trailingStopPercent,
+      );
+      if (!mounted) return;
+      setState(() => _isPlacing = false);
+      if (order == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(features.tradeError ?? 'Scalper order failed.'),
+          ),
+        );
+        return;
+      }
+      unawaited(portfolio.loadPortfolio(refreshQuotes: true));
+      unawaited(context.read<WalletProvider>().loadData());
+      final pending = order['status'] == 'pending';
+      final messenger = ScaffoldMessenger.of(context);
+      Navigator.of(context, rootNavigator: true).pop();
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            pending ? 'Limit order placed.' : 'Scalper position active.',
+          ),
+        ),
+      );
+      return;
+    }
     final order = await features.placePaperTrade(
       symbol: stock.symbol,
       side: _side,
@@ -147,9 +185,40 @@ class _StockTradingPadState extends State<StockTradingPad> {
 
     portfolio.applyExecutedOrder(order);
     unawaited(portfolio.loadPortfolio(refreshQuotes: false));
+    unawaited(context.read<WalletProvider>().loadData());
     if (!mounted) return;
     Navigator.of(context, rootNavigator: true).pop();
     await OrderSuccessSheet.show(context, order);
+  }
+
+  Future<void> _exitAll(StockModel stock, int quantity) async {
+    if (_isPlacing || quantity < 1) return;
+    setState(() => _isPlacing = true);
+    final features = context.read<StockFeaturesProvider>();
+    final order = await features.placeStockScalperOrder(
+      symbol: stock.symbol,
+      side: 'SELL',
+      quantity: quantity,
+      orderType: 'market',
+      referencePrice: stock.ltp,
+    );
+    if (!mounted) return;
+    setState(() => _isPlacing = false);
+    if (order == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(features.tradeError ?? 'Exit failed.')),
+      );
+      return;
+    }
+    unawaited(
+      context.read<StockPortfolioProvider>().loadPortfolio(refreshQuotes: true),
+    );
+    unawaited(context.read<WalletProvider>().loadData());
+    final messenger = ScaffoldMessenger.of(context);
+    Navigator.of(context, rootNavigator: true).pop();
+    messenger.showSnackBar(
+      const SnackBar(content: Text('Position exited successfully.')),
+    );
   }
 
   @override
@@ -157,7 +226,11 @@ class _StockTradingPadState extends State<StockTradingPad> {
     final colors = context.appColors;
     final screenH = MediaQuery.sizeOf(context).height;
 
-    return Consumer3<StockMarketProvider, StockPortfolioProvider, WalletProvider>(
+    return Consumer3<
+      StockMarketProvider,
+      StockPortfolioProvider,
+      WalletProvider
+    >(
       builder: (context, market, portfolio, wallet, _) {
         final stock = market.getStock(widget.stock.symbol) ?? widget.stock;
         final isPositive = stock.isPositive;
@@ -212,7 +285,10 @@ class _StockTradingPadState extends State<StockTradingPad> {
                     Align(
                       alignment: Alignment.centerLeft,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 8,
+                        ),
                         decoration: BoxDecoration(
                           color: colors.surfaceSecondary,
                           borderRadius: BorderRadius.circular(10),
@@ -220,7 +296,10 @@ class _StockTradingPadState extends State<StockTradingPad> {
                         ),
                         child: const Text(
                           'MARKET',
-                          style: TextStyle(fontWeight: FontWeight.w800, letterSpacing: 0.5),
+                          style: TextStyle(
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.5,
+                          ),
                         ),
                       ),
                     ),
@@ -229,17 +308,29 @@ class _StockTradingPadState extends State<StockTradingPad> {
                     const SizedBox(height: 10),
                     Row(
                       children: [
-                        _QtyStepButton(icon: Icons.remove, onTap: () => _adjustQty(-1)),
+                        _QtyStepButton(
+                          icon: Icons.remove,
+                          onTap: () => _adjustQty(-1),
+                        ),
                         Expanded(
                           child: TextField(
                             controller: _qtyController,
                             keyboardType: TextInputType.number,
                             textAlign: TextAlign.center,
-                            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 24),
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                            ],
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 24,
+                            ),
                             decoration: InputDecoration(
-                              contentPadding: const EdgeInsets.symmetric(vertical: 14),
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                              contentPadding: const EdgeInsets.symmetric(
+                                vertical: 14,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                                 borderSide: BorderSide(color: colors.border),
@@ -248,7 +339,10 @@ class _StockTradingPadState extends State<StockTradingPad> {
                             onChanged: (_) => setState(() {}),
                           ),
                         ),
-                        _QtyStepButton(icon: Icons.add, onTap: () => _adjustQty(1)),
+                        _QtyStepButton(
+                          icon: Icons.add,
+                          onTap: () => _adjustQty(1),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 10),
@@ -259,14 +353,38 @@ class _StockTradingPadState extends State<StockTradingPad> {
                         for (final chip in [1, 5, 10, 25, 50])
                           _QtyChip(label: '$chip', onTap: () => _setQty(chip)),
                         if (_isSell && available > 1)
-                          _QtyChip(label: 'Max', onTap: () => _setQty(available)),
+                          _QtyChip(
+                            label: 'Max',
+                            onTap: () => _setQty(available),
+                          ),
                       ],
                     ),
+                    const SizedBox(height: 18),
+                    ScalperControls(
+                      referencePrice: stock.ltp,
+                      onChanged: (config) => setState(() => _scalper = config),
+                    ),
+                    if (_scalper.enabled && available > 0) ...[
+                      const SizedBox(height: 10),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: _isPlacing
+                              ? null
+                              : () => _exitAll(stock, available),
+                          icon: const Icon(Icons.flash_off_rounded),
+                          label: Text('One-tap exit all $available shares'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.red,
+                          ),
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 18),
                     _OrderSummaryCard(
                       isSell: _isSell,
                       orderValue: orderValue,
-                      walletBalance: wallet.wallet.balance,
+                      walletBalance: wallet.practiceBalance,
                       avgPrice: holding?.avgPrice,
                       estRealizedPnl: estRealizedPnl,
                       availableQty: available,
@@ -304,10 +422,7 @@ class _PadHeader extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
       child: Row(
         children: [
-          IconButton(
-            icon: const Icon(Icons.close_rounded),
-            onPressed: onClose,
-          ),
+          IconButton(icon: const Icon(Icons.close_rounded), onPressed: onClose),
           Expanded(
             child: Column(
               children: [
@@ -316,18 +431,28 @@ class _PadHeader extends StatelessWidget {
                   children: [
                     Text(
                       stock.symbol,
-                      style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 17),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 17,
+                      ),
                     ),
                     const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: colors.surfaceSecondary,
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
                         stock.exchange,
-                        style: TextStyle(fontSize: 10, color: colors.textMuted, fontWeight: FontWeight.w700),
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: colors.textMuted,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                   ],
@@ -453,14 +578,20 @@ class _LivePriceCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Live Price', style: TextStyle(color: context.appColors.textMuted, fontSize: 12)),
+          Text(
+            'Live Price',
+            style: TextStyle(color: context.appColors.textMuted, fontSize: 12),
+          ),
           const SizedBox(height: 6),
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
                 CurrencyFormatter.format(stock.ltp),
-                style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 32),
+                style: const TextStyle(
+                  fontWeight: FontWeight.w900,
+                  fontSize: 32,
+                ),
               ),
               const SizedBox(width: 12),
               Padding(
@@ -468,13 +599,19 @@ class _LivePriceCard extends StatelessWidget {
                 child: Row(
                   children: [
                     Icon(
-                      isPositive ? Icons.arrow_drop_up_rounded : Icons.arrow_drop_down_rounded,
+                      isPositive
+                          ? Icons.arrow_drop_up_rounded
+                          : Icons.arrow_drop_down_rounded,
                       color: changeColor,
                       size: 22,
                     ),
                     Text(
                       '${isPositive ? '+' : ''}${CurrencyFormatter.format(stock.change)} (${stock.changePercent.toStringAsFixed(2)}%)',
-                      style: TextStyle(color: changeColor, fontWeight: FontWeight.w700, fontSize: 14),
+                      style: TextStyle(
+                        color: changeColor,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                      ),
                     ),
                   ],
                 ),
@@ -499,7 +636,10 @@ class _OhlcRow extends StatelessWidget {
         _OhlcCell(label: 'Open', value: CurrencyFormatter.format(stock.open)),
         _OhlcCell(label: 'High', value: CurrencyFormatter.format(stock.high)),
         _OhlcCell(label: 'Low', value: CurrencyFormatter.format(stock.low)),
-        _OhlcCell(label: 'Prev', value: CurrencyFormatter.format(stock.previousClose)),
+        _OhlcCell(
+          label: 'Prev',
+          value: CurrencyFormatter.format(stock.previousClose),
+        ),
       ],
     );
   }
@@ -517,9 +657,15 @@ class _OhlcCell extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: TextStyle(color: context.appColors.textMuted, fontSize: 11)),
+          Text(
+            label,
+            style: TextStyle(color: context.appColors.textMuted, fontSize: 11),
+          ),
           const SizedBox(height: 2),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
+          Text(
+            value,
+            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
+          ),
         ],
       ),
     );
@@ -541,18 +687,28 @@ class _HoldingSummary extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.brandOrange.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.brandOrange.withValues(alpha: 0.25)),
+        border: Border.all(
+          color: AppColors.brandOrange.withValues(alpha: 0.25),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.pie_chart_rounded, size: 16, color: AppColors.brandOrange),
+              const Icon(
+                Icons.pie_chart_rounded,
+                size: 16,
+                color: AppColors.brandOrange,
+              ),
               const SizedBox(width: 6),
               Text(
                 'Your Holdings',
-                style: TextStyle(fontWeight: FontWeight.w800, color: colors.textSecondary, fontSize: 13),
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  color: colors.textSecondary,
+                  fontSize: 13,
+                ),
               ),
             ],
           ),
@@ -560,11 +716,18 @@ class _HoldingSummary extends StatelessWidget {
           Row(
             children: [
               _MiniStat(label: 'Qty', value: '${holding.quantity}'),
-              _MiniStat(label: 'Avg', value: CurrencyFormatter.format(holding.avgPrice)),
-              _MiniStat(label: 'Value', value: CurrencyFormatter.formatCompact(holding.currentValue)),
+              _MiniStat(
+                label: 'Avg',
+                value: CurrencyFormatter.format(holding.avgPrice),
+              ),
+              _MiniStat(
+                label: 'Value',
+                value: CurrencyFormatter.formatCompact(holding.currentValue),
+              ),
               _MiniStat(
                 label: 'P&L',
-                value: '${holding.pnl >= 0 ? '+' : ''}${CurrencyFormatter.formatCompact(holding.pnl)}',
+                value:
+                    '${holding.pnl >= 0 ? '+' : ''}${CurrencyFormatter.formatCompact(holding.pnl)}',
                 valueColor: pnlColor,
               ),
             ],
@@ -588,11 +751,18 @@ class _MiniStat extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: TextStyle(color: context.appColors.textMuted, fontSize: 10)),
+          Text(
+            label,
+            style: TextStyle(color: context.appColors.textMuted, fontSize: 10),
+          ),
           const SizedBox(height: 2),
           Text(
             value,
-            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12, color: valueColor),
+            style: TextStyle(
+              fontWeight: FontWeight.w800,
+              fontSize: 12,
+              color: valueColor,
+            ),
           ),
         ],
       ),
@@ -695,26 +865,39 @@ class _OrderSummaryCard extends StatelessWidget {
           if (!isSell) ...[
             const SizedBox(height: 8),
             _SummaryRow(
-              label: 'Available balance',
+              label: 'Practice funds',
               value: CurrencyFormatter.format(walletBalance),
             ),
           ],
           if (isSell) ...[
             const SizedBox(height: 8),
-            _SummaryRow(label: 'Available to sell', value: '$availableQty shares'),
+            _SummaryRow(
+              label: 'Available to sell',
+              value: '$availableQty shares',
+            ),
             if (avgPrice != null) ...[
               const SizedBox(height: 8),
-              _SummaryRow(label: 'Avg buy price', value: CurrencyFormatter.format(avgPrice!)),
+              _SummaryRow(
+                label: 'Avg buy price',
+                value: CurrencyFormatter.format(avgPrice!),
+              ),
             ],
             if (pnl != null) ...[
               const Divider(height: 20),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Est. realized P&L', style: TextStyle(color: colors.textSecondary)),
+                  Text(
+                    'Est. realized P&L',
+                    style: TextStyle(color: colors.textSecondary),
+                  ),
                   Text(
                     '${pnl >= 0 ? '+' : ''}${CurrencyFormatter.format(pnl)}',
-                    style: TextStyle(color: pnlColor, fontWeight: FontWeight.w900, fontSize: 18),
+                    style: TextStyle(
+                      color: pnlColor,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 18,
+                    ),
                   ),
                 ],
               ),
@@ -731,14 +914,24 @@ class _SummaryRow extends StatelessWidget {
   final String value;
   final bool bold;
 
-  const _SummaryRow({required this.label, required this.value, this.bold = false});
+  const _SummaryRow({
+    required this.label,
+    required this.value,
+    this.bold = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: TextStyle(color: context.appColors.textSecondary, fontSize: 13)),
+        Text(
+          label,
+          style: TextStyle(
+            color: context.appColors.textSecondary,
+            fontSize: 13,
+          ),
+        ),
         Text(
           value,
           style: TextStyle(
@@ -811,19 +1004,27 @@ class _ConfirmBar extends StatelessWidget {
                 style: FilledButton.styleFrom(
                   backgroundColor: sideColor,
                   disabledBackgroundColor: sideColor.withValues(alpha: 0.35),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                 ),
                 child: isPlacing
                     ? const SizedBox(
                         width: 22,
                         height: 22,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
                       )
                     : Text(
                         enabled
                             ? '$action $qty @ $priceStr'
                             : '$action unavailable',
-                        style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 16,
+                        ),
                       ),
               ),
             ),

@@ -13,6 +13,7 @@ from .notifications import (
     notify_user_kyc_approved,
     notify_user_kyc_rejected,
 )
+from .service import _sync_user_name_from_kyc
 
 
 class ManualKycError(Exception):
@@ -124,8 +125,9 @@ def submit_kyc_request(
     profile, _ = KycProfile.objects.get_or_create(user=user)
     profile.pan_number = pan
     profile.pan_name = name
+    profile.pan_dob = dob
     profile.overall_status = KycProfile.OverallStatus.PENDING
-    profile.save(update_fields=['pan_number', 'pan_name', 'overall_status'])
+    profile.save(update_fields=['pan_number', 'pan_name', 'pan_dob', 'overall_status'])
 
     req_id = str(req.id)
     image_paths = [getattr(req.pan_image, 'path', '') or '']
@@ -180,12 +182,17 @@ def approve_kyc_request(req: KYCRequest, admin_user: User) -> KYCRequest:
     profile, _ = KycProfile.objects.get_or_create(user=user)
     profile.pan_number = req.pan_number
     profile.pan_name = req.full_name
+    profile.pan_dob = req.dob
     profile.pan_status = KycProfile.VerificationStatus.VERIFIED
     profile.pan_verified_at = now
     profile.overall_status = KycProfile.OverallStatus.VERIFIED
     profile.verified_at = now
     profile.mobile_verified = True
     profile.save()
+    user.date_of_birth = req.dob
+    user.name = req.full_name
+    user.save(update_fields=['date_of_birth', 'name'])
+    _sync_user_name_from_kyc(user, profile)
 
     user_phone = user.phone
     user_email = user.email or ''

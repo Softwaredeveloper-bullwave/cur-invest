@@ -22,18 +22,14 @@ class HomePortfolioSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
-    final balance = portfolio.currentValue > 0
-        ? portfolio.currentValue
-        : portfolio.walletBalance;
-
     return GestureDetector(
       onTap: onTap,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ModernHeroCard(
-            label: 'Portfolio Balance',
-            amount: balance,
+            label: 'Portfolio Value',
+            amount: portfolio.currentValue,
             changeAmount: portfolio.dayPnl,
             changePrefix: 'Today',
             chartValues: chartValues,

@@ -89,8 +89,8 @@ class _CommodityTradingPadState extends State<CommodityTradingPad> {
       _showSnack('You can sell at most $available units.');
       return;
     }
-    if (!_isSell && wallet.wallet.balance < orderInr) {
-      _showSnack('Insufficient wallet balance. Add funds to continue.');
+    if (!_isSell && wallet.practiceBalance < orderInr) {
+      _showSnack('Insufficient practice funds for this order.');
       return;
     }
 
@@ -127,7 +127,8 @@ class _CommodityTradingPadState extends State<CommodityTradingPad> {
 
     return Consumer2<CommodityProvider, WalletProvider>(
       builder: (context, commodities, wallet, _) {
-        final commodity = commodities.commodityById(widget.commodity.id) ?? widget.commodity;
+        final commodity =
+            commodities.commodityById(widget.commodity.id) ?? widget.commodity;
         final holding = commodities.holdingFor(commodity.id);
         final available = commodities.holdingQtyFor(commodity.id);
         final canSell = available >= 1;
@@ -150,18 +151,25 @@ class _CommodityTradingPadState extends State<CommodityTradingPad> {
                   children: [
                     IconButton(
                       icon: const Icon(Icons.close_rounded),
-                      onPressed: () => Navigator.of(context, rootNavigator: true).pop(),
+                      onPressed: () =>
+                          Navigator.of(context, rootNavigator: true).pop(),
                     ),
                     Expanded(
                       child: Column(
                         children: [
                           Text(
                             commodity.shortName,
-                            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 17),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 17,
+                            ),
                           ),
                           Text(
                             commodity.unit,
-                            style: TextStyle(color: colors.textSecondary, fontSize: 12),
+                            style: TextStyle(
+                              color: colors.textSecondary,
+                              fontSize: 12,
+                            ),
                           ),
                         ],
                       ),
@@ -171,7 +179,10 @@ class _CommodityTradingPadState extends State<CommodityTradingPad> {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 8,
+                ),
                 child: Row(
                   children: [
                     Expanded(
@@ -189,7 +200,9 @@ class _CommodityTradingPadState extends State<CommodityTradingPad> {
                         selected: _isSell,
                         color: AppColors.red,
                         enabled: canSell,
-                        onTap: canSell ? () => setState(() => _side = 'SELL') : null,
+                        onTap: canSell
+                            ? () => setState(() => _side = 'SELL')
+                            : null,
                       ),
                     ),
                   ],
@@ -208,11 +221,20 @@ class _CommodityTradingPadState extends State<CommodityTradingPad> {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Live price', style: TextStyle(color: colors.textMuted, fontSize: 12)),
+                              Text(
+                                'Live price',
+                                style: TextStyle(
+                                  color: colors.textMuted,
+                                  fontSize: 12,
+                                ),
+                              ),
                               const SizedBox(height: 4),
                               Text(
                                 '\$${IndexFormatter.format(commodity.ltp)}',
-                                style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 28),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 28,
+                                ),
                               ),
                             ],
                           ),
@@ -220,14 +242,24 @@ class _CommodityTradingPadState extends State<CommodityTradingPad> {
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
                               Text(
-                                IndexFormatter.formatPercent(commodity.changePercent),
+                                IndexFormatter.formatPercent(
+                                  commodity.changePercent,
+                                ),
                                 style: TextStyle(
-                                  color: commodity.isPositive ? AppColors.green : AppColors.red,
+                                  color: commodity.isPositive
+                                      ? AppColors.green
+                                      : AppColors.red,
                                   fontWeight: FontWeight.w800,
                                   fontSize: 16,
                                 ),
                               ),
-                              Text(commodity.category, style: TextStyle(color: colors.textSecondary, fontSize: 12)),
+                              Text(
+                                commodity.category,
+                                style: TextStyle(
+                                  color: colors.textSecondary,
+                                  fontSize: 12,
+                                ),
+                              ),
                             ],
                           ),
                         ],
@@ -242,41 +274,73 @@ class _CommodityTradingPadState extends State<CommodityTradingPad> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Your position', style: TextStyle(color: colors.textMuted, fontSize: 12)),
+                            Text(
+                              'Your position',
+                              style: TextStyle(
+                                color: colors.textMuted,
+                                fontSize: 12,
+                              ),
+                            ),
                             const SizedBox(height: 8),
                             Text(
                               '${holding.quantity} units • Avg \$${IndexFormatter.format(holding.avgPriceUsd)}',
-                              style: const TextStyle(fontWeight: FontWeight.w700),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                             Text(
                               'Value ${CurrencyFormatter.formatDecimal(holding.currentValueInr)}',
-                              style: TextStyle(color: colors.textSecondary, fontSize: 12),
+                              style: TextStyle(
+                                color: colors.textSecondary,
+                                fontSize: 12,
+                              ),
                             ),
                           ],
                         ),
                       ),
                     ],
                     const SizedBox(height: 18),
-                    Text('Quantity (units)', style: TextStyle(color: colors.textMuted, fontWeight: FontWeight.w700)),
+                    Text(
+                      'Quantity (units)',
+                      style: TextStyle(
+                        color: colors.textMuted,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                     const SizedBox(height: 10),
                     Row(
                       children: [
-                        _QtyStepButton(icon: Icons.remove, onTap: () => _setQty(_qty - 1, available)),
+                        _QtyStepButton(
+                          icon: Icons.remove,
+                          onTap: () => _setQty(_qty - 1, available),
+                        ),
                         Expanded(
                           child: TextField(
                             controller: _qtyController,
                             keyboardType: TextInputType.number,
                             textAlign: TextAlign.center,
-                            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 24),
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                            ],
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 24,
+                            ),
                             decoration: InputDecoration(
-                              contentPadding: const EdgeInsets.symmetric(vertical: 14),
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                              contentPadding: const EdgeInsets.symmetric(
+                                vertical: 14,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                             ),
                             onChanged: (_) => setState(() {}),
                           ),
                         ),
-                        _QtyStepButton(icon: Icons.add, onTap: () => _setQty(_qty + 1, available)),
+                        _QtyStepButton(
+                          icon: Icons.add,
+                          onTap: () => _setQty(_qty + 1, available),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 10),
@@ -303,20 +367,26 @@ class _CommodityTradingPadState extends State<CommodityTradingPad> {
                       child: Column(
                         children: [
                           _SummaryRow(
-                            label: _isSell ? 'Est. credit' : 'Order value (USD)',
+                            label: _isSell
+                                ? 'Est. credit'
+                                : 'Order value (USD)',
                             value: '\$${IndexFormatter.format(orderUsd)}',
                             bold: true,
                           ),
                           const SizedBox(height: 8),
                           _SummaryRow(
-                            label: _isSell ? 'Est. credit (INR)' : 'Debited from wallet',
+                            label: _isSell
+                                ? 'Est. credit (INR)'
+                                : 'Debited from wallet',
                             value: CurrencyFormatter.formatDecimal(orderInr),
                           ),
                           if (!_isSell) ...[
                             const SizedBox(height: 8),
                             _SummaryRow(
-                              label: 'Available balance',
-                              value: CurrencyFormatter.format(wallet.wallet.balance),
+                              label: 'Practice funds',
+                              value: CurrencyFormatter.format(
+                                wallet.practiceBalance,
+                              ),
                             ),
                           ],
                         ],
@@ -338,19 +408,27 @@ class _CommodityTradingPadState extends State<CommodityTradingPad> {
                           : () => _placeOrder(commodity),
                       style: FilledButton.styleFrom(
                         backgroundColor: sideColor,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
                       ),
                       child: _isPlacing
                           ? const SizedBox(
                               width: 22,
                               height: 22,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
                             )
                           : Text(
                               _isSell
                                   ? 'Sell $_qty @ \$${IndexFormatter.format(commodity.ltp)}'
                                   : 'Buy $_qty @ \$${IndexFormatter.format(commodity.ltp)}',
-                              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w800,
+                                fontSize: 15,
+                              ),
                             ),
                     ),
                   ),
@@ -441,17 +519,30 @@ class _SummaryRow extends StatelessWidget {
   final String value;
   final bool bold;
 
-  const _SummaryRow({required this.label, required this.value, this.bold = false});
+  const _SummaryRow({
+    required this.label,
+    required this.value,
+    this.bold = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: TextStyle(color: context.appColors.textSecondary, fontSize: 13)),
+        Text(
+          label,
+          style: TextStyle(
+            color: context.appColors.textSecondary,
+            fontSize: 13,
+          ),
+        ),
         Text(
           value,
-          style: TextStyle(fontWeight: bold ? FontWeight.w900 : FontWeight.w700, fontSize: bold ? 16 : 14),
+          style: TextStyle(
+            fontWeight: bold ? FontWeight.w900 : FontWeight.w700,
+            fontSize: bold ? 16 : 14,
+          ),
         ),
       ],
     );

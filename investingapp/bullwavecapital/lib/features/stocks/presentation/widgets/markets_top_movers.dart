@@ -66,7 +66,7 @@ class _MarketsTopMoversState extends State<MarketsTopMovers> {
             padding: const EdgeInsets.symmetric(horizontal: 20),
             scrollDirection: Axis.horizontal,
             itemCount: tabs.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 8),
+            separatorBuilder: (_, _) => const SizedBox(width: 8),
             itemBuilder: (context, index) {
               final (tab, label) = tabs[index];
               final selected = _tab == tab;

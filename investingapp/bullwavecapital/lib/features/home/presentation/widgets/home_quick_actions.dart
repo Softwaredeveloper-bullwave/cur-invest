@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 import '../../../../core/theme/theme_a.dart';
 import '../../../../core/widgets/scale_tap.dart';

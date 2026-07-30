@@ -33,6 +33,7 @@ from .serializers import (
     WalletSerializer,
     WalletTransactionSerializer,
 )
+from .practice_wallet_service import practice_wallet_payload
 
 
 class HomeView(APIView):
@@ -236,6 +237,13 @@ class WalletView(APIView):
             data['accountNumber'] = ''
             data['ifsc'] = ''
         return Response(data)
+
+
+class PracticeWalletView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response(practice_wallet_payload(request.user, transaction_limit=30))
 
 
 class WalletTransactionsView(APIView):

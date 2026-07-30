@@ -9,8 +9,7 @@ class AppProvider extends ChangeNotifier {
   bool _isLoading = false;
   bool _hasCompletedOnboarding;
 
-  AppProvider._({required bool hasCompletedOnboarding})
-      : _hasCompletedOnboarding = hasCompletedOnboarding;
+  AppProvider._({required this._hasCompletedOnboarding});
 
   static Future<AppProvider> create() async {
     final prefs = await SharedPreferences.getInstance();

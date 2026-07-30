@@ -21,14 +21,20 @@ import '../widgets/stock_detail_chart.dart';
 /// Index F&O hub — chart, market analysis, and full option chain (OI · LTP · Strike).
 class IndexFnoHubScreen extends StatefulWidget {
   final String symbol;
+  final bool paperMode;
 
-  const IndexFnoHubScreen({super.key, required this.symbol});
+  const IndexFnoHubScreen({
+    super.key,
+    required this.symbol,
+    this.paperMode = false,
+  });
 
   @override
   State<IndexFnoHubScreen> createState() => _IndexFnoHubScreenState();
 }
 
-class _IndexFnoHubScreenState extends State<IndexFnoHubScreen> with SingleTickerProviderStateMixin {
+class _IndexFnoHubScreenState extends State<IndexFnoHubScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabs;
   late String _symbol;
   String _intervalLabel = '1D';
@@ -36,7 +42,12 @@ class _IndexFnoHubScreenState extends State<IndexFnoHubScreen> with SingleTicker
 
   FnoIndexMeta get _meta =>
       FnoIndexCatalog.bySymbol(_symbol) ??
-      const FnoIndexMeta(symbol: 'NIFTY', label: 'Nifty 50', exchange: 'NSE', marketIndexKey: 'NIFTY');
+      const FnoIndexMeta(
+        symbol: 'NIFTY',
+        label: 'Nifty 50',
+        exchange: 'NSE',
+        marketIndexKey: 'NIFTY',
+      );
 
   String get _apiInterval {
     for (final item in stockChartIntervals) {
@@ -60,16 +71,21 @@ class _IndexFnoHubScreenState extends State<IndexFnoHubScreen> with SingleTicker
   }
 
   Future<void> _bootstrap() async {
-    final fno = context.read<FnoFlowProvider>();
-    await fno.ensureLoaded();
-    if (!mounted) return;
-    if (!fno.isVerified) {
-      context.replace(AppRoutes.fnoVerification);
-      return;
+    if (!widget.paperMode) {
+      final fno = context.read<FnoFlowProvider>();
+      await fno.ensureLoaded();
+      if (!mounted) return;
+      if (!fno.isVerified) {
+        context.replace(AppRoutes.fnoVerification);
+        return;
+      }
     }
     await _loadChain();
     if (!mounted) return;
-    await context.read<StockMarketProvider>().loadCandles(_symbol, interval: _apiInterval);
+    await context.read<StockMarketProvider>().loadCandles(
+      _symbol,
+      interval: _apiInterval,
+    );
   }
 
   Future<void> _loadChain() async {
@@ -82,7 +98,10 @@ class _IndexFnoHubScreenState extends State<IndexFnoHubScreen> with SingleTicker
       _intervalLabel = label;
       _chartLoading = true;
     });
-    await context.read<StockMarketProvider>().loadCandles(_symbol, interval: _apiInterval);
+    await context.read<StockMarketProvider>().loadCandles(
+      _symbol,
+      interval: _apiInterval,
+    );
     if (mounted) setState(() => _chartLoading = false);
   }
 
@@ -90,7 +109,9 @@ class _IndexFnoHubScreenState extends State<IndexFnoHubScreen> with SingleTicker
     final fromChain = features.optionUnderlying(_symbol);
     if (fromChain > 0) return fromChain;
     for (final idx in market.marketIndices) {
-      if (idx.shortName.toUpperCase().contains(_meta.marketIndexKey)) return idx.value;
+      if (idx.shortName.toUpperCase().contains(_meta.marketIndexKey)) {
+        return idx.value;
+      }
     }
     return 0;
   }
@@ -116,7 +137,11 @@ class _IndexFnoHubScreenState extends State<IndexFnoHubScreen> with SingleTicker
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _IndexHeader(meta: _meta, spot: spot, loading: loading && chain.isEmpty),
+              _IndexHeader(
+                meta: _meta,
+                spot: spot,
+                loading: loading && chain.isEmpty,
+              ),
               Material(
                 color: p.card.withValues(alpha: 0.5),
                 child: TabBar(
@@ -145,11 +170,7 @@ class _IndexFnoHubScreenState extends State<IndexFnoHubScreen> with SingleTicker
                       onIntervalChange: _onIntervalChange,
                       spot: spot,
                     ),
-                    _AnalysisTab(
-                      symbol: _symbol,
-                      spot: spot,
-                      contracts: chain,
-                    ),
+                    _AnalysisTab(symbol: _symbol, spot: spot, contracts: chain),
                     _OptionChainTab(
                       symbol: _symbol,
                       spot: spot,
@@ -158,9 +179,11 @@ class _IndexFnoHubScreenState extends State<IndexFnoHubScreen> with SingleTicker
                       error: error,
                       expiries: expiries,
                       selectedExpiry: selectedExpiry,
-                      onExpiry: (e) => features.loadOptionChain(_symbol, expiry: e),
+                      onExpiry: (e) =>
+                          features.loadOptionChain(_symbol, expiry: e),
                       onRefresh: _loadChain,
                       colors: colors,
+                      paperMode: widget.paperMode,
                     ),
                   ],
                 ),
@@ -178,7 +201,11 @@ class _IndexHeader extends StatelessWidget {
   final double spot;
   final bool loading;
 
-  const _IndexHeader({required this.meta, required this.spot, required this.loading});
+  const _IndexHeader({
+    required this.meta,
+    required this.spot,
+    required this.loading,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -191,13 +218,23 @@ class _IndexHeader extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(meta.label, style: ThemeAType.sectionTitle(color: p.textDark, size: 20)),
-                Text('${meta.exchange} · Index F&O', style: ThemeAType.body(color: p.textGrey, size: 12)),
+                Text(
+                  meta.label,
+                  style: ThemeAType.sectionTitle(color: p.textDark, size: 20),
+                ),
+                Text(
+                  '${meta.exchange} · Index F&O',
+                  style: ThemeAType.body(color: p.textGrey, size: 12),
+                ),
               ],
             ),
           ),
           if (loading)
-            const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2))
+            const SizedBox(
+              width: 22,
+              height: 22,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
           else
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
@@ -208,12 +245,18 @@ class _IndexHeader extends StatelessWidget {
                 ),
                 Container(
                   margin: const EdgeInsets.only(top: 4),
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     color: p.positive.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Text('LIVE', style: ThemeAType.label(size: 10, color: p.positive)),
+                  child: Text(
+                    'LIVE',
+                    style: ThemeAType.label(size: 10, color: p.positive),
+                  ),
                 ),
               ],
             ),
@@ -292,7 +335,11 @@ class _AnalysisTab extends StatelessWidget {
     final callOi = calls.fold<int>(0, (s, c) => s + c.oi);
     final putOi = puts.fold<int>(0, (s, c) => s + c.oi);
     final pcr = callOi > 0 ? putOi / callOi : 0.0;
-    final bias = pcr > 1.1 ? 'Bearish skew' : pcr < 0.9 ? 'Bullish skew' : 'Neutral';
+    final bias = pcr > 1.1
+        ? 'Bearish skew'
+        : pcr < 0.9
+        ? 'Bullish skew'
+        : 'Neutral';
 
     final support = spot > 0 ? spot * 0.985 : 0.0;
     final resistance = spot > 0 ? spot * 1.015 : 0.0;
@@ -305,17 +352,38 @@ class _AnalysisTab extends StatelessWidget {
           child: Text(
             '$symbol ${spot > 0 ? "trading at ${IndexFormatter.format(spot)}" : "option chain active"}. '
             'PCR ${pcr.toStringAsFixed(2)} suggests $bias. Watch max-OI strikes for intraday pivots.',
-            style: ThemeAType.body(color: p.textDark, size: 14).copyWith(height: 1.5),
+            style: ThemeAType.body(
+              color: p.textDark,
+              size: 14,
+            ).copyWith(height: 1.5),
           ),
         ),
         const SizedBox(height: 12),
         Row(
           children: [
-            Expanded(child: _MetricTile(label: 'PCR', value: pcr.toStringAsFixed(2), color: p.primary)),
+            Expanded(
+              child: _MetricTile(
+                label: 'PCR',
+                value: pcr.toStringAsFixed(2),
+                color: p.primary,
+              ),
+            ),
             const SizedBox(width: 10),
-            Expanded(child: _MetricTile(label: 'Call OI', value: _fmtOi(callOi), color: p.positive)),
+            Expanded(
+              child: _MetricTile(
+                label: 'Call OI',
+                value: _fmtOi(callOi),
+                color: p.positive,
+              ),
+            ),
             const SizedBox(width: 10),
-            Expanded(child: _MetricTile(label: 'Put OI', value: _fmtOi(putOi), color: p.negative)),
+            Expanded(
+              child: _MetricTile(
+                label: 'Put OI',
+                value: _fmtOi(putOi),
+                color: p.negative,
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 12),
@@ -323,9 +391,17 @@ class _AnalysisTab extends StatelessWidget {
           title: 'Key levels',
           child: Column(
             children: [
-              _LevelRow(label: 'Support', value: support > 0 ? IndexFormatter.format(support) : '—', color: p.positive),
+              _LevelRow(
+                label: 'Support',
+                value: support > 0 ? IndexFormatter.format(support) : '—',
+                color: p.positive,
+              ),
               const SizedBox(height: 8),
-              _LevelRow(label: 'Resistance', value: resistance > 0 ? IndexFormatter.format(resistance) : '—', color: p.negative),
+              _LevelRow(
+                label: 'Resistance',
+                value: resistance > 0 ? IndexFormatter.format(resistance) : '—',
+                color: p.negative,
+              ),
             ],
           ),
         ),
@@ -335,11 +411,20 @@ class _AnalysisTab extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('• Weekly expiry contracts loaded from live spot', style: ThemeAType.body(color: p.textGrey, size: 13)),
+              Text(
+                '• Weekly expiry contracts loaded from live spot',
+                style: ThemeAType.body(color: p.textGrey, size: 13),
+              ),
               const SizedBox(height: 6),
-              Text('• Tap CE/PE LTP in Option Chain to place paper orders', style: ThemeAType.body(color: p.textGrey, size: 13)),
+              Text(
+                '• Tap CE/PE LTP in Option Chain to place paper orders',
+                style: ThemeAType.body(color: p.textGrey, size: 13),
+              ),
               const SizedBox(height: 6),
-              Text('• OI bars highlight concentration at each strike', style: ThemeAType.body(color: p.textGrey, size: 13)),
+              Text(
+                '• OI bars highlight concentration at each strike',
+                style: ThemeAType.body(color: p.textGrey, size: 13),
+              ),
             ],
           ),
         ),
@@ -384,7 +469,11 @@ class _MetricTile extends StatelessWidget {
   final String value;
   final Color color;
 
-  const _MetricTile({required this.label, required this.value, required this.color});
+  const _MetricTile({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -413,14 +502,22 @@ class _LevelRow extends StatelessWidget {
   final String value;
   final Color color;
 
-  const _LevelRow({required this.label, required this.value, required this.color});
+  const _LevelRow({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
     return Row(
       children: [
-        Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
         const SizedBox(width: 8),
         Text(label, style: ThemeAType.body(color: p.textGrey, size: 13)),
         const Spacer(),
@@ -441,6 +538,7 @@ class _OptionChainTab extends StatelessWidget {
   final ValueChanged<String> onExpiry;
   final Future<void> Function() onRefresh;
   final AppThemeExtension colors;
+  final bool paperMode;
 
   const _OptionChainTab({
     required this.symbol,
@@ -453,12 +551,16 @@ class _OptionChainTab extends StatelessWidget {
     required this.onExpiry,
     required this.onRefresh,
     required this.colors,
+    required this.paperMode,
   });
 
   @override
   Widget build(BuildContext context) {
     if (loading && chain.isEmpty) {
-      return const Padding(padding: EdgeInsets.all(16), child: LoadingList(itemCount: 6, itemHeight: 52));
+      return const Padding(
+        padding: EdgeInsets.all(16),
+        child: LoadingList(itemCount: 6, itemHeight: 52),
+      );
     }
     if (chain.isEmpty) {
       return Center(
@@ -467,7 +569,10 @@ class _OptionChainTab extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(error ?? 'No option chain for $symbol', textAlign: TextAlign.center),
+              Text(
+                error ?? 'No option chain for $symbol',
+                textAlign: TextAlign.center,
+              ),
               const SizedBox(height: 12),
               FilledButton(onPressed: onRefresh, child: const Text('Retry')),
             ],
@@ -488,13 +593,16 @@ class _OptionChainTab extends StatelessWidget {
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 16),
               itemCount: expiries.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              separatorBuilder: (_, _) => const SizedBox(width: 8),
               itemBuilder: (_, i) {
                 final expiry = expiries[i];
                 final selected = expiry == selectedExpiry;
                 return FilterChip(
                   selected: selected,
-                  label: Text(DateFormatter.expiryLabel(expiry), style: const TextStyle(fontSize: 11)),
+                  label: Text(
+                    DateFormatter.expiryLabel(expiry),
+                    style: const TextStyle(fontSize: 11),
+                  ),
                   onSelected: loading ? null : (_) => onExpiry(expiry),
                   selectedColor: AppColors.brandPrimary.withValues(alpha: 0.15),
                 );
@@ -503,12 +611,19 @@ class _OptionChainTab extends StatelessWidget {
           ),
         ],
         if (loading)
-          const LinearProgressIndicator(minHeight: 2, color: AppColors.brandPrimary),
+          const LinearProgressIndicator(
+            minHeight: 2,
+            color: AppColors.brandPrimary,
+          ),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
           child: Text(
             'Calls ←  OI · LTP  |  STRIKE  |  LTP · OI  → Puts',
-            style: TextStyle(color: colors.textMuted, fontSize: 11, fontWeight: FontWeight.w600),
+            style: TextStyle(
+              color: colors.textMuted,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
         Expanded(
@@ -521,6 +636,7 @@ class _OptionChainTab extends StatelessWidget {
                 context,
                 contract: contract,
                 chainContext: OptionChainContext.equityFno,
+                paperMode: paperMode,
               ),
             ),
           ),

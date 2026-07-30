@@ -7,9 +7,10 @@ import 'package:provider/provider.dart';
 
 import '../../../../core/api/refresh_providers.dart';
 import '../../../../core/config/app_env.dart';
-import '../../../../core/constants/routes.dart';
+import '../../../../core/navigation/onboarding_flow_navigator.dart';
 import '../../../../core/theme/colors.dart';
 import '../../../../core/widgets/otp_box.dart';
+import '../../../kyc/presentation/provider/kyc_flow_provider.dart';
 import '../provider/auth_provider.dart';
 import '../widgets/premium_auth_ui.dart';
 
@@ -80,12 +81,11 @@ class _OtpScreenState extends State<OtpScreen> {
     setState(() => _isVerifying = false);
 
     if (success) {
-      if (auth.needsProfileSetup) {
-        router.go(AppRoutes.completeProfile);
-      } else {
-        unawaited(refreshAllProviders(context));
-        router.go(AppRoutes.home);
-      }
+      final kyc = context.read<KycFlowProvider>();
+      await kyc.loadStatus();
+      if (!mounted) return;
+      unawaited(refreshAllProviders(context));
+      router.go(OnboardingFlowNavigator.routeAfterAuthentication(auth, kyc));
       return;
     }
 

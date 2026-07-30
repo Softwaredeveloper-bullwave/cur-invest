@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_theme_extension.dart';
 import '../../../../core/theme/colors.dart';
+import '../../domain/kyc_models.dart';
 
 class KycStepTile extends StatelessWidget {
   final String title;
@@ -108,6 +109,110 @@ class KycErrorBanner extends StatelessWidget {
         border: Border.all(color: AppColors.red.withValues(alpha: 0.25)),
       ),
       child: Text(message, style: const TextStyle(color: AppColors.red, fontWeight: FontWeight.w600)),
+    );
+  }
+}
+
+class BankVerificationLogsCard extends StatelessWidget {
+  final String failureReason;
+  final List<BankVerificationLogModel> logs;
+
+  const BankVerificationLogsCard({
+    super.key,
+    required this.failureReason,
+    required this.logs,
+  });
+
+  String _formatTime(String iso) {
+    if (iso.isEmpty) return '';
+    final dt = DateTime.tryParse(iso);
+    if (dt == null) return iso;
+    final local = dt.toLocal();
+    final h = local.hour.toString().padLeft(2, '0');
+    final m = local.minute.toString().padLeft(2, '0');
+    return '${local.day}/${local.month} $h:$m';
+  }
+
+  Color _statusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'success':
+        return AppColors.green;
+      case 'failed':
+        return AppColors.red;
+      default:
+        return AppColors.brandOrange;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (failureReason.isEmpty && logs.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Bank verification logs',
+            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+          ),
+          if (failureReason.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              'Last error: $failureReason',
+              style: const TextStyle(color: AppColors.red, fontSize: 13, height: 1.4),
+            ),
+          ],
+          if (logs.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            ...logs.take(5).map((log) {
+              final label = log.status.isEmpty ? 'unknown' : log.status;
+              final detail = [
+                if (log.accountMasked.isNotEmpty) log.accountMasked,
+                if (log.ifsc.isNotEmpty) log.ifsc,
+                if (log.message.isNotEmpty) log.message,
+              ].join(' · ');
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _formatTime(log.time),
+                      style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: RichText(
+                        text: TextSpan(
+                          style: const TextStyle(fontSize: 12, color: AppColors.textPrimary, height: 1.35),
+                          children: [
+                            TextSpan(
+                              text: '${label.toUpperCase()} ',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                color: _statusColor(label),
+                              ),
+                            ),
+                            TextSpan(text: detail),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
+          ],
+        ],
+      ),
     );
   }
 }

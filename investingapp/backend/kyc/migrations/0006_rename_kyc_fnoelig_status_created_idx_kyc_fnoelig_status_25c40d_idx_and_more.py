@@ -10,14 +10,22 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RenameIndex(
-            model_name='fnoeligibilityrequest',
-            new_name='kyc_fnoelig_status_25c40d_idx',
-            old_name='kyc_fnoelig_status_created_idx',
-        ),
-        migrations.RenameIndex(
-            model_name='kycrequest',
-            new_name='kyc_kycrequ_status_0d6aed_idx',
-            old_name='kyc_kycrequ_status_created_idx',
+        # 0005 already performs the physical rename safely. Keep only the
+        # migration-state update here so fresh databases do not try to rename
+        # an index that no longer exists.
+        migrations.SeparateDatabaseAndState(
+            database_operations=[],
+            state_operations=[
+                migrations.RenameIndex(
+                    model_name='fnoeligibilityrequest',
+                    new_name='kyc_fnoelig_status_25c40d_idx',
+                    old_name='kyc_fnoelig_status_created_idx',
+                ),
+                migrations.RenameIndex(
+                    model_name='kycrequest',
+                    new_name='kyc_kycrequ_status_0d6aed_idx',
+                    old_name='kyc_kycrequ_status_created_idx',
+                ),
+            ],
         ),
     ]

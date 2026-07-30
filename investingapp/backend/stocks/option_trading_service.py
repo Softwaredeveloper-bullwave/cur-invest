@@ -7,7 +7,11 @@ from decimal import Decimal, ROUND_HALF_UP
 
 from django.db import transaction
 
-from finance.models import Transaction, Wallet, WalletTransaction
+from finance.practice_wallet_service import (
+    PracticeWalletError,
+    credit_practice_wallet,
+    debit_practice_wallet,
+)
 
 from .commodity_service import COMMODITY_CATALOG
 from .commodity_trading_service import get_usd_inr_rate
@@ -187,8 +191,6 @@ def place_option_order(
         expiry=expiry,
         asset_class=asset_class,
     )
-    wallet = Wallet.objects.select_for_update().get_or_create(user=user)[0]
-
     if side == 'SELL':
         if not holding or holding.quantity < quantity:
             available = holding.quantity if holding else 0
@@ -223,19 +225,13 @@ def place_option_order(
             holding = None
         else:
             holding.save(update_fields=['quantity'])
-        wallet.balance += order_inr
-        wallet.save(update_fields=['balance'])
-        WalletTransaction.objects.create(
-            wallet=wallet,
-            type=WalletTransaction.TxType.DEPOSIT,
-            amount=order_inr,
-            status=WalletTransaction.Status.COMPLETED,
+        practice_wallet = credit_practice_wallet(
+            user,
+            order_inr,
+            reference=f'OPT-{trade.id}',
+            description=f'Paper option sell {underlying} {option_type} × {quantity}',
         )
     else:
-        if wallet.balance < order_inr:
-            raise OptionTradingError(
-                f'Insufficient wallet balance. Need ₹{order_inr:,.2f}, have ₹{wallet.balance:,.2f}.'
-            )
         trade = OptionTrade.objects.create(
             user=user,
             underlying=underlying,
@@ -266,22 +262,16 @@ def place_option_order(
                 avg_premium=premium,
                 lot_size=lot_size,
             )
-        wallet.balance -= order_inr
-        wallet.save(update_fields=['balance'])
-        WalletTransaction.objects.create(
-            wallet=wallet,
-            type=WalletTransaction.TxType.WITHDRAWAL,
-            amount=order_inr,
-            status=WalletTransaction.Status.COMPLETED,
-        )
-        label = _contract_label(underlying, strike, option_type, expiry)
-        Transaction.objects.create(
-            user=user,
-            reference_id=f'OPT-{trade.id}',
-            type=Transaction.TxType.INVESTMENT,
-            status=Transaction.Status.COMPLETED,
-            amount=order_inr,
-            description=f'Option buy: {label} × {quantity} lot(s)',
-        )
+        try:
+            practice_wallet = debit_practice_wallet(
+                user,
+                order_inr,
+                reference=f'OPT-{trade.id}',
+                description=f'Paper option buy {underlying} {option_type} × {quantity}',
+            )
+        except PracticeWalletError as exc:
+            raise OptionTradingError(str(exc)) from exc
 
-    return build_option_trade_payload(trade, holding)
+    payload = build_option_trade_payload(trade, holding)
+    payload['practiceWalletBalance'] = _round2(practice_wallet.balance)
+    return payload

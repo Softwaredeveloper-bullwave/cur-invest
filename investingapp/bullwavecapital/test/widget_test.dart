@@ -17,6 +17,9 @@ void main() {
     await tester.pumpWidget(BullWaveApp(appProvider: appProvider));
     expect(find.byType(MaterialApp), findsOneWidget);
     await tester.pump(const Duration(seconds: 4));
-    await tester.pumpAndSettle();
+    // The app has intentional periodic market refreshes and animations, so it
+    // never reaches pumpAndSettle's definition of a fully idle frame.
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(tester.takeException(), isNull);
   });
 }

@@ -1,0 +1,47 @@
+const API_BASE =
+  (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, '') ??
+  `${window.location.protocol}//${window.location.hostname}:8000/api/v1/admin-panel`
+
+const TOKEN_KEY = 'bullwave_admin_access'
+
+/** Vite dev server: skip login screen. Set VITE_ADMIN_DEV_NO_AUTH=false to test login locally. */
+export const DEV_NO_AUTH =
+  import.meta.env.DEV && import.meta.env.VITE_ADMIN_DEV_NO_AUTH !== 'false'
+
+export function getToken() {
+  return sessionStorage.getItem(TOKEN_KEY)
+}
+
+export function setToken(token: string) {
+  sessionStorage.setItem(TOKEN_KEY, token)
+}
+
+export function clearToken() {
+  sessionStorage.removeItem(TOKEN_KEY)
+}
+
+type ApiOptions = Omit<RequestInit, 'body'> & {
+  body?: BodyInit | Record<string, unknown>
+}
+
+export async function api<T>(path: string, options: ApiOptions = {}): Promise<T> {
+  const headers = new Headers(options.headers)
+  const token = getToken()
+  if (token) headers.set('Authorization', `Bearer ${token}`)
+
+  let body = options.body
+  if (body && typeof body === 'object' && !(body instanceof FormData)) {
+    headers.set('Content-Type', 'application/json')
+    body = JSON.stringify(body)
+  }
+
+  const response = await fetch(`${API_BASE}${path}`, { ...options, headers, body: body as BodyInit })
+  const data = await response.json().catch(() => ({}))
+  if (!response.ok) {
+    if (response.status === 401) clearToken()
+    throw new Error(data.detail || data.message || `Request failed (${response.status})`)
+  }
+  return data as T
+}
+
+export { API_BASE }

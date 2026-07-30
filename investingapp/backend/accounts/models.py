@@ -48,6 +48,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     phone = models.CharField(max_length=15, unique=True, db_index=True)
     name = models.CharField(max_length=120, blank=True)
     email = models.EmailField(blank=True)
+    email_verified = models.BooleanField(default=False)
     avatar = models.ImageField(upload_to='avatars/%Y/%m/', blank=True, null=True)
     avatar_url = models.URLField(blank=True, default='')
     date_of_birth = models.DateField(blank=True, null=True)
@@ -89,6 +90,18 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 class OTPVerification(models.Model):
     phone = models.CharField(max_length=15, db_index=True)
+    otp_code = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    is_used = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['-created_at']
+
+
+class EmailOTPVerification(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='email_otp_requests')
+    email = models.EmailField(max_length=254, db_index=True)
     otp_code = models.CharField(max_length=6)
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField()

@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../../../../core/api/refresh_providers.dart';
 import '../../../../core/constants/routes.dart';
+import '../../../../core/navigation/onboarding_flow_navigator.dart';
 import '../../../kyc/presentation/provider/kyc_flow_provider.dart';
 import '../../../profile/presentation/provider/app_provider.dart';
 import '../provider/auth_provider.dart';
@@ -29,6 +30,7 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> _navigateNext() async {
     final auth = context.read<AuthProvider>();
     final app = context.read<AppProvider>();
+    final kyc = context.read<KycFlowProvider>();
 
     await Future.wait([
       Future.delayed(const Duration(milliseconds: 2800)),
@@ -36,7 +38,6 @@ class _SplashScreenState extends State<SplashScreen> {
     ]);
     if (!mounted) return;
 
-    // First launch: splash → onboarding → login → OTP → app.
     if (!app.hasCompletedOnboarding) {
       if (auth.isAuthenticated) {
         await auth.logout();
@@ -46,22 +47,21 @@ class _SplashScreenState extends State<SplashScreen> {
       return;
     }
 
-    // Returning user with valid session → home.
     if (auth.isAuthenticated) {
-      final kyc = context.read<KycFlowProvider>();
       await kyc.loadStatus();
       if (!mounted) return;
-
-      if (auth.needsProfileSetup) {
-        context.go(AppRoutes.completeProfile);
-      } else {
-        unawaited(refreshAllProviders(context));
-        context.go(AppRoutes.home);
-      }
+      unawaited(refreshAllProviders(context));
+      context.go(
+        OnboardingFlowNavigator.routeAfterSplash(
+          hasCompletedOnboarding: app.hasCompletedOnboarding,
+          isAuthenticated: auth.isAuthenticated,
+          auth: auth,
+          kyc: kyc,
+        ),
+      );
       return;
     }
 
-    // Onboarding done but logged out → login → OTP.
     context.go(AppRoutes.login);
   }
 

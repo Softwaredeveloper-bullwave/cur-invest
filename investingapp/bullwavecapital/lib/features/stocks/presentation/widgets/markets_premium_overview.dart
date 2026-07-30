@@ -108,7 +108,7 @@ class MarketsPremiumOverview extends StatelessWidget {
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   itemCount: items.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 10),
+                  separatorBuilder: (_, _) => const SizedBox(width: 10),
                   itemBuilder: (context, index) {
                     final item = items[index];
                     return _OverviewTile(item: item);
@@ -180,7 +180,7 @@ class _OverviewTile extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(item.label, style: ThemeAType.label(size: 11, color: p.textMuted), maxLines: 1),
+          Text(item.label, style: ThemeAType.label(size: 11, color: p.textGrey), maxLines: 1),
           const Spacer(),
           Text(valueText, style: ThemeAType.cardTitle(color: p.textDark, size: 15)),
           const SizedBox(height: 4),

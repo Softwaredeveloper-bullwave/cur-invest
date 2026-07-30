@@ -1,8 +1,10 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../../core/theme/app_theme_extension.dart';
 import '../../../../core/theme/colors.dart';
 import '../../../../core/theme/premium_background.dart';
 import '../../../../core/widgets/app_brand_logo.dart';
@@ -31,6 +33,7 @@ class PremiumAuthShell extends StatelessWidget {
       data: ThemeData.dark().copyWith(
         scaffoldBackgroundColor: Colors.transparent,
         textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme),
+        extensions: const [AppThemeExtension.dark],
       ),
       child: Scaffold(
         backgroundColor: Colors.transparent,
@@ -168,8 +171,9 @@ class PremiumAuthBody extends StatelessWidget {
 
 class PremiumGlassField extends StatelessWidget {
   final Widget child;
+  final EdgeInsetsGeometry? padding;
 
-  const PremiumGlassField({super.key, required this.child});
+  const PremiumGlassField({super.key, required this.child, this.padding});
 
   @override
   Widget build(BuildContext context) {
@@ -181,10 +185,397 @@ class PremiumGlassField extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.06),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.25),
+                blurRadius: 24,
+                offset: const Offset(0, 8),
+              ),
+            ],
           ),
+          padding: padding,
           child: child,
         ),
+      ),
+    );
+  }
+}
+
+/// Premium text input for auth screens — white text, high contrast on glass.
+class PremiumAuthInputField extends StatelessWidget {
+  final TextEditingController controller;
+  final String label;
+  final String hint;
+  final IconData? prefixIcon;
+  final String? prefixLabel;
+  final TextInputType keyboardType;
+  final TextAlign textAlign;
+  final String? Function(String?)? validator;
+  final List<TextInputFormatter>? inputFormatters;
+  final bool readOnly;
+
+  const PremiumAuthInputField({
+    super.key,
+    required this.controller,
+    required this.label,
+    required this.hint,
+    this.prefixIcon,
+    this.prefixLabel,
+    this.keyboardType = TextInputType.text,
+    this.textAlign = TextAlign.start,
+    this.validator,
+    this.inputFormatters,
+    this.readOnly = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          label.toUpperCase(),
+          textAlign: TextAlign.center,
+          style: GoogleFonts.inter(
+            color: Colors.white.withValues(alpha: 0.72),
+            fontWeight: FontWeight.w700,
+            fontSize: 11,
+            letterSpacing: 1.4,
+          ),
+        ),
+        const SizedBox(height: 10),
+        PremiumGlassField(
+          child: TextFormField(
+            controller: controller,
+            keyboardType: keyboardType,
+            textAlign: textAlign,
+            readOnly: readOnly,
+            autocorrect: false,
+            enableSuggestions: false,
+            validator: validator,
+            inputFormatters: inputFormatters,
+            style: GoogleFonts.inter(
+              color: Colors.white,
+              fontSize: 17,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.2,
+              height: 1.3,
+            ),
+            cursorColor: AppColors.brandCyan,
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: GoogleFonts.inter(
+                color: Colors.white.withValues(alpha: 0.28),
+                fontSize: 17,
+                fontWeight: FontWeight.w500,
+              ),
+              border: InputBorder.none,
+              errorStyle: GoogleFonts.inter(
+                color: AppColors.red,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+              prefixIcon: prefixIcon != null || prefixLabel != null
+                  ? Padding(
+                      padding: const EdgeInsets.only(left: 16, right: 8),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (prefixIcon != null)
+                            Icon(prefixIcon, color: AppColors.brandCyan, size: 20),
+                          if (prefixIcon != null && prefixLabel != null)
+                            const SizedBox(width: 6),
+                          if (prefixLabel != null)
+                            Text(
+                              prefixLabel!,
+                              style: GoogleFonts.inter(
+                                color: AppColors.brandCyan,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 15,
+                              ),
+                            ),
+                        ],
+                      ),
+                    )
+                  : null,
+              prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Verified status chip — phone / email confirmation badges.
+class PremiumAuthStatusChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color accent;
+
+  const PremiumAuthStatusChip({
+    super.key,
+    required this.icon,
+    required this.label,
+    required this.value,
+    this.accent = AppColors.brandCyan,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(14),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                accent.withValues(alpha: 0.16),
+                Colors.white.withValues(alpha: 0.04),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: accent.withValues(alpha: 0.35)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: accent.withValues(alpha: 0.18),
+                  border: Border.all(color: accent.withValues(alpha: 0.4)),
+                ),
+                child: Icon(icon, color: accent, size: 18),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label.toUpperCase(),
+                      style: GoogleFonts.inter(
+                        color: Colors.white.withValues(alpha: 0.55),
+                        fontWeight: FontWeight.w700,
+                        fontSize: 10,
+                        letterSpacing: 1.1,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      value,
+                      style: GoogleFonts.inter(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
+                        letterSpacing: 0.1,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.verified_rounded, color: accent.withValues(alpha: 0.85), size: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Highlighted email target on OTP screen.
+class PremiumAuthEmailTarget extends StatelessWidget {
+  final String email;
+
+  const PremiumAuthEmailTarget({super.key, required this.email});
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(14),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.mail_outline_rounded, color: AppColors.brandCyan, size: 22),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  email,
+                  style: GoogleFonts.inter(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                    letterSpacing: 0.1,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class PremiumAuthDevBanner extends StatelessWidget {
+  final String message;
+  final Color accent;
+  final IconData icon;
+
+  const PremiumAuthDevBanner({
+    super.key,
+    required this.message,
+    this.accent = AppColors.brandCyan,
+    this.icon = Icons.info_outline_rounded,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            accent.withValues(alpha: 0.14),
+            accent.withValues(alpha: 0.05),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: accent.withValues(alpha: 0.35)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: accent, size: 18),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              message,
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Colors.white.withValues(alpha: 0.88),
+                height: 1.45,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class PremiumAuthDevOtpBadge extends StatelessWidget {
+  final String otp;
+
+  const PremiumAuthDevOtpBadge({super.key, required this.otp});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppColors.green.withValues(alpha: 0.18),
+            AppColors.green.withValues(alpha: 0.06),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.green.withValues(alpha: 0.4)),
+      ),
+      child: Column(
+        children: [
+          Text(
+            'DEV VERIFICATION CODE',
+            style: GoogleFonts.inter(
+              color: AppColors.greenSoft.withValues(alpha: 0.85),
+              fontWeight: FontWeight.w700,
+              fontSize: 10,
+              letterSpacing: 1.4,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            otp,
+            style: GoogleFonts.jetBrainsMono(
+              fontWeight: FontWeight.w700,
+              fontSize: 28,
+              color: AppColors.greenSoft,
+              letterSpacing: 8,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class PremiumAuthResendAction extends StatelessWidget {
+  final bool canResend;
+  final bool isResending;
+  final int secondsRemaining;
+  final VoidCallback? onResend;
+
+  const PremiumAuthResendAction({
+    super.key,
+    required this.canResend,
+    required this.isResending,
+    required this.secondsRemaining,
+    this.onResend,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (canResend) {
+      return TextButton(
+        onPressed: isResending ? null : onResend,
+        style: TextButton.styleFrom(
+          foregroundColor: AppColors.brandCyan,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        ),
+        child: Text(
+          isResending ? 'Sending code...' : 'Resend code',
+          style: GoogleFonts.inter(
+            color: AppColors.brandCyan,
+            fontWeight: FontWeight.w700,
+            fontSize: 14,
+            letterSpacing: 0.2,
+          ),
+        ),
+      );
+    }
+
+    return Text(
+      'Resend in 0:${secondsRemaining.toString().padLeft(2, '0')}',
+      style: GoogleFonts.inter(
+        color: Colors.white.withValues(alpha: 0.55),
+        fontWeight: FontWeight.w600,
+        fontSize: 13,
+        letterSpacing: 0.3,
       ),
     );
   }
@@ -194,7 +585,11 @@ class PremiumLineIndicator extends StatelessWidget {
   final int count;
   final int current;
 
-  const PremiumLineIndicator({super.key, required this.count, required this.current});
+  const PremiumLineIndicator({
+    super.key,
+    required this.count,
+    required this.current,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -212,7 +607,12 @@ class PremiumLineIndicator extends StatelessWidget {
             borderRadius: BorderRadius.circular(999),
             color: active ? Colors.white : Colors.white.withValues(alpha: 0.22),
             boxShadow: active
-                ? [BoxShadow(color: Colors.white.withValues(alpha: 0.35), blurRadius: 8)]
+                ? [
+                    BoxShadow(
+                      color: Colors.white.withValues(alpha: 0.35),
+                      blurRadius: 8,
+                    ),
+                  ]
                 : null,
           ),
         );
@@ -301,7 +701,9 @@ class PremiumAuthBottomBar extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: const Color(0xFF141414),
                   borderRadius: BorderRadius.circular(999),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.06),
+                  ),
                 ),
                 child: Row(
                   children: [
@@ -335,7 +737,9 @@ class PremiumAuthBottomBar extends StatelessWidget {
                             ...List.generate(3, (i) {
                               return Icon(
                                 Icons.chevron_right_rounded,
-                                color: Colors.white.withValues(alpha: 0.5 - i * 0.15),
+                                color: Colors.white.withValues(
+                                  alpha: 0.5 - i * 0.15,
+                                ),
                                 size: 18,
                               );
                             }),
@@ -353,7 +757,9 @@ class PremiumAuthBottomBar extends StatelessWidget {
               right: 0,
               child: Center(
                 child: PremiumCircleIconButton(
-                  icon: isLoading ? null : (isLast ? Icons.check_rounded : nextIcon),
+                  icon: isLoading
+                      ? null
+                      : (isLast ? Icons.check_rounded : nextIcon),
                   onPressed: isLoading ? null : onNext,
                   filled: true,
                   isLoading: isLoading,
@@ -384,7 +790,8 @@ class PremiumCircleIconButton extends StatefulWidget {
   });
 
   @override
-  State<PremiumCircleIconButton> createState() => _PremiumCircleIconButtonState();
+  State<PremiumCircleIconButton> createState() =>
+      _PremiumCircleIconButtonState();
 }
 
 class _PremiumCircleIconButtonState extends State<PremiumCircleIconButton>
@@ -395,10 +802,14 @@ class _PremiumCircleIconButtonState extends State<PremiumCircleIconButton>
   @override
   void initState() {
     super.initState();
-    _press = AnimationController(vsync: this, duration: const Duration(milliseconds: 120));
-    _scale = Tween<double>(begin: 1, end: 0.92).animate(
-      CurvedAnimation(parent: _press, curve: Curves.easeInOut),
+    _press = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 120),
     );
+    _scale = Tween<double>(
+      begin: 1,
+      end: 0.92,
+    ).animate(CurvedAnimation(parent: _press, curve: Curves.easeInOut));
   }
 
   @override
@@ -409,7 +820,8 @@ class _PremiumCircleIconButtonState extends State<PremiumCircleIconButton>
 
   @override
   Widget build(BuildContext context) {
-    final canTap = widget.enabled && widget.onPressed != null && !widget.isLoading;
+    final canTap =
+        widget.enabled && widget.onPressed != null && !widget.isLoading;
     final size = widget.filled ? 68.0 : 46.0;
 
     return GestureDetector(
@@ -453,11 +865,16 @@ class _PremiumCircleIconButtonState extends State<PremiumCircleIconButton>
             child: widget.isLoading
                 ? const Padding(
                     padding: EdgeInsets.all(20),
-                    child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.black),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      color: Colors.black,
+                    ),
                   )
                 : Icon(
                     widget.icon,
-                    color: widget.filled ? Colors.black : Colors.white.withValues(alpha: 0.85),
+                    color: widget.filled
+                        ? Colors.black
+                        : Colors.white.withValues(alpha: 0.85),
                     size: widget.filled ? 28 : 20,
                   ),
           ),

@@ -147,6 +147,15 @@ When Razorpay is **not** configured, `POST /wallet/deposit/` works in DEBUG only
 
 Runs SIP installments, price alert checks, and monthly investment profit credits.
 
+Scalper Mode limit orders, stop-losses, targets, and trailing stops need the
+continuous monitor (run as a separate supervised process in deployment):
+
+```bash
+python manage.py run_scalper_monitor --interval 3
+```
+
+Use `--once` for cron-based processing instead of a continuous worker.
+
 ### 3. Install & migrate
 ```bash
 # From project root (App/)

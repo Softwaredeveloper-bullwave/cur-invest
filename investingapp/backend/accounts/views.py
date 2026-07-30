@@ -18,14 +18,21 @@ from core.integrations.cashfree_bypass import verify_bank_with_bypass, verify_pa
 from core.integrations.sms_service import (
     SMSError,
     check_otp_twilio_verify,
+    friendly_twilio_error,
     is_live_sms,
     send_otp_sms,
+    twilio_verify_delivery_blocked,
+    twilio_message_ready,
     uses_twilio_verify,
 )
 from kyc.service import get_or_create_profile
 
+from kyc.rate_limit import RateLimitExceeded, check_rate_limit
+
 from core.serializers import CamelCaseSerializer
-from .models import BankAccount, KycDocument, OTPVerification, User
+from .email_otp_service import EmailOtpError, normalize_email, send_email_otp, verify_email_otp
+from kyc.service import user_dob_verified_from_kyc
+from .models import BankAccount, EmailOTPVerification, KycDocument, OTPVerification, User
 from .otp_utils import normalize_otp, normalize_phone
 from .serializers import (
     BankAccountSerializer,
@@ -54,12 +61,12 @@ def _issue_auth_tokens(user, request, *, created=False):
 
 
 def _ensure_user_bootstrap(user, *, created=False):
-    get_or_create_profile(user)
-    if created:
-        from finance.models import Wallet
-        from engagement.models import Notification
+    from finance.models import Wallet
+    from engagement.models import Notification
 
-        Wallet.objects.create(user=user)
+    get_or_create_profile(user)
+    Wallet.objects.get_or_create(user=user)
+    if created:
         Notification.objects.create(
             user=user,
             title='Welcome to BullWave',
@@ -83,14 +90,52 @@ class SendOTPView(APIView):
         if not phone:
             return Response({'detail': 'Enter a valid 10-digit phone number.'}, status=400)
 
+        if not settings.SMS_OTP_ENABLED:
+            if not settings.DEBUG:
+                return Response(
+                    {'detail': 'Phone OTP login is temporarily disabled.'},
+                    status=503,
+                )
+            otp = self._issue_local_otp(phone)
+            logger.warning('Paid SMS OTP dispatch is disabled; issued local development OTP.')
+            return Response(
+                {
+                    'success': True,
+                    'message': 'Development OTP generated without sending SMS.',
+                    'otpMode': 'console',
+                    'devOtp': otp,
+                }
+            )
+
         live = is_live_sms()
 
-        if uses_twilio_verify():
+        if settings.SMS_OTP_ENABLED and uses_twilio_verify():
             try:
                 send_otp_sms(phone, '')
             except SMSError as exc:
+                if twilio_verify_delivery_blocked(exc) and twilio_message_ready():
+                    logger.warning(
+                        'Twilio Verify blocked for %s; falling back to Twilio Messages',
+                        phone,
+                    )
+                    otp = self._issue_local_otp(phone)
+                    try:
+                        send_otp_sms(phone, otp)
+                    except SMSError as fallback_exc:
+                        logger.error('Twilio Messages fallback failed for %s: %s', phone, fallback_exc)
+                        return Response(
+                            {'detail': friendly_twilio_error(fallback_exc)},
+                            status=503,
+                        )
+                    return Response(
+                        {
+                            'success': True,
+                            'message': 'OTP sent successfully.',
+                            'otpMode': 'sms',
+                        }
+                    )
                 logger.error('Twilio Verify failed for %s: %s', phone, exc)
-                return Response({'detail': str(exc)}, status=503)
+                return Response({'detail': friendly_twilio_error(exc)}, status=503)
             return Response(
                 {
                     'success': True,
@@ -124,6 +169,20 @@ class SendOTPView(APIView):
 class VerifyOTPView(APIView):
     permission_classes = [AllowAny]
 
+    @staticmethod
+    def _verify_db_otp(phone: str, otp: str) -> bool:
+        now = timezone.now()
+        latest = (
+            OTPVerification.objects.filter(phone=phone, is_used=False, expires_at__gte=now)
+            .order_by('-created_at')
+            .first()
+        )
+        if not latest or latest.otp_code != otp:
+            return False
+        latest.is_used = True
+        latest.save(update_fields=['is_used'])
+        return True
+
     def post(self, request):
         phone = normalize_phone(request.data.get('phone', ''))
         otp = normalize_otp(request.data.get('otp', ''))
@@ -133,32 +192,19 @@ class VerifyOTPView(APIView):
         if len(otp) != 6:
             return Response({'detail': 'Enter the 6-digit OTP.'}, status=400)
 
-        if uses_twilio_verify():
+        verified = False
+        if settings.SMS_OTP_ENABLED and uses_twilio_verify():
             try:
-                approved = check_otp_twilio_verify(phone, otp)
+                verified = check_otp_twilio_verify(phone, otp)
             except SMSError as exc:
-                return Response({'detail': str(exc)}, status=400)
-            if not approved:
-                return Response({'detail': 'Incorrect OTP. Please check and try again.'}, status=400)
+                logger.warning('Twilio Verify check failed for %s: %s', phone, exc)
+            if not verified:
+                verified = self._verify_db_otp(phone, otp)
         else:
-            now = timezone.now()
-            latest = (
-                OTPVerification.objects.filter(phone=phone, is_used=False, expires_at__gte=now)
-                .order_by('-created_at')
-                .first()
-            )
+            verified = self._verify_db_otp(phone, otp)
 
-            if not latest:
-                return Response(
-                    {'detail': 'OTP expired. Tap Resend OTP to get a new code.'},
-                    status=400,
-                )
-
-            if latest.otp_code != otp:
-                return Response({'detail': 'Incorrect OTP. Please check and try again.'}, status=400)
-
-            latest.is_used = True
-            latest.save(update_fields=['is_used'])
+        if not verified:
+            return Response({'detail': 'Incorrect OTP. Please check and try again.'}, status=400)
 
         user, created = User.objects.get_or_create(phone=phone)
         _ensure_user_bootstrap(user, created=created)
@@ -195,6 +241,14 @@ class ProfileView(APIView):
         serializer.is_valid(raise_exception=True)
         user = request.user
         for field, value in serializer.validated_data.items():
+            if field == 'email':
+                new_email = normalize_email(value)
+                if new_email != normalize_email(user.email):
+                    user.email_verified = False
+                user.email = new_email
+                continue
+            if field == 'date_of_birth' and user_dob_verified_from_kyc(user):
+                continue
             setattr(user, field, value)
         user.save()
         return Response(UserSerializer(user, context={'request': request}).data)
@@ -209,9 +263,12 @@ class CompleteProfileView(APIView):
         serializer = CompleteProfileSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = request.user
+        if not user.email_verified:
+            return Response({'detail': 'Verify your email before completing profile setup.'}, status=400)
 
         referral_code = serializer.validated_data.pop('referral_code', '')
         profile_fields = serializer.validated_data
+        profile_fields.pop('email', None)
 
         for field, value in profile_fields.items():
             setattr(user, field, value)
@@ -228,6 +285,60 @@ class CompleteProfileView(APIView):
         credit_referral_reward(user)
 
         return Response(UserSerializer(user, context={'request': request}).data)
+
+
+class SendEmailOTPView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            check_rate_limit(f'auth:email-otp:{request.user.id}', limit=5, window_seconds=300)
+        except RateLimitExceeded as exc:
+            return Response({'detail': str(exc)}, status=429)
+
+        email = normalize_email(request.data.get('email', ''))
+        if not email:
+            return Response({'detail': 'Enter a valid email address.'}, status=400)
+
+        try:
+            payload = send_email_otp(user=request.user, email=email)
+        except EmailOtpError as exc:
+            status_code = 503 if exc.code in ('email_not_configured', 'email_delivery_failed') else 400
+            return Response({'detail': str(exc), 'code': exc.code}, status=status_code)
+
+        request.user.refresh_from_db()
+        payload['user'] = UserSerializer(request.user, context={'request': request}).data
+        return Response(payload)
+
+
+class VerifyEmailOTPView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            check_rate_limit(f'auth:verify-email:{request.user.id}', limit=10, window_seconds=300)
+        except RateLimitExceeded as exc:
+            return Response({'detail': str(exc)}, status=429)
+
+        email = normalize_email(request.data.get('email', ''))
+        otp = normalize_otp(request.data.get('otp', ''))
+        if not email:
+            return Response({'detail': 'Enter a valid email address.'}, status=400)
+        if len(otp) != 6:
+            return Response({'detail': 'Enter the 6-digit verification code.'}, status=400)
+
+        try:
+            user = verify_email_otp(user=request.user, email=email, otp=otp)
+        except EmailOtpError as exc:
+            return Response({'detail': str(exc), 'code': exc.code}, status=400)
+
+        return Response(
+            {
+                'success': True,
+                'message': 'Email verified successfully.',
+                'user': UserSerializer(user, context={'request': request}).data,
+            }
+        )
 
 
 class ProfileAvatarView(APIView):
@@ -325,6 +436,8 @@ class BankAccountView(APIView):
 
 
 class BankVerifyView(APIView):
+    """Legacy profile bank verify — delegates to the same live KYC bank step."""
+
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -333,7 +446,7 @@ class BankVerifyView(APIView):
             return Response({'detail': 'Add bank details first.'}, status=400)
 
         try:
-            ifsc_data = validate_ifsc(account.ifsc)
+            validate_ifsc(account.ifsc)
             validate_account_number(account.account_number)
         except BankValidationError as exc:
             account.verification_status = 'failed'
@@ -341,86 +454,53 @@ class BankVerifyView(APIView):
             account.save(update_fields=['verification_status', 'verification_message'])
             return Response({'detail': str(exc)}, status=400)
 
-        user = request.user
-
-        if not cashfree_configured():
-            if settings.DEBUG:
-                return self._verify_fallback(account, user, ifsc_data)
-            return Response(
-                {
-                    'detail': (
-                        'Bank verification is not configured. '
-                        'Set CASHFREE_CLIENT_ID and CASHFREE_CLIENT_SECRET.'
-                    )
-                },
-                status=503,
-            )
+        from kyc.service import verify_bank_step, build_status_payload
+        from services.providers.cashfree_secure_id import CashfreeSecureIdError
+        from services.providers.eko_kyc import EkoKycError
 
         try:
-            pan_result = verify_pan_with_bypass(account.pan_number, account.account_holder_name)
-            bank_result = verify_bank_with_bypass(
-                bank_account=account.account_number,
+            profile = verify_bank_step(
+                request.user,
+                account_holder_name=account.account_holder_name,
+                account_number=account.account_number,
+                confirm_account_number=account.account_number,
                 ifsc=account.ifsc,
-                name=account.account_holder_name,
-                phone=user.phone,
             )
-        except CashfreeError as exc:
+        except ValueError as exc:
+            return Response({'detail': str(exc)}, status=400)
+        except (CashfreeSecureIdError, EkoKycError) as exc:
             account.verification_status = 'failed'
-            account.verification_message = str(exc)
+            account.verification_message = str(exc)[:280]
             account.is_verified = False
             account.save(
                 update_fields=['verification_status', 'verification_message', 'is_verified']
             )
-            return Response({'detail': str(exc), 'code': exc.code}, status=400)
+            return Response({'detail': str(exc), 'code': getattr(exc, 'code', '')}, status=400)
 
-        account.is_verified = True
-        account.verification_status = 'verified'
-        dev_bypass = bool(pan_result.get('dev_bypass') or bank_result.get('dev_bypass'))
-        account.verification_provider = 'cashfree_sandbox' if dev_bypass else 'cashfree'
-        account.verification_reference_id = bank_result.get('reference_id', '')
-        if dev_bypass:
-            account.verification_message = (
-                'Verified in sandbox (Cashfree IP not whitelisted). '
-                'Whitelist your server IP in Cashfree for production.'
-            )
-        else:
-            account.verification_message = 'Verified via Cashfree Secure ID'
-        account.name_at_bank = bank_result.get('name_at_bank', '')[:120]
-        account.name_match_result = bank_result.get('name_match_result', '')[:40]
-        account.pan_registered_name = pan_result.get('registered_name', '')[:120]
-        if bank_result.get('bank_name') and not account.bank_name:
-            account.bank_name = bank_result['bank_name'][:120]
-        account.verified_at = timezone.now()
-        account.save()
-
-        user.pan_status = User.PanStatus.VERIFIED
-        user.save(update_fields=['pan_status'])
-
-        from engagement.models import Notification
-
-        Notification.objects.create(
-            user=user,
-            title='Bank Account Verified',
-            message='Your bank account and PAN have been verified successfully.',
-            type='kyc',
+        account.refresh_from_db()
+        payload = build_status_payload(profile)
+        pending_manual_review = (
+            payload.get('bankReviewMode') == 'manual'
+            and payload.get('bankReviewStatus') == 'pending'
         )
-
         return Response(
             {
+                **payload,
                 'success': True,
                 'message': (
-                    'Bank account and PAN verified (sandbox mode).'
-                    if dev_bypass
-                    else 'Bank account and PAN verified successfully.'
+                    'Bank details submitted. Manual verification may take up to 24 hours.'
+                    if pending_manual_review
+                    else 'Bank account verified successfully.'
                 ),
-                'isVerified': True,
+                'isVerified': account.is_verified,
                 'provider': account.verification_provider,
-                'nameAtBank': account.name_at_bank,
-                'nameMatchResult': account.name_match_result,
-                'panRegisteredName': account.pan_registered_name,
-                'bank': bank_result.get('bank_name') or account.bank_name,
-                'branch': bank_result.get('branch') or ifsc_data.get('branch', ''),
-            }
+                'nameAtBank': profile.name_at_bank,
+                'nameMatchResult': profile.name_match_result,
+                'panRegisteredName': profile.pan_name,
+                'bank': profile.bank_name,
+                'branch': profile.bank_branch,
+            },
+            status=status.HTTP_202_ACCEPTED if pending_manual_review else status.HTTP_200_OK,
         )
 
     def _verify_fallback(self, account, user, ifsc_data):

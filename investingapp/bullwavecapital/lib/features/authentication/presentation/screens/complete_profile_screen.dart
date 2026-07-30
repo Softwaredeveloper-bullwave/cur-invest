@@ -9,10 +9,11 @@ import 'package:provider/provider.dart';
 import '../../../../core/api/api_config.dart';
 import '../../../../core/api/refresh_providers.dart';
 import '../../../../core/constants/dimensions.dart';
-import '../../../../core/constants/routes.dart';
+import '../../../../core/navigation/onboarding_flow_navigator.dart';
 import '../../../../core/theme/colors.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/widgets/custom_dialog.dart';
+import '../../../kyc/presentation/provider/kyc_flow_provider.dart';
 import '../provider/auth_provider.dart';
 import '../widgets/premium_auth_ui.dart';
 
@@ -26,9 +27,10 @@ class CompleteProfileScreen extends StatefulWidget {
 class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameController;
-  late final TextEditingController _emailController;
   late final TextEditingController _cityController;
+  late final TextEditingController _dobController;
   late final TextEditingController _referralCodeController;
+  DateTime? _dateOfBirth;
 
   Uint8List? _pickedImageBytes;
   String? _pickedImageName;
@@ -39,18 +41,41 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
     super.initState();
     final user = context.read<AuthProvider>().user;
     _nameController = TextEditingController(text: user?.name ?? '');
-    _emailController = TextEditingController(text: user?.email ?? '');
     _cityController = TextEditingController(text: user?.city ?? '');
+    _dateOfBirth = user?.dateOfBirth;
+    _dobController = TextEditingController(
+      text: _dateOfBirth == null ? '' : _formatDate(_dateOfBirth!),
+    );
     _referralCodeController = TextEditingController();
   }
 
   @override
   void dispose() {
     _nameController.dispose();
-    _emailController.dispose();
     _cityController.dispose();
+    _dobController.dispose();
     _referralCodeController.dispose();
     super.dispose();
+  }
+
+  String _formatDate(DateTime date) =>
+      '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+
+  Future<void> _pickDateOfBirth() async {
+    final now = DateTime.now();
+    final latest = DateTime(now.year - 18, now.month, now.day);
+    final selected = await showDatePicker(
+      context: context,
+      initialDate: _dateOfBirth ?? DateTime(latest.year - 10, latest.month, latest.day),
+      firstDate: DateTime(1900),
+      lastDate: latest,
+      helpText: 'Select date of birth',
+    );
+    if (selected == null || !mounted) return;
+    setState(() {
+      _dateOfBirth = selected;
+      _dobController.text = _formatDate(selected);
+    });
   }
 
   Future<void> _pickImage(ImageSource source) async {
@@ -88,19 +113,24 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
       await auth.removeAvatar();
     }
 
+    final verifiedEmail = auth.user?.emailVerified == true ? auth.user!.email : '';
+
     final success = await auth.completeProfileSetup(
       name: _nameController.text,
-      email: _emailController.text,
+      email: verifiedEmail,
       city: _cityController.text,
+      dateOfBirth: _dateOfBirth,
       referralCode: _referralCodeController.text,
     );
 
     if (!mounted) return;
 
     if (success) {
-      unawaited(refreshAllProviders(context));
+      final kyc = context.read<KycFlowProvider>();
+      await kyc.loadStatus();
       if (!mounted) return;
-      context.go(AppRoutes.home);
+      unawaited(refreshAllProviders(context));
+      context.go(OnboardingFlowNavigator.routeAfterProfileComplete(kyc));
     } else {
       AppSnackbar.error(context, auth.error ?? 'Could not save profile');
     }
@@ -191,6 +221,15 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                       ? 'Verified +91 ${user!.phone}. Add your details to unlock live markets.'
                       : 'Add your details to unlock live markets and portfolio.',
                 ),
+                if (user?.emailVerified == true && (user?.email.isNotEmpty ?? false)) ...[
+                  const SizedBox(height: 16),
+                  PremiumAuthStatusChip(
+                    icon: Icons.alternate_email_rounded,
+                    label: 'Email verified',
+                    value: user!.email,
+                    accent: AppColors.greenSoft,
+                  ),
+                ],
                 const SizedBox(height: 28),
                 Center(
                   child: Stack(
@@ -233,23 +272,44 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                 ),
                 const SizedBox(height: AppDimensions.paddingMd),
                 AppTextField(
-                  controller: _emailController,
-                  label: 'Email',
-                  hint: 'you@email.com',
-                  keyboardType: TextInputType.emailAddress,
-                  validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'Email is required';
-                    if (!v.contains('@') || !v.contains('.')) return 'Enter a valid email';
-                    return null;
-                  },
-                ),
-                const SizedBox(height: AppDimensions.paddingMd),
-                AppTextField(
                   controller: _cityController,
                   label: 'City',
                   hint: 'Mumbai',
                   textCapitalization: TextCapitalization.words,
                 ),
+                const SizedBox(height: AppDimensions.paddingMd),
+                AppTextField(
+                  controller: _dobController,
+                  label: 'Date of Birth',
+                  hint: 'YYYY-MM-DD',
+                  readOnly: true,
+                  onTap: auth.user?.dobVerifiedFromKyc == true || auth.isLoading
+                      ? null
+                      : _pickDateOfBirth,
+                  suffixIcon: Icon(
+                    auth.user?.dobVerifiedFromKyc == true
+                        ? Icons.verified_outlined
+                        : Icons.calendar_month_outlined,
+                    color: auth.user?.dobVerifiedFromKyc == true ? AppColors.greenSoft : null,
+                  ),
+                  validator: (_) {
+                    if (auth.user?.dobVerifiedFromKyc == true || _dateOfBirth != null) {
+                      return null;
+                    }
+                    return 'Date of birth is required for identity verification';
+                  },
+                ),
+                if (auth.user?.dobVerifiedFromKyc == true) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    'DOB verified from PAN / Aadhaar',
+                    style: TextStyle(
+                      color: AppColors.greenSoft.withValues(alpha: 0.9),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
                 const SizedBox(height: AppDimensions.paddingMd),
                 AppTextField(
                   controller: _referralCodeController,

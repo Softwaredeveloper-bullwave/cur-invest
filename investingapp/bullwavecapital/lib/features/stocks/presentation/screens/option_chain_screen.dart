@@ -4,8 +4,6 @@ import 'package:go_router/go_router.dart';
 
 import 'package:provider/provider.dart';
 
-
-
 import '../../../../core/constants/routes.dart';
 import '../../../../core/constants/fno_underlyings.dart';
 import '../../../fno/presentation/provider/fno_flow_provider.dart';
@@ -26,53 +24,41 @@ import '../provider/stock_market_provider.dart';
 import '../utils/option_trading_flow.dart';
 import '../widgets/option_chain_table.dart';
 
-
-
 class OptionChainScreen extends StatefulWidget {
-
   final String symbol;
+  final bool paperMode;
 
-
-
-  const OptionChainScreen({super.key, required this.symbol});
-
-
+  const OptionChainScreen({
+    super.key,
+    required this.symbol,
+    this.paperMode = false,
+  });
 
   @override
-
   State<OptionChainScreen> createState() => _OptionChainScreenState();
-
 }
 
-
-
 class _OptionChainScreenState extends State<OptionChainScreen> {
-
   late String _symbol;
 
-
-
   @override
-
   void initState() {
-
     super.initState();
 
     _symbol = widget.symbol.toUpperCase();
 
     WidgetsBinding.instance.addPostFrameCallback((_) => _load());
-
   }
 
-
-
   Future<void> _load() async {
-    final fno = context.read<FnoFlowProvider>();
-    await fno.ensureLoaded();
-    if (!mounted) return;
-    if (!fno.isVerified) {
-      context.replace(AppRoutes.fnoVerification);
-      return;
+    if (!widget.paperMode) {
+      final fno = context.read<FnoFlowProvider>();
+      await fno.ensureLoaded();
+      if (!mounted) return;
+      if (!fno.isVerified) {
+        context.replace(AppRoutes.fnoVerification);
+        return;
+      }
     }
 
     final market = context.read<StockMarketProvider>();
@@ -85,10 +71,7 @@ class _OptionChainScreenState extends State<OptionChainScreen> {
     await features.loadOptionChain(_symbol);
   }
 
-
-
   Future<void> _selectSymbol(String symbol) async {
-
     final next = symbol.toUpperCase();
 
     if (next == _symbol) return;
@@ -96,51 +79,30 @@ class _OptionChainScreenState extends State<OptionChainScreen> {
     setState(() => _symbol = next);
 
     await _load();
-
   }
-
-
 
   String _formatExpiry(String iso) => DateFormatter.expiryLabel(iso);
 
-
-
   @override
-
   Widget build(BuildContext context) {
-
     final colors = context.appColors;
 
     final sym = _symbol;
 
-
-
     return Scaffold(
-
       backgroundColor: Colors.transparent,
 
       appBar: const CustomAppBar(title: 'F&O Chain'),
 
       body: Column(
-
         crossAxisAlignment: CrossAxisAlignment.start,
 
         children: [
-
-          _UnderlyingPicker(
-
-            selected: sym,
-
-            onSelected: _selectSymbol,
-
-          ),
+          _UnderlyingPicker(selected: sym, onSelected: _selectSymbol),
 
           Expanded(
-
             child: Consumer2<StockFeaturesProvider, StockMarketProvider>(
-
               builder: (context, features, market, _) {
-
                 final loading = features.isOptionChainLoading(sym);
 
                 final chain = features.optionChain(sym);
@@ -151,23 +113,17 @@ class _OptionChainScreenState extends State<OptionChainScreen> {
 
                 final stock = market.getStock(sym);
 
-                final spot = spotFromChain > 0 ? spotFromChain : (stock?.ltp ?? 0);
-
-
+                final spot = spotFromChain > 0
+                    ? spotFromChain
+                    : (stock?.ltp ?? 0);
 
                 if (loading && chain.isEmpty) {
-
                   return Padding(
-
                     padding: const EdgeInsets.all(16),
 
                     child: LoadingList(itemCount: 5, itemHeight: 56),
-
                   );
-
                 }
-
-
 
                 if (chain.isEmpty) {
                   final needsFno = error == '__fno_required__';
@@ -178,7 +134,9 @@ class _OptionChainScreenState extends State<OptionChainScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
-                            needsFno ? Icons.verified_user_outlined : Icons.candlestick_chart_outlined,
+                            needsFno
+                                ? Icons.verified_user_outlined
+                                : Icons.candlestick_chart_outlined,
                             size: 48,
                             color: colors.textMuted,
                           ),
@@ -188,16 +146,28 @@ class _OptionChainScreenState extends State<OptionChainScreen> {
                                 ? 'Complete F&O verification to access the option chain.'
                                 : (error ?? 'No F&O data for $sym'),
                             textAlign: TextAlign.center,
-                            style: TextStyle(color: colors.textSecondary, fontWeight: FontWeight.w600),
+                            style: TextStyle(
+                              color: colors.textSecondary,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                           const SizedBox(height: 16),
                           FilledButton.icon(
                             onPressed: needsFno
-                                ? () => context.replace(AppRoutes.fnoVerification)
+                                ? () =>
+                                      context.replace(AppRoutes.fnoVerification)
                                 : _load,
-                            icon: Icon(needsFno ? Icons.arrow_forward_rounded : Icons.refresh_rounded),
-                            label: Text(needsFno ? 'Verify F&O Access' : 'Retry'),
-                            style: FilledButton.styleFrom(backgroundColor: AppColors.brandOrange),
+                            icon: Icon(
+                              needsFno
+                                  ? Icons.arrow_forward_rounded
+                                  : Icons.refresh_rounded,
+                            ),
+                            label: Text(
+                              needsFno ? 'Verify F&O Access' : 'Retry',
+                            ),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: AppColors.brandOrange,
+                            ),
                           ),
                         ],
                       ),
@@ -205,32 +175,27 @@ class _OptionChainScreenState extends State<OptionChainScreen> {
                   );
                 }
 
-
-
                 final expiries = features.optionExpiries(sym);
 
                 final selectedExpiry = features.optionSelectedExpiry(sym);
 
-
-
                 return Column(
-
                   crossAxisAlignment: CrossAxisAlignment.start,
 
                   children: [
-
-                    OptionChainSummary(symbol: sym, spot: spot, contracts: chain),
+                    OptionChainSummary(
+                      symbol: sym,
+                      spot: spot,
+                      contracts: chain,
+                    ),
 
                     if (expiries.isNotEmpty) ...[
-
                       const SizedBox(height: 12),
 
                       SizedBox(
-
                         height: 44,
 
                         child: ListView.separated(
-
                           scrollDirection: Axis.horizontal,
 
                           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -240,91 +205,75 @@ class _OptionChainScreenState extends State<OptionChainScreen> {
                           separatorBuilder: (_, _) => const SizedBox(width: 8),
 
                           itemBuilder: (_, i) {
-
                             final expiry = expiries[i];
 
                             final selected = expiry == selectedExpiry;
 
                             return Material(
-
                               color: selected
-
-                                  ? AppColors.brandOrange.withValues(alpha: 0.15)
-
+                                  ? AppColors.brandOrange.withValues(
+                                      alpha: 0.15,
+                                    )
                                   : colors.surfaceSecondary,
 
                               borderRadius: BorderRadius.circular(999),
 
                               child: InkWell(
-
                                 onTap: loading
-
                                     ? null
-
-                                    : () => features.loadOptionChain(sym, expiry: expiry),
+                                    : () => features.loadOptionChain(
+                                        sym,
+                                        expiry: expiry,
+                                      ),
 
                                 borderRadius: BorderRadius.circular(999),
 
                                 child: Container(
-
-                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 14,
+                                    vertical: 8,
+                                  ),
 
                                   decoration: BoxDecoration(
-
                                     borderRadius: BorderRadius.circular(999),
 
                                     border: Border.all(
-
                                       color: selected
-
                                           ? AppColors.brandOrange
-
-                                          : colors.border.withValues(alpha: 0.7),
-
+                                          : colors.border.withValues(
+                                              alpha: 0.7,
+                                            ),
                                     ),
-
                                   ),
 
                                   child: Text(
-
                                     _formatExpiry(expiry),
 
                                     style: TextStyle(
-
                                       fontWeight: FontWeight.w700,
 
                                       fontSize: 12,
 
-                                      color: selected ? AppColors.brandOrange : colors.textSecondary,
-
+                                      color: selected
+                                          ? AppColors.brandOrange
+                                          : colors.textSecondary,
                                     ),
-
                                   ),
-
                                 ),
-
                               ),
-
                             );
-
                           },
-
                         ),
-
                       ),
-
                     ],
 
                     if (loading)
-
                       const LinearProgressIndicator(
-
                         minHeight: 2,
 
                         color: AppColors.brandOrange,
 
                         backgroundColor: Colors.transparent,
-
                       ),
 
                     const SizedBox(height: 8),
@@ -333,16 +282,18 @@ class _OptionChainScreenState extends State<OptionChainScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: Text(
                         'Tap CE or PE price to buy or sell',
-                        style: TextStyle(color: colors.textMuted, fontSize: 11, fontWeight: FontWeight.w600),
+                        style: TextStyle(
+                          color: colors.textMuted,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
 
                     const SizedBox(height: 4),
 
                     Expanded(
-
                       child: RefreshIndicator(
-
                         color: AppColors.brandOrange,
 
                         onRefresh: _load,
@@ -350,81 +301,55 @@ class _OptionChainScreenState extends State<OptionChainScreen> {
                         child: OptionChainTable(
                           contracts: chain,
                           spot: spot,
-                          onContractTap: (contract) => openOptionContractTradingPad(
-                            context,
-                            contract: contract,
-                            chainContext: OptionChainContext.equityFno,
-                          ),
+                          onContractTap: (contract) =>
+                              openOptionContractTradingPad(
+                                context,
+                                contract: contract,
+                                chainContext: OptionChainContext.equityFno,
+                                paperMode: widget.paperMode,
+                              ),
                         ),
-
                       ),
-
                     ),
-
                   ],
-
                 );
-
               },
-
             ),
-
           ),
-
         ],
-
       ),
-
     );
-
   }
-
 }
 
-
-
 class _UnderlyingPicker extends StatelessWidget {
-
   final String selected;
 
   final ValueChanged<String> onSelected;
 
-
-
   const _UnderlyingPicker({required this.selected, required this.onSelected});
 
-
-
   @override
-
   Widget build(BuildContext context) {
-
     final colors = context.appColors;
 
-
-
     return Container(
-
       padding: const EdgeInsets.fromLTRB(16, 8, 0, 12),
 
       decoration: BoxDecoration(
-
-        border: Border(bottom: BorderSide(color: colors.border.withValues(alpha: 0.5))),
-
+        border: Border(
+          bottom: BorderSide(color: colors.border.withValues(alpha: 0.5)),
+        ),
       ),
 
       child: Column(
-
         crossAxisAlignment: CrossAxisAlignment.start,
 
         children: [
-
           Text(
-
             'Select underlying',
 
             style: TextStyle(
-
               fontSize: 11,
 
               fontWeight: FontWeight.w700,
@@ -432,9 +357,7 @@ class _UnderlyingPicker extends StatelessWidget {
               color: colors.textMuted,
 
               letterSpacing: 0.5,
-
             ),
-
           ),
 
           const SizedBox(height: 10),
@@ -444,7 +367,7 @@ class _UnderlyingPicker extends StatelessWidget {
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.only(right: 16),
               itemCount: FnoUnderlyings.indices.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              separatorBuilder: (_, _) => const SizedBox(width: 8),
               itemBuilder: (context, index) {
                 final indexMeta = FnoUnderlyings.indices[index];
                 final isSelected = selected == indexMeta.symbol;
@@ -457,7 +380,10 @@ class _UnderlyingPicker extends StatelessWidget {
                     onTap: () => onSelected(indexMeta.symbol),
                     borderRadius: BorderRadius.circular(12),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 10,
+                      ),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
@@ -471,7 +397,9 @@ class _UnderlyingPicker extends StatelessWidget {
                         style: TextStyle(
                           fontWeight: FontWeight.w800,
                           fontSize: 12,
-                          color: isSelected ? const Color(0xFF6366F1) : colors.textSecondary,
+                          color: isSelected
+                              ? const Color(0xFF6366F1)
+                              : colors.textSecondary,
                         ),
                       ),
                     ),
@@ -484,11 +412,9 @@ class _UnderlyingPicker extends StatelessWidget {
           const SizedBox(height: 10),
 
           SizedBox(
-
             height: 36,
 
             child: ListView.separated(
-
               scrollDirection: Axis.horizontal,
 
               padding: const EdgeInsets.only(right: 16),
@@ -498,83 +424,59 @@ class _UnderlyingPicker extends StatelessWidget {
               separatorBuilder: (_, _) => const SizedBox(width: 6),
 
               itemBuilder: (_, i) {
-
                 final stock = FnoUnderlyings.stocks[i];
 
                 final isSelected = selected == stock;
 
                 return Material(
-
                   color: isSelected
-
                       ? AppColors.brandOrange.withValues(alpha: 0.12)
-
                       : colors.surfaceSecondary,
 
                   borderRadius: BorderRadius.circular(999),
 
                   child: InkWell(
-
                     onTap: () => onSelected(stock),
 
                     borderRadius: BorderRadius.circular(999),
 
                     child: Container(
-
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
 
                       decoration: BoxDecoration(
-
                         borderRadius: BorderRadius.circular(999),
 
                         border: Border.all(
-
                           color: isSelected
-
                               ? AppColors.brandOrange
-
                               : colors.border.withValues(alpha: 0.5),
-
                         ),
-
                       ),
 
                       child: Text(
-
                         stock,
 
                         style: TextStyle(
-
                           fontWeight: FontWeight.w700,
 
                           fontSize: 11,
 
-                          color: isSelected ? AppColors.brandOrange : colors.textMuted,
-
+                          color: isSelected
+                              ? AppColors.brandOrange
+                              : colors.textMuted,
                         ),
-
                       ),
-
                     ),
-
                   ),
-
                 );
-
               },
-
             ),
-
           ),
-
         ],
-
       ),
-
     );
-
   }
-
 }
-
-

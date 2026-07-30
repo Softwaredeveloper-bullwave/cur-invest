@@ -1,1 +1,34 @@
 .DS_Store
+.cursor/cashfree-skills/
+.claude/skills/
+
+# Env secrets — NEVER commit real keys (templates .env.example are OK)
+.env
+.env.local
+.env.*.local
+investingapp/backend/.env
+admin-panel/.env
+*.pem
+*.key
+
+# Python / Django runtime artifacts
+investingapp/backend/venv/
+investingapp/backend/.venv/
+investingapp/backend/logs/
+investingapp/backend/exports/
+investingapp/backend/media/
+investingapp/backend/staticfiles/
+investingapp/backend/*.log
+investingapp/backend/db.sqlite3
+investingapp/backend/__pycache__/
+investingapp/backend/**/__pycache__/
+
+# Flutter build cache
+investingapp/bullwavecapital/build/
+investingapp/bullwavecapital/.dart_tool/
+investingapp/bullwavecapital/.idea/
+
+# Admin panel build artifacts
+admin-panel/node_modules/
+admin-panel/dist/
+.env

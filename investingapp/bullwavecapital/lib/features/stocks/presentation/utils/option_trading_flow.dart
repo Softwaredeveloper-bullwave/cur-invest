@@ -40,17 +40,20 @@ Future<void> openOptionContractTradingPad(
   required OptionContractModel contract,
   required OptionChainContext chainContext,
   String initialSide = 'BUY',
+  bool paperMode = false,
 }) async {
   if (!await ensureBankVerified(context)) return;
   if (!context.mounted) return;
 
-  if (chainContext.requiresFno) {
+  if (chainContext.requiresFno && !paperMode) {
     final fno = context.read<FnoFlowProvider>();
     await fno.ensureLoaded();
     if (!context.mounted) return;
     if (!fno.isVerified) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Complete F&O verification to trade options.')),
+        const SnackBar(
+          content: Text('Complete F&O verification to trade options.'),
+        ),
       );
       return;
     }
@@ -68,7 +71,10 @@ Future<void> openOptionContractTradingPad(
   );
 }
 
-String optionContractTitle(OptionContractModel contract, {String? underlyingName}) {
+String optionContractTitle(
+  OptionContractModel contract, {
+  String? underlyingName,
+}) {
   final name = underlyingName ?? contract.symbol;
   final strike = contract.strike == contract.strike.roundToDouble()
       ? contract.strike.toStringAsFixed(0)
@@ -76,9 +82,8 @@ String optionContractTitle(OptionContractModel contract, {String? underlyingName
   return '$name $strike ${contract.type}';
 }
 
-String optionExpiryLabel(DateTime expiry) => DateFormatter.expiryLabel(
-      expiry.toIso8601String().substring(0, 10),
-    );
+String optionExpiryLabel(DateTime expiry) =>
+    DateFormatter.expiryLabel(expiry.toIso8601String().substring(0, 10));
 
 int optionLotSize(String underlying, String assetClass) {
   if (assetClass == 'commodity') return 1;

@@ -12,6 +12,7 @@ class Notification(models.Model):
     title = models.CharField(max_length=200)
     message = models.TextField()
     type = models.CharField(max_length=30, default='general')
+    reference_id = models.CharField(max_length=80, blank=True, default='')
     is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -41,10 +42,47 @@ class SupportTicket(models.Model):
     subject = models.CharField(max_length=200)
     message = models.TextField(blank=True)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.OPEN)
+    resolution_note = models.TextField(blank=True, default='')
+    resolved_at = models.DateTimeField(null=True, blank=True)
+    resolved_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='resolved_support_tickets',
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-updated_at']
+
+
+class SupportTicketMessage(models.Model):
+    class AuthorRole(models.TextChoices):
+        USER = 'user', 'User'
+        ADMIN = 'admin', 'Admin'
+        SYSTEM = 'system', 'System'
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    ticket = models.ForeignKey(
+        SupportTicket,
+        on_delete=models.CASCADE,
+        related_name='messages',
+    )
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='support_ticket_messages',
+    )
+    author_role = models.CharField(max_length=10, choices=AuthorRole.choices)
+    body = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ['-created_at']
+        ordering = ['created_at']
 
 
 class ReferralReward(models.Model):

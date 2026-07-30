@@ -50,6 +50,7 @@ class ShellPageHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -59,7 +60,7 @@ class ShellPageHeader extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: ThemeAType.heading(size: 28),
+                style: ThemeAType.heading(size: 28, color: p.textDark),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -67,7 +68,7 @@ class ShellPageHeader extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   subtitle!,
-                  style: ThemeAType.secondary(size: 14),
+                  style: ThemeAType.secondary(size: 14, color: p.textGrey),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),

@@ -1,10 +1,11 @@
-
 import 'package:flutter/material.dart';
 
 import 'package:go_router/go_router.dart';
 
 import '../config/dev_config.dart';
 import '../navigation/app_access_policy.dart';
+
+import '../navigation/onboarding_flow_navigator.dart';
 
 import '../../features/authentication/presentation/provider/auth_provider.dart';
 
@@ -18,6 +19,10 @@ import '../../features/authentication/presentation/screens/onboarding_screen.dar
 import '../../features/authentication/presentation/screens/login_screen.dart';
 
 import '../../features/authentication/presentation/screens/otp_screen.dart';
+
+import '../../features/authentication/presentation/screens/verify_email_screen.dart';
+
+import '../../features/authentication/presentation/screens/verify_email_otp_screen.dart';
 
 import '../../features/authentication/presentation/screens/complete_profile_screen.dart';
 
@@ -51,6 +56,7 @@ import '../../features/stocks/presentation/screens/index_fno_hub_screen.dart';
 
 import '../../features/fno/presentation/screens/fno_verification_screen.dart';
 
+import '../../features/stocks/presentation/screens/paper_portfolio_screen.dart';
 import '../../features/stocks/presentation/screens/paper_trading_screen.dart';
 import '../../features/stocks/presentation/screens/copy_trading_screen.dart';
 
@@ -94,8 +100,13 @@ import '../../features/kyc/presentation/screens/kyc_status_screen.dart';
 
 import '../../features/kyc/presentation/screens/pan_verification_screen.dart';
 
+import '../../features/kyc/presentation/screens/aadhaar_verification_screen.dart';
+
 import '../../features/kyc/presentation/screens/bank_verification_kyc_screen.dart';
 
+import '../../features/kyc/presentation/screens/selfie_verification_screen.dart';
+
+import '../../features/kyc/presentation/screens/identity_verification_screen.dart';
 import '../../features/kyc/presentation/screens/name_match_screen.dart';
 
 import '../../features/kyc/presentation/screens/kyc_success_screen.dart';
@@ -126,65 +137,47 @@ import '../constants/routes.dart';
 
 import '../constants/dimensions.dart';
 
-
-
 class AppRouter {
-
   AppRouter._();
-
-
 
   static final _rootNavigatorKey = GlobalKey<NavigatorState>();
   static final _shellNavigatorKey = GlobalKey<NavigatorState>();
 
   static GlobalKey<NavigatorState> get rootNavigatorKey => _rootNavigatorKey;
 
-
-
   static bool _isPublicAuthRoute(String path) =>
-
       path == AppRoutes.onboarding ||
-
       path == AppRoutes.login ||
-
-      path == AppRoutes.otp;
-
-
+      path == AppRoutes.otp ||
+      path == AppRoutes.verifyEmail ||
+      path == AppRoutes.verifyEmailOtp;
 
   static bool _isKycOnboardingPath(String path) =>
-
       path == AppRoutes.kyc ||
-
       path == AppRoutes.kycStatus ||
-
       path == AppRoutes.kycSubmit ||
-
       path == AppRoutes.kycPending ||
-
       path == AppRoutes.kycRejected ||
-
       path == AppRoutes.panVerification ||
-
+      path == AppRoutes.aadhaarVerificationKyc ||
       path == AppRoutes.bankVerificationKyc ||
-
+      path == AppRoutes.selfieVerification ||
+      path == AppRoutes.identityVerification ||
+      path == AppRoutes.upiVerification ||
       path == AppRoutes.nameMatch ||
-
       path == AppRoutes.kycSuccess ||
-
       path == AppRoutes.fnoVerification ||
-
       path == AppRoutes.bankVerification;
-
-
 
   static bool _requiresKyc(String path) {
     if (_isKycOnboardingPath(path)) return false;
     return AppAccessPolicy.requiresKyc(path);
   }
 
-
-
   static String _manualKycRoute(KycFlowProvider kyc) {
+    if (kyc.usesAutomatedKyc || kyc.status.panVerified) {
+      return OnboardingFlowNavigator.routeAfterProfileComplete(kyc);
+    }
     if (kyc.manualStatus.isVerified) return AppRoutes.home;
     if (kyc.manualStatus.isPending) return AppRoutes.kycPending;
     if (kyc.manualStatus.isRejected) return AppRoutes.kycRejected;
@@ -197,724 +190,643 @@ class AppRouter {
       path == AppRoutes.kycRejected ||
       path == AppRoutes.kycStatus;
 
-  static String _postAuthDestination(KycFlowProvider kyc) => AppRoutes.home;
-
-
+  static String _postAuthDestination(KycFlowProvider kyc) =>
+      OnboardingFlowNavigator.routeAfterProfileComplete(kyc);
 
   static GoRouter create(
     AuthProvider auth,
     KycFlowProvider kyc,
     AppProvider app,
-  ) =>
-      GoRouter(
+  ) => GoRouter(
+    navigatorKey: _rootNavigatorKey,
 
-        navigatorKey: _rootNavigatorKey,
+    initialLocation: DevConfig.enabled
+        ? DevConfig.debugInitialRoute
+        : AppRoutes.splash,
 
-        initialLocation:
-            DevConfig.enabled ? AppRoutes.home : AppRoutes.splash,
+    refreshListenable: Listenable.merge([auth, kyc, app]),
 
-        refreshListenable: Listenable.merge([auth, kyc, app]),
+    redirect: (context, state) {
+      if (DevConfig.enabled) return null;
 
-        redirect: (context, state) {
-          if (DevConfig.enabled) return null;
+      final path = state.matchedLocation;
 
-          final path = state.matchedLocation;
+      // Splash handles its own routing animation.
+      if (path == AppRoutes.splash) return null;
 
-          // Splash handles its own routing animation.
-          if (path == AppRoutes.splash) return null;
+      // Step 2 — onboarding slides (first launch).
+      if (!app.hasCompletedOnboarding) {
+        if (path == AppRoutes.onboarding) return null;
+        return AppRoutes.onboarding;
+      }
 
-          // Step 2 — onboarding slides (first launch).
-          if (!app.hasCompletedOnboarding) {
-            if (path == AppRoutes.onboarding) return null;
-            return AppRoutes.onboarding;
-          }
+      // Step 3–4 — phone login + OTP.
+      if (!auth.isAuthenticated) {
+        if (path == AppRoutes.login || path == AppRoutes.otp) return null;
+        return AppRoutes.login;
+      }
 
-          // Step 3–4 — phone login + OTP.
-          if (!auth.isAuthenticated) {
-            if (path == AppRoutes.login || path == AppRoutes.otp) return null;
-            return AppRoutes.login;
-          }
-
-
-
-          if (auth.needsProfileSetup) {
-
-            if (path == AppRoutes.completeProfile) return null;
-
-            return AppRoutes.completeProfile;
-
-          }
-
-
-
-          if (_isPublicAuthRoute(path) || path == AppRoutes.completeProfile) {
-            return _postAuthDestination(kyc);
-          }
-
-          if (kyc.isFullyVerified && _isManualKycRoute(path)) {
-            return AppRoutes.home;
-          }
-
-          if (!kyc.isFullyVerified && _requiresKyc(path)) {
-
-            return _manualKycRoute(kyc);
-
-          }
-
-
-
+      if (auth.needsEmailVerification) {
+        if (path == AppRoutes.verifyEmail || path == AppRoutes.verifyEmailOtp) {
           return null;
+        }
+        if (auth.needsEmailOtpEntry) {
+          return AppRoutes.verifyEmailOtp;
+        }
+        return AppRoutes.verifyEmail;
+      }
 
-        },
+      if (auth.needsProfileSetup) {
+        if (path == AppRoutes.completeProfile) return null;
+
+        return AppRoutes.completeProfile;
+      }
+
+      if (_isPublicAuthRoute(path) || path == AppRoutes.completeProfile) {
+        return _postAuthDestination(kyc);
+      }
+
+      if (kyc.isFullyVerified && _isManualKycRoute(path)) {
+        return AppRoutes.home;
+      }
+
+      // Eko/automated users must never see legacy manual PAN upload.
+      if ((path == AppRoutes.kycSubmit ||
+              path == AppRoutes.kycPending ||
+              path == AppRoutes.kycRejected) &&
+          (kyc.usesAutomatedKyc || kyc.status.panVerified)) {
+        return OnboardingFlowNavigator.routeAfterProfileComplete(kyc);
+      }
+
+      if (!kyc.isFullyVerified &&
+          kyc.usesAutomatedKyc &&
+          OnboardingFlowNavigator.shouldBlockShellUntilKycComplete(path)) {
+        return OnboardingFlowNavigator.routeAfterProfileComplete(kyc);
+      }
+
+      if (!kyc.isFullyVerified && _requiresKyc(path)) {
+        return _manualKycRoute(kyc);
+      }
+
+      return null;
+    },
+
+    routes: [
+      GoRoute(
+        path: AppRoutes.splash,
+
+        builder: (context, state) => const SplashScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.onboarding,
+
+        builder: (context, state) => const OnboardingScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.login,
+
+        builder: (context, state) => const LoginScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.otp,
+
+        builder: (context, state) => const OtpScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.verifyEmail,
+
+        builder: (context, state) => const VerifyEmailScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.verifyEmailOtp,
+
+        builder: (context, state) => const VerifyEmailOtpScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.completeProfile,
+
+        builder: (context, state) => const CompleteProfileScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.bankVerification,
+
+        builder: (context, state) => const BankVerificationScreen(),
+      ),
+
+      ShellRoute(
+        navigatorKey: _shellNavigatorKey,
+
+        builder: (context, state, child) => MainShell(child: child),
 
         routes: [
-
           GoRoute(
+            path: AppRoutes.home,
 
-            path: AppRoutes.splash,
-
-            builder: (context, state) => const SplashScreen(),
-
+            pageBuilder: (context, state) =>
+                _fadePage(state, const HomeScreen()),
           ),
 
           GoRoute(
+            path: AppRoutes.invest,
 
-            path: AppRoutes.onboarding,
-
-            builder: (context, state) => const OnboardingScreen(),
-
+            pageBuilder: (context, state) =>
+                _fadePage(state, const StockMarketsScreen()),
           ),
 
           GoRoute(
+            path: AppRoutes.portfolio,
 
-            path: AppRoutes.login,
-
-            builder: (context, state) => const LoginScreen(),
-
+            pageBuilder: (context, state) =>
+                _fadePage(state, const PortfolioScreen()),
           ),
 
           GoRoute(
+            path: AppRoutes.wallet,
 
-            path: AppRoutes.otp,
-
-            builder: (context, state) => const OtpScreen(),
-
+            pageBuilder: (context, state) =>
+                _fadePage(state, const WalletScreen()),
           ),
 
           GoRoute(
+            path: AppRoutes.profile,
 
-            path: AppRoutes.completeProfile,
-
-            builder: (context, state) => const CompleteProfileScreen(),
-
+            pageBuilder: (context, state) =>
+                _fadePage(state, const ProfileScreen()),
           ),
-
-          GoRoute(
-
-            path: AppRoutes.bankVerification,
-
-            builder: (context, state) => const BankVerificationScreen(),
-
-          ),
-
-          ShellRoute(
-
-            navigatorKey: _shellNavigatorKey,
-
-            builder: (context, state, child) => MainShell(child: child),
-
-            routes: [
-
-              GoRoute(
-
-                path: AppRoutes.home,
-
-                pageBuilder: (context, state) => _fadePage(state, const HomeScreen()),
-
-              ),
-
-              GoRoute(
-
-                path: AppRoutes.invest,
-
-                pageBuilder: (context, state) =>
-
-                    _fadePage(state, const StockMarketsScreen()),
-
-              ),
-
-              GoRoute(
-
-                path: AppRoutes.portfolio,
-
-                pageBuilder: (context, state) =>
-
-                    _fadePage(state, const PortfolioScreen()),
-
-              ),
-
-              GoRoute(
-
-                path: AppRoutes.wallet,
-
-                pageBuilder: (context, state) => _fadePage(state, const WalletScreen()),
-
-              ),
-
-              GoRoute(
-
-                path: AppRoutes.profile,
-
-                pageBuilder: (context, state) => _fadePage(state, const ProfileScreen()),
-
-              ),
-
-            ],
-
-          ),
-
-          GoRoute(
-
-            path: AppRoutes.transactions,
-
-            builder: (context, state) => const TransactionsScreen(),
-
-          ),
-
-          GoRoute(
-
-            path: AppRoutes.notifications,
-
-            builder: (context, state) => const NotificationsScreen(),
-
-          ),
-
-          GoRoute(
-
-            path: AppRoutes.support,
-
-            builder: (context, state) => const SupportScreen(),
-
-          ),
-
-          GoRoute(
-
-            path: AppRoutes.kyc,
-
-            builder: (context, state) => const KycStatusScreen(),
-
-          ),
-
-          GoRoute(
-
-            path: AppRoutes.kycStatus,
-
-            builder: (context, state) => const KycStatusScreen(),
-
-          ),
-
-          GoRoute(
-
-            path: AppRoutes.kycSubmit,
-
-            builder: (context, state) => const KycSubmitScreen(),
-
-          ),
-
-          GoRoute(
-
-            path: AppRoutes.kycPending,
-
-            builder: (context, state) => const KycPendingScreen(),
-
-          ),
-
-          GoRoute(
-
-            path: AppRoutes.kycRejected,
-
-            builder: (context, state) => const KycRejectedScreen(),
-
-          ),
-
-          GoRoute(
-
-            path: AppRoutes.panVerification,
-
-            builder: (context, state) => const PanVerificationScreen(),
-
-          ),
-
-          GoRoute(
-
-            path: AppRoutes.bankVerificationKyc,
-
-            builder: (context, state) => const BankVerificationKycScreen(),
-
-          ),
-
-          GoRoute(
-
-            path: AppRoutes.nameMatch,
-
-            builder: (context, state) => const NameMatchScreen(),
-
-          ),
-
-          GoRoute(
-
-            path: AppRoutes.kycSuccess,
-
-            builder: (context, state) => const KycSuccessScreen(),
-
-          ),
-
-          GoRoute(
-
-            path: AppRoutes.settings,
-
-            builder: (context, state) => const SettingsScreen(),
-
-          ),
-
-          GoRoute(
-
-            path: AppRoutes.editProfile,
-
-            builder: (context, state) => const EditProfileScreen(),
-
-          ),
-
-          GoRoute(
-
-            path: AppRoutes.referral,
-
-            builder: (context, state) => const ReferralScreen(),
-
-          ),
-
-          GoRoute(
-
-            path: AppRoutes.withdraw,
-
-            builder: (context, state) => const WithdrawScreen(),
-
-          ),
-
-          GoRoute(
-
-            path: AppRoutes.deposit,
-
-            builder: (context, state) => const DepositScreen(),
-
-          ),
-
-          GoRoute(
-
-            path: AppRoutes.depositSuccess,
-
-            builder: (context, state) => const DepositSuccessScreen(),
-
-          ),
-
-          GoRoute(
-
-            path: AppRoutes.investmentDetails,
-
-            builder: (context, state) => const InvestmentDetailsScreen(),
-
-          ),
-
-          GoRoute(
-            path: AppRoutes.featuredPlansList,
-            builder: (context, state) => const FeaturedPlansListScreen(),
-          ),
-          GoRoute(
-            path: AppRoutes.goalPlans,
-            builder: (context, state) => const GoalPlansScreen(),
-          ),
-          GoRoute(
-            path: AppRoutes.createGoal,
-            builder: (context, state) => CreateGoalScreen(
-              category: state.uri.queryParameters['category'] ?? 'house',
-            ),
-          ),
-          GoRoute(
-            path: AppRoutes.goalDetail,
-            builder: (context, state) => GoalDetailScreen(
-              goalId: state.uri.queryParameters['id'] ?? '',
-            ),
-          ),
-          GoRoute(
-            path: '${AppRoutes.featuredPlan}/:planId',
-
-            builder: (context, state) => FeaturedPlanScreen(
-              planId: state.pathParameters['planId'] ?? 'PLAN001',
-              initialPlan: state.extra is InvestmentPlanModel ? state.extra as InvestmentPlanModel : null,
-            ),
-
-          ),
-
-          GoRoute(
-
-            path: AppRoutes.bankDetails,
-
-            builder: (context, state) => const BankDetailsScreen(),
-
-          ),
-
-          GoRoute(
-
-            path: AppRoutes.privacy,
-
-            builder: (context, state) => const PrivacyScreen(),
-
-          ),
-
-          GoRoute(
-
-            path: AppRoutes.terms,
-
-            builder: (context, state) => const TermsScreen(),
-
-          ),
-
-          GoRoute(
-
-            path: AppRoutes.stockDetail,
-
-            parentNavigatorKey: _rootNavigatorKey,
-
-            builder: (context, state) {
-
-              final symbol = state.uri.queryParameters['symbol'] ?? 'RELIANCE';
-
-              return StockDetailScreen(symbol: symbol);
-
-            },
-
-          ),
-
-          GoRoute(
-
-            path: AppRoutes.watchlist,
-
-            parentNavigatorKey: _rootNavigatorKey,
-
-            builder: (context, state) => const WatchlistScreen(),
-
-          ),
-
-          GoRoute(
-
-            path: AppRoutes.stockNews,
-
-            parentNavigatorKey: _rootNavigatorKey,
-
-            builder: (context, state) => const StockNewsScreen(),
-
-          ),
-
-          GoRoute(
-
-            path: AppRoutes.stockScreener,
-
-            parentNavigatorKey: _rootNavigatorKey,
-
-            builder: (context, state) => const StockScreenerScreen(),
-
-          ),
-
-          GoRoute(
-
-            path: AppRoutes.priceAlerts,
-
-            parentNavigatorKey: _rootNavigatorKey,
-
-            builder: (context, state) => const PriceAlertsScreen(),
-
-          ),
-
-          GoRoute(
-
-            path: AppRoutes.economicCalendar,
-
-            parentNavigatorKey: _rootNavigatorKey,
-
-            builder: (context, state) => const EconomicCalendarFullScreen(),
-
-          ),
-
-          GoRoute(
-
-            path: AppRoutes.sipTracker,
-
-            parentNavigatorKey: _rootNavigatorKey,
-
-            builder: (context, state) => const SipTrackerScreen(),
-
-          ),
-
-          GoRoute(
-
-            path: AppRoutes.fnoVerification,
-
-            parentNavigatorKey: _rootNavigatorKey,
-
-            builder: (context, state) => const FnoVerificationScreen(),
-
-          ),
-
-          GoRoute(
-
-            path: AppRoutes.optionChain,
-
-            parentNavigatorKey: _rootNavigatorKey,
-
-            builder: (context, state) {
-
-              final symbol = state.uri.queryParameters['symbol'] ?? 'NIFTY';
-
-              return OptionChainScreen(symbol: symbol);
-
-            },
-
-          ),
-
-          GoRoute(
-
-            path: AppRoutes.indexFnoHub,
-
-            parentNavigatorKey: _rootNavigatorKey,
-
-            builder: (context, state) {
-
-              final symbol = state.uri.queryParameters['symbol'] ?? 'NIFTY';
-
-              return IndexFnoHubScreen(symbol: symbol);
-
-            },
-
-          ),
-
-          GoRoute(
-
-            path: AppRoutes.paperTrading,
-
-            parentNavigatorKey: _rootNavigatorKey,
-
-            builder: (context, state) => const PaperTradingScreen(),
-
-          ),
-
-          GoRoute(
-
-            path: AppRoutes.copyTrading,
-
-            parentNavigatorKey: _rootNavigatorKey,
-
-            builder: (context, state) => const CopyTradingScreen(),
-
-          ),
-
-          GoRoute(
-
-            path: AppRoutes.copyTraderDetail,
-
-            parentNavigatorKey: _rootNavigatorKey,
-
-            builder: (context, state) {
-              final id = state.uri.queryParameters['id'] ?? '';
-              return CopyTraderDetailScreen(traderId: id);
-            },
-
-          ),
-
-          GoRoute(
-
-            path: AppRoutes.portfolioAnalytics,
-
-            parentNavigatorKey: _rootNavigatorKey,
-
-            builder: (context, state) => const PortfolioAnalyticsScreen(),
-
-          ),
-
-          GoRoute(
-
-            path: AppRoutes.dividendTracker,
-
-            parentNavigatorKey: _rootNavigatorKey,
-
-            builder: (context, state) => const DividendTrackerScreen(),
-
-          ),
-
-          GoRoute(
-
-            path: AppRoutes.ipoCalendar,
-
-            parentNavigatorKey: _rootNavigatorKey,
-
-            builder: (context, state) => const IpoCalendarScreen(),
-
-          ),
-
-          GoRoute(
-
-            path: AppRoutes.blockDealTracker,
-
-            parentNavigatorKey: _rootNavigatorKey,
-
-            builder: (context, state) => const BlockDealTrackerScreen(),
-
-          ),
-
-          GoRoute(
-
-            path: AppRoutes.darkPoolTracker,
-
-            parentNavigatorKey: _rootNavigatorKey,
-
-            builder: (context, state) => const DarkPoolTrackerScreen(),
-
-          ),
-
-          GoRoute(
-
-            path: AppRoutes.investmentNotes,
-
-            parentNavigatorKey: _rootNavigatorKey,
-
-            builder: (context, state) => const InvestmentNotesScreen(
-              title: 'Investment Journal',
-            ),
-
-          ),
-
-          GoRoute(
-
-            path: AppRoutes.investmentCalculator,
-
-            parentNavigatorKey: _rootNavigatorKey,
-
-            builder: (context, state) => const InvestmentCalculatorScreen(),
-
-          ),
-
-          GoRoute(
-
-            path: AppRoutes.investmentDocuments,
-
-            parentNavigatorKey: _rootNavigatorKey,
-
-            builder: (context, state) => const InvestmentDocumentsScreen(),
-
-          ),
-
-          GoRoute(
-
-            path: AppRoutes.documentQuiz,
-
-            parentNavigatorKey: _rootNavigatorKey,
-
-            builder: (context, state) => DocumentQuizScreen(
-              quizId: state.pathParameters['quizId'] ?? '',
-            ),
-
-          ),
-
-          GoRoute(
-
-            path: AppRoutes.documentArticle,
-
-            parentNavigatorKey: _rootNavigatorKey,
-
-            builder: (context, state) => DocumentReaderScreen(
-              categoryId: state.pathParameters['categoryId'] ?? '',
-              articleId: state.pathParameters['articleId'] ?? '',
-            ),
-
-          ),
-
-          GoRoute(
-
-            path: AppRoutes.documentCategory,
-
-            parentNavigatorKey: _rootNavigatorKey,
-
-            builder: (context, state) => DocumentCategoryScreen(
-              categoryId: state.pathParameters['categoryId'] ?? '',
-            ),
-
-          ),
-
-          GoRoute(
-
-            path: AppRoutes.aiAssistant,
-
-            parentNavigatorKey: _rootNavigatorKey,
-
-            builder: (context, state) {
-              final voice = state.uri.queryParameters['voice'];
-              final startWithVoice = voice == '1' || voice == 'true';
-              return AiAssistantScreen(startWithVoice: startWithVoice);
-            },
-
-          ),
-
-          GoRoute(
-
-            path: AppRoutes.commodities,
-
-            parentNavigatorKey: _rootNavigatorKey,
-
-            builder: (context, state) => const CommodityMarketScreen(),
-
-          ),
-
-          GoRoute(
-
-            path: AppRoutes.commodityDetail,
-
-            parentNavigatorKey: _rootNavigatorKey,
-
-            builder: (context, state) {
-
-              final commodityId = state.uri.queryParameters['commodityId'] ?? 'GOLD';
-
-              return CommodityDetailScreen(commodityId: commodityId);
-
-            },
-
-          ),
-
-          GoRoute(
-
-            path: AppRoutes.commodityOptionChain,
-
-            parentNavigatorKey: _rootNavigatorKey,
-
-            builder: (context, state) {
-
-              final commodityId = state.uri.queryParameters['commodityId'] ?? 'GOLD';
-
-              return CommodityOptionChainScreen(commodityId: commodityId);
-
-            },
-
-          ),
-
         ],
+      ),
 
-      );
+      GoRoute(
+        path: AppRoutes.transactions,
 
+        builder: (context, state) => const TransactionsScreen(),
+      ),
 
+      GoRoute(
+        path: AppRoutes.notifications,
+
+        builder: (context, state) => const NotificationsScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.support,
+
+        builder: (context, state) => SupportScreen(
+          initialTicketId: state.uri.queryParameters['ticket'],
+        ),
+      ),
+
+      GoRoute(
+        path: AppRoutes.kyc,
+
+        builder: (context, state) => const KycStatusScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.kycStatus,
+
+        builder: (context, state) => const KycStatusScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.kycSubmit,
+
+        builder: (context, state) => const KycSubmitScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.kycPending,
+
+        builder: (context, state) => const KycPendingScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.kycRejected,
+
+        builder: (context, state) => const KycRejectedScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.panVerification,
+
+        builder: (context, state) => const PanVerificationScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.aadhaarVerificationKyc,
+
+        builder: (context, state) => const AadhaarVerificationScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.bankVerificationKyc,
+
+        builder: (context, state) => const BankVerificationKycScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.selfieVerification,
+
+        builder: (context, state) => const SelfieVerificationScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.upiVerification,
+        redirect: (context, state) => AppRoutes.identityVerification,
+      ),
+
+      GoRoute(
+        path: AppRoutes.identityVerification,
+        builder: (context, state) => const IdentityVerificationScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.nameMatch,
+
+        builder: (context, state) => const NameMatchScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.kycSuccess,
+
+        builder: (context, state) => const KycSuccessScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.settings,
+
+        builder: (context, state) => const SettingsScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.editProfile,
+
+        builder: (context, state) => const EditProfileScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.referral,
+
+        builder: (context, state) => const ReferralScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.withdraw,
+
+        builder: (context, state) => const WithdrawScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.deposit,
+
+        builder: (context, state) => const DepositScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.depositSuccess,
+
+        builder: (context, state) => const DepositSuccessScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.investmentDetails,
+
+        builder: (context, state) => const InvestmentDetailsScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.featuredPlansList,
+        builder: (context, state) => const FeaturedPlansListScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.goalPlans,
+        builder: (context, state) => const GoalPlansScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.createGoal,
+        builder: (context, state) => CreateGoalScreen(
+          category: state.uri.queryParameters['category'] ?? 'house',
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.goalDetail,
+        builder: (context, state) =>
+            GoalDetailScreen(goalId: state.uri.queryParameters['id'] ?? ''),
+      ),
+      GoRoute(
+        path: '${AppRoutes.featuredPlan}/:planId',
+
+        builder: (context, state) => FeaturedPlanScreen(
+          planId: state.pathParameters['planId'] ?? 'PLAN001',
+          initialPlan: state.extra is InvestmentPlanModel
+              ? state.extra as InvestmentPlanModel
+              : null,
+        ),
+      ),
+
+      GoRoute(
+        path: AppRoutes.bankDetails,
+
+        builder: (context, state) => const BankDetailsScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.privacy,
+
+        builder: (context, state) => const PrivacyScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.terms,
+
+        builder: (context, state) => const TermsScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.stockDetail,
+
+        parentNavigatorKey: _rootNavigatorKey,
+
+        builder: (context, state) {
+          final symbol = state.uri.queryParameters['symbol'] ?? 'RELIANCE';
+
+          return StockDetailScreen(symbol: symbol);
+        },
+      ),
+
+      GoRoute(
+        path: AppRoutes.watchlist,
+
+        parentNavigatorKey: _rootNavigatorKey,
+
+        builder: (context, state) => const WatchlistScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.stockNews,
+
+        parentNavigatorKey: _rootNavigatorKey,
+
+        builder: (context, state) => const StockNewsScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.stockScreener,
+
+        parentNavigatorKey: _rootNavigatorKey,
+
+        builder: (context, state) => const StockScreenerScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.priceAlerts,
+
+        parentNavigatorKey: _rootNavigatorKey,
+
+        builder: (context, state) => const PriceAlertsScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.economicCalendar,
+
+        parentNavigatorKey: _rootNavigatorKey,
+
+        builder: (context, state) => const EconomicCalendarFullScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.sipTracker,
+
+        parentNavigatorKey: _rootNavigatorKey,
+
+        builder: (context, state) => const SipTrackerScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.fnoVerification,
+
+        parentNavigatorKey: _rootNavigatorKey,
+
+        builder: (context, state) => const FnoVerificationScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.optionChain,
+
+        parentNavigatorKey: _rootNavigatorKey,
+
+        builder: (context, state) {
+          final symbol = state.uri.queryParameters['symbol'] ?? 'NIFTY';
+
+          return OptionChainScreen(
+            symbol: symbol,
+            paperMode: state.uri.queryParameters['paper'] == '1',
+          );
+        },
+      ),
+
+      GoRoute(
+        path: AppRoutes.indexFnoHub,
+
+        parentNavigatorKey: _rootNavigatorKey,
+
+        builder: (context, state) {
+          final symbol = state.uri.queryParameters['symbol'] ?? 'NIFTY';
+
+          return IndexFnoHubScreen(
+            symbol: symbol,
+            paperMode: state.uri.queryParameters['paper'] == '1',
+          );
+        },
+      ),
+
+      GoRoute(
+        path: AppRoutes.paperTrading,
+
+        parentNavigatorKey: _rootNavigatorKey,
+
+        builder: (context, state) => const PaperTradingScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.paperPortfolio,
+
+        parentNavigatorKey: _rootNavigatorKey,
+
+        builder: (context, state) => const PaperPortfolioScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.copyTrading,
+
+        parentNavigatorKey: _rootNavigatorKey,
+
+        builder: (context, state) => const CopyTradingScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.copyTraderDetail,
+
+        parentNavigatorKey: _rootNavigatorKey,
+
+        builder: (context, state) {
+          final id = state.uri.queryParameters['id'] ?? '';
+          return CopyTraderDetailScreen(traderId: id);
+        },
+      ),
+
+      GoRoute(
+        path: AppRoutes.portfolioAnalytics,
+
+        parentNavigatorKey: _rootNavigatorKey,
+
+        builder: (context, state) => const PortfolioAnalyticsScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.dividendTracker,
+
+        parentNavigatorKey: _rootNavigatorKey,
+
+        builder: (context, state) => const DividendTrackerScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.ipoCalendar,
+
+        parentNavigatorKey: _rootNavigatorKey,
+
+        builder: (context, state) => const IpoCalendarScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.blockDealTracker,
+
+        parentNavigatorKey: _rootNavigatorKey,
+
+        builder: (context, state) => const BlockDealTrackerScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.darkPoolTracker,
+
+        parentNavigatorKey: _rootNavigatorKey,
+
+        builder: (context, state) => const DarkPoolTrackerScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.investmentNotes,
+
+        parentNavigatorKey: _rootNavigatorKey,
+
+        builder: (context, state) =>
+            const InvestmentNotesScreen(title: 'Investment Journal'),
+      ),
+
+      GoRoute(
+        path: AppRoutes.investmentCalculator,
+
+        parentNavigatorKey: _rootNavigatorKey,
+
+        builder: (context, state) => const InvestmentCalculatorScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.investmentDocuments,
+
+        parentNavigatorKey: _rootNavigatorKey,
+
+        builder: (context, state) => const InvestmentDocumentsScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.documentQuiz,
+
+        parentNavigatorKey: _rootNavigatorKey,
+
+        builder: (context, state) =>
+            DocumentQuizScreen(quizId: state.pathParameters['quizId'] ?? ''),
+      ),
+
+      GoRoute(
+        path: AppRoutes.documentArticle,
+
+        parentNavigatorKey: _rootNavigatorKey,
+
+        builder: (context, state) => DocumentReaderScreen(
+          categoryId: state.pathParameters['categoryId'] ?? '',
+          articleId: state.pathParameters['articleId'] ?? '',
+        ),
+      ),
+
+      GoRoute(
+        path: AppRoutes.documentCategory,
+
+        parentNavigatorKey: _rootNavigatorKey,
+
+        builder: (context, state) => DocumentCategoryScreen(
+          categoryId: state.pathParameters['categoryId'] ?? '',
+        ),
+      ),
+
+      GoRoute(
+        path: AppRoutes.aiAssistant,
+
+        parentNavigatorKey: _rootNavigatorKey,
+
+        builder: (context, state) {
+          final voice = state.uri.queryParameters['voice'];
+          final startWithVoice = voice == '1' || voice == 'true';
+          return AiAssistantScreen(startWithVoice: startWithVoice);
+        },
+      ),
+
+      GoRoute(
+        path: AppRoutes.commodities,
+
+        parentNavigatorKey: _rootNavigatorKey,
+
+        builder: (context, state) => const CommodityMarketScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.commodityDetail,
+
+        parentNavigatorKey: _rootNavigatorKey,
+
+        builder: (context, state) {
+          final commodityId =
+              state.uri.queryParameters['commodityId'] ?? 'GOLD';
+
+          return CommodityDetailScreen(commodityId: commodityId);
+        },
+      ),
+
+      GoRoute(
+        path: AppRoutes.commodityOptionChain,
+
+        parentNavigatorKey: _rootNavigatorKey,
+
+        builder: (context, state) {
+          final commodityId =
+              state.uri.queryParameters['commodityId'] ?? 'GOLD';
+
+          return CommodityOptionChainScreen(commodityId: commodityId);
+        },
+      ),
+    ],
+  );
 
   static CustomTransitionPage _fadePage(GoRouterState state, Widget child) {
-
     return CustomTransitionPage(
-
       key: ValueKey('tab-${state.matchedLocation}'),
 
       transitionDuration: AppDimensions.transitionFast,
@@ -924,25 +836,20 @@ class AppRouter {
       child: child,
 
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
-
-        final slide = Tween<Offset>(begin: const Offset(0.03, 0), end: Offset.zero)
-
-            .animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic));
+        final slide =
+            Tween<Offset>(
+              begin: const Offset(0.03, 0),
+              end: Offset.zero,
+            ).animate(
+              CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+            );
 
         return FadeTransition(
-
           opacity: animation,
 
           child: SlideTransition(position: slide, child: child),
-
         );
-
       },
-
     );
-
   }
-
 }
-
-

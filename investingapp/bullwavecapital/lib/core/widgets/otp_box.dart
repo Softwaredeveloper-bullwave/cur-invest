@@ -96,13 +96,15 @@ class ModernOtpInputState extends State<ModernOtpInput> {
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       color: colors.surfaceSecondary,
-                      borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+                      borderRadius: BorderRadius.circular(
+                        AppDimensions.radiusMd,
+                      ),
                       border: Border.all(
                         color: active
                             ? AppColors.green
                             : filled
-                                ? colors.border
-                                : colors.border.withValues(alpha: 0.7),
+                            ? colors.border
+                            : colors.border.withValues(alpha: 0.7),
                         width: active ? 2 : 1,
                       ),
                       boxShadow: active
@@ -116,9 +118,11 @@ class ModernOtpInputState extends State<ModernOtpInput> {
                     ),
                     child: Text(
                       filled ? code[index] : '',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(
                             fontWeight: FontWeight.w800,
                             letterSpacing: 0,
+                            color: colors.textPrimary,
                           ),
                     ),
                   ),

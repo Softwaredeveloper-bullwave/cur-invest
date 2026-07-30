@@ -73,6 +73,42 @@ class WalletTransaction(models.Model):
         ordering = ['-created_at']
 
 
+class PracticeWallet(models.Model):
+    """Virtual cash used only by paper-market simulations."""
+
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='practice_wallet',
+    )
+    balance = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal('100000'))
+    last_refilled_at = models.DateTimeField(null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
+class PracticeWalletTransaction(models.Model):
+    class TxType(models.TextChoices):
+        DEBIT = 'debit', 'Trade debit'
+        CREDIT = 'credit', 'Trade credit'
+        REFILL = 'refill', 'Automatic refill'
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    wallet = models.ForeignKey(
+        PracticeWallet,
+        on_delete=models.CASCADE,
+        related_name='transactions',
+    )
+    type = models.CharField(max_length=12, choices=TxType.choices)
+    amount = models.DecimalField(max_digits=14, decimal_places=2)
+    balance_after = models.DecimalField(max_digits=14, decimal_places=2)
+    reference = models.CharField(max_length=100, blank=True, default='')
+    description = models.CharField(max_length=240, blank=True, default='')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+
 class Transaction(models.Model):
     class TxType(models.TextChoices):
         INVESTMENT = 'investment', 'Investment'

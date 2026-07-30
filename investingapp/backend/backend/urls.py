@@ -4,7 +4,7 @@ from django.contrib import admin
 from django.http import JsonResponse
 from django.urls import include, path
 
-from core.views import HealthView
+from core.views import ClientErrorReportView, HealthView
 
 
 def api_root(request):
@@ -33,6 +33,8 @@ urlpatterns = [
     path('', api_root, name='api-root'),
     path('health/', HealthView.as_view(), name='health'),
     path('admin/', admin.site.urls),
+    path('api/v1/admin-panel/', include('adminpanel.urls')),
+    path('api/v1/client-errors/', ClientErrorReportView.as_view(), name='client-error-report'),
     path('api/v1/', include('accounts.urls')),
     path('api/v1/', include('kyc.urls')),
     path('api/v1/', include('payments.urls')),

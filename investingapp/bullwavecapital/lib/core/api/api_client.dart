@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -6,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'api_config.dart';
 import 'api_exception.dart';
 import 'token_storage.dart';
+import '../services/app_error_reporter.dart';
 
 class ApiClient {
   ApiClient._();
@@ -39,18 +41,35 @@ class ApiClient {
     return Uri.parse('$base$normalized').replace(queryParameters: query);
   }
 
-  dynamic _decode(http.Response response) {
+  void _report(Object error, StackTrace stack, String path, {int? statusCode}) {
+    if (statusCode == 401 || statusCode == 403 || path.contains('/client-errors/')) return;
+    unawaited(
+      AppErrorReporter.instance.report(
+        error,
+        stack,
+        location: path,
+        statusCode: statusCode,
+        context: {'transport': 'http'},
+      ),
+    );
+  }
+
+  dynamic _decode(http.Response response, String path) {
     dynamic body;
     if (response.body.isNotEmpty) {
       try {
         body = jsonDecode(response.body);
       } catch (_) {
-        throw ApiException(
+        final error = ApiException(
           response.statusCode,
           response.statusCode >= 500
               ? 'Server error. Is Django running on port 8000?'
               : 'Unexpected server response. Check backend logs.',
         );
+        if (response.statusCode >= 500) {
+          _report(error, StackTrace.current, path, statusCode: response.statusCode);
+        }
+        throw error;
       }
     }
     if (response.statusCode >= 400) {
@@ -63,7 +82,11 @@ class ApiClient {
           message = detail.first.toString();
         }
       }
-      throw ApiException(response.statusCode, message);
+      final error = ApiException(response.statusCode, message);
+      if (response.statusCode >= 500) {
+        _report(error, StackTrace.current, path, statusCode: response.statusCode);
+      }
+      throw error;
     }
     return body;
   }
@@ -74,13 +97,18 @@ class ApiClient {
     bool auth = true,
     Duration? timeout,
   }) async {
-    final response = await http
-        .get(
-          _uri(path, query),
-          headers: _headers(auth: auth),
-        )
-        .timeout(timeout ?? const Duration(seconds: 20));
-    return _decode(response);
+    try {
+      final response = await http
+          .get(
+            _uri(path, query),
+            headers: _headers(auth: auth),
+          )
+          .timeout(timeout ?? const Duration(seconds: 20));
+      return _decode(response, path);
+    } catch (error, stack) {
+      if (error is! ApiException) _report(error, stack, path);
+      rethrow;
+    }
   }
 
   Future<dynamic> post(
@@ -91,7 +119,7 @@ class ApiClient {
   }) async {
     final uri = _uri(path);
     if (kDebugMode) {
-      debugPrint('[API] POST $uri body=$body');
+      debugPrint('[API] POST ${uri.path}');
     }
     try {
       final response = await http
@@ -102,13 +130,14 @@ class ApiClient {
           )
           .timeout(timeout ?? const Duration(seconds: 15));
       if (kDebugMode) {
-        debugPrint('[API] ${response.statusCode} ${response.body}');
+        debugPrint('[API] ${response.statusCode} ${uri.path}');
       }
-      return _decode(response);
-    } catch (e) {
+      return _decode(response, path);
+    } catch (e, stack) {
       if (kDebugMode) {
         debugPrint('[API] ERROR POST $uri -> $e');
       }
+      if (e is! ApiException) _report(e, stack, path);
       rethrow;
     }
   }
@@ -118,20 +147,30 @@ class ApiClient {
     Map<String, dynamic>? body,
     bool auth = true,
   }) async {
-    final response = await http.patch(
-      _uri(path),
-      headers: _headers(auth: auth),
-      body: body == null ? null : jsonEncode(body),
-    );
-    return _decode(response);
+    try {
+      final response = await http.patch(
+        _uri(path),
+        headers: _headers(auth: auth),
+        body: body == null ? null : jsonEncode(body),
+      );
+      return _decode(response, path);
+    } catch (error, stack) {
+      if (error is! ApiException) _report(error, stack, path);
+      rethrow;
+    }
   }
 
   Future<dynamic> delete(String path, {bool auth = true}) async {
-    final response = await http.delete(
-      _uri(path),
-      headers: _headers(auth: auth),
-    );
-    return _decode(response);
+    try {
+      final response = await http.delete(
+        _uri(path),
+        headers: _headers(auth: auth),
+      );
+      return _decode(response, path);
+    } catch (error, stack) {
+      if (error is! ApiException) _report(error, stack, path);
+      rethrow;
+    }
   }
 
   Future<dynamic> multipart(
@@ -141,13 +180,18 @@ class ApiClient {
     bool auth = true,
     Duration? timeout,
   }) async {
-    final request = http.MultipartRequest('POST', _uri(path));
-    request.headers.addAll(_headers(auth: auth, json: false));
-    request.fields.addAll(fields);
-    request.files.addAll(files);
-    final streamed = await request.send().timeout(timeout ?? const Duration(seconds: 60));
-    final response = await http.Response.fromStream(streamed);
-    return _decode(response);
+    try {
+      final request = http.MultipartRequest('POST', _uri(path));
+      request.headers.addAll(_headers(auth: auth, json: false));
+      request.fields.addAll(fields);
+      request.files.addAll(files);
+      final streamed = await request.send().timeout(timeout ?? const Duration(seconds: 60));
+      final response = await http.Response.fromStream(streamed);
+      return _decode(response, path);
+    } catch (error, stack) {
+      if (error is! ApiException) _report(error, stack, path);
+      rethrow;
+    }
   }
 
   /// POST JSON body and return raw response bytes (e.g. AI TTS audio).
@@ -157,27 +201,36 @@ class ApiClient {
     bool auth = true,
     Duration? timeout,
   }) async {
-    final response = await http
-        .post(
-          _uri(path),
-          headers: _headers(auth: auth),
-          body: body == null ? null : jsonEncode(body),
-        )
-        .timeout(timeout ?? const Duration(seconds: 60));
+    try {
+      final response = await http
+          .post(
+            _uri(path),
+            headers: _headers(auth: auth),
+            body: body == null ? null : jsonEncode(body),
+          )
+          .timeout(timeout ?? const Duration(seconds: 60));
 
-    if (response.statusCode >= 400) {
-      String message = 'Request failed (${response.statusCode})';
-      if (response.body.isNotEmpty) {
-        try {
-          final decoded = jsonDecode(response.body);
-          if (decoded is Map) {
-            final detail = decoded['detail'];
-            if (detail is String && detail.isNotEmpty) message = detail;
-          }
-        } catch (_) {}
+      if (response.statusCode >= 400) {
+        String message = 'Request failed (${response.statusCode})';
+        if (response.body.isNotEmpty) {
+          try {
+            final decoded = jsonDecode(response.body);
+            if (decoded is Map) {
+              final detail = decoded['detail'];
+              if (detail is String && detail.isNotEmpty) message = detail;
+            }
+          } catch (_) {}
+        }
+        final error = ApiException(response.statusCode, message);
+        if (response.statusCode >= 500) {
+          _report(error, StackTrace.current, path, statusCode: response.statusCode);
+        }
+        throw error;
       }
-      throw ApiException(response.statusCode, message);
+      return response.bodyBytes;
+    } catch (error, stack) {
+      if (error is! ApiException) _report(error, stack, path);
+      rethrow;
     }
-    return response.bodyBytes;
   }
 }

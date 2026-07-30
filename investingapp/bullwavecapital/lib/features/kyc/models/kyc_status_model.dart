@@ -1,4 +1,5 @@
-/// Manual KYC status from GET /api/v1/kyc/me
+/// Manual document-upload KYC status (`GET /kyc/me`, `POST /kyc/submit`).
+/// Automated step status lives in [KycStatusModel] (`domain/kyc_models.dart`).
 class ManualKycStatusModel {
   final String kycStatus;
   final KycRequestModel? latestRequest;

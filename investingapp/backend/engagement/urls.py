@@ -7,6 +7,7 @@ from .views import (
     NotificationReadView,
     ReferralView,
     SupportFaqListView,
+    SupportTicketDetailView,
     SupportTicketListView,
 )
 
@@ -16,6 +17,7 @@ urlpatterns = [
     path('notifications/<uuid:notification_id>/read/', NotificationReadView.as_view(), name='notification-read'),
     path('support/faqs/', SupportFaqListView.as_view(), name='support-faqs'),
     path('support/tickets/', SupportTicketListView.as_view(), name='support-tickets'),
+    path('support/tickets/<uuid:ticket_id>/', SupportTicketDetailView.as_view(), name='support-ticket-detail'),
     path('referrals/', ReferralView.as_view(), name='referrals'),
     path('referrals/apply/', ApplyReferralView.as_view(), name='referrals-apply'),
 ]

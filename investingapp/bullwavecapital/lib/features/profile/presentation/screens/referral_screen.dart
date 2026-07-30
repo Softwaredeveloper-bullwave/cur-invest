@@ -322,7 +322,7 @@ class _HeroBanner extends StatelessWidget {
       padding: const EdgeInsets.all(AppDimensions.paddingLg),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [AppColors.primary, AppColors.primaryLight],
+          colors: [AppColors.brandPrimary, AppColors.brandPrimaryDeep],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -336,17 +336,17 @@ class _HeroBanner extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.15),
+                  color: AppColors.onBrandPrimary.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.card_giftcard_rounded, color: Colors.white, size: 28),
+                child: const Icon(Icons.card_giftcard_rounded, color: AppColors.onBrandPrimary, size: 28),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   'Refer & Earn',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: Colors.white,
+                        color: AppColors.onBrandPrimary,
                         fontWeight: FontWeight.w800,
                       ),
                 ),
@@ -357,8 +357,9 @@ class _HeroBanner extends StatelessWidget {
           Text(
             'Earn $rewardLabel for every friend who joins and completes their profile.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.9),
+                  color: AppColors.onBrandPrimaryMuted,
                   height: 1.4,
+                  fontWeight: FontWeight.w500,
                 ),
           ),
         ],

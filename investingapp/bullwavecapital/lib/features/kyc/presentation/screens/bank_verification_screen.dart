@@ -60,11 +60,16 @@ class _BankVerificationScreenState extends State<BankVerificationScreen> {
       builder: (context, provider, _) {
         return Scaffold(
           appBar: CustomAppBar(
-            title: provider.step == BankVerificationStep.success
-                ? 'Verified'
-                : 'Link Bank Account',
-            showBack: provider.step != BankVerificationStep.success,
+            title: provider.isEditMode
+                ? 'Update Bank Account'
+                : provider.step == BankVerificationStep.success
+                    ? 'Verified'
+                    : 'Link Bank Account',
+            showBack: provider.step != BankVerificationStep.success || provider.isEditMode,
             onBack: () {
+              if (provider.isEditMode) {
+                provider.exitEditMode();
+              }
               if (provider.step == BankVerificationStep.verify) {
                 provider.resetToDetails();
               } else {
@@ -86,7 +91,20 @@ class _BankVerificationScreenState extends State<BankVerificationScreen> {
                 provider: provider,
                 onVerified: () {},
               ),
-            BankVerificationStep.success => _SuccessStep(onContinue: _finish),
+            BankVerificationStep.pendingReview => _PendingReviewStep(
+                provider: provider,
+                onContinue: () {
+                  provider.exitEditMode();
+                  _finish();
+                },
+              ),
+            BankVerificationStep.success => _SuccessStep(
+                onContinue: () {
+                  provider.exitEditMode();
+                  _finish();
+                },
+                onUpdateAgain: provider.enterEditMode,
+              ),
           },
         );
       },
@@ -322,7 +340,7 @@ class _VerifyStep extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'We verify your bank account and PAN in real time using Cashfree Secure ID — '
+            'We verify your bank account and PAN in real time — '
             'the same verification stack used by leading fintech apps in India.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: colors.textSecondary,
@@ -354,7 +372,7 @@ class _VerifyStep extends StatelessWidget {
             const SizedBox(height: 12),
             Center(
               child: Text(
-                'Verifying bank account…',
+                'Submitting bank details…',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: colors.textSecondary,
                     ),
@@ -362,12 +380,16 @@ class _VerifyStep extends StatelessWidget {
             ),
           ] else
             PrimaryButton(
-              label: 'Verify Bank & PAN',
+              label: 'Submit for verification',
               icon: Icons.verified_user_outlined,
               onPressed: () async {
                 final result = await provider.verifyAccount();
                 if (!context.mounted) return;
-                if (!result.success && result.message.isNotEmpty) {
+                if (result.success && result.message.isNotEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(result.message)),
+                  );
+                } else if (!result.success && result.message.isNotEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text(result.message)),
                   );
@@ -388,10 +410,68 @@ class _VerifyStep extends StatelessWidget {
   }
 }
 
-class _SuccessStep extends StatelessWidget {
+class _PendingReviewStep extends StatelessWidget {
+  final BankVerificationProvider provider;
   final VoidCallback onContinue;
 
-  const _SuccessStep({required this.onContinue});
+  const _PendingReviewStep({
+    required this.provider,
+    required this.onContinue,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.appColors;
+
+    return Padding(
+      padding: const EdgeInsets.all(AppDimensions.paddingMd),
+      child: Column(
+        children: [
+          const Spacer(),
+          Container(
+            width: 72,
+            height: 72,
+            decoration: BoxDecoration(
+              color: AppColors.brandOrange.withValues(alpha: 0.12),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.schedule_rounded, color: AppColors.brandOrange, size: 40),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'Submitted for manual review',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: colors.textPrimary,
+                ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'Your bank details were received. Final verification may take up to 24 hours. '
+            'You will get a notification when approved.',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: colors.textSecondary,
+                  height: 1.45,
+                ),
+          ),
+          const Spacer(),
+          PrimaryButton(label: 'Back to profile', onPressed: onContinue),
+          const SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
+}
+
+class _SuccessStep extends StatelessWidget {
+  final VoidCallback onContinue;
+  final VoidCallback onUpdateAgain;
+
+  const _SuccessStep({
+    required this.onContinue,
+    required this.onUpdateAgain,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -456,6 +536,11 @@ class _SuccessStep extends StatelessWidget {
           ),
           const Spacer(),
           PrimaryButton(label: 'Continue', onPressed: onContinue),
+          const SizedBox(height: 12),
+          OutlinedButton(
+            onPressed: onUpdateAgain,
+            child: const Text('Update Bank Account'),
+          ),
           const SizedBox(height: 24),
         ],
       ),

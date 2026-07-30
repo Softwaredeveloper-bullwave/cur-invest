@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
+import '../constants/routes.dart';
 import '../theme/app_theme_extension.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
@@ -59,7 +61,14 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                   color: colors.textPrimary,
                 ),
               ),
-              onPressed: onBack ?? () => Navigator.of(context).pop(),
+              onPressed: onBack ??
+                  () {
+                    if (context.canPop()) {
+                      context.pop();
+                    } else {
+                      context.go(AppRoutes.kycStatus);
+                    }
+                  },
             )
           : null,
       title: Column(

@@ -40,6 +40,14 @@ class SupportProvider extends ChangeNotifier {
       return false;
     }
   }
+
+  Future<SupportTicketModel?> loadTicketDetail(String ticketId) async {
+    try {
+      return await _api.getSupportTicketDetail(ticketId);
+    } catch (_) {
+      return null;
+    }
+  }
 }
 
 class ReferralProvider extends ChangeNotifier {

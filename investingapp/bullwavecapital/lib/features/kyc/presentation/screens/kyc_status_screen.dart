@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/constants/routes.dart';
+import '../../../../core/navigation/onboarding_flow_navigator.dart';
 import '../../../../core/theme/app_theme_extension.dart';
 import '../../../../core/theme/colors.dart';
 import '../../../../core/widgets/custom_app_bar.dart';
@@ -80,16 +81,48 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
                       ),
                       KycStepTile(
                         title: 'PAN Verified',
-                        subtitle: s.panVerified ? '${s.panName} • ${s.panNumberMasked}' : 'Verify PAN with Cashfree',
+                        subtitle: s.panVerified ? '${s.panName} • ${s.panNumberMasked}' : 'Verify your PAN',
                         completed: s.panVerified,
+                      ),
+                      KycStepTile(
+                        title: 'Aadhaar Verified',
+                        subtitle: s.aadhaarVerified
+                            ? (s.aadhaarName.isEmpty
+                                ? 'Verified through DigiLocker'
+                                : '${s.aadhaarName} • DigiLocker')
+                            : 'Verify Aadhaar through DigiLocker',
+                        completed: s.aadhaarVerified,
                       ),
                       KycStepTile(
                         title: 'Bank Verified',
                         subtitle: s.bankVerified
                             ? '${s.bankName} • ${s.bankAccountMasked}'
-                            : 'Link bank account',
+                            : 'Verify bank account via Eko',
                         completed: s.bankVerified,
                       ),
+                      KycStepTile(
+                        title: 'Selfie Verified',
+                        subtitle: s.selfieVerified
+                            ? 'Live selfie approved'
+                            : s.selfieReviewPending
+                            ? 'Under manual review (up to 24h)'
+                            : s.selfieReviewRejected
+                            ? 'Retake required'
+                            : 'Capture a live selfie',
+                        completed: s.selfieVerified,
+                      ),
+                      if (kyc.upiRequired)
+                        KycStepTile(
+                          title: 'UPI Verified',
+                          subtitle: s.upiVerified
+                              ? (s.upiName.isEmpty
+                                  ? s.upiVpaMasked
+                                  : '${s.upiName} • ${s.upiVpaMasked}')
+                              : s.paymentReviewPending
+                              ? 'Under manual review (up to 24h)'
+                              : 'Verify your UPI ID',
+                          completed: s.upiVerified,
+                        ),
                       KycStepTile(
                         title: 'Name Match Passed',
                         subtitle: s.nameMatchPassed
@@ -106,25 +139,28 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
                   KycErrorBanner(message: kyc.error!),
                 ],
                 const SizedBox(height: 24),
-                if (!s.panVerified)
+                if (kyc.upiRequired &&
+                    (s.paymentReviewPending || s.bankDraftReady || !s.upiVerified) &&
+                    s.bankVerified &&
+                    !s.upiVerified)
                   PrimaryButton(
-                    label: 'Verify PAN',
-                    onPressed: () => context.push(AppRoutes.panVerification),
-                  )
-                else if (!s.bankVerified)
-                  PrimaryButton(
-                    label: 'Verify Bank Account',
-                    onPressed: () => context.push(AppRoutes.bankVerificationKyc),
-                  )
-                else if (!s.nameMatchPassed)
-                  PrimaryButton(
-                    label: 'Run Name Match',
-                    onPressed: () => context.push(AppRoutes.nameMatch),
+                    label: s.paymentReviewPending
+                        ? 'View review status'
+                        : 'Continue to identity verification',
+                    onPressed: () => context.push(AppRoutes.identityVerification),
                   )
                 else
                   PrimaryButton(
-                    label: 'Start Investing',
-                    onPressed: () => context.go(AppRoutes.invest),
+                    label: kyc.isFullyVerified
+                        ? 'Go to Home'
+                        : OnboardingFlowNavigator.labelForNextKycStep(kyc),
+                    onPressed: () {
+                      if (kyc.isFullyVerified) {
+                        context.go(AppRoutes.home);
+                      } else {
+                        OnboardingFlowNavigator.goToNextKycStep(context, kyc);
+                      }
+                    },
                   ),
               ],
             ),

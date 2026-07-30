@@ -61,7 +61,7 @@ def cashfree_settings() -> CashfreeSettings:
         secure_id_base_url=_env('SECURE_ID_BASE_URL', secure_id_default),
         payments_base_url=_env('CASHFREE_PAYMENTS_BASE_URL', payments_default),
         payouts_base_url=_env('CASHFREE_PAYOUTS_BASE_URL', payouts_default),
-        api_version=_env('CASHFREE_API_VERSION', '2022-10-26'),
+        api_version=_env('CASHFREE_API_VERSION', '2024-12-01'),
         payment_api_version=_env('CASHFREE_PAYMENT_API_VERSION', '2023-08-01'),
         webhook_secret=_env('CASHFREE_PAYMENT_WEBHOOK_SECRET') or _env('CASHFREE_WEBHOOK_SECRET'),
         payout_webhook_secret=_env('CASHFREE_PAYOUT_WEBHOOK_SECRET'),

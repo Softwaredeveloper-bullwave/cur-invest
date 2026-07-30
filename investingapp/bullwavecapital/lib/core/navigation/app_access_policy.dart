@@ -3,7 +3,7 @@ import '../constants/routes.dart';
 /// Central access rules — browse vs trade.
 ///
 /// Users can explore Home, Markets, Portfolio, Wallet, Profile, and Featured Plans
-/// without KYC. Trading, deposits, and withdrawals still require verification.
+/// without KYC. Trading and withdrawals require verification; deposits do not.
 class AppAccessPolicy {
   AppAccessPolicy._();
 
@@ -45,11 +45,13 @@ class AppAccessPolicy {
 
   static bool requiresKyc(String path) {
     if (isBrowsePath(path)) return false;
-    if (path == AppRoutes.completeProfile) return false;
+    if (path == AppRoutes.completeProfile ||
+        path == AppRoutes.verifyEmail ||
+        path == AppRoutes.verifyEmailOtp) {
+      return false;
+    }
 
     const tradeAndFunding = {
-      AppRoutes.deposit,
-      AppRoutes.depositSuccess,
       AppRoutes.withdraw,
       AppRoutes.investmentDetails,
       AppRoutes.paperTrading,

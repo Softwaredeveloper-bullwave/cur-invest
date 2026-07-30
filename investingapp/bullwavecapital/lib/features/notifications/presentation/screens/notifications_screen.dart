@@ -40,9 +40,44 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   void _onNotificationTap(BuildContext context, NotificationModel notification) {
     context.read<NotificationProvider>().markAsRead(notification.id);
+    if (notification.type == 'kyc') {
+      final title = notification.title.toLowerCase();
+      if (title.contains('verified')) {
+        context.go(AppRoutes.home);
+      } else if (title.contains('review') || title.contains('attention')) {
+        context.push(AppRoutes.bankVerificationKyc);
+      } else {
+        context.push(AppRoutes.kyc);
+      }
+      return;
+    }
+    if (notification.type == 'support') {
+      final ticketId = notification.referenceId;
+      if (ticketId.isNotEmpty) {
+        context.push('${AppRoutes.support}?ticket=$ticketId');
+      } else {
+        context.push(AppRoutes.support);
+      }
+      return;
+    }
+    if (notification.type == 'announcement' ||
+        notification.type == 'important' ||
+        notification.type == 'news') {
+      showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(notification.title),
+          content: SingleChildScrollView(child: Text(notification.message)),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Close')),
+          ],
+        ),
+      );
+      return;
+    }
     if (notification.type == 'rebalance') {
       context.push(AppRoutes.portfolioAnalytics);
-    } else if (notification.type == 'alert' || notification.type == 'news') {
+    } else if (notification.type == 'alert') {
       context.push(AppRoutes.priceAlerts);
     }
   }

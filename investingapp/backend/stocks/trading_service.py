@@ -6,6 +6,11 @@ from decimal import Decimal
 
 from django.db import transaction
 
+from finance.practice_wallet_service import (
+    PracticeWalletError,
+    credit_practice_wallet,
+    debit_practice_wallet,
+)
 from .finnhub_client import FinnhubError
 from .market_data_service import refresh_stock
 from .models import PaperTrade, Stock, StockHolding
@@ -87,6 +92,12 @@ def place_paper_order(user, *, symbol: str, side: str, quantity: int) -> dict:
             avg_cost=avg_cost,
             realized_pnl=realized_pnl,
         )
+        practice_wallet = credit_practice_wallet(
+            user,
+            price * Decimal(quantity),
+            reference=f'PAPER-{trade.id}',
+            description=f'Paper sell {symbol} × {quantity}',
+        )
         holding.quantity -= quantity
         if holding.quantity == 0:
             holding.delete()
@@ -101,6 +112,15 @@ def place_paper_order(user, *, symbol: str, side: str, quantity: int) -> dict:
             quantity=quantity,
             price=price,
         )
+        try:
+            practice_wallet = debit_practice_wallet(
+                user,
+                price * Decimal(quantity),
+                reference=f'PAPER-{trade.id}',
+                description=f'Paper buy {symbol} × {quantity}',
+            )
+        except PracticeWalletError as exc:
+            raise TradingError(str(exc)) from exc
         if holding:
             total_cost = holding.quantity * holding.avg_price + Decimal(quantity) * price
             holding.quantity += quantity
@@ -121,7 +141,9 @@ def place_paper_order(user, *, symbol: str, side: str, quantity: int) -> dict:
     except Exception:
         pass
 
-    return build_trade_payload(trade, stock, holding)
+    payload = build_trade_payload(trade, stock, holding)
+    payload['practiceWalletBalance'] = _round2(practice_wallet.balance)
+    return payload
 
 
 def list_recent_trades(user, limit: int = 20) -> list[dict]:

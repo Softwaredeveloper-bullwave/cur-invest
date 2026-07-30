@@ -64,7 +64,7 @@ class MarketsFnoIndicesSection extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 20),
             scrollDirection: Axis.horizontal,
             itemCount: FnoIndexCatalog.indices.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 10),
+            separatorBuilder: (_, _) => const SizedBox(width: 10),
             itemBuilder: (context, index) {
               final meta = FnoIndexCatalog.indices[index];
               return _FnoIndexCard(

@@ -30,17 +30,48 @@ def _ascii_env(value: str) -> str:
 
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-dev-key-change-in-production')
 DEBUG = config('DEBUG', default=True, cast=bool)
+# Open admin-panel APIs without JWT while DEBUG=True (disable before go-live).
+ADMIN_PANEL_DEV_NO_AUTH = DEBUG and config('ADMIN_PANEL_DEV_NO_AUTH', default=True, cast=bool)
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,10.0.2.2').split(',')
 if DEBUG:
     ALLOWED_HOSTS = ['*']
 
+EKO_LOG_LEVEL = _clean_env(config('EKO_LOG_LEVEL', default='INFO')).upper() or 'INFO'
+EKO_API_LOG_FILE = _clean_env(config('EKO_API_LOG_FILE', default=''))
+if DEBUG and not EKO_API_LOG_FILE:
+    EKO_API_LOG_FILE = 'logs/eko_kyc.log'
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '%(asctime)s [%(levelname)s] %(name)s: %(message)s',
+            'datefmt': '%Y-%m-%d %H:%M:%S',
+        },
+    },
     'handlers': {
-        'console': {'class': 'logging.StreamHandler'},
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+        'error_database': {
+            'class': 'core.logging_handler.DatabaseErrorHandler',
+            'level': 'ERROR',
+            'formatter': 'verbose',
+        },
     },
     'loggers': {
+        'django.request': {
+            'handlers': ['console', 'error_database'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+        'bullwave': {
+            'handlers': ['error_database'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
         'bullwave.requests': {
             'handlers': ['console'],
             'level': 'INFO',
@@ -49,8 +80,25 @@ LOGGING = {
             'handlers': ['console'],
             'level': 'INFO',
         },
+        'bullwave.kyc': {
+            'handlers': ['console', 'error_database'],
+            'level': EKO_LOG_LEVEL,
+            'propagate': False,
+        },
     },
 }
+
+if EKO_API_LOG_FILE:
+    _eko_log_path = Path(EKO_API_LOG_FILE)
+    if not _eko_log_path.is_absolute():
+        _eko_log_path = BASE_DIR / _eko_log_path
+    _eko_log_path.parent.mkdir(parents=True, exist_ok=True)
+    LOGGING['handlers']['eko_file'] = {
+        'class': 'logging.FileHandler',
+        'filename': str(_eko_log_path),
+        'formatter': 'verbose',
+    }
+    LOGGING['loggers']['bullwave.kyc']['handlers'].append('eko_file')
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -66,6 +114,7 @@ INSTALLED_APPS = [
     'kyc',
     'payments',
     'finance',
+    'adminpanel.apps.AdminPanelConfig',
     'stocks.apps.StocksConfig',
     'engagement',
     'education',
@@ -167,6 +216,7 @@ CACHES = {
 }
 
 OTP_EXPIRY_MINUTES = config('OTP_EXPIRY_MINUTES', default=5, cast=int)
+SMS_OTP_ENABLED = config('SMS_OTP_ENABLED', default=True, cast=bool)
 
 # AI assistant — default: Ollama (local, free). See ai/ollama_client.py
 AI_PROVIDER = config('AI_PROVIDER', default='ollama')
@@ -236,6 +286,8 @@ TWILIO_AUTH_TOKEN = _ascii_env(config('TWILIO_AUTH_TOKEN', default=''))
 TWILIO_FROM_NUMBER = _clean_env(config('TWILIO_FROM_NUMBER', default=''))
 TWILIO_SERVICE_SID = _ascii_env(config('TWILIO_SERVICE_SID', default=''))
 TWILIO_VERIFY_CHANNEL = _clean_env(config('TWILIO_VERIFY_CHANNEL', default='sms')) or 'sms'
+# verify = Twilio Verify API (TWILIO_SERVICE_SID) | messages = DB OTP via TWILIO_FROM_NUMBER
+TWILIO_OTP_MODE = _clean_env(config('TWILIO_OTP_MODE', default='verify')).lower() or 'verify'
 
 if TWILIO_FROM_NUMBER and not TWILIO_FROM_NUMBER.startswith('+'):
     TWILIO_FROM_NUMBER = f'+{TWILIO_FROM_NUMBER.lstrip("+")}'
@@ -278,12 +330,72 @@ SECURE_ID_BASE_URL = config('SECURE_ID_BASE_URL', default='')
 SECURE_ID_API_KEY = config('SECURE_ID_API_KEY', default='')
 SECURE_ID_API_SECRET = config('SECURE_ID_API_SECRET', default='')
 
+# KYC provider — legacy default when per-step KYC_*_PROVIDER vars are unset
+KYC_PROVIDER = _clean_env(config('KYC_PROVIDER', default='cashfree')).lower() or 'cashfree'
+# Per-step overrides (fall back to KYC_PROVIDER when blank)
+KYC_PAN_PROVIDER = _clean_env(config('KYC_PAN_PROVIDER', default='')).lower() or ''
+KYC_BANK_PROVIDER = _clean_env(config('KYC_BANK_PROVIDER', default='')).lower() or ''
+KYC_UPI_PROVIDER = _clean_env(config('KYC_UPI_PROVIDER', default='')).lower() or ''
+KYC_AADHAAR_PROVIDER = _clean_env(config('KYC_AADHAAR_PROVIDER', default='')).lower() or ''
+# provider: call Cashfree/Eko immediately; manual: staff review within 24 hours.
+KYC_BANK_REVIEW_MODE = _clean_env(config('KYC_BANK_REVIEW_MODE', default='provider')).lower()
+if KYC_BANK_REVIEW_MODE not in {'provider', 'manual'}:
+    KYC_BANK_REVIEW_MODE = 'provider'
+
+# Verification — Eko Platform Services (https://developers.eko.in) — paste keys in .env
+EKO_DEVELOPER_KEY = _ascii_env(config('EKO_DEVELOPER_KEY', default=''))
+EKO_ACCESS_KEY = _ascii_env(config('EKO_ACCESS_KEY', default=''))
+EKO_INITIATOR_ID = _clean_env(config('EKO_INITIATOR_ID', default=''))
+EKO_USER_CODE = _clean_env(config('EKO_USER_CODE', default=''))
+EKO_ENVIRONMENT = _clean_env(config('EKO_ENVIRONMENT', default='uat'))
+EKO_BASE_URL = _clean_env(config('EKO_BASE_URL', default=''), strip_trailing_slash=True)
+# Optional override when UPI validate-vpa lives on a different Eko host/port than KYC tools.
+EKO_UPI_BASE_URL = _clean_env(config('EKO_UPI_BASE_URL', default=''), strip_trailing_slash=True)
+EKO_ALLOW_SANDBOX_BYPASS = config('EKO_ALLOW_SANDBOX_BYPASS', default=False, cast=bool)
+# Prefer Eko Penny-less bank verification; fall back to penny-drop when unavailable.
+EKO_PENNYLESS_ENABLED = config('EKO_PENNYLESS_ENABLED', default=True, cast=bool)
+# Partner slug from Eko Connect (docs example: touras).
+EKO_ORG_SLUG = _clean_env(config('EKO_ORG_SLUG', default=''))
+# Optional full override; leave blank to derive /v3/tools/kyc/{slug}/bank-acc-verify-penniless
+EKO_PENNYLESS_PATH = _clean_env(config('EKO_PENNYLESS_PATH', default=''))
+# Eko PAN/bank/UPI calls can be slow in production — allow up to 90s read time.
+EKO_HTTP_TIMEOUT_SECONDS = config('EKO_HTTP_TIMEOUT_SECONDS', default=90, cast=int)
+# Optional public HTTPS override after DigiLocker consent. Leave blank to use
+# BACKEND_PUBLIC_URL/api/v1/digilocker/callback/{state}/ (never the marketing site).
+EKO_DIGILOCKER_REDIRECT_URL = _clean_env(
+    config('EKO_DIGILOCKER_REDIRECT_URL', default=''),
+    strip_trailing_slash=True,
+)
+# Flutter/web app URL for redirect after DigiLocker callback (e.g. http://localhost:58076).
+APP_WEB_URL = _clean_env(config('APP_WEB_URL', default=''), strip_trailing_slash=True)
+# A URL-safe Fernet key used only for Aadhaar numbers held during an active
+# OTP transaction. Generate with: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+AADHAAR_ENCRYPTION_KEY = _ascii_env(config('AADHAAR_ENCRYPTION_KEY', default=''))
+
 # Compliance
 KYC_AUTO_APPROVE = config('KYC_AUTO_APPROVE', default=False, cast=bool)
+# Opt-in dev bypasses only — must stay False for real PAN/bank/UPI verification.
+# These do NOT default from KYC_AUTO_APPROVE (which only affects document upload approval).
+CASHFREE_DEV_BYPASS = config('CASHFREE_DEV_BYPASS', default=False, cast=bool)
+EKO_UPI_SOFT_VERIFY = config('EKO_UPI_SOFT_VERIFY', default=False, cast=bool)
+EKO_BANK_SOFT_VERIFY = config('EKO_BANK_SOFT_VERIFY', default=False, cast=bool)
+# Testing only — skip PAN/Aadhaar name match during bank verify (Eko account-exists check only).
+# Must stay False in production.
+KYC_BANK_SKIP_IDENTITY_MATCH = config('KYC_BANK_SKIP_IDENTITY_MATCH', default=False, cast=bool)
+# UPI verification step in KYC — disabled for BullWave MVP (bank verify via Eko only).
+KYC_UPI_REQUIRED = config('KYC_UPI_REQUIRED', default=False, cast=bool)
+# Manual UPI ID review after bank verify (no Eko UPI API). User submits UPI + selfie together.
+KYC_UPI_MANUAL = config('KYC_UPI_MANUAL', default=True, cast=bool)
+# Admin must click final approve after UPI + selfie review (replaces auto name-match gate).
+KYC_MANUAL_FINAL_APPROVAL = config('KYC_MANUAL_FINAL_APPROVAL', default=True, cast=bool)
+# Dev/testing — relax KYC endpoint rate limits (defaults to DEBUG). Keep False in production.
+KYC_RELAX_RATE_LIMITS = config('KYC_RELAX_RATE_LIMITS', default=DEBUG, cast=bool)
 REFERRAL_REWARD_AMOUNT = config('REFERRAL_REWARD_AMOUNT', default=500, cast=int)
 APP_SHARE_URL = config('APP_SHARE_URL', default='https://bullwave.in')
 # Public URL for email action links (approve/reject). Use your deployed API URL or ngrok in dev.
 BACKEND_PUBLIC_URL = _clean_env(config('BACKEND_PUBLIC_URL', default='http://127.0.0.1:8000'), strip_trailing_slash=True)
+# HTTPS tunnel for local DigiLocker callbacks (localtunnel / ngrok). Example: https://abc123.loca.lt
+LOCAL_DEV_TUNNEL_URL = _clean_env(config('LOCAL_DEV_TUNNEL_URL', default=''), strip_trailing_slash=True)
 
 # Manual KYC admin email — set SMTP credentials in .env for production.
 # If left empty, backend will default to: bullwaveteam5@gmail.com

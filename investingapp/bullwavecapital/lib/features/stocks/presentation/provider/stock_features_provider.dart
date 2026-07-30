@@ -23,6 +23,7 @@ class StockFeaturesProvider extends ChangeNotifier {
   List<NewsAlertModel> _newsAlerts = [];
   List<SipPlanModel> _sipPlans = [];
   List<PaperTradeModel> _paperTrades = [];
+  List<Map<String, dynamic>> _scalperOrders = [];
   String? _tradeError;
   List<DividendModel> _dividends = [];
   List<ScreenerStockModel> _screenerResults = [];
@@ -48,14 +49,18 @@ class StockFeaturesProvider extends ChangeNotifier {
   String? _aiError;
   bool _usingDemoNews = false;
 
-  _SymbolOptionChain _chainState(String symbol) =>
-      _optionChains.putIfAbsent(symbol.toUpperCase(), () => _SymbolOptionChain());
+  _SymbolOptionChain _chainState(String symbol) => _optionChains.putIfAbsent(
+    symbol.toUpperCase(),
+    () => _SymbolOptionChain(),
+  );
 
   List<StockNewsModel> get news => _news;
   List<PriceAlertModel> get alerts => _alerts;
   List<NewsAlertModel> get newsAlerts => _newsAlerts;
   List<SipPlanModel> get sipPlans => _sipPlans;
   List<PaperTradeModel> get paperTrades => _paperTrades;
+  List<Map<String, dynamic>> get scalperOrders =>
+      List.unmodifiable(_scalperOrders);
   String? get tradeError => _tradeError;
   List<DividendModel> get dividends => _dividends;
   List<AiMessageModel> get aiMessages => _aiMessages;
@@ -86,12 +91,14 @@ class StockFeaturesProvider extends ChangeNotifier {
     return null;
   }
 
-  List<OptionContractModel> optionChain(String symbol) => _chainState(symbol).contracts;
+  List<OptionContractModel> optionChain(String symbol) =>
+      _chainState(symbol).contracts;
   bool isOptionChainLoading(String symbol) => _chainState(symbol).loading;
   String? optionChainError(String symbol) => _chainState(symbol).error;
   double optionUnderlying(String symbol) => _chainState(symbol).underlying;
   List<String> optionExpiries(String symbol) => _chainState(symbol).expiries;
-  String optionSelectedExpiry(String symbol) => _chainState(symbol).selectedExpiry;
+  String optionSelectedExpiry(String symbol) =>
+      _chainState(symbol).selectedExpiry;
 
   StockFeaturesProvider() {
     loadAll();
@@ -142,7 +149,8 @@ class StockFeaturesProvider extends ChangeNotifier {
 
   Future<void> _loadAlerts() async => _alerts = await _api.getPriceAlerts();
   Future<void> _loadSip() async => _sipPlans = await _api.getSipPlans();
-  Future<void> _loadPaperTrades() async => _paperTrades = await _api.getPaperTrades();
+  Future<void> _loadPaperTrades() async =>
+      _paperTrades = await _api.getPaperTrades();
   Future<void> _loadDividends() async {
     try {
       _dividends = await _api.getDividends(sync: true);
@@ -190,7 +198,11 @@ class StockFeaturesProvider extends ChangeNotifier {
     try {
       // Fast path — show chain immediately from cached/fallback spot.
       try {
-        final fast = await _api.getOptionChain(symbol, expiry: expiry, fast: true);
+        final fast = await _api.getOptionChain(
+          symbol,
+          expiry: expiry,
+          fast: true,
+        );
         if (fast.underlyingValue > 0 || fast.contracts.isNotEmpty) {
           _applyChain(state, fast);
           state.error = null;
@@ -207,8 +219,7 @@ class StockFeaturesProvider extends ChangeNotifier {
       }
     } on ApiException catch (e) {
       if (state.contracts.isEmpty) {
-        if (e.statusCode == 403 &&
-            e.message.toLowerCase().contains('f&o')) {
+        if (e.statusCode == 403 && e.message.toLowerCase().contains('f&o')) {
           state.error = '__fno_required__';
         } else {
           state.error = e.message;
@@ -216,7 +227,8 @@ class StockFeaturesProvider extends ChangeNotifier {
       }
     } catch (_) {
       if (state.contracts.isEmpty) {
-        state.error = 'Could not load F&O chain. Check that Django is running on port 8000.';
+        state.error =
+            'Could not load F&O chain. Check that Django is running on port 8000.';
       }
     }
 
@@ -355,6 +367,13 @@ class StockFeaturesProvider extends ChangeNotifier {
     } catch (_) {}
   }
 
+  Future<void> refreshScalperOrders() async {
+    try {
+      _scalperOrders = await _api.getScalperOrders();
+      notifyListeners();
+    } catch (_) {}
+  }
+
   Future<PaperTradeModel?> placePaperTrade({
     required String symbol,
     required String side,
@@ -372,6 +391,43 @@ class StockFeaturesProvider extends ChangeNotifier {
       return trade;
     } catch (e) {
       _tradeError = e is ApiException ? e.message : 'Order failed. Try again.';
+      notifyListeners();
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> placeStockScalperOrder({
+    required String symbol,
+    required String side,
+    required int quantity,
+    required String orderType,
+    required double referencePrice,
+    double? limitPrice,
+    double? stopLoss,
+    double? targetPrice,
+    double? trailingStopPercent,
+  }) async {
+    _tradeError = null;
+    try {
+      final order = await _api.placeScalperOrder(
+        instrumentType: 'stock',
+        orderType: orderType,
+        side: side,
+        quantity: quantity,
+        symbol: symbol,
+        requestedPrice: referencePrice,
+        limitPrice: limitPrice,
+        stopLoss: stopLoss,
+        targetPrice: targetPrice,
+        trailingStopPercent: trailingStopPercent,
+      );
+      await _loadPaperTrades();
+      notifyListeners();
+      return order;
+    } catch (e) {
+      _tradeError = e is ApiException
+          ? e.message
+          : 'Scalper order failed. Try again.';
       notifyListeners();
       return null;
     }
@@ -407,7 +463,8 @@ class StockFeaturesProvider extends ChangeNotifier {
       _aiMessages = [
         AiMessageModel(
           role: 'assistant',
-          content: 'Chat cleared. Ask about your portfolio, stocks, or any BullWave feature.',
+          content:
+              'Chat cleared. Ask about your portfolio, stocks, or any BullWave feature.',
           time: DateTime.now(),
         ),
       ];
@@ -441,7 +498,8 @@ class StockFeaturesProvider extends ChangeNotifier {
       if (_aiMessages.isNotEmpty && _aiMessages.last.role == 'user') {
         _aiMessages = _aiMessages.sublist(0, _aiMessages.length - 1);
       }
-      _aiError = 'Could not reach AI assistant. Check server connection and API key in backend/.env.';
+      _aiError =
+          'Could not reach AI assistant. Check server connection and API key in backend/.env.';
     }
     _isAiLoading = false;
     notifyListeners();
@@ -469,15 +527,19 @@ class StockFeaturesProvider extends ChangeNotifier {
     _ipoTradeError = null;
     notifyListeners();
     try {
-      final trade = await _api.placeIpoOrder(ipoId: ipoId, side: side, lots: lots);
+      final trade = await _api.placeIpoOrder(
+        ipoId: ipoId,
+        side: side,
+        lots: lots,
+      );
       _ipoTrades = [trade, ..._ipoTrades.where((t) => t.id != trade.id)];
-      await Future.wait([
-        _api.getIpoHoldings().then((v) => _ipoHoldings = v),
-      ]);
+      await Future.wait([_api.getIpoHoldings().then((v) => _ipoHoldings = v)]);
       notifyListeners();
       return true;
     } catch (e) {
-      _ipoTradeError = e is ApiException ? e.message : 'IPO order failed. Try again.';
+      _ipoTradeError = e is ApiException
+          ? e.message
+          : 'IPO order failed. Try again.';
       notifyListeners();
       return false;
     }

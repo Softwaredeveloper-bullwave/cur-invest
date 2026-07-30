@@ -1,8 +1,12 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 import '../../../core/api/api_config.dart';
 import '../../../core/api/api_exception.dart';
 import '../../../core/api/token_storage.dart';
+import '../../../core/services/app_error_reporter.dart';
 
 /// Dio HTTP client for KYC & Payments module.
 class KycDioClient {
@@ -14,7 +18,7 @@ class KycDioClient {
     BaseOptions(
       baseUrl: ApiConfig.baseUrl,
       connectTimeout: const Duration(seconds: 30),
-      receiveTimeout: const Duration(seconds: 45),
+      receiveTimeout: const Duration(seconds: 90),
       headers: {'Accept': 'application/json', 'Content-Type': 'application/json'},
     ),
   )..interceptors.add(
@@ -23,6 +27,15 @@ class KycDioClient {
           final token = await TokenStorage.getAccessToken();
           if (token != null && token.isNotEmpty) {
             options.headers['Authorization'] = 'Bearer $token';
+          }
+          if (kDebugMode) {
+            final authorization = options.headers['Authorization']?.toString();
+            final hasBearerToken =
+                authorization != null && authorization.startsWith('Bearer ');
+            debugPrint(
+              '[KYC API] ${options.method} ${options.path} '
+              'Authorization: ${hasBearerToken ? 'Bearer present' : 'missing'}',
+            );
           }
           handler.next(options);
         },
@@ -33,11 +46,34 @@ class KycDioClient {
             data,
             _friendlyDioMessage(error),
           );
+          final path = error.requestOptions.path;
+          if (status != 401 &&
+              status != 403 &&
+              !path.contains('/client-errors/') &&
+              (status >= 500 || error.response == null)) {
+            unawaited(
+              AppErrorReporter.instance.report(
+                ApiException(status, message, code: _extractErrorCode(data)),
+                error.stackTrace,
+                location: path,
+                statusCode: status,
+                context: {
+                  'transport': 'dio',
+                  'method': error.requestOptions.method,
+                  'errorType': error.type.name,
+                },
+              ),
+            );
+          }
           handler.reject(
             DioException(
               requestOptions: error.requestOptions,
               response: error.response,
-              error: ApiException(status, message),
+              error: ApiException(
+                status,
+                message,
+                code: _extractErrorCode(data),
+              ),
             ),
           );
         },
@@ -49,14 +85,19 @@ class KycDioClient {
   static String _extractErrorMessage(dynamic data, String fallback) {
     if (data is! Map) return fallback;
 
-    final message = data['message'];
-    if (message is String && message.trim().isNotEmpty) {
-      return message.trim();
-    }
-
     final detail = data['detail'];
     if (detail is String && detail.trim().isNotEmpty) {
       return detail.trim();
+    }
+
+    final retryAfter = data['retry_after_seconds'];
+    if (retryAfter is num && retryAfter > 0) {
+      return 'Too many attempts. Try again in ${retryAfter.round()} seconds.';
+    }
+
+    final message = data['message'];
+    if (message is String && message.trim().isNotEmpty) {
+      return message.trim();
     }
     if (detail is List && detail.isNotEmpty) {
       return detail.map((item) => item.toString()).join('. ');
@@ -71,6 +112,15 @@ class KycDioClient {
     }
 
     return fallback;
+  }
+
+  static String? _extractErrorCode(dynamic data) {
+    if (data is! Map) return null;
+    final code = data['code'];
+    if (code is String && code.trim().isNotEmpty) {
+      return code.trim();
+    }
+    return null;
   }
 
   static String _friendlyDioMessage(DioException error) {
@@ -94,9 +144,15 @@ class KycDioClient {
     );
   }
 
-  Future<Map<String, dynamic>> getJson(String path) async {
+  Future<Map<String, dynamic>> getJson(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+  }) async {
     try {
-      final res = await _dio.get<Map<String, dynamic>>(path);
+      final res = await _dio.get<Map<String, dynamic>>(
+        path,
+        queryParameters: queryParameters,
+      );
       return res.data ?? {};
     } on DioException catch (e) {
       _rethrowAsApi(e);

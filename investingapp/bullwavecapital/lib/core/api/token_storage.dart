@@ -5,6 +5,7 @@ class TokenStorage {
 
   static const _accessKey = 'access_token';
   static const _refreshKey = 'refresh_token';
+  static const _pendingEmailKey = 'pending_email_verification';
 
   static SharedPreferences? _prefs;
 
@@ -26,9 +27,25 @@ class TokenStorage {
     return _prefs!.getString(_accessKey);
   }
 
+  static Future<void> savePendingEmail(String email) async {
+    await init();
+    final normalized = email.trim().toLowerCase();
+    if (normalized.isEmpty) {
+      await _prefs!.remove(_pendingEmailKey);
+      return;
+    }
+    await _prefs!.setString(_pendingEmailKey, normalized);
+  }
+
+  static Future<String?> getPendingEmail() async {
+    await init();
+    return _prefs!.getString(_pendingEmailKey);
+  }
+
   static Future<void> clear() async {
     await init();
     await _prefs!.remove(_accessKey);
     await _prefs!.remove(_refreshKey);
+    await _prefs!.remove(_pendingEmailKey);
   }
 }

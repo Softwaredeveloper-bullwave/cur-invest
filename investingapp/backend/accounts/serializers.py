@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from core.serializers import CamelCaseModelSerializer, CamelCaseSerializer
+from kyc.service import user_dob_verified_from_kyc
 from .models import BankAccount, KycDocument, User
 
 
@@ -9,15 +10,19 @@ class UserSerializer(CamelCaseModelSerializer):
     kyc_status = serializers.SerializerMethodField()
     avatar_url = serializers.SerializerMethodField()
     date_of_birth = serializers.DateField(required=False, allow_null=True)
+    dob_verified_from_kyc = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = (
-            'id', 'name', 'phone', 'email', 'pan_status', 'kyc_status',
-            'avatar_url', 'date_of_birth', 'city', 'bio',
+            'id', 'name', 'phone', 'email', 'email_verified', 'pan_status', 'kyc_status',
+            'avatar_url', 'date_of_birth', 'dob_verified_from_kyc', 'city', 'bio',
             'referral_code', 'has_completed_onboarding',
         )
-        read_only_fields = ('id', 'phone', 'referral_code', 'pan_status', 'kyc_status')
+        read_only_fields = (
+            'id', 'phone', 'referral_code', 'pan_status', 'kyc_status',
+            'email_verified', 'dob_verified_from_kyc',
+        )
 
     def get_avatar_url(self, obj):
         if obj.avatar:
@@ -42,6 +47,9 @@ class UserSerializer(CamelCaseModelSerializer):
             'completed': 'Completed',
         }
         return mapping.get(obj.kyc_status, obj.kyc_status)
+
+    def get_dob_verified_from_kyc(self, obj):
+        return user_dob_verified_from_kyc(obj)
 
 
 class ProfileUpdateSerializer(CamelCaseSerializer):

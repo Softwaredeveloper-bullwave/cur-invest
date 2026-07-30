@@ -14,6 +14,7 @@ import '../../../wallet/presentation/provider/wallet_provider.dart';
 import '../provider/option_trading_provider.dart';
 import '../utils/option_trading_flow.dart';
 import 'option_order_success_sheet.dart';
+import 'scalper_controls.dart';
 
 class OptionTradingPad extends StatefulWidget {
   final OptionContractModel contract;
@@ -51,6 +52,7 @@ class _OptionTradingPadState extends State<OptionTradingPad> {
   late String _side;
   late final TextEditingController _qtyController;
   bool _isPlacing = false;
+  ScalperOrderConfig _scalper = const ScalperOrderConfig();
 
   @override
   void initState() {
@@ -72,7 +74,8 @@ class _OptionTradingPadState extends State<OptionTradingPad> {
     return parsed == null || parsed < 1 ? 1 : parsed;
   }
 
-  int _lotSize() => optionLotSize(widget.contract.symbol, widget.chainContext.assetClass);
+  int _lotSize() =>
+      optionLotSize(widget.contract.symbol, widget.chainContext.assetClass);
 
   double _orderInrEstimate(int lots) {
     final lot = _lotSize();
@@ -112,12 +115,51 @@ class _OptionTradingPadState extends State<OptionTradingPad> {
 
     final wallet = context.read<WalletProvider>();
     final orderInr = _orderInrEstimate(_qty);
-    if (!_isSell && wallet.wallet.balance < orderInr) {
-      _snack('Insufficient wallet balance. Add funds to continue.');
+    if (!_isSell &&
+        (!_scalper.enabled || _scalper.orderType == 'market') &&
+        wallet.practiceBalance < orderInr) {
+      _snack('Insufficient practice funds for this order.');
       return;
     }
 
     setState(() => _isPlacing = true);
+    if (_scalper.enabled) {
+      final order = await trading.placeScalperOrder(
+        underlying: widget.contract.symbol,
+        strike: widget.contract.strike,
+        optionType: widget.contract.type,
+        expiry: widget.contract.expiry,
+        side: _side,
+        quantity: _qty,
+        premium: widget.contract.ltp,
+        assetClass: widget.chainContext.assetClass,
+        orderType: _scalper.orderType,
+        limitPrice: _scalper.limitPrice,
+        stopLoss: _isSell ? null : _scalper.stopLoss,
+        targetPrice: _isSell ? null : _scalper.targetPrice,
+        trailingStopPercent: _isSell ? null : _scalper.trailingStopPercent,
+      );
+      if (!mounted) return;
+      setState(() => _isPlacing = false);
+      if (order == null) {
+        _snack(trading.tradeError ?? 'Scalper order failed.');
+        return;
+      }
+      unawaited(wallet.loadData());
+      final pending = order['status'] == 'pending';
+      final messenger = ScaffoldMessenger.of(context);
+      Navigator.of(context, rootNavigator: true).pop();
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            pending
+                ? 'Option limit order placed.'
+                : 'Option scalper position active.',
+          ),
+        ),
+      );
+      return;
+    }
     final trade = await trading.placeOrder(
       underlying: widget.contract.symbol,
       strike: widget.contract.strike,
@@ -139,7 +181,40 @@ class _OptionTradingPadState extends State<OptionTradingPad> {
     unawaited(wallet.loadData());
     if (!mounted) return;
     Navigator.of(context, rootNavigator: true).pop();
-    await OptionOrderSuccessSheet.show(context, trade, currencySymbol: widget.chainContext.currencySymbol);
+    await OptionOrderSuccessSheet.show(
+      context,
+      trade,
+      currencySymbol: widget.chainContext.currencySymbol,
+    );
+  }
+
+  Future<void> _exitAll(int quantity) async {
+    if (_isPlacing || quantity < 1) return;
+    setState(() => _isPlacing = true);
+    final trading = context.read<OptionTradingProvider>();
+    final order = await trading.placeScalperOrder(
+      underlying: widget.contract.symbol,
+      strike: widget.contract.strike,
+      optionType: widget.contract.type,
+      expiry: widget.contract.expiry,
+      side: 'SELL',
+      quantity: quantity,
+      premium: widget.contract.ltp,
+      assetClass: widget.chainContext.assetClass,
+      orderType: 'market',
+    );
+    if (!mounted) return;
+    setState(() => _isPlacing = false);
+    if (order == null) {
+      _snack(trading.tradeError ?? 'Exit failed.');
+      return;
+    }
+    unawaited(context.read<WalletProvider>().loadData());
+    final messenger = ScaffoldMessenger.of(context);
+    Navigator.of(context, rootNavigator: true).pop();
+    messenger.showSnackBar(
+      const SnackBar(content: Text('Option position exited successfully.')),
+    );
   }
 
   void _snack(String message) {
@@ -185,15 +260,25 @@ class _OptionTradingPadState extends State<OptionTradingPad> {
                   children: [
                     IconButton(
                       icon: const Icon(Icons.close_rounded),
-                      onPressed: () => Navigator.of(context, rootNavigator: true).pop(),
+                      onPressed: () =>
+                          Navigator.of(context, rootNavigator: true).pop(),
                     ),
                     Expanded(
                       child: Column(
                         children: [
-                          Text(title, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+                          Text(
+                            title,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 16,
+                            ),
+                          ),
                           Text(
                             'Exp ${optionExpiryLabel(contract.expiry)} • Lot $lot',
-                            style: TextStyle(color: colors.textSecondary, fontSize: 12),
+                            style: TextStyle(
+                              color: colors.textSecondary,
+                              fontSize: 12,
+                            ),
                           ),
                         ],
                       ),
@@ -203,7 +288,10 @@ class _OptionTradingPadState extends State<OptionTradingPad> {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 8,
+                ),
                 child: Row(
                   children: [
                     Expanded(
@@ -221,7 +309,9 @@ class _OptionTradingPadState extends State<OptionTradingPad> {
                         selected: _isSell,
                         color: AppColors.red,
                         enabled: canSell,
-                        onTap: canSell ? () => setState(() => _side = 'SELL') : null,
+                        onTap: canSell
+                            ? () => setState(() => _side = 'SELL')
+                            : null,
                       ),
                     ),
                   ],
@@ -240,7 +330,13 @@ class _OptionTradingPadState extends State<OptionTradingPad> {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Premium (LTP)', style: TextStyle(color: colors.textMuted, fontSize: 12)),
+                              Text(
+                                'Premium (LTP)',
+                                style: TextStyle(
+                                  color: colors.textMuted,
+                                  fontSize: 12,
+                                ),
+                              ),
                               Text(
                                 '${widget.chainContext.currencySymbol}${contract.ltp.toStringAsFixed(2)}',
                                 style: TextStyle(
@@ -252,14 +348,21 @@ class _OptionTradingPadState extends State<OptionTradingPad> {
                             ],
                           ),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 6,
+                            ),
                             decoration: BoxDecoration(
                               color: typeColor.withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(999),
                             ),
                             child: Text(
                               contract.type,
-                              style: TextStyle(color: typeColor, fontWeight: FontWeight.w800, fontSize: 12),
+                              style: TextStyle(
+                                color: typeColor,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 12,
+                              ),
                             ),
                           ),
                         ],
@@ -278,26 +381,47 @@ class _OptionTradingPadState extends State<OptionTradingPad> {
                       ),
                     ],
                     const SizedBox(height: 18),
-                    Text('Lots', style: TextStyle(color: colors.textMuted, fontWeight: FontWeight.w700)),
+                    Text(
+                      'Lots',
+                      style: TextStyle(
+                        color: colors.textMuted,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                     const SizedBox(height: 10),
                     Row(
                       children: [
-                        _QtyStepButton(icon: Icons.remove, onTap: () => _setQty(_qty - 1, available)),
+                        _QtyStepButton(
+                          icon: Icons.remove,
+                          onTap: () => _setQty(_qty - 1, available),
+                        ),
                         Expanded(
                           child: TextField(
                             controller: _qtyController,
                             keyboardType: TextInputType.number,
                             textAlign: TextAlign.center,
-                            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 24),
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                            ],
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 24,
+                            ),
                             decoration: InputDecoration(
-                              contentPadding: const EdgeInsets.symmetric(vertical: 14),
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                              contentPadding: const EdgeInsets.symmetric(
+                                vertical: 14,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                             ),
                             onChanged: (_) => setState(() {}),
                           ),
                         ),
-                        _QtyStepButton(icon: Icons.add, onTap: () => _setQty(_qty + 1, available)),
+                        _QtyStepButton(
+                          icon: Icons.add,
+                          onTap: () => _setQty(_qty + 1, available),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 10),
@@ -305,11 +429,38 @@ class _OptionTradingPadState extends State<OptionTradingPad> {
                       spacing: 8,
                       children: [
                         for (final chip in [1, 2, 5])
-                          ActionChip(label: Text('$chip'), onPressed: () => _setQty(chip, available)),
+                          ActionChip(
+                            label: Text('$chip'),
+                            onPressed: () => _setQty(chip, available),
+                          ),
                         if (_isSell && available > 1)
-                          ActionChip(label: const Text('Max'), onPressed: () => _setQty(available, available)),
+                          ActionChip(
+                            label: const Text('Max'),
+                            onPressed: () => _setQty(available, available),
+                          ),
                       ],
                     ),
+                    const SizedBox(height: 18),
+                    ScalperControls(
+                      referencePrice: contract.ltp,
+                      onChanged: (config) => setState(() => _scalper = config),
+                    ),
+                    if (_scalper.enabled && available > 0) ...[
+                      const SizedBox(height: 10),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: _isPlacing
+                              ? null
+                              : () => _exitAll(available),
+                          icon: const Icon(Icons.flash_off_rounded),
+                          label: Text('One-tap exit all $available lot(s)'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.red,
+                          ),
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 18),
                     Container(
                       width: double.infinity,
@@ -324,8 +475,10 @@ class _OptionTradingPadState extends State<OptionTradingPad> {
                           ),
                           const SizedBox(height: 8),
                           _SummaryRow(
-                            label: 'Wallet balance',
-                            value: CurrencyFormatter.formatDecimal(wallet.wallet.balance),
+                            label: 'Practice funds',
+                            value: CurrencyFormatter.formatDecimal(
+                              wallet.practiceBalance,
+                            ),
                           ),
                         ],
                       ),
@@ -343,18 +496,30 @@ class _OptionTradingPadState extends State<OptionTradingPad> {
                     child: FilledButton(
                       onPressed: _isPlacing ? null : _placeOrder,
                       style: FilledButton.styleFrom(
-                        backgroundColor: _isSell ? AppColors.red : AppColors.green,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        backgroundColor: _isSell
+                            ? AppColors.red
+                            : AppColors.green,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
                       ),
                       child: _isPlacing
                           ? const SizedBox(
                               width: 22,
                               height: 22,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
                             )
                           : Text(
-                              _isSell ? 'Sell ${contract.type}' : 'Buy ${contract.type}',
-                              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                              _isSell
+                                  ? 'Sell ${contract.type}'
+                                  : 'Buy ${contract.type}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w800,
+                                fontSize: 16,
+                              ),
                             ),
                     ),
                   ),
@@ -396,14 +561,19 @@ class _SideButton extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 14),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: active ? color : Colors.grey.shade400, width: active ? 2 : 1),
+            border: Border.all(
+              color: active ? color : Colors.grey.shade400,
+              width: active ? 2 : 1,
+            ),
           ),
           alignment: Alignment.center,
           child: Text(
             label,
             style: TextStyle(
               fontWeight: FontWeight.w800,
-              color: enabled ? (active ? color : Colors.grey.shade600) : Colors.grey.shade400,
+              color: enabled
+                  ? (active ? color : Colors.grey.shade600)
+                  : Colors.grey.shade400,
             ),
           ),
         ),
@@ -429,7 +599,11 @@ class _SummaryRow extends StatelessWidget {
   final String value;
   final bool bold;
 
-  const _SummaryRow({required this.label, required this.value, this.bold = false});
+  const _SummaryRow({
+    required this.label,
+    required this.value,
+    this.bold = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -439,7 +613,10 @@ class _SummaryRow extends StatelessWidget {
         Text(label, style: TextStyle(color: Colors.grey.shade600)),
         Text(
           value,
-          style: TextStyle(fontWeight: bold ? FontWeight.w800 : FontWeight.w600, fontSize: bold ? 16 : 14),
+          style: TextStyle(
+            fontWeight: bold ? FontWeight.w800 : FontWeight.w600,
+            fontSize: bold ? 16 : 14,
+          ),
         ),
       ],
     );

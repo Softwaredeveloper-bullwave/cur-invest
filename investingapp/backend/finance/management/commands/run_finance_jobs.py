@@ -6,6 +6,7 @@ from stocks.alert_service import process_price_alerts
 from stocks.news_alert_service import process_news_alerts
 from stocks.rebalance_service import process_portfolio_rebalance_automation
 from stocks.sip_service import process_due_sip_installments
+from stocks.scalper_service import process_scalper_orders
 
 
 class Command(BaseCommand):
@@ -18,12 +19,14 @@ class Command(BaseCommand):
         parser.add_argument('--profits', action='store_true', help='Credit monthly investment returns')
         parser.add_argument('--goals', action='store_true', help='Process goal plan installments')
         parser.add_argument('--rebalance', action='store_true', help='AI portfolio rebalancing notifications')
+        parser.add_argument('--scalper', action='store_true', help='Process scalper limits and risk exits')
         parser.add_argument('--all', action='store_true', help='Run all jobs')
 
     def handle(self, *args, **options):
         run_all = options['all'] or not any([
             options['sip'], options['alerts'], options['news_alerts'],
             options['profits'], options['goals'], options['rebalance'],
+            options['scalper'],
         ])
 
         if run_all or options['sip']:
@@ -54,3 +57,7 @@ class Command(BaseCommand):
         if run_all or options['rebalance']:
             count = process_portfolio_rebalance_automation()
             self.stdout.write(self.style.SUCCESS(f'Rebalance: sent {count} AI notification(s).'))
+
+        if run_all or options['scalper']:
+            count = process_scalper_orders()
+            self.stdout.write(self.style.SUCCESS(f'Scalper: processed {count} order trigger(s).'))

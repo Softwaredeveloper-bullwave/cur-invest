@@ -156,6 +156,16 @@ class AppTheme {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
       ),
       dividerTheme: DividerThemeData(color: colors.border, thickness: 1),
+      progressIndicatorTheme: ProgressIndicatorThemeData(
+        color: colors.primary,
+      ),
+      expansionTileTheme: ExpansionTileThemeData(
+        iconColor: colors.primary,
+        collapsedIconColor: colors.textSecondary,
+        textColor: colors.textPrimary,
+        collapsedTextColor: colors.textPrimary,
+        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
         backgroundColor: colors.surface,

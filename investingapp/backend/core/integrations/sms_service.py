@@ -1,5 +1,6 @@
 """SMS OTP delivery — MSG91, Twilio Messages, Twilio Verify, or console (dev)."""
 
+import json
 import logging
 import re
 import socket
@@ -46,8 +47,48 @@ def resolve_sms_provider() -> str:
     return provider
 
 
+def _twilio_otp_mode() -> str:
+    """verify | messages — messages forces DB-stored OTP via Twilio Messages API."""
+    mode = (getattr(settings, 'TWILIO_OTP_MODE', 'verify') or 'verify').lower().strip()
+    return 'messages' if mode == 'messages' else 'verify'
+
+
 def uses_twilio_verify() -> bool:
-    return resolve_sms_provider() == 'twilio' and _twilio_verify_ready()
+    return (
+        resolve_sms_provider() == 'twilio'
+        and _twilio_verify_ready()
+        and _twilio_otp_mode() == 'verify'
+    )
+
+
+def twilio_message_ready() -> bool:
+    return _twilio_message_ready()
+
+
+def twilio_verify_delivery_blocked(exc: Exception) -> bool:
+    text = str(exc or '')
+    return any(
+        token in text
+        for token in ('60238', '21408', 'blocked by Twilio', 'Geo Permission')
+    )
+
+
+def friendly_twilio_error(exc: Exception) -> str:
+    text = str(exc or '')
+    if '60238' in text or 'blocked by Twilio' in text:
+        return (
+            'Twilio blocked OTP to this number. In Twilio Console open '
+            'Messaging → Settings → Geo permissions and enable India (+91). '
+            'If your account upgrade is under review, wait or contact Twilio Support. '
+            'Alternative: buy a Twilio SMS number, set TWILIO_FROM_NUMBER in .env, '
+            'and set TWILIO_OTP_MODE=messages.'
+        )
+    if '21408' in text or 'Geo Permission' in text:
+        return (
+            'Twilio geo permissions block SMS to India. Enable India (+91) under '
+            'Twilio Console → Messaging → Geo permissions.'
+        )
+    return text
 
 
 def is_live_sms() -> bool:
@@ -250,7 +291,15 @@ def _send_twilio_verify(phone: str) -> None:
         raise SMSError(f'Twilio Verify connection failed: {exc}') from exc
 
     if response.is_error:
-        raise SMSError(f'Twilio Verify error ({response.status_code}): {response.text[:200]}')
+        code = ''
+        try:
+            code = str(response.json().get('code') or '')
+        except json.JSONDecodeError:
+            pass
+        detail = response.text[:200]
+        if code:
+            detail = f'code {code}: {detail}'
+        raise SMSError(f'Twilio Verify error ({response.status_code}): {detail}')
 
     logger.info('Twilio Verify OTP sent to %s', to)
 

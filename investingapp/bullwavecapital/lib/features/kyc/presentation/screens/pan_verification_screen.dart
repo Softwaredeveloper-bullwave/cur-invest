@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-import '../../../../core/constants/routes.dart';
+import '../../../../core/navigation/onboarding_flow_navigator.dart';
 import '../../../../core/theme/colors.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/widgets/custom_app_bar.dart';
@@ -23,13 +22,15 @@ class PanVerificationScreen extends StatefulWidget {
 class _PanVerificationScreenState extends State<PanVerificationScreen> {
   final _panController = TextEditingController();
   final _nameController = TextEditingController();
-  bool _verified = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
+      // Refresh from the database so an already-verified PAN shows the
+      // verified state immediately instead of asking to verify again.
+      context.read<KycFlowProvider>().loadKycStatus();
       final name = context.read<AuthProvider>().user?.name ?? '';
       if (name.isNotEmpty && _nameController.text.isEmpty) {
         _nameController.text = name;
@@ -52,9 +53,13 @@ class _PanVerificationScreenState extends State<PanVerificationScreen> {
       );
       return;
     }
-    final ok = await context.read<KycFlowProvider>().verifyPan(pan, holderName: _nameController.text);
-    if (!mounted) return;
-    if (ok) setState(() => _verified = true);
+    final kyc = context.read<KycFlowProvider>();
+    final verified = await kyc.verifyPan(pan, holderName: _nameController.text);
+    if (!mounted || !verified) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('PAN verified successfully.')),
+    );
+    OnboardingFlowNavigator.goToNextKycStep(context, kyc);
   }
 
   @override
@@ -68,17 +73,17 @@ class _PanVerificationScreenState extends State<PanVerificationScreen> {
             padding: const EdgeInsets.all(20),
             children: [
               const Text(
-                'Verify your PAN with Cashfree Secure ID',
+                'Verify your PAN',
                 style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
               ),
                 const SizedBox(height: 8),
                 Text(
-                  'Your PAN is verified against Income Tax Department records via Cashfree. '
+                  'Your PAN is verified in real time against Income Tax Department records. '
                   'Use the exact legal name printed on your PAN card.',
                   style: TextStyle(color: Colors.grey.shade600),
                 ),
               const SizedBox(height: 24),
-              if (!_verified) ...[
+              if (!s.panVerified) ...[
                 AppTextField(
                   controller: _panController,
                   label: 'PAN Number',
@@ -127,8 +132,8 @@ class _PanVerificationScreenState extends State<PanVerificationScreen> {
                 ),
                 const SizedBox(height: 24),
                 PrimaryButton(
-                  label: 'Continue to Bank Verification',
-                  onPressed: () => context.push(AppRoutes.bankVerificationKyc),
+                  label: OnboardingFlowNavigator.labelForNextKycStep(kyc),
+                  onPressed: () => OnboardingFlowNavigator.goToNextKycStep(context, kyc),
                 ),
               ],
             ],

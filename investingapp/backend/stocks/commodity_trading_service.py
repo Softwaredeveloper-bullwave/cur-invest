@@ -6,7 +6,11 @@ from decimal import Decimal, ROUND_HALF_UP
 
 from django.db import transaction
 
-from finance.models import Transaction, Wallet, WalletTransaction
+from finance.practice_wallet_service import (
+    PracticeWalletError,
+    credit_practice_wallet,
+    debit_practice_wallet,
+)
 
 from .commodity_service import COMMODITY_CATALOG, get_commodity_detail
 from .models import CommodityHolding, CommodityTrade
@@ -125,8 +129,6 @@ def place_commodity_order(user, *, commodity_id: str, side: str, quantity: int) 
     order_usd = price * quantity
     order_inr = _inr_from_usd(order_usd, rate)
     holding = CommodityHolding.objects.filter(user=user, commodity_id=commodity_id).first()
-    wallet = Wallet.objects.select_for_update().get_or_create(user=user)[0]
-
     if side == 'SELL':
         if not holding or holding.quantity < quantity:
             available = holding.quantity if holding else 0
@@ -151,19 +153,13 @@ def place_commodity_order(user, *, commodity_id: str, side: str, quantity: int) 
             holding = None
         else:
             holding.save(update_fields=['quantity'])
-        wallet.balance += order_inr
-        wallet.save(update_fields=['balance'])
-        WalletTransaction.objects.create(
-            wallet=wallet,
-            type=WalletTransaction.TxType.DEPOSIT,
-            amount=order_inr,
-            status=WalletTransaction.Status.COMPLETED,
+        practice_wallet = credit_practice_wallet(
+            user,
+            order_inr,
+            reference=f'CMD-{trade.id}',
+            description=f'Paper commodity sell {commodity_id} × {quantity}',
         )
     else:
-        if wallet.balance < order_inr:
-            raise CommodityTradingError(
-                f'Insufficient wallet balance. Need ₹{order_inr:,.2f}, have ₹{wallet.balance:,.2f}.'
-            )
         trade = CommodityTrade.objects.create(
             user=user,
             commodity_id=commodity_id,
@@ -185,24 +181,19 @@ def place_commodity_order(user, *, commodity_id: str, side: str, quantity: int) 
                 quantity=quantity,
                 avg_price_usd=price,
             )
-        wallet.balance -= order_inr
-        wallet.save(update_fields=['balance'])
-        WalletTransaction.objects.create(
-            wallet=wallet,
-            type=WalletTransaction.TxType.WITHDRAWAL,
-            amount=order_inr,
-            status=WalletTransaction.Status.COMPLETED,
-        )
-        Transaction.objects.create(
-            user=user,
-            reference_id=f'CMD-{trade.id}',
-            type=Transaction.TxType.INVESTMENT,
-            status=Transaction.Status.COMPLETED,
-            amount=order_inr,
-            description=f'Commodity purchase: {quote["name"]} × {quantity}',
-        )
+        try:
+            practice_wallet = debit_practice_wallet(
+                user,
+                order_inr,
+                reference=f'CMD-{trade.id}',
+                description=f'Paper commodity buy {commodity_id} × {quantity}',
+            )
+        except PracticeWalletError as exc:
+            raise CommodityTradingError(str(exc)) from exc
 
-    return build_trade_payload(trade, quote, holding)
+    payload = build_trade_payload(trade, quote, holding)
+    payload['practiceWalletBalance'] = _round2(practice_wallet.balance)
+    return payload
 
 
 def list_recent_commodity_trades(user, limit: int = 30) -> list[dict]:

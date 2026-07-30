@@ -68,6 +68,13 @@ PLANS = [
 class Command(BaseCommand):
     help = 'Seed BullWave database with investment plans, stocks, and market data'
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--demo-holdings',
+            action='store_true',
+            help='Assign sample stock holdings to users (dev/demo only — off by default).',
+        )
+
     def handle(self, *args, **options):
         self._seed_plans()
         self._seed_faqs()
@@ -75,7 +82,8 @@ class Command(BaseCommand):
         self._seed_market()
         self._seed_news()
         self._seed_options()
-        self._seed_demo_holdings()
+        if options.get('demo_holdings'):
+            self._seed_demo_holdings()
         self.stdout.write(self.style.SUCCESS('Seed data loaded successfully.'))
 
     def _seed_plans(self):

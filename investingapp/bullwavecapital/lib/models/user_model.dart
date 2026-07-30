@@ -10,6 +10,8 @@ class UserModel {
   final String bio;
   final DateTime? dateOfBirth;
   final bool hasCompletedOnboarding;
+  final bool emailVerified;
+  final bool dobVerifiedFromKyc;
 
   const UserModel({
     required this.id,
@@ -23,6 +25,8 @@ class UserModel {
     this.bio = '',
     this.dateOfBirth,
     this.hasCompletedOnboarding = false,
+    this.emailVerified = false,
+    this.dobVerifiedFromKyc = false,
   });
 
   String get displayName => name.trim().isNotEmpty ? name.trim() : 'Investor';
@@ -35,6 +39,8 @@ class UserModel {
     String? bio,
     DateTime? dateOfBirth,
     bool? hasCompletedOnboarding,
+    bool? emailVerified,
+    bool? dobVerifiedFromKyc,
   }) =>
       UserModel(
         id: id,
@@ -48,6 +54,8 @@ class UserModel {
         bio: bio ?? this.bio,
         dateOfBirth: dateOfBirth ?? this.dateOfBirth,
         hasCompletedOnboarding: hasCompletedOnboarding ?? this.hasCompletedOnboarding,
+        emailVerified: emailVerified ?? this.emailVerified,
+        dobVerifiedFromKyc: dobVerifiedFromKyc ?? this.dobVerifiedFromKyc,
       );
 
   factory UserModel.fromJson(Map<String, dynamic> json) => UserModel(
@@ -64,5 +72,7 @@ class UserModel {
             ? DateTime.tryParse(json['dateOfBirth'] as String)
             : null,
         hasCompletedOnboarding: json['hasCompletedOnboarding'] as bool? ?? false,
+        emailVerified: json['emailVerified'] as bool? ?? false,
+        dobVerifiedFromKyc: json['dobVerifiedFromKyc'] as bool? ?? false,
       );
 }

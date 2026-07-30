@@ -5,17 +5,17 @@ import logging
 from django.conf import settings
 
 from services.providers.cashfree_config import cashfree_settings
-from services.providers.cashfree_secure_id import CashfreeSecureIdError, verify_bank_account, verify_pan
+from services.providers.cashfree_secure_id import CashfreeSecureIdError, verify_bank_account, verify_pan, verify_upi_vpa
 
 logger = logging.getLogger('bullwave.kyc')
 
 
 def sandbox_bypass_allowed() -> bool:
-    """Dev/sandbox only — never bypass in production."""
+    """Explicit opt-in only — never bypass from DEBUG or KYC_AUTO_APPROVE."""
     cfg = cashfree_settings()
     if cfg.is_production:
         return False
-    return bool(getattr(settings, 'DEBUG', False) or getattr(settings, 'KYC_AUTO_APPROVE', False))
+    return bool(getattr(settings, 'CASHFREE_DEV_BYPASS', False))
 
 
 def should_bypass_cashfree(exc: CashfreeSecureIdError) -> bool:
@@ -98,4 +98,35 @@ def verify_bank_with_bypass(
                 ifsc,
             )
             return mock_bank_result(account_holder_name=name, ifsc=ifsc)
+        raise
+
+
+def verify_upi_with_bypass(
+    *,
+    customer_vpa: str,
+    name: str = '',
+    verification_id: str = '',
+) -> dict:
+    try:
+        return verify_upi_vpa(
+            customer_vpa=customer_vpa,
+            name=name,
+            verification_id=verification_id,
+        )
+    except CashfreeSecureIdError as exc:
+        if should_bypass_cashfree(exc):
+            logger.warning(
+                'Cashfree UPI verify blocked (%s) — sandbox dev bypass for VPA %s',
+                exc.code or 'error',
+                customer_vpa.split('@', 1)[0][:4] + '@***',
+            )
+            return {
+                'vpa': customer_vpa.strip().lower(),
+                'valid': True,
+                'recipient_name': name or 'Verified User',
+                'mobile_number': '',
+                'reference_id': f'sandbox-{customer_vpa.split("@", 1)[0][-4:]}',
+                'verification_method': 'upi_penny_drop',
+                'dev_bypass': True,
+            }
         raise

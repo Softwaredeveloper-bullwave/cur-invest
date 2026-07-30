@@ -5,6 +5,8 @@ class AppRoutes {
   static const String onboarding = '/onboarding';
   static const String login = '/login';
   static const String otp = '/otp';
+  static const String verifyEmail = '/verify-email';
+  static const String verifyEmailOtp = '/verify-email-otp';
   static const String completeProfile = '/complete-profile';
   static const String bankVerification = '/bank-verification';
   static const String home = '/home';
@@ -22,7 +24,11 @@ class AppRoutes {
   static const String kycRejected = '/kyc/manual/rejected';
   static const String kycSuccess = '/kyc/success';
   static const String panVerification = '/kyc/pan';
+  static const String aadhaarVerificationKyc = '/kyc/aadhaar';
   static const String bankVerificationKyc = '/kyc/bank';
+  static const String selfieVerification = '/kyc/selfie';
+  static const String upiVerification = '/kyc/upi';
+  static const String identityVerification = '/kyc/identity';
   static const String nameMatch = '/kyc/name-match';
   static const String settings = '/settings';
   static const String editProfile = '/edit-profile';
@@ -52,6 +58,7 @@ class AppRoutes {
   static const String indexFnoHub = '/index-fno';
   static const String fnoVerification = '/fno/verification';
   static const String paperTrading = '/paper-trading';
+  static const String paperPortfolio = '/paper-portfolio';
   static const String copyTrading = '/copy-trading';
   static const String copyTraderDetail = '/copy-trading/trader';
   static const String portfolioAnalytics = '/portfolio-analytics';

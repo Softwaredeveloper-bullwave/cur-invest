@@ -296,6 +296,83 @@ class OptionTrade(models.Model):
         ordering = ['-created_at']
 
 
+class ScalperOrder(models.Model):
+    """Paper scalper entry with optional OCO risk controls."""
+
+    class InstrumentType(models.TextChoices):
+        STOCK = 'stock', 'Paper stock'
+        OPTION = 'option', 'Option'
+
+    class OrderType(models.TextChoices):
+        MARKET = 'market', 'Market'
+        LIMIT = 'limit', 'Limit'
+
+    class Status(models.TextChoices):
+        PENDING = 'pending', 'Pending entry'
+        ACTIVE = 'active', 'Active position'
+        EXECUTED = 'executed', 'Executed'
+        CANCELLED = 'cancelled', 'Cancelled'
+        FAILED = 'failed', 'Failed'
+
+    class ExitReason(models.TextChoices):
+        MANUAL = 'manual', 'Manual'
+        STOP_LOSS = 'stop_loss', 'Stop loss'
+        TARGET = 'target', 'Target'
+        TRAILING = 'trailing', 'Trailing stop'
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='scalper_orders',
+    )
+    instrument_type = models.CharField(max_length=12, choices=InstrumentType.choices)
+    order_type = models.CharField(max_length=12, choices=OrderType.choices)
+    side = models.CharField(max_length=4, choices=(('BUY', 'Buy'), ('SELL', 'Sell')))
+    quantity = models.PositiveIntegerField()
+    stock = models.ForeignKey(
+        Stock,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name='scalper_orders',
+    )
+    underlying = models.CharField(max_length=20, blank=True, default='')
+    asset_class = models.CharField(max_length=20, blank=True, default='')
+    strike = models.DecimalField(max_digits=12, decimal_places=4, null=True, blank=True)
+    option_type = models.CharField(max_length=2, blank=True, default='')
+    expiry = models.DateField(null=True, blank=True)
+    requested_price = models.DecimalField(max_digits=12, decimal_places=4, null=True, blank=True)
+    limit_price = models.DecimalField(max_digits=12, decimal_places=4, null=True, blank=True)
+    fill_price = models.DecimalField(max_digits=12, decimal_places=4, null=True, blank=True)
+    stop_loss = models.DecimalField(max_digits=12, decimal_places=4, null=True, blank=True)
+    target_price = models.DecimalField(max_digits=12, decimal_places=4, null=True, blank=True)
+    trailing_stop_percent = models.DecimalField(
+        max_digits=6,
+        decimal_places=3,
+        null=True,
+        blank=True,
+    )
+    high_water_mark = models.DecimalField(max_digits=12, decimal_places=4, null=True, blank=True)
+    status = models.CharField(max_length=12, choices=Status.choices, default=Status.PENDING)
+    exit_reason = models.CharField(max_length=20, choices=ExitReason.choices, blank=True, default='')
+    entry_trade_id = models.CharField(max_length=64, blank=True, default='')
+    exit_trade_id = models.CharField(max_length=64, blank=True, default='')
+    error_message = models.CharField(max_length=280, blank=True, default='')
+    filled_at = models.DateTimeField(null=True, blank=True)
+    closed_at = models.DateTimeField(null=True, blank=True)
+    last_checked_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['status', 'instrument_type'], name='stocks_scalper_status_idx'),
+            models.Index(fields=['user', 'created_at'], name='stocks_scalper_user_idx'),
+        ]
+
+
 class IpoEvent(models.Model):
     class Status(models.TextChoices):
         UPCOMING = 'upcoming', 'Upcoming'

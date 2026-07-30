@@ -213,6 +213,58 @@ class OptionOrderSerializer(CamelCaseSerializer):
     )
 
 
+class ScalperOrderSerializer(CamelCaseSerializer):
+    instrument_type = serializers.ChoiceField(choices=['stock', 'option'])
+    order_type = serializers.ChoiceField(choices=['market', 'limit'])
+    side = serializers.ChoiceField(choices=['BUY', 'SELL'])
+    quantity = serializers.IntegerField(min_value=1)
+    symbol = serializers.CharField(required=False, allow_blank=True)
+    underlying = serializers.CharField(required=False, allow_blank=True)
+    asset_class = serializers.ChoiceField(
+        choices=['equity_fno', 'commodity'],
+        default='equity_fno',
+        required=False,
+    )
+    strike = serializers.DecimalField(
+        max_digits=12,
+        decimal_places=4,
+        required=False,
+        allow_null=True,
+    )
+    option_type = serializers.CharField(required=False, allow_blank=True)
+    expiry = serializers.DateField(required=False, allow_null=True)
+    requested_price = serializers.DecimalField(
+        max_digits=12,
+        decimal_places=4,
+        required=False,
+        allow_null=True,
+    )
+    limit_price = serializers.DecimalField(
+        max_digits=12,
+        decimal_places=4,
+        required=False,
+        allow_null=True,
+    )
+    stop_loss = serializers.DecimalField(
+        max_digits=12,
+        decimal_places=4,
+        required=False,
+        allow_null=True,
+    )
+    target_price = serializers.DecimalField(
+        max_digits=12,
+        decimal_places=4,
+        required=False,
+        allow_null=True,
+    )
+    trailing_stop_percent = serializers.DecimalField(
+        max_digits=6,
+        decimal_places=3,
+        required=False,
+        allow_null=True,
+    )
+
+
 class ScreenerStockSerializer(CamelCaseSerializer):
     stock = StockSerializer()
     roe = serializers.DecimalField(max_digits=8, decimal_places=2)

@@ -8,6 +8,8 @@ import '../../../../core/theme/colors.dart';
 import '../../../../core/widgets/custom_app_bar.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../../kyc/presentation/provider/bank_verification_provider.dart';
+import '../../../kyc/presentation/provider/kyc_flow_provider.dart';
+import '../../../kyc/presentation/widgets/bank_manual_review_panel.dart';
 
 class BankDetailsScreen extends StatefulWidget {
   const BankDetailsScreen({super.key});
@@ -22,13 +24,17 @@ class _BankDetailsScreenState extends State<BankDetailsScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<BankVerificationProvider>().hydrateFromServer();
+      context.read<KycFlowProvider>().loadKycStatus();
     });
   }
 
   @override
   Widget build(BuildContext context) {
     final bank = context.watch<BankVerificationProvider>();
+    final kyc = context.watch<KycFlowProvider>();
+    final kycStatus = kyc.status;
     final colors = context.appColors;
+    final pendingReview = kycStatus.bankReviewPending;
 
     return Scaffold(
       appBar: const CustomAppBar(title: 'Bank Details'),
@@ -37,7 +43,14 @@ class _BankDetailsScreenState extends State<BankDetailsScreen> {
           : ListView(
               padding: const EdgeInsets.all(AppDimensions.paddingMd),
               children: [
-                if (bank.isVerified) ...[
+                if (pendingReview) ...[
+                  BankManualReviewPendingPanel(status: kycStatus),
+                  const SizedBox(height: 20),
+                  OutlinedButton(
+                    onPressed: () => context.push(AppRoutes.bankVerificationKyc),
+                    child: const Text('View submission status'),
+                  ),
+                ] else if (bank.isVerified) ...[
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -86,8 +99,11 @@ class _BankDetailsScreenState extends State<BankDetailsScreen> {
                   ),
                   const SizedBox(height: 20),
                   OutlinedButton(
-                    onPressed: () => context.push(AppRoutes.bankVerification),
-                    child: const Text('Update Bank Details'),
+                    onPressed: () {
+                      bank.enterEditMode();
+                      context.push(AppRoutes.bankVerification);
+                    },
+                    child: const Text('Update Bank Account'),
                   ),
                 ] else ...[
                   Icon(Icons.account_balance_outlined, size: 56, color: colors.textMuted),
@@ -101,7 +117,7 @@ class _BankDetailsScreenState extends State<BankDetailsScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Link and verify your bank account with Cashfree to buy stocks, invest, and withdraw.',
+                    'Link your bank account. Our team will manually verify your details within 24 hours.',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: colors.textSecondary,
                         ),
@@ -110,7 +126,7 @@ class _BankDetailsScreenState extends State<BankDetailsScreen> {
                   const SizedBox(height: 24),
                   PrimaryButton(
                     label: 'Link Bank Account',
-                    onPressed: () => context.push(AppRoutes.bankVerification),
+                    onPressed: () => context.push(AppRoutes.bankVerificationKyc),
                   ),
                 ],
               ],

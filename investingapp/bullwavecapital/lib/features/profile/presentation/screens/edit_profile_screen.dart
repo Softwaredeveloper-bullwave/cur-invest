@@ -192,12 +192,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               ),
               const SizedBox(height: AppDimensions.paddingMd),
               InkWell(
-                onTap: _pickDate,
+                onTap: auth.user?.dobVerifiedFromKyc == true ? null : _pickDate,
                 borderRadius: BorderRadius.circular(12),
                 child: InputDecorator(
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Date of Birth',
-                    border: OutlineInputBorder(),
+                    border: const OutlineInputBorder(),
+                    suffixIcon: auth.user?.dobVerifiedFromKyc == true
+                        ? const Icon(Icons.verified_outlined, color: AppColors.greenSoft)
+                        : const Icon(Icons.calendar_month_outlined),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -215,6 +218,20 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   ),
                 ),
               ),
+              if (user?.dobVerifiedFromKyc == true) ...[
+                const SizedBox(height: 8),
+                const Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'DOB verified from PAN / Aadhaar and cannot be changed.',
+                    style: TextStyle(
+                      color: AppColors.greenSoft,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
               const SizedBox(height: AppDimensions.paddingMd),
               AppTextField(
                 controller: _bioController,

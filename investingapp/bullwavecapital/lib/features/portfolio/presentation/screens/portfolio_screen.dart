@@ -146,7 +146,7 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                               ),
                               border: Border.all(color: AppColors.brandPrimaryLight.withValues(alpha: 0.35)),
                             ),
-                            child: const Icon(Icons.pie_chart_outline_rounded, size: 36, color: AppColors.brandPrimaryLight),
+                            child: const Icon(Icons.pie_chart_outline_rounded, size: 36, color: AppColors.brandPrimary),
                           ),
                           const SizedBox(height: 16),
                           Text(
@@ -229,10 +229,13 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text(item.label, style: const TextStyle(fontWeight: FontWeight.w700)),
+                                  Text(
+                                    item.label,
+                                    style: ThemeAType.cardTitle(size: 14, color: context.palette.textDark),
+                                  ),
                                   Text(
                                     '${CurrencyFormatter.formatCompact(item.value)} • ${item.percentage.toStringAsFixed(1)}%',
-                                    style: Theme.of(context).textTheme.bodySmall,
+                                    style: ThemeAType.secondary(size: 13, color: context.palette.textGrey),
                                   ),
                                 ],
                               ),

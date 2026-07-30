@@ -1,15 +1,127 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+
+import '../../../../core/api/refresh_providers.dart';
 import '../../../../core/constants/dimensions.dart';
 import '../../../../core/constants/routes.dart';
+import '../../../../core/payments/cashfree_checkout_service.dart';
 import '../../../../core/theme/colors.dart';
+import '../../../../core/utils/formatters.dart';
 import '../../../../core/widgets/primary_button.dart';
+import '../../presentation/provider/wallet_provider.dart';
 
-class DepositSuccessScreen extends StatelessWidget {
+class DepositSuccessScreen extends StatefulWidget {
   const DepositSuccessScreen({super.key});
 
   @override
+  State<DepositSuccessScreen> createState() => _DepositSuccessScreenState();
+}
+
+class _DepositSuccessScreenState extends State<DepositSuccessScreen> {
+  bool _verifying = true;
+  bool _verified = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _finalizeDeposit());
+  }
+
+  Future<void> _finalizeDeposit() async {
+    final params = GoRouterState.of(context).uri.queryParameters;
+    final orderId = params['orderId'] ?? params['order_id'] ?? '';
+    final amount = double.tryParse(params['amount'] ?? '') ?? 0;
+
+    if (orderId.isEmpty) {
+      setState(() {
+        _verifying = false;
+        _verified = true;
+      });
+      await context.read<WalletProvider>().loadData();
+      return;
+    }
+
+    final result = await CashfreeCheckoutService.instance.confirmOrder(orderId);
+    if (!mounted) return;
+
+    if (result.status == CashfreeCheckoutStatus.success ||
+        result.status == CashfreeCheckoutStatus.unavailable) {
+      await context.read<WalletProvider>().loadData();
+      await refreshAllProviders(context);
+      if (!mounted) return;
+      setState(() {
+        _verifying = false;
+        _verified = true;
+      });
+      return;
+    }
+
+    setState(() {
+      _verifying = false;
+      _verified = false;
+      _error = result.message.isNotEmpty
+          ? result.message
+          : 'Could not confirm payment for order $orderId.';
+    });
+
+    if (amount <= 0) return;
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final params = GoRouterState.of(context).uri.queryParameters;
+    final amount = double.tryParse(params['amount'] ?? '') ?? 0;
+
+    if (_verifying) {
+      return const Scaffold(
+        body: SafeArea(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Confirming your payment…'),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (!_verified) {
+      return Scaffold(
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(AppDimensions.paddingLg),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, color: AppColors.red, size: 72),
+                const SizedBox(height: 16),
+                Text(
+                  'Payment pending',
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  _error ?? 'We could not confirm your payment yet.',
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                PrimaryButton(
+                  label: 'Go to Wallet',
+                  onPressed: () => context.go(AppRoutes.wallet),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       body: SafeArea(
         child: Padding(
@@ -28,8 +140,18 @@ class DepositSuccessScreen extends StatelessWidget {
               const SizedBox(height: AppDimensions.paddingLg),
               Text('Deposit Successful!', style: Theme.of(context).textTheme.headlineLarge),
               const SizedBox(height: 8),
+              if (amount > 0) ...[
+                Text(
+                  CurrencyFormatter.format(amount),
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        color: AppColors.green,
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+                const SizedBox(height: 8),
+              ],
               Text(
-                'Your deposit has been processed successfully and will reflect in your wallet shortly.',
+                'Your wallet balance has been updated.',
                 style: Theme.of(context).textTheme.bodyMedium,
                 textAlign: TextAlign.center,
               ),

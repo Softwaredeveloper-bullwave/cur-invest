@@ -35,8 +35,11 @@ class WalletScreen extends StatelessWidget {
 
         final wallet = provider.wallet;
 
-        return SafeArea(
+        return RefreshIndicator(
+          onRefresh: () => provider.loadData(),
+          child: SafeArea(
           child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -72,10 +75,7 @@ class WalletScreen extends StatelessWidget {
                               label: 'Add Money',
                               icon: Icons.add_rounded,
                               compact: true,
-                              onPressed: () async {
-                                if (!await ensureBankVerified(context)) return;
-                                if (context.mounted) context.push(AppRoutes.deposit);
-                              },
+                              onPressed: () => context.push(AppRoutes.deposit),
                             ),
                           ),
                           const SizedBox(width: 10),
@@ -96,43 +96,56 @@ class WalletScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 24),
-                SectionHeader(title: 'Bank Account'),
-                const SizedBox(height: AppDimensions.paddingSm),
-                RobinhoodCard(
-                  padding: const EdgeInsets.all(AppDimensions.paddingMd),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: AppColors.green.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(12),
+                if (wallet.bankName.isNotEmpty) ...[
+                  SectionHeader(title: 'Bank Account'),
+                  const SizedBox(height: AppDimensions.paddingSm),
+                  RobinhoodCard(
+                    padding: const EdgeInsets.all(AppDimensions.paddingMd),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: AppColors.green.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(Icons.account_balance, color: AppColors.green),
                         ),
-                        child: const Icon(Icons.account_balance, color: AppColors.green),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(wallet.bankName, style: Theme.of(context).textTheme.titleMedium),
-                            Text('A/C ${wallet.accountNumber} • ${wallet.ifsc}',
-                                style: Theme.of(context).textTheme.bodySmall),
-                          ],
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(wallet.bankName, style: Theme.of(context).textTheme.titleMedium),
+                              Text('A/C ${wallet.accountNumber} • ${wallet.ifsc}',
+                                  style: Theme.of(context).textTheme.bodySmall),
+                            ],
+                          ),
                         ),
-                      ),
-                      const Icon(Icons.verified, color: AppColors.green, size: 20),
-                    ],
+                        const Icon(Icons.verified, color: AppColors.green, size: 20),
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(height: AppDimensions.paddingLg),
+                  const SizedBox(height: AppDimensions.paddingLg),
+                ],
                 SectionHeader(
                   title: 'Transactions',
                   actionLabel: 'View All',
                   onAction: () => context.push(AppRoutes.transactions),
                 ),
                 const SizedBox(height: AppDimensions.paddingSm),
-                ...provider.transactions.map((txn) {
+                if (provider.transactions.isEmpty)
+                  RobinhoodCard(
+                    padding: const EdgeInsets.all(AppDimensions.paddingMd),
+                    child: Text(
+                      wallet.balance <= 0
+                          ? 'No transactions yet. Add money to get started.'
+                          : 'No transactions yet.',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  )
+                else
+                  ...provider.transactions.map((txn) {
                   final isCredit = txn.type != 'Withdrawal';
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 8),
@@ -196,6 +209,7 @@ class WalletScreen extends StatelessWidget {
               ],
             ),
           ),
+        ),
         );
       },
     );

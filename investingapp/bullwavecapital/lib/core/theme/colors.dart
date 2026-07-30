@@ -7,7 +7,11 @@ class AppColors {
   // ── Brand (Neobank lime) ──
   static const Color brandPrimary = Color(0xFFC6FF00);
   static const Color brandPrimaryDark = Color(0xFF0A0A0A);
+  /// Ink text/icons on lime brand surfaces — never use white here.
+  static const Color onBrandPrimary = brandPrimaryDark;
+  static const Color onBrandPrimaryMuted = Color(0xB30A0A0A);
   static const Color brandPrimaryLight = Color(0xFFF0FFD6);
+  static const Color brandPrimaryDeep = Color(0xFF9ECC00);
   static const Color brandPink = Color(0xFFFF6B9D);
   static const Color brandPinkLight = Color(0xFFFF8FB3);
   static const Color brandMagenta = Color(0xFFA855F7);
@@ -31,15 +35,17 @@ class AppColors {
   static const Color borderSubtle = Color(0xFF1A2440);
 
   // ── Semantic ──
-  static const Color green = Color(0xFF16A34A);
-  static const Color greenSoft = Color(0xFFF0FFD6);
+  static const Color green = Color(0xFF22C55E);
+  /// Readable mint accent on dark backgrounds.
+  static const Color greenSoft = Color(0xFF86EFAC);
+  static const Color greenTint = Color(0xFF1A2E14);
   static const Color greenDark = Color(0xFF365314);
   static const Color red = Color(0xFFF87171);
   static const Color warningRed = red;
-  static const Color blue = Color(0xFF4D9FFF);
-  static const Color yellow = brandGold;
-  static const Color warningAmber = brandGold;
-  static const Color secondary = Color(0xFF627DFF);
+  static const Color blue = Color(0xFF60A5FA);
+  static const Color yellow = Color(0xFFFBBF24);
+  static const Color warningAmber = yellow;
+  static const Color secondary = Color(0xFF818CF8);
 
   // ── Commodity categories ──
   static const Color commodityGold = brandGold;
@@ -49,9 +55,9 @@ class AppColors {
 
   // ── Text ──
   static const Color textPrimary = Color(0xFFFFFFFF);
-  static const Color textSecondary = Color(0xFFB4C0D4);
-  static const Color textMuted = Color(0xFF6B7A94);
-  static const Color textDisabled = Color(0xFF4A5568);
+  static const Color textSecondary = Color(0xFFDCE3EA);
+  static const Color textMuted = Color(0xFFADB9C7);
+  static const Color textDisabled = Color(0xFF7A8798);
 
   // ── Aliases ──
   static const Color primary = brandPrimary;
@@ -62,7 +68,7 @@ class AppColors {
   static const Color card = surface;
   static const Color profit = green;
   static const Color loss = red;
-  static const Color success = green;
+  static const Color success = Color(0xFF4ADE80);
   static const Color error = red;
   static const Color warning = yellow;
   static const Color textHint = textMuted;

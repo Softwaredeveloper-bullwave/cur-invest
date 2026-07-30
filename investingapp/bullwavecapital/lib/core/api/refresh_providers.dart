@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../features/home/presentation/provider/home_provider.dart';
+import '../../features/kyc/presentation/provider/kyc_flow_provider.dart';
 import '../../features/notifications/presentation/provider/notification_provider.dart';
 import '../../features/portfolio/presentation/provider/portfolio_provider.dart';
 import '../../features/profile/presentation/provider/referral_support_provider.dart';
@@ -16,6 +17,7 @@ import '../../features/wallet/presentation/provider/wallet_provider.dart';
 /// Reload authenticated data after login. Never blocks login — failures are ignored.
 Future<void> refreshAllProviders(BuildContext context) async {
   final tasks = <Future<void>>[
+    _safe(() => context.read<KycFlowProvider>().loadStatus()),
     _safe(() => context.read<HomeProvider>().refresh()),
     _safe(() => context.read<WalletProvider>().loadData()),
     _safe(() => context.read<TransactionProvider>().loadData()),

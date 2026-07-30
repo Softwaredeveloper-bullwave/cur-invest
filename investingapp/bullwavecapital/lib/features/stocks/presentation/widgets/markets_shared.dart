@@ -44,7 +44,7 @@ class MarketsSectionHeader extends StatelessWidget {
                 minimumSize: Size.zero,
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
-              child: Text(actionLabel!, style: ThemeAType.action()),
+              child: Text(actionLabel!, style: ThemeAType.action(size: 14, color: p.primary)),
             ),
         ],
       ),
@@ -73,7 +73,7 @@ class AnimatedMetricText extends StatelessWidget {
       tween: Tween(begin: 0, end: value),
       duration: duration,
       curve: Curves.easeOutCubic,
-      builder: (_, v, __) => Text(formatter(v), style: style),
+      builder: (_, v, _) => Text(formatter(v), style: style),
     );
   }
 }

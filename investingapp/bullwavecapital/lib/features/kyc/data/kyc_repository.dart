@@ -4,6 +4,9 @@ import '../../../core/api/api_exception.dart';
 import '../domain/kyc_models.dart';
 import 'dio_client.dart';
 
+export 'payment_repository.dart';
+
+/// Automated KYC step API client (PAN, Aadhaar DigiLocker, bank, UPI, name match).
 class KycRepository {
   final _client = KycDioClient.instance;
 
@@ -20,17 +23,48 @@ class KycRepository {
     return KycStatusModel.fromJson(data);
   }
 
+  Future<KycStatusModel> startAadhaarDigiLocker() async {
+    final data = await _client.postJson('/start-aadhaar-digilocker/');
+    return KycStatusModel.fromJson(data);
+  }
+
+  Future<KycStatusModel> checkAadhaarDigiLocker({String? verificationId}) async {
+    final data = await _client.postJson(
+      '/check-aadhaar-digilocker/',
+      body: {
+        if (verificationId != null && verificationId.trim().isNotEmpty)
+          'verification_id': verificationId.trim(),
+      },
+    );
+    return KycStatusModel.fromJson(data);
+  }
+
   Future<KycStatusModel> verifyBank({
-    required String accountHolderName,
     required String accountNumber,
     required String confirmAccountNumber,
     required String ifsc,
+    String accountHolderName = '',
   }) async {
     final data = await _client.postJson('/verify-bank/', body: {
-      'account_holder_name': accountHolderName,
+      if (accountHolderName.trim().isNotEmpty)
+        'account_holder_name': accountHolderName.trim(),
       'account_number': accountNumber,
       'confirm_account_number': confirmAccountNumber,
       'ifsc': ifsc.toUpperCase(),
+    });
+    return KycStatusModel.fromJson(data);
+  }
+
+  Future<KycStatusModel> verifyUpi({
+    required String upiVpa,
+    String recipientMobile = '',
+    String latlong = '28.6139,77.2090',
+  }) async {
+    final data = await _client.postJson('/verify-upi/', body: {
+      'upi_vpa': upiVpa.trim().toLowerCase(),
+      if (recipientMobile.trim().isNotEmpty)
+        'recipient_mobile': recipientMobile.trim(),
+      if (latlong.isNotEmpty) 'latlong': latlong,
     });
     return KycStatusModel.fromJson(data);
   }
@@ -39,36 +73,29 @@ class KycRepository {
     final data = await _client.postJson('/name-match/');
     return KycStatusModel.fromJson(data);
   }
-}
 
-class PaymentRepository {
-  final _client = KycDioClient.instance;
-
-  Future<PaymentSessionModel> createPayment(double amount, {String returnUrl = ''}) async {
+  Future<KycStatusModel> uploadSelfie(List<int> imageBytes) async {
+    final form = FormData.fromMap({
+      'selfie': MultipartFile.fromBytes(
+        imageBytes,
+        filename: 'selfie.jpg',
+        contentType: DioMediaType('image', 'jpeg'),
+      ),
+    });
     try {
-      final data = await _client.postJson('/create-payment/', body: {
-        'amount': amount,
-        if (returnUrl.isNotEmpty) 'return_url': returnUrl,
-      });
-      return PaymentSessionModel.fromJson(data);
+      final res = await _client.dio.post<Map<String, dynamic>>(
+        '/upload-selfie/',
+        data: form,
+        options: Options(
+          contentType: 'multipart/form-data',
+          sendTimeout: const Duration(seconds: 90),
+          receiveTimeout: const Duration(seconds: 60),
+        ),
+      );
+      return KycStatusModel.fromJson(res.data ?? {});
     } on DioException catch (e) {
       if (e.error is ApiException) throw e.error!;
       rethrow;
     }
-  }
-
-  Future<WithdrawResultModel> withdraw(double amount) async {
-    try {
-      final data = await _client.postJson('/withdraw/', body: {'amount': amount});
-      return WithdrawResultModel.fromJson(data);
-    } on DioException catch (e) {
-      if (e.error is ApiException) throw e.error!;
-      rethrow;
-    }
-  }
-
-  Future<String> paymentStatus(String orderId) async {
-    final data = await _client.getJson('/payment-status/$orderId/');
-    return data['status'] as String? ?? 'created';
   }
 }

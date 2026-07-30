@@ -14,9 +14,11 @@ class AppTextField extends StatelessWidget {
   final int maxLines;
   final String? Function(String?)? validator;
   final ValueChanged<String>? onChanged;
+  final VoidCallback? onTap;
   final List<TextInputFormatter>? inputFormatters;
   final bool readOnly;
   final TextCapitalization textCapitalization;
+  final TextInputAction? textInputAction;
 
   const AppTextField({
     super.key,
@@ -31,9 +33,11 @@ class AppTextField extends StatelessWidget {
     this.maxLines = 1,
     this.validator,
     this.onChanged,
+    this.onTap,
     this.inputFormatters,
     this.readOnly = false,
     this.textCapitalization = TextCapitalization.none,
+    this.textInputAction,
   });
 
   @override
@@ -52,9 +56,11 @@ class AppTextField extends StatelessWidget {
           maxLines: maxLines,
           validator: validator,
           onChanged: onChanged,
+          onTap: onTap,
           inputFormatters: inputFormatters,
           readOnly: readOnly,
           textCapitalization: textCapitalization,
+          textInputAction: textInputAction,
           decoration: InputDecoration(
             hintText: hint,
             prefixText: prefixText,

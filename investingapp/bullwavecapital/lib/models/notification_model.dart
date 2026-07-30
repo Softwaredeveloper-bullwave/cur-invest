@@ -5,6 +5,7 @@ class NotificationModel {
   final DateTime date;
   final bool isRead;
   final String type;
+  final String referenceId;
 
   const NotificationModel({
     required this.id,
@@ -13,6 +14,7 @@ class NotificationModel {
     required this.date,
     required this.isRead,
     required this.type,
+    this.referenceId = '',
   });
 
   NotificationModel copyWith({bool? isRead}) => NotificationModel(
@@ -22,5 +24,6 @@ class NotificationModel {
         date: date,
         isRead: isRead ?? this.isRead,
         type: type,
+        referenceId: referenceId,
       );
 }

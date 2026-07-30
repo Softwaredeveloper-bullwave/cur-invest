@@ -32,6 +32,12 @@ class NotificationTile extends StatelessWidget {
         return Icons.flag_rounded;
       case 'kyc':
         return Icons.verified_user_outlined;
+      case 'support':
+        return Icons.support_agent_rounded;
+      case 'announcement':
+        return Icons.campaign_rounded;
+      case 'important':
+        return Icons.priority_high_rounded;
       case 'market':
         return Icons.show_chart_rounded;
       case 'referral':
@@ -48,6 +54,12 @@ class NotificationTile extends StatelessWidget {
         return const Color(0xFF8B5CF6);
       case 'news':
         return const Color(0xFF3B82F6);
+      case 'announcement':
+        return const Color(0xFF0EA5E9);
+      case 'important':
+        return AppColors.warning;
+      case 'support':
+        return AppColors.brandPrimary;
       case 'alert':
         return AppColors.warning;
       default:
@@ -106,7 +118,7 @@ class NotificationTile extends StatelessWidget {
                   Text(
                     notification.message,
                     style: Theme.of(context).textTheme.bodyMedium,
-                    maxLines: notification.type == 'rebalance' ? 4 : 2,
+                    maxLines: notification.type == 'rebalance' ? 4 : 3,
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 6),

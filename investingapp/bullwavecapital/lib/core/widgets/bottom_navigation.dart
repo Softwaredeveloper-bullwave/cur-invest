@@ -65,6 +65,7 @@ class _AppBottomNavigationState extends State<AppBottomNavigation> {
               final (icon, label) = _items[i];
               final active = i == widget.currentIndex;
               final pressed = _pressedIndex == i;
+              final inactiveColor = p.isDark ? const Color(0xFFACB8C6) : p.textGrey;
 
               return Expanded(
                 child: GestureDetector(
@@ -115,7 +116,7 @@ class _AppBottomNavigationState extends State<AppBottomNavigation> {
                           child: Icon(
                             icon,
                             size: active ? 23 : 20,
-                            color: active ? p.primaryDark : p.textGrey,
+                            color: active ? p.primaryDark : inactiveColor,
                           ),
                         ),
                       ),
@@ -125,7 +126,7 @@ class _AppBottomNavigationState extends State<AppBottomNavigation> {
                         style: GoogleFonts.inter(
                           fontSize: active ? 12 : 11,
                           fontWeight: active ? FontWeight.w700 : FontWeight.w500,
-                          color: active ? p.textDark : p.textGrey,
+                          color: active ? p.primary : inactiveColor,
                           height: 1.1,
                         ),
                         child: Text(

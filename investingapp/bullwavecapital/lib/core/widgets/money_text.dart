@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../theme/colors.dart';
 import '../theme/theme_a.dart';
 import '../theme/typography.dart';
 import '../theme/app_theme_extension.dart';
@@ -104,7 +103,7 @@ class SectionHeader extends StatelessWidget {
             ),
             child: Text(
               actionLabel!,
-              style: ThemeAType.action(size: 14, color: colors.textPrimary),
+              style: ThemeAType.action(size: 14, color: colors.primary),
             ),
           ),
       ],

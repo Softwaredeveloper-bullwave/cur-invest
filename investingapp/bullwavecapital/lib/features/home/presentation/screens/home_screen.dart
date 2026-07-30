@@ -143,10 +143,6 @@ class _HomeScreenState extends State<HomeScreen> {
         final portfolio = provider.portfolio;
         final notificationCount = context.watch<NotificationProvider>().unreadCount;
         final plans = _featuredPlansForHome(provider);
-        final balance = portfolio.currentValue > 0
-            ? portfolio.currentValue
-            : portfolio.walletBalance;
-
         return SafeArea(
           child: RefreshIndicator(
             color: AppColors.brandCyan,
@@ -214,7 +210,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         const SizedBox(height: 16),
                         HomeBalanceCards(
-                          portfolioValue: balance,
+                          portfolioValue: portfolio.currentValue,
                           walletBalance: portfolio.walletBalance,
                           dayPnl: portfolio.dayPnl,
                           onPortfolioTap: () => context.go(AppRoutes.portfolio),

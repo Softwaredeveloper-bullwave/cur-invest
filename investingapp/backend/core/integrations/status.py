@@ -5,9 +5,25 @@ from django.conf import settings
 from services.providers.cashfree_config import cashfree_settings
 from services.providers.cashfree_payments import is_configured as cashfree_payments_configured
 from services.providers.cashfree_secure_id import is_configured as cashfree_secure_id_configured
+from services.providers.eko_kyc import is_configured as eko_kyc_configured
 
 from .razorpay_service import is_configured as razorpay_configured
 from .sms_service import resolve_sms_provider, uses_twilio_verify
+
+
+def _kyc_provider_name() -> str:
+    return (getattr(settings, 'KYC_PROVIDER', 'cashfree') or 'cashfree').strip().lower()
+
+
+def _kyc_verification_configured() -> bool:
+    from kyc.providers import aadhaar_provider, bank_provider, pan_provider, upi_provider
+
+    providers = {pan_provider(), bank_provider(), upi_provider(), aadhaar_provider()}
+    if 'eko' in providers and eko_kyc_configured():
+        return True
+    if 'cashfree' in providers and cashfree_secure_id_configured():
+        return True
+    return False
 
 
 def _market_provider():
@@ -21,6 +37,64 @@ def _market_provider():
     if (getattr(settings, 'FINNHUB_API_KEY', '') or '').strip():
         return 'finnhub'
     return 'yahoo'
+
+
+def _cashfree_secure_id_probe() -> dict:
+    """Lightweight live probe — confirms IP whitelist + credentials (no billing)."""
+    cfg = cashfree_settings()
+    if not cfg.is_configured:
+        return {'reachable': False, 'code': 'not_configured', 'message': 'Cashfree keys missing.'}
+
+    suffix = cfg.client_id[-6:] if len(cfg.client_id) >= 6 else cfg.client_id
+    try:
+        import httpx
+
+        url = f'{cfg.secure_id_base_url.rstrip("/")}/bank-account/sync'
+        headers = {
+            'x-client-id': cfg.client_id,
+            'x-client-secret': cfg.client_secret,
+            'x-api-version': cfg.api_version,
+            'Content-Type': 'application/json',
+        }
+        response = httpx.post(
+            url,
+            json={'bank_account': '000000000000', 'ifsc': 'HDFC0000001'},
+            headers=headers,
+            timeout=20,
+        )
+        data = {}
+        try:
+            data = response.json()
+        except Exception:
+            pass
+        code = (data.get('code') or '').lower()
+        message = (data.get('message') or response.text[:180] or '').strip()
+
+        if code == 'ip_validation_failed' or 'ip not whitelisted' in message.lower():
+            return {
+                'reachable': False,
+                'clientIdSuffix': suffix,
+                'environment': cfg.environment,
+                'code': 'ip_not_whitelisted',
+                'message': message,
+            }
+
+        # Any non-IP response means auth + IP whitelist passed (account may still fail validation).
+        return {
+            'reachable': True,
+            'clientIdSuffix': suffix,
+            'environment': cfg.environment,
+            'code': code or 'ok',
+            'message': message or 'Cashfree Secure ID reachable.',
+        }
+    except Exception as exc:
+        return {
+            'reachable': False,
+            'clientIdSuffix': suffix,
+            'environment': cfg.environment,
+            'code': 'connection_failed',
+            'message': str(exc)[:180],
+        }
 
 
 def integration_status() -> dict:
@@ -58,8 +132,11 @@ def integration_status() -> dict:
             'razorpay': razorpay_configured(),
         },
         'kyc_verification': {
-            'provider': 'cashfree_secure_id',
-            'configured': cashfree_secure_id_configured(),
+            'provider': f'{_kyc_provider_name()}_kyc',
+            'configured': _kyc_verification_configured(),
+            'cashfree': cashfree_secure_id_configured(),
+            'eko': eko_kyc_configured(),
+            'cashfreeSecureId': _cashfree_secure_id_probe(),
         },
         'payouts': {
             'provider': 'cashfree_payouts',
@@ -71,8 +148,8 @@ def integration_status() -> dict:
             'twilio_verify': uses_twilio_verify(),
         },
         'bank_validation': {
-            'provider': 'cashfree' if cashfree_secure_id_configured() else 'razorpay_ifsc',
-            'configured': cashfree_secure_id_configured(),
+            'provider': _kyc_provider_name() if _kyc_verification_configured() else 'razorpay_ifsc',
+            'configured': _kyc_verification_configured(),
         },
         'ai_assistant': {
             'provider': ai_provider,

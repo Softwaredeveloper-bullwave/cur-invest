@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../features/stocks/presentation/widgets/candlestick_chart.dart';
 import '../../models/stock_model.dart';
 import '../theme/theme_a.dart';
+import 'lightweight_chart.dart';
 import 'tradingview_config.dart';
 import 'tradingview_symbols.dart';
 
@@ -20,6 +20,9 @@ class TradingViewChart extends StatelessWidget {
   final double height;
   final List<CandleModel>? fallbackCandles;
   final bool isLoading;
+  final MarketChartType chartType;
+  final bool showVolume;
+  final bool showSma;
 
   const TradingViewChart({
     super.key,
@@ -31,6 +34,9 @@ class TradingViewChart extends StatelessWidget {
     this.height = 280,
     this.fallbackCandles,
     this.isLoading = false,
+    this.chartType = MarketChartType.candlestick,
+    this.showVolume = true,
+    this.showSma = false,
   });
 
   String get _tvSymbol => isCommodity
@@ -75,7 +81,10 @@ class TradingViewChart extends StatelessWidget {
                   child: SizedBox(
                     width: 28,
                     height: 28,
-                    child: CircularProgressIndicator(strokeWidth: 2.5, color: p.primary),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      color: p.primary,
+                    ),
                   ),
                 ),
               ),
@@ -92,7 +101,10 @@ class TradingViewChart extends StatelessWidget {
           child: SizedBox(
             width: 28,
             height: 28,
-            child: CircularProgressIndicator(strokeWidth: 2.5, color: p.primary),
+            child: CircularProgressIndicator(
+              strokeWidth: 2.5,
+              color: p.primary,
+            ),
           ),
         ),
       );
@@ -110,6 +122,14 @@ class TradingViewChart extends StatelessWidget {
       );
     }
 
-    return CandlestickChart(candles: candles, height: height);
+    return LightweightMarketChart(
+      symbol: symbol,
+      intervalLabel: intervalLabel,
+      candles: candles,
+      height: height,
+      chartType: chartType,
+      showVolume: showVolume,
+      showSma: showSma,
+    );
   }
 }

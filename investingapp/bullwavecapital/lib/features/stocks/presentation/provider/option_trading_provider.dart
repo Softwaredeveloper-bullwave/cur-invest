@@ -81,4 +81,48 @@ class OptionTradingProvider extends ChangeNotifier {
     notifyListeners();
     return null;
   }
+
+  Future<Map<String, dynamic>?> placeScalperOrder({
+    required String underlying,
+    required double strike,
+    required String optionType,
+    required DateTime expiry,
+    required String side,
+    required int quantity,
+    required double premium,
+    required String assetClass,
+    required String orderType,
+    double? limitPrice,
+    double? stopLoss,
+    double? targetPrice,
+    double? trailingStopPercent,
+  }) async {
+    _tradeError = null;
+    try {
+      final order = await _api.placeScalperOrder(
+        instrumentType: 'option',
+        orderType: orderType,
+        side: side,
+        quantity: quantity,
+        underlying: underlying,
+        strike: strike,
+        optionType: optionType,
+        expiry: expiry,
+        assetClass: assetClass,
+        requestedPrice: premium,
+        limitPrice: limitPrice,
+        stopLoss: stopLoss,
+        targetPrice: targetPrice,
+        trailingStopPercent: trailingStopPercent,
+      );
+      await loadHoldings(assetClass: assetClass);
+      return order;
+    } on ApiException catch (e) {
+      _tradeError = e.message;
+    } catch (_) {
+      _tradeError = 'Could not place option scalper order.';
+    }
+    notifyListeners();
+    return null;
+  }
 }

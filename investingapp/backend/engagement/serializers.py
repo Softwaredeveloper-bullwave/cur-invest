@@ -1,7 +1,15 @@
 from rest_framework import serializers
 
 from core.serializers import CamelCaseModelSerializer, CamelCaseSerializer
-from .models import MarketIndex, MarketNews, Notification, ReferralReward, SupportFaq, SupportTicket
+from .models import (
+    MarketIndex,
+    MarketNews,
+    Notification,
+    ReferralReward,
+    SupportFaq,
+    SupportTicket,
+    SupportTicketMessage,
+)
 
 
 class MarketIndexSerializer(CamelCaseModelSerializer):
@@ -21,7 +29,7 @@ class NotificationSerializer(CamelCaseModelSerializer):
 
     class Meta:
         model = Notification
-        fields = ('id', 'title', 'message', 'date', 'is_read', 'type')
+        fields = ('id', 'title', 'message', 'date', 'is_read', 'type', 'reference_id')
 
 
 class SupportFaqSerializer(CamelCaseModelSerializer):
@@ -32,10 +40,46 @@ class SupportFaqSerializer(CamelCaseModelSerializer):
 
 class SupportTicketSerializer(CamelCaseModelSerializer):
     created_at = serializers.DateTimeField()
+    updated_at = serializers.DateTimeField()
+    message_count = serializers.SerializerMethodField()
 
     class Meta:
         model = SupportTicket
-        fields = ('id', 'subject', 'status', 'created_at')
+        fields = (
+            'id',
+            'subject',
+            'status',
+            'message',
+            'resolution_note',
+            'created_at',
+            'updated_at',
+            'message_count',
+        )
+
+    def get_message_count(self, obj):
+        if hasattr(obj, '_message_count'):
+            return obj._message_count
+        return obj.messages.count()
+
+
+class SupportTicketMessageSerializer(CamelCaseModelSerializer):
+    author_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = SupportTicketMessage
+        fields = ('id', 'author_role', 'author_name', 'body', 'created_at')
+
+    def get_author_name(self, obj):
+        if not obj.author_id:
+            return 'Support'
+        return obj.author.name or obj.author.phone
+
+
+class SupportTicketDetailSerializer(SupportTicketSerializer):
+    messages = SupportTicketMessageSerializer(many=True, read_only=True)
+
+    class Meta(SupportTicketSerializer.Meta):
+        fields = SupportTicketSerializer.Meta.fields + ('messages',)
 
 
 class CreateTicketSerializer(CamelCaseSerializer):

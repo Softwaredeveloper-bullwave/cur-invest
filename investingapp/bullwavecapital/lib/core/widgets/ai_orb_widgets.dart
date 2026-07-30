@@ -379,7 +379,7 @@ class AiGlassBubble extends StatelessWidget {
                       child: child,
                     ),
                   ),
-                  if (trailing != null) trailing!,
+                  ?trailing,
                 ],
               ),
             ),

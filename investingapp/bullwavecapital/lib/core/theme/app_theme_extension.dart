@@ -69,8 +69,8 @@ class AppThemeExtension extends ThemeExtension<AppThemeExtension> {
     surfaceSecondary: Color(0xFF161616),
     border: Color(0xFF2E2E2E),
     textPrimary: Color(0xFFF5F5F0),
-    textSecondary: Color(0xFFD0D0CA),
-    textMuted: Color(0xFFAEAEA8),
+    textSecondary: Color(0xFFDCE3EA),
+    textMuted: Color(0xFFADB9C7),
     shimmerBase: Color(0xFF1C1C1C),
     shimmerHighlight: Color(0xFF2E2E2E),
     primary: Color(0xFFC6FF00),
@@ -78,10 +78,10 @@ class AppThemeExtension extends ThemeExtension<AppThemeExtension> {
     primaryLight: Color(0xFF1A2208),
     iconBg: Color(0xFF1A2208),
     iconBorder: Color(0xFF3D4F0A),
-    positive: Color(0xFFC6FF00),
+    positive: Color(0xFF4ADE80),
     negative: Color(0xFFFF6B6B),
     onPrimary: Color(0xFF0A0A0A),
-    accentOrange: Color(0xFFFB923C),
+    accentOrange: Color(0xFFFBBF24),
   );
 
   @override

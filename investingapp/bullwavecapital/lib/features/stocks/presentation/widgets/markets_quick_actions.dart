@@ -7,7 +7,6 @@ import '../../../../core/theme/theme_a.dart';
 import '../../../../core/widgets/modern_icon_badge.dart';
 import '../../../../core/widgets/premium_ui_kit.dart';
 import '../../../../core/widgets/scale_tap.dart';
-import '../../../fno/fno_navigation.dart';
 import 'explore_feature_tile.dart';
 
 class MarketsQuickActions extends StatelessWidget {
@@ -47,7 +46,7 @@ class MarketsQuickActions extends StatelessWidget {
         iconAsset: AppAssets.featPaperTrade,
         icon: Icons.show_chart_rounded,
         gradient: const [Color(0xFF0EA5E9), Color(0xFF38BDF8)],
-        onTap: () => openFnoFeature(context, AppRoutes.paperTrading),
+        onTap: () => context.push(AppRoutes.paperTrading),
       ),
       _QuickAction(
         label: 'More',
