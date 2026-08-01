@@ -49,7 +49,15 @@ export async function api<T>(path: string, options: ApiOptions = {}): Promise<T>
   const data = await response.json().catch(() => ({}))
   if (!response.ok) {
     if (response.status === 401) clearToken()
-    throw new Error(data.detail || data.message || `Request failed (${response.status})`)
+    const detail =
+      typeof data.detail === 'string'
+        ? data.detail
+        : typeof data.message === 'string'
+          ? data.message
+          : response.status >= 500
+            ? `Server error (${response.status}). Check that the API is deployed and restarted on EC2.`
+            : `Request failed (${response.status})`
+    throw new Error(detail)
   }
   return data as T
 }

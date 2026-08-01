@@ -14,6 +14,7 @@ from .auth import admin_panel_authentication_classes
 from accounts.models import KycDocument, User
 from engagement.models import SupportTicket
 from finance.models import PaymentOrder, Wallet
+from kyc.rate_limit import RateLimitExceeded, check_rate_limit
 from kyc.bank_manual_service import (
     ManualBankReviewError,
     approve_bank_review,
