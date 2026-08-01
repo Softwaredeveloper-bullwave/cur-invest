@@ -124,13 +124,18 @@ class KycDioClient {
   }
 
   static String _friendlyDioMessage(DioException error) {
+    final status = error.response?.statusCode;
+    if (status == 301 || status == 302 || status == 307 || status == 308) {
+      return 'API URL must use HTTPS. Update ApiConfig.baseUrl to https://… '
+          '(nginx redirects HTTP with status $status).';
+    }
     switch (error.type) {
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.sendTimeout:
       case DioExceptionType.receiveTimeout:
         return 'Server is taking too long to respond. Check that Django is running at ${ApiConfig.baseUrl}.';
       case DioExceptionType.connectionError:
-        return 'Cannot reach server at ${ApiConfig.baseUrl}. Run: python manage.py runserver 0.0.0.0:8000';
+        return 'Cannot reach server at ${ApiConfig.baseUrl}. Check network and that nginx/gunicorn is running.';
       default:
         return error.message ?? 'Request failed';
     }

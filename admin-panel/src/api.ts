@@ -1,6 +1,8 @@
 const API_BASE =
   (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, '') ??
-  `${window.location.protocol}//${window.location.hostname}:8000/api/v1/admin-panel`
+  (import.meta.env.DEV
+    ? '/api/v1/admin-panel'
+    : `${window.location.protocol}//${window.location.hostname}:8000/api/v1/admin-panel`)
 
 const TOKEN_KEY = 'bullwave_admin_access'
 
@@ -35,7 +37,15 @@ export async function api<T>(path: string, options: ApiOptions = {}): Promise<T>
     body = JSON.stringify(body)
   }
 
-  const response = await fetch(`${API_BASE}${path}`, { ...options, headers, body: body as BodyInit })
+  let response: Response
+  try {
+    response = await fetch(`${API_BASE}${path}`, { ...options, headers, body: body as BodyInit })
+  } catch {
+    throw new Error(
+      `Cannot reach the API at ${API_BASE}. ` +
+        'Start Django on port 8000 (see admin-panel/README.md), or set VITE_API_BASE_URL in admin-panel/.env and restart Vite.',
+    )
+  }
   const data = await response.json().catch(() => ({}))
   if (!response.ok) {
     if (response.status === 401) clearToken()

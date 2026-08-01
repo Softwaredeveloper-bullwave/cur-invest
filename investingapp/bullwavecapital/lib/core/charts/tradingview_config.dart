@@ -5,7 +5,7 @@
 /// flutter run -d chrome \
 ///   --dart-define=TRADINGVIEW_API_KEY=your-key \
 ///   --dart-define=TRADINGVIEW_CHARTING_LIBRARY_URL=https://your-cdn/charting_library/ \
-///   --dart-define=TRADINGVIEW_UDF_BASE_URL=http://127.0.0.1:8000/api/v1/market/tradingview/udf
+///   --dart-define=TRADINGVIEW_UDF_BASE_URL=https://api.capitalbullwave.com/api/v1/market/tradingview/udf
 /// ```
 ///
 /// When [chartingLibraryUrl] is empty the app uses TradingView's hosted widget

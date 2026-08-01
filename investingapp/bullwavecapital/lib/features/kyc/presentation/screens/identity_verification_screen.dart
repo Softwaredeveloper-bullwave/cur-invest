@@ -4,10 +4,13 @@ import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image/image.dart' as img;
+import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../core/constants/routes.dart';
 import '../../../../core/navigation/onboarding_flow_navigator.dart';
 import '../../../../core/theme/colors.dart';
 import '../../../../core/widgets/app_text_field.dart';
@@ -27,20 +30,33 @@ class IdentityVerificationScreen extends StatefulWidget {
   State<IdentityVerificationScreen> createState() => _IdentityVerificationScreenState();
 }
 
-class _IdentityVerificationScreenState extends State<IdentityVerificationScreen> {
+class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
+    with WidgetsBindingObserver {
+  static const _selfiePreviewMaxHeight = 320.0;
+
   final _formKey = GlobalKey<FormState>();
   final _vpaController = TextEditingController();
   final _mobileController = TextEditingController();
+  final _imagePicker = ImagePicker();
   CameraController? _controller;
   Uint8List? _capturedBytes;
   bool _cameraReady = false;
+  bool _cameraInitializing = false;
   String? _cameraError;
   bool _submitting = false;
+  bool _usePickerFallback = false;
   Timer? _pollTimer;
+
+  bool get _isDesktop =>
+      !kIsWeb &&
+      (defaultTargetPlatform == TargetPlatform.macOS ||
+          defaultTargetPlatform == TargetPlatform.windows ||
+          defaultTargetPlatform == TargetPlatform.linux);
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _vpaController.addListener(() {
       _syncMobileFromVpa(_vpaController.text);
       if (mounted) setState(() {});
@@ -59,11 +75,22 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _pollTimer?.cancel();
     unawaited(_releaseCamera());
     _vpaController.dispose();
     _mobileController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (_usePickerFallback || _capturedBytes != null) return;
+    if (state == AppLifecycleState.inactive || state == AppLifecycleState.paused) {
+      unawaited(_releaseCamera());
+    } else if (state == AppLifecycleState.resumed) {
+      _maybeInitCamera();
+    }
   }
 
   Future<void> _releaseCamera() async {
@@ -77,7 +104,7 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
     if (mounted) {
       setState(() {
         _cameraReady = false;
-        _cameraError = null;
+        _cameraInitializing = false;
       });
     }
   }
@@ -135,28 +162,42 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
     });
   }
 
-  Future<void> _maybeInitCamera() async {
+  Future<void> _maybeInitCamera({bool force = false}) async {
     final s = context.read<KycFlowProvider>().status;
-    if (!_stillNeedsSelfie(s) || _awaitingAdminReview(s)) return;
+    if (!_stillNeedsSelfie(s) || _awaitingAdminReview(s) || _capturedBytes != null) {
+      return;
+    }
 
-    if (!kIsWeb) {
+    if (!force && (_cameraInitializing || _cameraReady)) return;
+
+    setState(() {
+      _cameraInitializing = true;
+      _cameraReady = false;
+      _cameraError = null;
+      _usePickerFallback = false;
+    });
+
+    if (!kIsWeb && !_isDesktop) {
       final permission = await Permission.camera.request();
       if (!permission.isGranted || !mounted) {
-        setState(() => _cameraError = 'Camera permission is required.');
+        setState(() {
+          _cameraError = 'Camera permission is required. Enable it in System Settings → Privacy → Camera.';
+          _cameraInitializing = false;
+          _usePickerFallback = false;
+        });
         return;
       }
     }
 
-    setState(() {
-      _cameraReady = false;
-      _cameraError = null;
-    });
-
     try {
-      final cameras = await availableCameras();
+      final cameras = await availableCameras().timeout(const Duration(seconds: 12));
       if (cameras.isEmpty) {
         if (!mounted) return;
-        setState(() => _cameraError = 'No camera found on this device.');
+        setState(() {
+          _cameraError = 'No camera found on this device.';
+          _cameraInitializing = false;
+          _usePickerFallback = _isDesktop;
+        });
         return;
       }
       final front = cameras.firstWhere(
@@ -165,15 +206,21 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
       );
 
       await _controller?.dispose();
-      final controller = kIsWeb
-          ? CameraController(front, ResolutionPreset.medium, enableAudio: false)
-          : CameraController(
+      final useJpegFormat = defaultTargetPlatform == TargetPlatform.android ||
+          defaultTargetPlatform == TargetPlatform.iOS;
+      final controller = useJpegFormat
+          ? CameraController(
               front,
-              ResolutionPreset.high,
+              _isDesktop ? ResolutionPreset.medium : ResolutionPreset.high,
               enableAudio: false,
               imageFormatGroup: ImageFormatGroup.jpeg,
+            )
+          : CameraController(
+              front,
+              _isDesktop ? ResolutionPreset.medium : ResolutionPreset.high,
+              enableAudio: false,
             );
-      await controller.initialize();
+      await controller.initialize().timeout(const Duration(seconds: 12));
       if (!mounted) {
         await controller.dispose();
         return;
@@ -182,16 +229,33 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
         _controller = controller;
         _cameraReady = true;
         _cameraError = null;
+        _cameraInitializing = false;
+        _usePickerFallback = false;
       });
-    } catch (_) {
+    } on TimeoutException {
+      if (!mounted) return;
+      setState(() {
+        _cameraError = 'Camera took too long to start. Tap the preview to retry.';
+        _cameraReady = false;
+        _cameraInitializing = false;
+        _usePickerFallback = false;
+      });
+    } catch (e) {
       if (!mounted) return;
       setState(() {
         _cameraError = kIsWeb
             ? 'Could not open camera. Allow camera access in your browser and reload.'
-            : 'Could not open front camera. Please try again.';
+            : 'Could not open camera. Tap the preview to retry.';
         _cameraReady = false;
+        _cameraInitializing = false;
+        _usePickerFallback = false;
       });
     }
+  }
+
+  Future<void> _startLiveCamera() async {
+    if (_capturedBytes != null) return;
+    await _maybeInitCamera(force: true);
   }
 
   Uint8List _compressSelfie(Uint8List bytes) {
@@ -201,17 +265,56 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
     return Uint8List.fromList(img.encodeJpg(resized, quality: 78));
   }
 
+  Future<void> _captureWithPicker() async {
+    try {
+      final picked = await _imagePicker.pickImage(
+        source: ImageSource.camera,
+        preferredCameraDevice: CameraDevice.front,
+        imageQuality: 85,
+        maxWidth: 1280,
+      );
+      if (picked == null || !mounted) return;
+      final bytes = _compressSelfie(await picked.readAsBytes());
+      await _releaseCamera();
+      setState(() {
+        _capturedBytes = bytes;
+        _cameraError = null;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not capture photo. Check camera permission and try again.')),
+      );
+    }
+  }
+
   Future<void> _captureSelfie() async {
     if (!_cameraReady || _controller == null) {
-      await _maybeInitCamera();
-      if (!_cameraReady || _controller == null) return;
+      await _startLiveCamera();
+      if (!_cameraReady || _controller == null) {
+        if (_usePickerFallback) await _captureWithPicker();
+        return;
+      }
     }
+
     final controller = _controller!;
     if (!controller.value.isInitialized) return;
-    final file = await controller.takePicture();
-    final bytes = _compressSelfie(await file.readAsBytes());
-    if (!mounted) return;
-    setState(() => _capturedBytes = bytes);
+    try {
+      final file = await controller.takePicture();
+      final bytes = _compressSelfie(await file.readAsBytes());
+      if (!mounted) return;
+      setState(() => _capturedBytes = bytes);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not capture photo. Please try again.')),
+      );
+    }
+  }
+
+  Future<void> _retakeSelfie() async {
+    setState(() => _capturedBytes = null);
+    await _maybeInitCamera();
   }
 
   Future<void> _submitAll() async {
@@ -219,6 +322,17 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
     final s = kyc.status;
     final needsUpi = _stillNeedsUpi(s);
     final needsSelfie = _stillNeedsSelfie(s);
+
+    if (!s.bankReadyForIdentity) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Complete live bank verification first. Saving bank details alone is not enough.',
+          ),
+        ),
+      );
+      return;
+    }
 
     if (needsUpi && !_formKey.currentState!.validate()) return;
     if (needsSelfie && _capturedBytes == null) {
@@ -230,6 +344,7 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
 
     setState(() => _submitting = true);
 
+    var upiSubmitted = !needsUpi;
     if (needsUpi) {
       final vpa = _vpaController.text.trim();
       if (_needsLinkedMobile(vpa) && _mobileController.text.trim().length != 10) {
@@ -244,9 +359,11 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
         recipientMobile: _mobileController.text.trim(),
       );
       if (!mounted) return;
-      if (!upiOk && kyc.error != null) {
+      if (!upiOk) {
         setState(() => _submitting = false);
-        return;
+        if (kyc.error != null) return;
+      } else {
+        upiSubmitted = true;
       }
     }
 
@@ -258,7 +375,7 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
         _capturedBytes = null;
       }
       setState(() => _submitting = false);
-      if (!selfieOk && kyc.error != null) return;
+      if (!selfieOk) return;
     } else {
       setState(() => _submitting = false);
     }
@@ -269,15 +386,72 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
     if (_awaitingAdminReview(kyc.status)) {
       await _releaseCamera();
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Submitted for admin verification. Our team will review your UPI and selfie within 24 hours.',
+
+    final message = upiSubmitted && needsSelfie
+        ? 'Submitted for admin verification. Our team will review your UPI and selfie within 24 hours.'
+        : needsSelfie
+            ? 'Selfie submitted for admin verification.'
+            : 'UPI submitted for admin verification.';
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    _startPolling();
+    setState(() {});
+  }
+
+  Widget _buildSelfiePreview() {
+    if (_capturedBytes != null) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Image.memory(_capturedBytes!, fit: BoxFit.cover, width: double.infinity),
+      );
+    }
+
+    if (_cameraReady && _controller != null && _controller!.value.isInitialized) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: CameraPreview(_controller!),
+      );
+    }
+
+    final showTapToStart = !_cameraInitializing && !_cameraReady;
+    return GestureDetector(
+      onTap: showTapToStart ? _startLiveCamera : null,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: ColoredBox(
+          color: Colors.black,
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (_cameraInitializing)
+                    const CircularProgressIndicator(color: AppColors.brandOrange)
+                  else
+                    const Icon(Icons.videocam_outlined, color: AppColors.brandOrange, size: 44),
+                  const SizedBox(height: 12),
+                  Text(
+                    _cameraError ??
+                        (showTapToStart
+                            ? 'Tap here to turn on your camera.'
+                            : 'Starting front camera…'),
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.white.withValues(alpha: 0.85), height: 1.4),
+                  ),
+                  if (_cameraError != null && !_cameraInitializing) ...[
+                    const SizedBox(height: 12),
+                    OutlinedButton(
+                      onPressed: _startLiveCamera,
+                      child: const Text('Turn on camera'),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );
-    _startPolling();
-    setState(() {});
   }
 
   @override
@@ -288,6 +462,17 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
         final needsUpi = _stillNeedsUpi(s);
         final needsSelfie = _stillNeedsSelfie(s);
         final awaitingReview = _awaitingAdminReview(s) && !needsUpi && !needsSelfie;
+        final showActions = needsUpi || needsSelfie;
+        final bankBlocked = !s.bankReadyForIdentity && (needsUpi || needsSelfie);
+        final bankError = (kyc.error ?? '').toLowerCase().contains('bank verification');
+
+        void goBack() {
+          OnboardingFlowNavigator.goToPreviousKycStep(
+            context,
+            kyc,
+            currentRoute: AppRoutes.identityVerification,
+          );
+        }
 
         return KycStepScaffold(
           title: 'UPI & selfie verification',
@@ -297,12 +482,74 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
           stepIndex: 5,
           totalSteps: 5,
           icon: Icons.face_retouching_natural_outlined,
+          onBack: goBack,
+          footer: showActions
+              ? SafeArea(
+                  top: false,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (bankBlocked || bankError) ...[
+                          OutlinedButton(
+                            onPressed: goBack,
+                            child: const Text('Back to Bank Verification'),
+                          ),
+                          const SizedBox(height: 10),
+                        ],
+                        if (needsSelfie) ...[
+                          Row(
+                            children: [
+                              Expanded(
+                                child: OutlinedButton(
+                                  onPressed: _submitting
+                                      ? null
+                                      : (_capturedBytes == null
+                                          ? (_cameraReady ? _captureSelfie : _startLiveCamera)
+                                          : _retakeSelfie),
+                                  child: Text(
+                                    _capturedBytes == null
+                                        ? (_cameraReady ? 'Capture selfie' : 'Turn on camera')
+                                        : 'Retake',
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                        ],
+                        PrimaryButton(
+                          label: _submitting ? 'Submitting…' : 'Submit for verification',
+                          onPressed: (bankBlocked || bankError || _submitting || kyc.isLoading) ? null : _submitAll,
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : null,
           body: ListView(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
             children: [
               if (kyc.error != null) ...[
                 KycErrorBanner(message: kyc.error!),
                 const SizedBox(height: 12),
+              ],
+              if (bankBlocked || bankError) ...[
+                KycInfoCard(
+                  tone: KycInfoTone.warning,
+                  title: 'Bank verification required',
+                  message: bankBlocked
+                      ? 'You saved bank details, but live verification (Eko) has not completed yet. '
+                          'Go back to Bank Verification and tap Verify Bank Account before submitting UPI.'
+                      : 'Complete bank verification before submitting UPI. Return to the bank step and verify your account.',
+                ),
+                const SizedBox(height: 12),
+                PrimaryButton(
+                  label: 'Go to Bank Verification',
+                  onPressed: () => context.go(AppRoutes.bankVerificationKyc),
+                ),
+                const SizedBox(height: 16),
               ],
               if (awaitingReview) ...[
                 if (s.selfieReviewPending) SelfieManualReviewPendingPanel(status: s),
@@ -375,75 +622,26 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 8),
-                  AspectRatio(
-                    aspectRatio: 3 / 4,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: ColoredBox(
-                        color: Colors.black,
-                        child: _capturedBytes != null
-                            ? Image.memory(_capturedBytes!, fit: BoxFit.cover)
-                            : _cameraReady && _controller != null
-                                ? CameraPreview(_controller!)
-                                : Center(
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(20),
-                                      child: Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          if (_cameraError == null)
-                                            const CircularProgressIndicator(color: AppColors.brandOrange)
-                                          else ...[
-                                            const Icon(Icons.videocam_off_outlined,
-                                                color: AppColors.brandOrange, size: 40),
-                                            const SizedBox(height: 12),
-                                            Text(
-                                              _cameraError!,
-                                              textAlign: TextAlign.center,
-                                              style: TextStyle(
-                                                color: Colors.white.withValues(alpha: 0.85),
-                                              ),
-                                            ),
-                                            const SizedBox(height: 12),
-                                            OutlinedButton(
-                                              onPressed: _maybeInitCamera,
-                                              child: const Text('Retry camera'),
-                                            ),
-                                          ],
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                      ),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxHeight: _selfiePreviewMaxHeight),
+                    child: AspectRatio(
+                      aspectRatio: 3 / 4,
+                      child: _buildSelfiePreview(),
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: _capturedBytes == null
-                              ? _captureSelfie
-                              : () {
-                                  setState(() => _capturedBytes = null);
-                                  _maybeInitCamera();
-                                },
-                          child: Text(_capturedBytes == null ? 'Capture selfie' : 'Retake'),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Position your face in the frame. Only a live camera photo is accepted.',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.65),
+                          height: 1.4,
                         ),
-                      ),
-                    ],
                   ),
-                  const SizedBox(height: 20),
                 ] else if (s.selfieVerified)
                   const KycInfoCard(
                     tone: KycInfoTone.success,
                     title: 'Selfie verified',
                     message: 'Your selfie has been approved.',
-                  ),
-                if (needsUpi || needsSelfie)
-                  PrimaryButton(
-                    label: _submitting ? 'Submitting…' : 'Submit for verification',
-                    onPressed: _submitting ? null : _submitAll,
                   ),
               ],
             ],

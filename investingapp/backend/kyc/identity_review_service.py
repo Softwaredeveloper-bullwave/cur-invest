@@ -11,6 +11,7 @@ from engagement.models import Notification
 from .masking import mask_upi_vpa
 from .models import KycProfile, VerificationAuditLog
 from .service import (
+    _bank_ready_for_identity_steps,
     _bank_really_verified,
     _selfie_really_verified,
     _update_overall_status,
@@ -85,8 +86,11 @@ def submit_manual_upi(user, *, upi_vpa: str, upi_mobile: str = '') -> KycProfile
     """Store UPI for manual admin review after Eko bank verification."""
     profile = get_or_create_profile(user)
     profile = KycProfile.objects.select_for_update().get(pk=profile.pk)
-    if not _bank_really_verified(profile):
-        raise IdentityReviewError('Complete bank verification before submitting UPI.')
+    if not _bank_ready_for_identity_steps(profile):
+        raise IdentityReviewError(
+            'Complete bank verification before submitting UPI. '
+            'If you only saved bank details, go back and complete live bank verification.'
+        )
     if profile.upi_status == KycProfile.VerificationStatus.VERIFIED:
         raise IdentityReviewError('UPI is already verified.')
 

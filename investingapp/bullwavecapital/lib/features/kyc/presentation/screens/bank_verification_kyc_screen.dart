@@ -379,7 +379,7 @@ class _BankVerificationKycScreenState extends State<BankVerificationKycScreen>
                     BankManualReviewPendingPanel(status: status),
                     const SizedBox(height: 16),
                     BankVerificationResultCard(status: status, showMethod: false),
-                  ] else if (manualMode && status.bankDraftReady && kyc.upiRequired) ...[
+                  ] else if (manualMode && status.bankDraftReady && kyc.upiRequired && status.canProceedToIdentity) ...[
                     BankVerificationResultCard(status: status, showMethod: false),
                     const SizedBox(height: 16),
                     PrimaryButton(
@@ -393,7 +393,7 @@ class _BankVerificationKycScreenState extends State<BankVerificationKycScreen>
                       onPressed: _startUpdate,
                       child: const Text('Update Bank Account'),
                     ),
-                    if (kyc.upiRequired && !status.upiVerified) ...[
+                    if (kyc.upiRequired && !status.upiVerified && status.canProceedToIdentity) ...[
                       const SizedBox(height: 12),
                       PrimaryButton(
                         label: 'Continue to identity verification',

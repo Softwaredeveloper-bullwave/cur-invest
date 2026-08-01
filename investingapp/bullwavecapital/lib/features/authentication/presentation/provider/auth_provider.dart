@@ -148,7 +148,7 @@ class AuthProvider extends ChangeNotifier {
     } catch (e) {
       _error = AppEnv.isRelease
           ? 'Cannot reach the server. Check your internet connection and try again.'
-          : 'Cannot reach server at ${ApiConfig.baseUrl}. Is Django running? (${e.runtimeType})';
+          : 'Cannot reach server at ${ApiConfig.baseUrl}. Check Wi‑Fi/VPN, then restart the app (full rebuild on macOS: stop flutter run and start again). (${e.runtimeType})';
       _isLoading = false;
       notifyListeners();
       return false;

@@ -5,6 +5,7 @@ import random
 from datetime import timedelta
 
 from django.conf import settings
+from django.db import DatabaseError
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -46,6 +47,18 @@ from .serializers import (
 logger = logging.getLogger('bullwave.accounts')
 
 DEV_AUTH_PHONE = '9999999999'
+
+_DB_UNAVAILABLE_DETAIL = (
+    'Database connection failed. On the server, set DB_HOST, DB_USER, DB_PASSWORD, and DB_NAME '
+    'in investingapp/backend/.env, then run migrate and restart gunicorn.'
+)
+
+
+def _database_unavailable_response():
+    return Response(
+        {'detail': _DB_UNAVAILABLE_DETAIL, 'code': 'database_unavailable'},
+        status=503,
+    )
 
 
 def _issue_auth_tokens(user, request, *, created=False):
@@ -90,80 +103,76 @@ class SendOTPView(APIView):
         if not phone:
             return Response({'detail': 'Enter a valid 10-digit phone number.'}, status=400)
 
-        if not settings.SMS_OTP_ENABLED:
-            if not settings.DEBUG:
-                return Response(
-                    {'detail': 'Phone OTP login is temporarily disabled.'},
-                    status=503,
-                )
-            otp = self._issue_local_otp(phone)
-            logger.warning('Paid SMS OTP dispatch is disabled; issued local development OTP.')
-            return Response(
-                {
-                    'success': True,
-                    'message': 'Development OTP generated without sending SMS.',
-                    'otpMode': 'console',
-                    'devOtp': otp,
-                }
-            )
-
-        live = is_live_sms()
-
-        if settings.SMS_OTP_ENABLED and uses_twilio_verify():
-            try:
-                send_otp_sms(phone, '')
-            except SMSError as exc:
-                if twilio_verify_delivery_blocked(exc) and twilio_message_ready():
-                    logger.warning(
-                        'Twilio Verify blocked for %s; falling back to Twilio Messages',
-                        phone,
-                    )
-                    otp = self._issue_local_otp(phone)
-                    try:
-                        send_otp_sms(phone, otp)
-                    except SMSError as fallback_exc:
-                        logger.error('Twilio Messages fallback failed for %s: %s', phone, fallback_exc)
-                        return Response(
-                            {'detail': friendly_twilio_error(fallback_exc)},
-                            status=503,
-                        )
-                    return Response(
-                        {
-                            'success': True,
-                            'message': 'OTP sent successfully.',
-                            'otpMode': 'sms',
-                        }
-                    )
-                logger.error('Twilio Verify failed for %s: %s', phone, exc)
-                return Response({'detail': friendly_twilio_error(exc)}, status=503)
-            return Response(
-                {
-                    'success': True,
-                    'message': 'OTP sent successfully.',
-                    'otpMode': 'sms',
-                }
-            )
-
-        otp = self._issue_local_otp(phone)
-
         try:
-            send_otp_sms(phone, otp)
-        except SMSError as exc:
-            logger.error('SMS OTP failed for %s: %s', phone, exc)
-            return Response({'detail': str(exc)}, status=503)
+            if not settings.SMS_OTP_ENABLED:
+                otp = self._issue_local_otp(phone)
+                logger.info('[BullWave OTP] Phone: %s | OTP: %s | SMS disabled (dev mode)', phone, otp)
+                return Response(
+                    {
+                        'success': True,
+                        'message': 'Development OTP generated without sending SMS.',
+                        'otpMode': 'console',
+                        'devOtp': otp,
+                    }
+                )
 
-        payload = {
-            'success': True,
-            'message': 'OTP sent successfully.',
-            'otpMode': 'sms' if live else 'console',
-        }
-        # DEBUG dev phone — expose OTP so Flutter dev mode can auto-login without Twilio.
-        if settings.DEBUG and phone == DEV_AUTH_PHONE:
-            payload['devOtp'] = otp
-            payload['otpMode'] = 'console'
-        elif not live and settings.DEBUG:
-            payload['devOtp'] = otp
-        return Response(payload)
+            live = is_live_sms()
+
+            if settings.SMS_OTP_ENABLED and uses_twilio_verify():
+                try:
+                    send_otp_sms(phone, '')
+                except SMSError as exc:
+                    if twilio_verify_delivery_blocked(exc) and twilio_message_ready():
+                        logger.warning(
+                            'Twilio Verify blocked for %s; falling back to Twilio Messages',
+                            phone,
+                        )
+                        otp = self._issue_local_otp(phone)
+                        try:
+                            send_otp_sms(phone, otp)
+                        except SMSError as fallback_exc:
+                            logger.error('Twilio Messages fallback failed for %s: %s', phone, fallback_exc)
+                            return Response(
+                                {'detail': friendly_twilio_error(fallback_exc)},
+                                status=503,
+                            )
+                        return Response(
+                            {
+                                'success': True,
+                                'message': 'OTP sent successfully.',
+                                'otpMode': 'sms',
+                            }
+                        )
+                    logger.error('Twilio Verify failed for %s: %s', phone, exc)
+                    return Response({'detail': friendly_twilio_error(exc)}, status=503)
+                return Response(
+                    {
+                        'success': True,
+                        'message': 'OTP sent successfully.',
+                        'otpMode': 'sms',
+                    }
+                )
+
+            otp = self._issue_local_otp(phone)
+
+            try:
+                send_otp_sms(phone, otp)
+            except SMSError as exc:
+                logger.error('SMS OTP failed for %s: %s', phone, exc)
+                return Response({'detail': str(exc)}, status=503)
+
+            payload = {
+                'success': True,
+                'message': 'OTP sent successfully.',
+                'otpMode': 'console' if not live else 'sms',
+            }
+            if not live:
+                payload['devOtp'] = otp
+                logger.info('[BullWave OTP] Phone: %s | OTP: %s | console mode', phone, otp)
+            return Response(payload)
+        except DatabaseError:
+            logger.exception('Database error during send-otp for %s', phone)
+            return _database_unavailable_response()
 
 
 class VerifyOTPView(APIView):
@@ -192,23 +201,27 @@ class VerifyOTPView(APIView):
         if len(otp) != 6:
             return Response({'detail': 'Enter the 6-digit OTP.'}, status=400)
 
-        verified = False
-        if settings.SMS_OTP_ENABLED and uses_twilio_verify():
-            try:
-                verified = check_otp_twilio_verify(phone, otp)
-            except SMSError as exc:
-                logger.warning('Twilio Verify check failed for %s: %s', phone, exc)
-            if not verified:
+        try:
+            verified = False
+            if settings.SMS_OTP_ENABLED and uses_twilio_verify():
+                try:
+                    verified = check_otp_twilio_verify(phone, otp)
+                except SMSError as exc:
+                    logger.warning('Twilio Verify check failed for %s: %s', phone, exc)
+                if not verified:
+                    verified = self._verify_db_otp(phone, otp)
+            else:
                 verified = self._verify_db_otp(phone, otp)
-        else:
-            verified = self._verify_db_otp(phone, otp)
 
-        if not verified:
-            return Response({'detail': 'Incorrect OTP. Please check and try again.'}, status=400)
+            if not verified:
+                return Response({'detail': 'Incorrect OTP. Please check and try again.'}, status=400)
 
-        user, created = User.objects.get_or_create(phone=phone)
-        _ensure_user_bootstrap(user, created=created)
-        return _issue_auth_tokens(user, request, created=created)
+            user, created = User.objects.get_or_create(phone=phone)
+            _ensure_user_bootstrap(user, created=created)
+            return _issue_auth_tokens(user, request, created=created)
+        except DatabaseError:
+            logger.exception('Database error during verify-otp for %s', phone)
+            return _database_unavailable_response()
 
 
 class DevLoginView(APIView):

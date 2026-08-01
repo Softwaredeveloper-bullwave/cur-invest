@@ -188,6 +188,27 @@ class _OtpScreenState extends State<OtpScreen> {
                       ),
                     ),
                   ),
+                if (AppEnv.showDevOtpHints && auth.otpIsConsoleMode && auth.devOtp == null)
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.red.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.red.withValues(alpha: 0.35)),
+                    ),
+                    child: Text(
+                      'OTP not returned by server. On AWS set SMS_EXPOSE_DEV_OTP=True in .env and restart gunicorn.',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white.withValues(alpha: 0.85),
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
                 if (AppEnv.showDevOtpHints && auth.devOtp != null)
                   Container(
                     width: double.infinity,

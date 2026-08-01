@@ -92,6 +92,7 @@ class KycStatusModel {
   final bool panVerified;
   final bool aadhaarVerified;
   final bool bankVerified;
+  final bool bankReadyForIdentity;
   final bool upiVerified;
   final bool selfieVerified;
   final String selfieStatus;
@@ -155,6 +156,7 @@ class KycStatusModel {
     required this.panVerified,
     this.aadhaarVerified = false,
     required this.bankVerified,
+    this.bankReadyForIdentity = false,
     this.upiVerified = false,
     this.selfieVerified = false,
     this.selfieStatus = 'pending',
@@ -222,6 +224,9 @@ class KycStatusModel {
   bool get selfieUploaded =>
       selfieReviewPending || selfieVerified || selfieStatus == 'completed';
 
+  bool get canProceedToIdentity =>
+      bankReadyForIdentity || bankVerified || (isManualBankReview && bankDraftReady);
+
   factory KycStatusModel.fromJson(Map<String, dynamic> json) => KycStatusModel(
     provider: json['provider'] as String? ?? 'cashfree',
     kycMode: json['kycMode'] as String? ?? 'manual',
@@ -245,6 +250,8 @@ class KycStatusModel {
     panVerified: json['panVerified'] as bool? ?? false,
     aadhaarVerified: json['aadhaarVerified'] as bool? ?? false,
     bankVerified: json['bankVerified'] as bool? ?? false,
+    bankReadyForIdentity: json['bankReadyForIdentity'] as bool? ??
+        (json['bankVerified'] as bool? ?? false),
     upiVerified: json['upiVerified'] as bool? ?? false,
     selfieVerified: json['selfieVerified'] as bool? ?? false,
     selfieStatus: json['selfieStatus'] as String? ?? 'pending',
@@ -315,6 +322,7 @@ class KycStatusModel {
     panVerified: false,
     aadhaarVerified: false,
     bankVerified: false,
+    bankReadyForIdentity: false,
     upiVerified: false,
     selfieVerified: false,
     selfieStatus: 'pending',

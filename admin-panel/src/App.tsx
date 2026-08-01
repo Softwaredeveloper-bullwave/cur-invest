@@ -5,7 +5,7 @@ import {
   Headphones, IndianRupee, Landmark, LayoutDashboard, LineChart, LogOut, Mail, MessageSquare,
   Package, RefreshCw, ScrollText, Send, ShieldCheck, Trash2, TrendingUp, UserX, Users, XCircle,
 } from 'lucide-react'
-import { api, clearToken, DEV_NO_AUTH, getToken, setToken } from './api'
+import { api, API_BASE, clearToken, DEV_NO_AUTH, getToken, setToken } from './api'
 import './App.css'
 
 type Tab =
@@ -1401,7 +1401,9 @@ function App() {
       </aside>
       <main className="content">
         {DEV_NO_AUTH && (
-          <div className="dev-banner">Development mode — no login required. Enable auth before production.</div>
+          <div className="dev-banner">
+            Development mode — no login required. API: {API_BASE}. Start Django on port 8000 if data fails to load.
+          </div>
         )}
         <header>
           <div><p className="eyebrow">OPERATIONS</p><h1>{NAV.find((item) => item.id === tab)?.label}</h1></div>

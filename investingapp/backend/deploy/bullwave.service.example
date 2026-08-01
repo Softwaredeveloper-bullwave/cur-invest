@@ -1,0 +1,25 @@
+# Copy to EC2: /etc/systemd/system/bullwave.service
+# Then: sudo systemctl daemon-reload && sudo systemctl enable bullwave && sudo systemctl start bullwave
+#
+# Adjust paths if your clone lives at ~/cur-invest instead of /var/www/bullwave.
+
+[Unit]
+Description=BullWave Django API (gunicorn)
+After=network.target
+
+[Service]
+User=ubuntu
+Group=www-data
+WorkingDirectory=/home/ubuntu/cur-invest/investingapp/backend
+Environment="PATH=/home/ubuntu/cur-invest/investingapp/backend/venv/bin"
+# Prefer a single clean .env file — avoid duplicate EnvironmentFile keys overriding each other.
+ExecStart=/home/ubuntu/cur-invest/investingapp/backend/venv/bin/gunicorn \
+  --workers 3 \
+  --bind 127.0.0.1:8000 \
+  --timeout 120 \
+  backend.wsgi:application
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

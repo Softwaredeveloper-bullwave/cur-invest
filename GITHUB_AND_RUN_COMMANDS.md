@@ -187,13 +187,31 @@ ADMIN_PANEL_DEV_NO_AUTH=False
 SECRET_KEY=<long-random-string>
 ALLOWED_HOSTS=api.bullwave.in,<your-ec2-ip>
 BACKEND_PUBLIC_URL=https://api.bullwave.in
-DB_HOST=<rds-endpoint>
+# PostgreSQL on EC2 — do NOT copy your Mac username (e.g. gopal) here
+DB_HOST=localhost
 DB_NAME=bullwave_db
-DB_USER=...
-DB_PASSWORD=...
+DB_USER=postgres
+DB_PASSWORD=<postgres-password-on-ec2>
+DB_PORT=5432
 KYC_AUTO_APPROVE=False
 KYC_RELAX_RATE_LIMITS=False
+SMS_OTP_ENABLED=False
+SMS_EXPOSE_DEV_OTP=True
 ```
+
+After editing `.env` on EC2:
+
+```bash
+cd /var/www/bullwave/investingapp/backend
+source venv/bin/activate
+python manage.py migrate
+sudo systemctl restart bullwave
+curl -s http://127.0.0.1/health/ | python3 -m json.tool | grep -A6 '"database"'
+curl -s -X POST http://127.0.0.1/api/v1/auth/send-otp/ \
+  -H 'Content-Type: application/json' -d '{"phone":"9999999999"}'
+```
+
+If `database.reachable` is `false`, OTP/login will fail with 503 until `DB_*` is correct.
 
 ---
 
@@ -296,11 +314,91 @@ flutter build apk --release \
 
 ---
 
+## Admin panel — use AWS backend (no local Django)
+
+Copy `admin-panel/.env.example` to `.env` (already set for production):
+
+```env
+VITE_API_BASE_URL=https://api.capitalbullwave.com/api/v1/admin-panel
+VITE_ADMIN_DEV_NO_AUTH=false
+```
+
+```bash
+cd /Users/gopal/cur-invest/admin-panel
+npm run dev
+```
+
+Open `http://127.0.0.1:5173` and log in with a **staff** account created on EC2:
+
+```bash
+ssh ubuntu@54.252.109.12
+cd ~/cur-invest/investingapp/backend
+source venv/bin/activate
+python manage.py createsuperuser
+```
+
+You do **not** need `python manage.py runserver` on your Mac when using the AWS URL.
+
+---
+
+## AWS — backend runs automatically (systemd)
+
+On EC2, gunicorn should start on boot via systemd (not a manual terminal).
+
+**1. SSH into the server**
+
+```bash
+ssh ubuntu@54.252.109.12
+```
+
+**2. Install the service file** (paths match `~/cur-invest` — adjust if yours differ):
+
+```bash
+sudo cp ~/cur-invest/investingapp/backend/deploy/bullwave.service.example \
+  /etc/systemd/system/bullwave.service
+sudo systemctl daemon-reload
+sudo systemctl enable bullwave
+sudo systemctl start bullwave
+sudo systemctl status bullwave
+```
+
+**3. Verify API is up**
+
+```bash
+curl -s https://api.capitalbullwave.com/health/ | head -c 200
+```
+
+**4. After each deploy**
+
+```bash
+cd ~/cur-invest
+git pull
+cd investingapp/backend
+source venv/bin/activate
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py collectstatic --noinput
+sudo systemctl restart bullwave
+sudo systemctl restart nginx
+```
+
+**Useful commands**
+
+| Command | Purpose |
+|---------|---------|
+| `sudo systemctl status bullwave` | Is gunicorn running? |
+| `sudo journalctl -u bullwave -n 50 --no-pager` | Recent backend logs |
+| `sudo systemctl restart bullwave` | Restart after `.env` change |
+
+**Important:** Keep production `.env` on EC2 only. Set `BACKEND_PUBLIC_URL=https://api.capitalbullwave.com`, RDS credentials, and `DEBUG=False` before go-live. Remove duplicate keys in `.env` — they override each other when loaded via systemd.
+
+---
+
 ## All three together (daily dev)
 
-Open **3 terminals**:
+Open **3 terminals** only if you want **local** Django. Otherwise use AWS API (see above).
 
-**Terminal 1 — Backend**
+**Terminal 1 — Backend (optional local only)**
 
 ```bash
 cd /Users/gopal/cur-invest/investingapp/backend
@@ -320,7 +418,7 @@ npm run dev
 ```bash
 cd /Users/gopal/cur-invest/investingapp/bullwavecapital
 flutter run
-# or: flutter run --dart-define=API_HOST=192.168.x.x
+# App already defaults to https://api.capitalbullwave.com/api/v1
 ```
 
 ---

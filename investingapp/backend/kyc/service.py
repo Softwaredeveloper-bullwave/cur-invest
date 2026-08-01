@@ -1277,8 +1277,13 @@ def verify_upi_step(
     from .identity_review_service import IdentityReviewError, manual_upi_enabled, submit_manual_upi
 
     if manual_upi_enabled():
-        if not _bank_really_verified(profile):
-            raise ValueError('Complete bank verification before submitting UPI.')
+        if not _bank_ready_for_identity_steps(profile):
+            if getattr(settings, 'KYC_BANK_REVIEW_MODE', 'provider') == 'manual':
+                raise ValueError('Enter your bank account details before UPI verification.')
+            raise ValueError(
+                'Your bank account must be verified live before submitting UPI. '
+                'Go back to Bank Verification and tap Verify Bank Account.'
+            )
         linked_mobile = _resolve_upi_recipient_mobile(
             upi_vpa=upi_vpa,
             recipient_mobile=recipient_mobile,
@@ -1619,6 +1624,19 @@ def _bank_really_verified(profile: KycProfile) -> bool:
     )
 
 
+def _bank_ready_for_identity_steps(profile: KycProfile) -> bool:
+    """Bank gate for manual UPI/selfie — live verify or saved draft (manual bank mode)."""
+    if _bank_really_verified(profile):
+        return True
+    if getattr(settings, 'KYC_BANK_REVIEW_MODE', 'provider') != 'manual':
+        return False
+    return bool(
+        profile.bank_account_number
+        and profile.bank_ifsc
+        and profile.bank_status != KycProfile.VerificationStatus.FAILED
+    )
+
+
 def _upi_really_verified(profile: KycProfile) -> bool:
     return (
         profile.upi_status == KycProfile.VerificationStatus.VERIFIED
@@ -1683,6 +1701,7 @@ def build_status_payload(profile: KycProfile) -> dict:
         'panVerified': _pan_really_verified(profile),
         'aadhaarVerified': profile.aadhaar_status == KycProfile.VerificationStatus.VERIFIED,
         'bankVerified': _bank_really_verified(profile),
+        'bankReadyForIdentity': _bank_ready_for_identity_steps(profile),
         'selfieVerified': _selfie_really_verified(profile),
         'selfieStatus': profile.selfie_status,
         'selfieUrl': (

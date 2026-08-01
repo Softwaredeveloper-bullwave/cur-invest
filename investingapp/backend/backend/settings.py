@@ -152,6 +152,17 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'backend.wsgi.application'
 
+_db_ssl_mode = _clean_env(config('DB_SSL_MODE', default=''))
+_db_ssl_root_cert = _clean_env(config('DB_SSL_ROOT_CERT', default=''))
+if _db_ssl_root_cert and not Path(_db_ssl_root_cert).is_absolute():
+    _db_ssl_root_cert = str((BASE_DIR / _db_ssl_root_cert).resolve())
+
+_db_options: dict = {}
+if _db_ssl_mode:
+    _db_options['sslmode'] = _db_ssl_mode
+if _db_ssl_root_cert:
+    _db_options['sslrootcert'] = _db_ssl_root_cert
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -160,6 +171,7 @@ DATABASES = {
         'PASSWORD': config('DB_PASSWORD', default='postgres'),
         'HOST': config('DB_HOST', default='localhost'),
         'PORT': config('DB_PORT', default='5432'),
+        **({'OPTIONS': _db_options} if _db_options else {}),
     }
 }
 
@@ -204,7 +216,7 @@ SIMPLE_JWT = {
 CORS_ALLOW_ALL_ORIGINS = DEBUG
 CORS_ALLOWED_ORIGINS = config(
     'CORS_ALLOWED_ORIGINS',
-    default='http://localhost:3000,http://127.0.0.1:3000',
+    default='http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173',
     cast=lambda v: [origin.strip() for origin in v.split(',') if origin.strip()],
 )
 
@@ -217,6 +229,8 @@ CACHES = {
 
 OTP_EXPIRY_MINUTES = config('OTP_EXPIRY_MINUTES', default=5, cast=int)
 SMS_OTP_ENABLED = config('SMS_OTP_ENABLED', default=True, cast=bool)
+# When SMS is off or provider falls back to console, return devOtp in API (for AWS/demo).
+SMS_EXPOSE_DEV_OTP = config('SMS_EXPOSE_DEV_OTP', default=not SMS_OTP_ENABLED, cast=bool)
 
 # AI assistant — default: Ollama (local, free). See ai/ollama_client.py
 AI_PROVIDER = config('AI_PROVIDER', default='ollama')

@@ -11,11 +11,10 @@ class AppEnv {
   static bool get allowsDevShortcuts => kDebugMode;
 
   /// Default production API when `--dart-define=API_BASE_URL=...` is omitted.
-  /// Deploy Django behind HTTPS at this host before publishing.
-  static const String productionApiBaseUrl = 'https://api.bullwave.in/api/v1';
+  static const String productionApiBaseUrl = 'https://api.capitalbullwave.com/api/v1';
 
-  /// Whether OTP console/dev hints may be shown in the UI.
-  static bool get showDevOtpHints => kDebugMode;
+  /// Whether OTP console/dev hints may be shown in the UI (debug + profile builds).
+  static bool get showDevOtpHints => !kReleaseMode;
 
   /// Block login when backend returns console OTP mode (SMS not configured).
   static bool get blockConsoleOtpInRelease => kReleaseMode;

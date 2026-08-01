@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/colors.dart';
 
@@ -14,6 +15,8 @@ class KycStepScaffold extends StatelessWidget {
     required this.body,
     this.icon = Icons.verified_user_outlined,
     this.footer,
+    this.showBack = true,
+    this.onBack,
   });
 
   final String title;
@@ -24,6 +27,8 @@ class KycStepScaffold extends StatelessWidget {
   final Widget body;
   final IconData icon;
   final Widget? footer;
+  final bool showBack;
+  final VoidCallback? onBack;
 
   @override
   Widget build(BuildContext context) {
@@ -37,10 +42,28 @@ class KycStepScaffold extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+              padding: const EdgeInsets.fromLTRB(12, 12, 20, 0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (showBack)
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton.icon(
+                        onPressed: onBack ??
+                            () {
+                              if (context.canPop()) {
+                                context.pop();
+                              }
+                            },
+                        icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 16),
+                        label: const Text('Back'),
+                        style: TextButton.styleFrom(
+                          foregroundColor: theme.colorScheme.onSurface.withValues(alpha: 0.75),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        ),
+                      ),
+                    ),
                   Row(
                     children: [
                       Container(

@@ -4,6 +4,7 @@ from rest_framework.views import APIView
 
 from kyc.rate_limit import RateLimitExceeded, check_rate_limit
 
+from .db_health import database_status
 from .error_reporting import record_error_event
 from .integrations.status import integration_status
 
@@ -13,7 +14,9 @@ class HealthView(APIView):
 
     def get(self, request):
         integrations = integration_status()
-        all_critical = integrations['market_data']['configured']
+        db = database_status()
+        integrations['database'] = db
+        all_critical = integrations['market_data']['configured'] and db['reachable']
         return Response(
             {
                 'status': 'ok' if all_critical else 'degraded',

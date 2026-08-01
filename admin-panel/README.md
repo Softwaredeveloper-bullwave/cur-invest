@@ -34,6 +34,27 @@ customer password.
 
 ## Start locally
 
+### Option A — AWS backend (recommended; no local Django)
+
+1. Ensure EC2 backend is running (`sudo systemctl status bullwave` on the server).
+2. Create `admin-panel/.env`:
+
+```env
+VITE_API_BASE_URL=https://api.capitalbullwave.com/api/v1/admin-panel
+VITE_ADMIN_DEV_NO_AUTH=false
+```
+
+3. Start Vite:
+
+```bash
+cd /Users/gopal/cur-invest/admin-panel
+npm run dev
+```
+
+4. Log in at `http://127.0.0.1:5173` with a staff account from EC2 (`python manage.py createsuperuser`).
+
+### Option B — local Django on port 8000
+
 Terminal 1 — Django API:
 
 ```bash
@@ -49,12 +70,14 @@ cd /Users/gopal/cur-invest/admin-panel
 npm run dev -- --host 0.0.0.0
 ```
 
+Use `.env` with `VITE_API_BASE_URL=/api/v1/admin-panel` (Vite proxies to port 8000).
+
 Open:
 
 - This Mac: `http://127.0.0.1:5173`
 - Same Wi-Fi: `http://192.168.1.26:5173`
 
-The frontend automatically calls port `8000` on the same hostname. To use a
+The frontend automatically calls port `8000` on the same hostname when not using Option A. To use a
 different backend, copy `.env.example` to `.env`, set `VITE_API_BASE_URL`, and
 restart Vite.
 

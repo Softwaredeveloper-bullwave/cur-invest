@@ -375,7 +375,10 @@ class KycFlowProvider extends ChangeNotifier {
       }
       return status.upiVerified ||
           status.paymentReviewPending ||
-          status.identityReviewPending;
+          status.identityReviewPending ||
+          (status.upiManual &&
+              status.upiStatus == 'pending' &&
+              status.upiVpaMasked.isNotEmpty);
     } on ApiException catch (e) {
       error = e.message;
     } catch (e) {

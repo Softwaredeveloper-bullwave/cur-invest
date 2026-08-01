@@ -54,6 +54,14 @@ class ApiClient {
     );
   }
 
+  String _friendlyServerError(int statusCode) {
+    if (statusCode >= 500) {
+      return 'Server error at ${ApiConfig.baseUrl}. The API responded but failed — '
+          'check GET /health/ and backend logs on the server.';
+    }
+    return 'Unexpected server response. Check backend logs.';
+  }
+
   dynamic _decode(http.Response response, String path) {
     dynamic body;
     if (response.body.isNotEmpty) {
@@ -62,9 +70,7 @@ class ApiClient {
       } catch (_) {
         final error = ApiException(
           response.statusCode,
-          response.statusCode >= 500
-              ? 'Server error. Is Django running on port 8000?'
-              : 'Unexpected server response. Check backend logs.',
+          _friendlyServerError(response.statusCode),
         );
         if (response.statusCode >= 500) {
           _report(error, StackTrace.current, path, statusCode: response.statusCode);
@@ -81,6 +87,8 @@ class ApiClient {
         } else if (detail is List && detail.isNotEmpty) {
           message = detail.first.toString();
         }
+      } else if (response.statusCode >= 500) {
+        message = _friendlyServerError(response.statusCode);
       }
       final error = ApiException(response.statusCode, message);
       if (response.statusCode >= 500) {

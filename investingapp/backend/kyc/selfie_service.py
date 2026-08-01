@@ -8,7 +8,14 @@ from django.utils import timezone
 from engagement.models import Notification
 
 from .models import KycProfile, VerificationAuditLog
-from .service import _bank_really_verified, _update_overall_status, get_or_create_profile, upi_step_required, _upi_really_verified
+from .service import (
+    _bank_ready_for_identity_steps,
+    _bank_really_verified,
+    _update_overall_status,
+    get_or_create_profile,
+    upi_step_required,
+    _upi_really_verified,
+)
 
 
 SELFIE_REVIEW_HOURS = 24
@@ -45,8 +52,11 @@ def serialize_selfie_review(profile: KycProfile, request) -> dict:
 
 
 def _assert_selfie_prerequisites(profile: KycProfile) -> None:
-    if not _bank_really_verified(profile):
-        raise SelfieError('Complete bank verification before capturing a selfie.')
+    if not _bank_ready_for_identity_steps(profile):
+        raise SelfieError(
+            'Complete bank verification before capturing a selfie. '
+            'Go back to Bank Verification if live verification is still pending.'
+        )
     from .identity_review_service import manual_upi_enabled
 
     if manual_upi_enabled():

@@ -77,7 +77,7 @@ class OnboardingFlowNavigator {
     final status = kyc.status;
     if (!status.panVerified) return AppRoutes.panVerification;
     if (!status.aadhaarVerified) return AppRoutes.aadhaarVerificationKyc;
-    if (!status.bankVerified) return AppRoutes.bankVerificationKyc;
+    if (!status.canProceedToIdentity) return AppRoutes.bankVerificationKyc;
 
     final useCombinedIdentity = status.upiManual || kyc.upiRequired;
     if (useCombinedIdentity) {
@@ -102,6 +102,42 @@ class OnboardingFlowNavigator {
 
   static void goToNextKycStep(BuildContext context, KycFlowProvider kyc) {
     context.go(nextIncompleteKycStep(kyc) ?? AppRoutes.home);
+  }
+
+  /// Route for the step before [currentRoute] in the automated KYC flow.
+  static String previousKycStep(KycFlowProvider kyc, {String? currentRoute}) {
+    final current = currentRoute ?? nextIncompleteKycStep(kyc);
+    return switch (current) {
+      AppRoutes.identityVerification ||
+      AppRoutes.selfieVerification ||
+      AppRoutes.upiVerification =>
+        AppRoutes.bankVerificationKyc,
+      AppRoutes.nameMatch => AppRoutes.identityVerification,
+      AppRoutes.bankVerificationKyc => AppRoutes.aadhaarVerificationKyc,
+      AppRoutes.aadhaarVerificationKyc => AppRoutes.panVerification,
+      AppRoutes.panVerification => AppRoutes.kycStatus,
+      _ => AppRoutes.kycStatus,
+    };
+  }
+
+  static void goToPreviousKycStep(
+    BuildContext context,
+    KycFlowProvider kyc, {
+    String? currentRoute,
+  }) {
+    context.go(previousKycStep(kyc, currentRoute: currentRoute));
+  }
+
+  static String labelForPreviousKycStep(KycFlowProvider kyc, {String? currentRoute}) {
+    final previous = previousKycStep(kyc, currentRoute: currentRoute);
+    return switch (previous) {
+      AppRoutes.panVerification => 'Back to PAN Verification',
+      AppRoutes.aadhaarVerificationKyc => 'Back to Aadhaar Verification',
+      AppRoutes.bankVerificationKyc => 'Back to Bank Verification',
+      AppRoutes.identityVerification => 'Back to Identity Verification',
+      AppRoutes.kycStatus => 'Back to KYC Status',
+      _ => 'Back',
+    };
   }
 
   static String labelForNextKycStep(KycFlowProvider kyc) {
