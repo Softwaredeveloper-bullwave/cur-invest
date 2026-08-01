@@ -54,6 +54,8 @@ export async function api<T>(path: string, options: ApiOptions = {}): Promise<T>
         ? data.detail
         : typeof data.message === 'string'
           ? data.message
+          : response.status === 404
+            ? 'API endpoint not found (404). Deploy the latest backend on EC2 and restart bullwave.'
           : response.status >= 500
             ? `Server error (${response.status}). Check that the API is deployed and restarted on EC2.`
             : `Request failed (${response.status})`

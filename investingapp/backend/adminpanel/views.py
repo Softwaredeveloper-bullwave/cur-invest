@@ -23,8 +23,10 @@ from kyc.bank_manual_service import (
 )
 from kyc.identity_review_service import (
     IdentityReviewError,
+    approve_manual_bank,
     approve_manual_upi,
     final_kyc_approve,
+    profile_needs_identity_admin_attention,
     ready_for_final_kyc_approval,
     reject_manual_upi,
     serialize_identity_review,
@@ -297,6 +299,11 @@ def _serialize_kyc_profile_row(row: KycProfile) -> dict:
         'accountNumber': mask_account_number(row.bank_account_number),
         'ifsc': row.bank_ifsc,
         'accountHolderName': row.account_holder_name,
+        'bankPendingAdminReview': (
+            row.bank_status == KycProfile.VerificationStatus.PENDING
+            and bool(row.bank_account_number)
+            and bool(row.bank_ifsc)
+        ),
         'bankName': row.bank_name,
         'upiStatus': row.upi_status,
         'upiVpa': row.upi_vpa,
@@ -331,12 +338,8 @@ class KycOverviewView(AdminPanelAPIView):
             selfie_rows = selfie_rows.filter(selfie_status=selfie_status)
         identity_rows = [
             serialize_identity_review(row, request)
-            for row in KycProfile.objects.select_related('user').filter(
-                bank_status=KycProfile.VerificationStatus.VERIFIED,
-            ).order_by('-updated_at')[:300]
-            if row.upi_status == KycProfile.VerificationStatus.PENDING
-            or row.selfie_status == KycProfile.SelfieStatus.COMPLETED
-            or ready_for_final_kyc_approval(row)
+            for row in KycProfile.objects.select_related('user').order_by('-updated_at')[:500]
+            if profile_needs_identity_admin_attention(row)
         ][:200]
         profiles = [
             _serialize_kyc_profile_row(row)
@@ -599,6 +602,31 @@ class IdentityUpiDecisionView(AdminPanelAPIView):
             target_type='KycProfile',
             target_id=user_id,
             summary=summary,
+        )
+        return Response({'success': True, 'profile': serialize_identity_review(profile, request)})
+
+
+class BankProfileDecisionView(AdminPanelAPIView):
+    """Approve bank on KycProfile when details exist but no BankVerificationRequest was created."""
+
+    def post(self, request, user_id, decision):
+        try:
+            profile = KycProfile.objects.select_related('user').get(user_id=user_id)
+        except KycProfile.DoesNotExist:
+            return Response({'detail': 'KYC profile not found.'}, status=404)
+        note = str(request.data.get('note') or request.data.get('reason') or '').strip()
+        if decision != 'approve':
+            return Response({'detail': 'Unsupported decision.'}, status=400)
+        try:
+            profile = approve_manual_bank(profile, request.user, note=note)
+        except IdentityReviewError as exc:
+            return Response({'detail': str(exc)}, status=400)
+        _audit(
+            request,
+            action='bank_profile_approve',
+            target_type='KycProfile',
+            target_id=user_id,
+            summary=note or 'Bank manually approved on profile.',
         )
         return Response({'success': True, 'profile': serialize_identity_review(profile, request)})
 

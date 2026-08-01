@@ -41,6 +41,30 @@ def identity_review_pending(profile: KycProfile) -> bool:
     return upi_waiting or selfie_waiting
 
 
+def bank_pending_admin_review(profile: KycProfile) -> bool:
+    """Bank details on file but never live-verified — admin can approve manually."""
+    return (
+        profile.bank_status == KycProfile.VerificationStatus.PENDING
+        and bool(profile.bank_account_number)
+        and bool(profile.bank_ifsc)
+        and not _bank_really_verified(profile)
+    )
+
+
+def profile_needs_identity_admin_attention(profile: KycProfile) -> bool:
+    if identity_review_pending(profile):
+        return True
+    if ready_for_final_kyc_approval(profile):
+        return True
+    if bank_pending_admin_review(profile) and (
+        profile.upi_status == KycProfile.VerificationStatus.VERIFIED
+        or profile.selfie_status
+        in (KycProfile.SelfieStatus.COMPLETED, KycProfile.SelfieStatus.VERIFIED)
+    ):
+        return True
+    return False
+
+
 def serialize_identity_review(profile: KycProfile, request) -> dict:
     selfie_url = ''
     if profile.selfie_image:
@@ -52,6 +76,9 @@ def serialize_identity_review(profile: KycProfile, request) -> dict:
         'userEmail': profile.user.email,
         'panName': profile.pan_name,
         'bankStatus': profile.bank_status,
+        'bankPendingAdminReview': bank_pending_admin_review(profile),
+        'accountNumber': profile.bank_account_number[-4:] if profile.bank_account_number else '',
+        'ifsc': profile.bank_ifsc,
         'upiVpa': profile.upi_vpa,
         'upiVpaMasked': mask_upi_vpa(profile.upi_vpa) if profile.upi_vpa else '',
         'upiStatus': profile.upi_status,
@@ -68,7 +95,8 @@ def ready_for_final_kyc_approval(profile: KycProfile) -> bool:
         return False
     if profile.final_kyc_approved_at:
         return False
-    if not _bank_really_verified(profile):
+    bank_ok = _bank_really_verified(profile) or bank_pending_admin_review(profile)
+    if not bank_ok:
         return False
     if profile.pan_status != KycProfile.VerificationStatus.VERIFIED:
         return False
@@ -122,6 +150,81 @@ def submit_manual_upi(user, *, upi_vpa: str, upi_mobile: str = '') -> KycProfile
         status=VerificationAuditLog.Status.STARTED,
         message='UPI submitted for manual admin review.',
         request_meta={'vpa': mask_upi_vpa(upi_vpa), 'reference_id': ref},
+    )
+    _update_overall_status(profile)
+    return profile
+
+
+@transaction.atomic
+def approve_manual_bank(profile: KycProfile, reviewer, note: str = '') -> KycProfile:
+    """Mark bank verified when account details were saved but Eko/manual request never completed."""
+    profile = KycProfile.objects.select_for_update().select_related('user').get(pk=profile.pk)
+    if _bank_really_verified(profile):
+        return profile
+    if not profile.bank_account_number or not profile.bank_ifsc:
+        raise IdentityReviewError('No bank account details on file.')
+    if profile.bank_status == KycProfile.VerificationStatus.FAILED:
+        raise IdentityReviewError('Bank verification failed — user must re-enter bank details.')
+
+    from accounts.models import BankAccount
+
+    now = timezone.now()
+    ref = f'manual:bank:{uuid.uuid4().hex[:16]}'
+    profile.bank_status = KycProfile.VerificationStatus.VERIFIED
+    profile.bank_reference_id = ref
+    profile.bank_verification_method = 'manual_admin'
+    profile.bank_failure_reason = ''
+    profile.bank_verified_at = now
+    if not profile.name_at_bank:
+        profile.name_at_bank = profile.account_holder_name or profile.pan_name or profile.user.name
+    profile.save(
+        update_fields=[
+            'bank_status',
+            'bank_reference_id',
+            'bank_verification_method',
+            'bank_failure_reason',
+            'bank_verified_at',
+            'name_at_bank',
+            'updated_at',
+        ]
+    )
+
+    account, _ = BankAccount.objects.get_or_create(
+        user=profile.user,
+        defaults={
+            'account_holder_name': profile.account_holder_name or profile.name_at_bank,
+            'bank_name': profile.bank_name,
+            'account_number': profile.bank_account_number,
+            'ifsc': profile.bank_ifsc,
+            'pan_number': profile.pan_number,
+        },
+    )
+    account.account_holder_name = profile.account_holder_name or profile.name_at_bank
+    account.bank_name = profile.bank_name
+    account.account_number = profile.bank_account_number
+    account.ifsc = profile.bank_ifsc
+    account.pan_number = profile.pan_number
+    account.is_verified = True
+    account.verification_provider = 'manual_admin'
+    account.verification_reference_id = ref
+    account.verification_status = 'verified'
+    account.verification_message = (note or 'Bank manually approved by admin.')[:280]
+    account.name_at_bank = profile.name_at_bank
+    account.verified_at = now
+    account.save()
+
+    VerificationAuditLog.objects.create(
+        user=profile.user,
+        step=VerificationAuditLog.Step.BANK,
+        status=VerificationAuditLog.Status.SUCCESS,
+        message=(note or 'Bank manually approved by admin.')[:280],
+        response_meta={'provider': 'manual_admin', 'reviewer': str(reviewer.id), 'reference_id': ref},
+    )
+    Notification.objects.create(
+        user=profile.user,
+        title='Bank account verified',
+        message='Your bank account has been verified. We will complete your KYC shortly.',
+        type='kyc',
     )
     _update_overall_status(profile)
     return profile
@@ -207,6 +310,12 @@ def approve_manual_upi(profile: KycProfile, reviewer, note: str = '') -> KycProf
 @transaction.atomic
 def final_kyc_approve(profile: KycProfile, reviewer, note: str = '') -> KycProfile:
     profile = KycProfile.objects.select_for_update().select_related('user').get(pk=profile.pk)
+    if bank_pending_admin_review(profile):
+        profile = approve_manual_bank(
+            profile,
+            reviewer,
+            note=note or 'Bank auto-approved with final KYC.',
+        )
     if not ready_for_final_kyc_approval(profile):
         raise IdentityReviewError(
             'PAN, Aadhaar, bank, UPI, and selfie must all be verified before final approval.'

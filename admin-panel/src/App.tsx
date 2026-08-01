@@ -365,47 +365,76 @@ function KycPage({ data, reload }: { data: Json; reload: (opts?: { silent?: bool
   const identityRows = (data.identityReviews as Json[]) || []
   const selfieRows = (data.selfieRequests as Json[]) || []
   const profiles = (data.profiles as Json[]) || []
+  const [actionError, setActionError] = useState('')
+
+  async function runAction(action: () => Promise<void>) {
+    setActionError('')
+    try {
+      await action()
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Action failed.')
+    }
+  }
 
   async function panDecide(id: string, decision: 'approve' | 'reject') {
     const reason = decision === 'reject' ? window.prompt('Rejection reason') : ''
     if (decision === 'reject' && (!reason || reason.trim().length < 3)) return
-    await api(`/kyc/pan/${id}/${decision}/`, { method: 'POST', body: { reason } })
-    await reload({ silent: true })
+    await runAction(async () => {
+      await api(`/kyc/pan/${id}/${decision}/`, { method: 'POST', body: { reason } })
+      await reload({ silent: true })
+    })
   }
 
   async function bankDecide(id: string, decision: 'approve' | 'reject') {
     const note = window.prompt(decision === 'approve' ? 'Optional note' : 'Rejection reason', '')
     if (note === null || (decision === 'reject' && note.trim().length < 3)) return
-    await api(`/kyc/bank/${id}/${decision}/`, {
-      method: 'POST', body: decision === 'approve' ? { note } : { reason: note },
+    await runAction(async () => {
+      await api(`/kyc/bank/${id}/${decision}/`, {
+        method: 'POST', body: decision === 'approve' ? { note } : { reason: note },
+      })
+      await reload({ silent: true })
     })
-    await reload({ silent: true })
   }
 
   async function aadhaar(userId: string, decision: 'approve' | 'reject') {
     const reason = window.prompt(decision === 'approve' ? 'Optional note' : 'Rejection reason') ?? ''
     if (decision === 'reject' && reason.trim().length < 3) return
-    await api(`/kyc/aadhaar/${userId}/${decision}/`, { method: 'POST', body: { reason } })
-    await reload({ silent: true })
+    await runAction(async () => {
+      await api(`/kyc/aadhaar/${userId}/${decision}/`, { method: 'POST', body: { reason } })
+      await reload({ silent: true })
+    })
   }
 
   async function finalKycApprove(userId: string) {
     const note = window.prompt('Optional note for final KYC approval', '') ?? ''
-    await api(`/kyc/final/${userId}/approve/`, { method: 'POST', body: { note } })
-    await reload({ silent: true })
+    await runAction(async () => {
+      await api(`/kyc/final/${userId}/approve/`, { method: 'POST', body: { note } })
+      await reload({ silent: true })
+    })
   }
 
   async function upiApprove(userId: string) {
     const note = window.prompt('Optional note for UPI approval', '') ?? ''
-    await api(`/kyc/upi/${userId}/approve/`, { method: 'POST', body: { note } })
-    await reload({ silent: true })
+    await runAction(async () => {
+      await api(`/kyc/upi/${userId}/approve/`, { method: 'POST', body: { note } })
+      await reload({ silent: true })
+    })
   }
 
   async function upiReject(userId: string) {
     const reason = window.prompt('Reason for rejecting this UPI ID', '') ?? ''
     if (reason.trim().length < 3) return
-    await api(`/kyc/upi/${userId}/reject/`, { method: 'POST', body: { reason } })
-    await reload({ silent: true })
+    await runAction(async () => {
+      await api(`/kyc/upi/${userId}/reject/`, { method: 'POST', body: { reason } })
+      await reload({ silent: true })
+    })
+  }
+
+  async function bankApprove(userId: string) {
+    await runAction(async () => {
+      await api(`/kyc/bank-profile/${userId}/approve/`, { method: 'POST', body: { note: '' } })
+      await reload({ silent: true })
+    })
   }
 
   function hasUpiOnFile(row: Json) {
@@ -416,17 +445,39 @@ function KycPage({ data, reload }: { data: Json; reload: (opts?: { silent?: bool
     return String(row.upiStatus || '').toLowerCase() === 'pending' && hasUpiOnFile(row)
   }
 
+  function bankPending(row: Json) {
+    if (String(row.bankStatus || '').toLowerCase() !== 'pending') return false
+    if (row.bankPendingAdminReview === true) return true
+    const acct = String(row.accountNumber || '').trim()
+    return acct.length > 0 && acct !== '—'
+  }
+
+  function canCompleteKyc(row: Json) {
+    if (row.readyForFinalApproval === true) return true
+    const verified = (value: unknown) => String(value || '').toLowerCase() === 'verified'
+    return (
+      verified(row.panStatus) &&
+      verified(row.aadhaarStatus) &&
+      verified(row.upiStatus) &&
+      String(row.selfieStatus || '').toLowerCase() === 'verified' &&
+      bankPending(row)
+    )
+  }
+
   async function selfieDecide(userId: string, decision: 'approve' | 'reject') {
     const note = window.prompt(decision === 'approve' ? 'Optional note' : 'Rejection reason', '')
     if (note === null || (decision === 'reject' && note.trim().length < 3)) return
-    await api(`/kyc/selfie/${userId}/${decision}/`, {
-      method: 'POST', body: decision === 'approve' ? { note } : { reason: note },
+    await runAction(async () => {
+      await api(`/kyc/selfie/${userId}/${decision}/`, {
+        method: 'POST', body: decision === 'approve' ? { note } : { reason: note },
+      })
+      await reload({ silent: true })
     })
-    await reload({ silent: true })
   }
 
   return (
     <>
+      {actionError && <div className="error-banner">{actionError}</div>}
       <SummaryRow summary={{
         ...summary,
         total: Number(summary.panPending || 0) + Number(summary.panApproved || 0) + Number(summary.panRejected || 0),
@@ -502,6 +553,11 @@ function KycPage({ data, reload }: { data: Json; reload: (opts?: { silent?: bool
               <Status value={String(row.overallStatus || 'pending')} />
             </div>
             <dl>
+              <dt>Bank</dt>
+              <dd className="mono">
+                {row.ifsc ? `•••• ${String(row.accountNumber || '—')} / ${String(row.ifsc)}` : '—'}
+                <Status value={String(row.bankStatus || 'pending')} />
+              </dd>
               <dt>UPI ID</dt>
               <dd className="mono">
                 {String(row.upiVpa || row.upiVpaMasked || '—')}
@@ -513,6 +569,9 @@ function KycPage({ data, reload }: { data: Json; reload: (opts?: { silent?: bool
               <a className="document-link" href={String(row.selfieUrl)} target="_blank" rel="noreferrer">Open selfie</a>
             ) : null}
             <div className="actions">
+              {bankPending(row) ? (
+                <button className="approve" onClick={() => bankApprove(String(row.userId))}><CheckCircle2 size={15} /> Approve bank</button>
+              ) : null}
               {upiPending(row) ? (
                 <>
                   <button className="approve" onClick={() => upiApprove(String(row.userId))}><CheckCircle2 size={15} /> Approve UPI</button>
@@ -525,7 +584,7 @@ function KycPage({ data, reload }: { data: Json; reload: (opts?: { silent?: bool
                   <button className="reject" onClick={() => selfieDecide(String(row.userId), 'reject')}><XCircle size={15} /> Reject selfie</button>
                 </>
               ) : null}
-              {row.readyForFinalApproval ? (
+              {canCompleteKyc(row) ? (
                 <button className="approve" onClick={() => finalKycApprove(String(row.userId))}><CheckCircle2 size={15} /> Complete KYC</button>
               ) : null}
             </div>
@@ -579,13 +638,16 @@ function KycPage({ data, reload }: { data: Json; reload: (opts?: { silent?: bool
                 <td><span className="mono">{String(row.upiVpa || '—')}</span><Status value={String(row.upiStatus)} /></td>
                 <td><Status value={String(row.overallStatus)} /></td>
                 <td><div className="actions">
+                  {bankPending(row) ? (
+                    <button className="approve" onClick={() => bankApprove(String(row.userId))}><CheckCircle2 size={15} /> Approve bank</button>
+                  ) : null}
                   {upiPending(row) ? (
                     <>
                       <button className="approve" onClick={() => upiApprove(String(row.userId))}><CheckCircle2 size={15} /> Approve UPI</button>
                       <button className="reject" onClick={() => upiReject(String(row.userId))}><XCircle size={15} /> Reject UPI</button>
                     </>
                   ) : null}
-                  {row.readyForFinalApproval ? (
+                  {canCompleteKyc(row) ? (
                     <button className="approve" onClick={() => finalKycApprove(String(row.userId))}><CheckCircle2 size={15} /> Complete KYC</button>
                   ) : null}
                   <button className="icon-action approve" title="Approve Aadhaar" onClick={() => aadhaar(String(row.userId), 'approve')}><CheckCircle2 size={15} /></button>

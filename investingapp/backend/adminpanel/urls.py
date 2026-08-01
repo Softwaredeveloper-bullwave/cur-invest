@@ -5,6 +5,7 @@ from .views import (
     AdminLoginView,
     AdminMeView,
     AuditLogView,
+    BankProfileDecisionView,
     BankReviewDecisionView,
     BankReviewListView,
     CommoditiesReportView,
@@ -86,6 +87,11 @@ urlpatterns = [
         'kyc/upi/<uuid:user_id>/<str:decision>/',
         IdentityUpiDecisionView.as_view(),
         name='admin-panel-upi-decision',
+    ),
+    path(
+        'kyc/bank-profile/<uuid:user_id>/<str:decision>/',
+        BankProfileDecisionView.as_view(),
+        name='admin-panel-bank-profile-decision',
     ),
     path(
         'kyc/final/<uuid:user_id>/<str:decision>/',

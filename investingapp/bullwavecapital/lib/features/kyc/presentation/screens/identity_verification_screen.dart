@@ -147,7 +147,7 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
     _pollTimer?.cancel();
     final kyc = context.read<KycFlowProvider>();
     if (!_awaitingAdminReview(kyc.status)) return;
-    _pollTimer = Timer.periodic(const Duration(seconds: 45), (_) async {
+    _pollTimer = Timer.periodic(const Duration(seconds: 20), (_) async {
       await context.read<KycFlowProvider>().loadKycStatus();
       if (!mounted) return;
       final s = context.read<KycFlowProvider>().status;
@@ -564,11 +564,13 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
                     s.selfieVerified &&
                     s.manualFinalApprovalRequired &&
                     !s.finalKycApproved)
-                  const KycInfoCard(
+                  KycInfoCard(
                     tone: KycInfoTone.warning,
                     title: 'Final review in progress',
-                    message:
-                        'UPI and selfie are verified. An admin will complete your account verification shortly.',
+                    message: s.bankVerified
+                        ? 'UPI and selfie are verified. An admin will complete your account verification shortly.'
+                        : 'UPI and selfie are verified. Your bank account still needs admin approval — '
+                            'once verified, an admin will complete your account verification.',
                   ),
               ] else ...[
                 if (needsUpi) ...[
