@@ -31,13 +31,28 @@ import 'json_parsers.dart';
 import 'token_storage.dart';
 
 class SendOtpResult {
-  const SendOtpResult({this.devOtp, required this.otpMode, this.user});
+  const SendOtpResult({
+    this.devOtp,
+    required this.otpMode,
+    this.user,
+    this.isRegistered = false,
+  });
 
   final String? devOtp;
   final String otpMode;
   final UserModel? user;
+  /// True when this phone already has an account (returning user).
+  final bool isRegistered;
 
   bool get isConsoleMode => otpMode == 'console';
+}
+
+class VerifyOtpResult {
+  const VerifyOtpResult({required this.user, required this.isNewUser});
+
+  final UserModel user;
+  /// True when the account was created on this OTP verification (first sign-up).
+  final bool isNewUser;
 }
 
 class BullwaveApi {
@@ -63,6 +78,7 @@ class BullwaveApi {
     return SendOtpResult(
       devOtp: data['devOtp']?.toString(),
       otpMode: data['otpMode']?.toString() ?? 'console',
+      isRegistered: data['isRegistered'] as bool? ?? false,
     );
   }
 
@@ -91,7 +107,7 @@ class BullwaveApi {
     return parseUser(data['user'] as Map<String, dynamic>);
   }
 
-  Future<UserModel> verifyOtp(String phone, String otp) async {
+  Future<VerifyOtpResult> verifyOtp(String phone, String otp) async {
     final normalizedPhone = _normalizePhone(phone);
     final normalizedOtp = otp.replaceAll(RegExp(r'\D'), '');
     final data =
@@ -111,7 +127,10 @@ class BullwaveApi {
 
     await TokenStorage.saveTokens(access: access, refresh: refresh);
     await _client.setAccessToken(access);
-    return parseUser(data['user'] as Map<String, dynamic>);
+    return VerifyOtpResult(
+      user: parseUser(data['user'] as Map<String, dynamic>),
+      isNewUser: data['isNewUser'] as bool? ?? false,
+    );
   }
 
   Future<SendOtpResult> sendEmailOtp(String email) async {

@@ -67,6 +67,20 @@ class _LoginScreenState extends State<LoginScreen> {
             behavior: SnackBarBehavior.floating,
           ),
         );
+      } else if (auth.phoneIsRegistered) {
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text('Welcome back — enter the OTP to sign in.'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      } else {
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text('New number — you\'ll set up your account after OTP.'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       }
       router.push(AppRoutes.otp);
     } else {
@@ -121,7 +135,9 @@ class _LoginScreenState extends State<LoginScreen> {
             PremiumAuthHero(
               pill: 'Step 1 · Phone',
               headline: 'SIGN IN OR\nJOIN',
-              body: 'Enter your mobile number. New users will complete email verification and KYC after OTP.',
+              body: 'Enter your mobile number. '
+                  'If you\'re new, we\'ll guide you through registration. '
+                  'If you\'re returning, you\'ll go straight to the app after OTP.',
               showLogo: true,
               belowBody: PremiumGlassField(
                 child: TextFormField(

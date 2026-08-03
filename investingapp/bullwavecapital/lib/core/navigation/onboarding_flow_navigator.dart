@@ -58,13 +58,21 @@ class OnboardingFlowNavigator {
     AuthProvider auth,
     KycFlowProvider kyc,
   ) {
-    if (auth.needsEmailVerification) {
-      return auth.needsEmailOtpEntry
-          ? AppRoutes.verifyEmailOtp
-          : AppRoutes.verifyEmail;
+    if (auth.needsRegistrationFlow) {
+      if (auth.needsEmailVerification) {
+        return auth.needsEmailOtpEntry
+            ? AppRoutes.verifyEmailOtp
+            : AppRoutes.verifyEmail;
+      }
+      if (auth.needsProfileSetup) return AppRoutes.completeProfile;
+      return AppRoutes.verifyEmail;
     }
-    if (auth.needsProfileSetup) return AppRoutes.completeProfile;
-    return routeAfterProfileComplete(kyc);
+    return routeForReturningUser(kyc);
+  }
+
+  /// Registered returning user — home first; KYC is optional until they trade.
+  static String routeForReturningUser(KycFlowProvider kyc) {
+    return AppRoutes.home;
   }
 
   static String routeAfterProfileComplete(KycFlowProvider kyc) {

@@ -136,6 +136,7 @@ class _OtpScreenState extends State<OtpScreen> {
     final canResend = _secondsRemaining == 0 && !_isResending;
     final isBusy = auth.isLoading || _isVerifying;
     final canVerify = _otp.replaceAll(RegExp(r'\D'), '').length == 6 && !isBusy;
+    final isReturningPhone = auth.phoneIsRegistered;
 
     return PremiumAuthShell(
       glowPrimary: const Color(0xFF22D3EE),
@@ -152,11 +153,14 @@ class _OtpScreenState extends State<OtpScreen> {
         children: [
           const Spacer(),
           PremiumAuthHero(
-            pill: 'Step 1 · Phone OTP',
-            headline: 'ENTER\nOTP',
+            pill: isReturningPhone ? 'Welcome back' : 'Step 1 · Create account',
+            headline: isReturningPhone ? 'SIGN IN' : 'VERIFY\nPHONE',
             body: AppEnv.showDevOtpHints && auth.otpIsConsoleMode
                 ? 'Dev mode: SMS is not configured. Use the OTP shown below or in the Django terminal.'
-                : 'We sent a 6-digit code to +91 ${_maskedPhone(auth.phoneNumber)}. New numbers continue to email verification next.',
+                : isReturningPhone
+                    ? 'Enter the 6-digit code sent to +91 ${_maskedPhone(auth.phoneNumber)} to open your account.'
+                    : 'Enter the 6-digit code sent to +91 ${_maskedPhone(auth.phoneNumber)}. '
+                        'Next you\'ll verify email and complete your profile.',
             showLogo: false,
             belowBody: Column(
               children: [

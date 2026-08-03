@@ -241,12 +241,14 @@ class AppRouter {
 
       if (auth.needsProfileSetup) {
         if (path == AppRoutes.completeProfile) return null;
-
         return AppRoutes.completeProfile;
       }
 
       if (_isPublicAuthRoute(path) || path == AppRoutes.completeProfile) {
-        return _postAuthDestination(kyc);
+        if (auth.hasCompletedRegistration) {
+          return AppRoutes.home;
+        }
+        return OnboardingFlowNavigator.routeAfterAuthentication(auth, kyc);
       }
 
       if (kyc.isFullyVerified && _isManualKycRoute(path)) {
@@ -263,6 +265,7 @@ class AppRouter {
 
       if (!kyc.isFullyVerified &&
           kyc.usesAutomatedKyc &&
+          auth.needsRegistrationFlow &&
           OnboardingFlowNavigator.shouldBlockShellUntilKycComplete(path)) {
         return OnboardingFlowNavigator.routeAfterProfileComplete(kyc);
       }

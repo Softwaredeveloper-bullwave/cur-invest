@@ -98,10 +98,17 @@ class SendOTPView(APIView):
         OTPVerification.objects.create(phone=phone, otp_code=otp, expires_at=expires_at)
         return otp
 
+    @staticmethod
+    def _registration_hint(phone: str) -> dict:
+        """Tell the app whether this phone already has an account (returning user)."""
+        return {'isRegistered': User.objects.filter(phone=phone).exists()}
+
     def post(self, request):
         phone = normalize_phone(request.data.get('phone', ''))
         if not phone:
             return Response({'detail': 'Enter a valid 10-digit phone number.'}, status=400)
+
+        registration_hint = self._registration_hint(phone)
 
         try:
             if not settings.SMS_OTP_ENABLED:
@@ -113,6 +120,7 @@ class SendOTPView(APIView):
                         'message': 'Development OTP generated without sending SMS.',
                         'otpMode': 'console',
                         'devOtp': otp,
+                        **registration_hint,
                     }
                 )
 
@@ -141,6 +149,7 @@ class SendOTPView(APIView):
                                 'success': True,
                                 'message': 'OTP sent successfully.',
                                 'otpMode': 'sms',
+                                **registration_hint,
                             }
                         )
                     logger.error('Twilio Verify failed for %s: %s', phone, exc)
@@ -150,6 +159,7 @@ class SendOTPView(APIView):
                         'success': True,
                         'message': 'OTP sent successfully.',
                         'otpMode': 'sms',
+                        **registration_hint,
                     }
                 )
 
@@ -165,6 +175,7 @@ class SendOTPView(APIView):
                 'success': True,
                 'message': 'OTP sent successfully.',
                 'otpMode': 'console' if not live else 'sms',
+                **registration_hint,
             }
             if not live:
                 payload['devOtp'] = otp

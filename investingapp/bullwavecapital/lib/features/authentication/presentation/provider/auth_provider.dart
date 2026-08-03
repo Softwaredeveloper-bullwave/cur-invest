@@ -29,6 +29,8 @@ class AuthProvider extends ChangeNotifier {
   String _otpMode = 'console';
   String _pendingEmail = '';
   String _emailOtpMode = 'email';
+  bool _isNewUser = false;
+  bool? _phoneIsRegistered;
 
   String get phoneNumber => _phoneNumber;
   String get pendingEmail => _pendingEmail;
@@ -41,14 +43,37 @@ class AuthProvider extends ChangeNotifier {
   bool get otpIsConsoleMode => _otpMode == 'console';
   bool get emailOtpIsConsoleMode => _emailOtpMode == 'console';
 
+  /// Account was created on this sign-in (phone was not in the system before).
+  bool get isNewUser => _isNewUser;
+
+  /// Phone already had an account when OTP was sent (from send-otp API).
+  bool get phoneIsRegistered => _phoneIsRegistered ?? false;
+
+  /// Email + profile setup finished — user is past the registration funnel.
+  bool get hasCompletedRegistration =>
+      _isAuthenticated &&
+      _user != null &&
+      _user!.emailVerified &&
+      _user!.hasCompletedOnboarding;
+
+  /// Must complete email verification and/or profile before using the app.
+  bool get needsRegistrationFlow =>
+      _isAuthenticated && !hasCompletedRegistration;
+
+  /// Returning user who already finished registration — should land on home.
+  bool get isReturningRegisteredUser =>
+      _isAuthenticated && hasCompletedRegistration && !_isNewUser;
+
   bool get needsEmailVerification =>
-      _isAuthenticated && (_user?.emailVerified != true);
+      needsRegistrationFlow && (_user?.emailVerified != true);
 
   bool get needsEmailOtpEntry =>
       needsEmailVerification && _pendingEmail.isNotEmpty;
 
   bool get needsProfileSetup =>
-      _isAuthenticated && _user?.emailVerified == true && (_user?.hasCompletedOnboarding != true);
+      _isAuthenticated &&
+      _user?.emailVerified == true &&
+      (_user?.hasCompletedOnboarding != true);
 
   void setPhoneNumber(String value) {
     var digits = value.replaceAll(RegExp(r'\D'), '');
@@ -116,6 +141,7 @@ class AuthProvider extends ChangeNotifier {
     try {
       _user = await _api.getProfile();
       _isAuthenticated = true;
+      _isNewUser = false;
       if (_user?.emailVerified == true) {
         _pendingEmail = '';
         await TokenStorage.savePendingEmail('');
@@ -149,6 +175,7 @@ class AuthProvider extends ChangeNotifier {
       }
       _devOtp = result.devOtp;
       _otpMode = result.otpMode;
+      _phoneIsRegistered = result.isRegistered;
       _isLoading = false;
       notifyListeners();
       return true;
@@ -181,7 +208,9 @@ class AuthProvider extends ChangeNotifier {
     _error = null;
     notifyListeners();
     try {
-      _user = await _api.verifyOtp(_phoneNumber, code);
+      final result = await _api.verifyOtp(_phoneNumber, code);
+      _user = result.user;
+      _isNewUser = result.isNewUser;
       _isAuthenticated = true;
       await _syncPendingEmailState();
       _isLoading = false;
@@ -382,6 +411,8 @@ class AuthProvider extends ChangeNotifier {
     _user = null;
     _phoneNumber = '';
     _pendingEmail = '';
+    _isNewUser = false;
+    _phoneIsRegistered = null;
     await TokenStorage.savePendingEmail('');
     _termsAccepted = false;
     notifyListeners();

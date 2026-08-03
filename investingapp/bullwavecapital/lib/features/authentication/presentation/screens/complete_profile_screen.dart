@@ -206,7 +206,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
             key: _formKey,
             child: Column(
               children: [
-                const PremiumPillTag(label: 'Profile'),
+                const PremiumPillTag(label: 'Step 3 · Profile'),
                 const SizedBox(height: 20),
                 const PremiumAuthHeadline(text: 'COMPLETE\nYOUR PROFILE'),
                 const SizedBox(height: 12),
