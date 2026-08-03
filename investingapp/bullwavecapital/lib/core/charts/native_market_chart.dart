@@ -414,7 +414,7 @@ class _PriceAxisPainter extends CustomPainter {
     for (var i = 0; i <= 4; i++) {
       final price = yMax - range * i / 4;
       final y = 4 + (mainHeight - 8) * i / 4;
-      _drawText(canvas, price.toStringAsFixed(2), Offset(2, y - 6), style);
+      _drawText(canvas, price.toStringAsFixed(2), Offset(2, y - 6), style, size.width);
     }
 
     final lp = lastPrice ?? candles.last.close;
@@ -432,11 +432,11 @@ class _PriceAxisPainter extends CustomPainter {
     tp.paint(canvas, Offset(4, lpY - 7));
   }
 
-  void _drawText(Canvas canvas, String text, Offset offset, TextStyle style) {
+  void _drawText(Canvas canvas, String text, Offset offset, TextStyle style, double maxWidth) {
     final tp = TextPainter(
       text: TextSpan(text: text, style: style),
       textDirection: TextDirection.ltr,
-    )..layout(maxWidth: size.width);
+    )..layout(maxWidth: maxWidth);
     tp.paint(canvas, offset);
   }
 
