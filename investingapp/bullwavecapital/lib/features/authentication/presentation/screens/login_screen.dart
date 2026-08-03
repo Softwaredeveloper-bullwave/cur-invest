@@ -119,9 +119,9 @@ class _LoginScreenState extends State<LoginScreen> {
           children: [
             const Spacer(),
             PremiumAuthHero(
-              pill: 'Sign in',
-              headline: 'WELCOME\nBACK',
-              body: 'Enter your mobile number. We\'ll send a secure 6-digit OTP to verify you.',
+              pill: 'Step 1 · Phone',
+              headline: 'SIGN IN OR\nJOIN',
+              body: 'Enter your mobile number. New users will complete email verification and KYC after OTP.',
               showLogo: true,
               belowBody: PremiumGlassField(
                 child: TextFormField(

@@ -12,6 +12,7 @@ import 'core/routes/app_router.dart';
 import 'core/services/app_error_reporter.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/premium_background.dart';
+import 'features/authentication/presentation/widgets/splash_animation.dart';
 import 'features/authentication/presentation/provider/auth_provider.dart';
 import 'features/kyc/presentation/provider/kyc_flow_provider.dart';
 import 'features/home/presentation/provider/home_provider.dart';
@@ -136,7 +137,9 @@ class _BullWaveAppState extends State<BullWaveApp> {
             themeMode: appProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
             routerConfig: _router,
             builder: (context, child) {
-              if (child == null) return const SizedBox.shrink();
+              if (child == null) {
+                return const PremiumAppBackdrop(child: SplashAnimation());
+              }
               return PremiumAppBackdrop(child: child);
             },
           );

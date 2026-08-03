@@ -227,6 +227,9 @@ class AppRouter {
       }
 
       if (auth.needsEmailVerification) {
+        if (path == AppRoutes.verifyEmailOtp && !auth.needsEmailOtpEntry) {
+          return AppRoutes.verifyEmail;
+        }
         if (path == AppRoutes.verifyEmail || path == AppRoutes.verifyEmailOtp) {
           return null;
         }

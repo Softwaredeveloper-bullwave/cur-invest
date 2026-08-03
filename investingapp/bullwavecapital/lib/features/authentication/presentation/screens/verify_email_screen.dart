@@ -84,10 +84,10 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
           children: [
             const Spacer(),
             PremiumAuthHero(
-              pill: 'Step 2 · Email',
-              headline: 'VERIFY\nEMAIL',
-              body:
-                  'Enter your email address. We\'ll send a secure 6-digit code to confirm it\'s yours.',
+            pill: 'Step 2 · Email',
+            headline: 'VERIFY\nEMAIL',
+            body:
+                'Enter your email address. We\'ll send a secure 6-digit code — required for all new accounts.',
               showLogo: false,
               belowBody: Column(
                 children: [

@@ -5,12 +5,10 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
-import '../../../../core/api/refresh_providers.dart';
 import '../../../../core/config/app_env.dart';
-import '../../../../core/navigation/onboarding_flow_navigator.dart';
+import '../../../../core/navigation/auth_flow_navigation.dart';
 import '../../../../core/theme/colors.dart';
 import '../../../../core/widgets/otp_box.dart';
-import '../../../kyc/presentation/provider/kyc_flow_provider.dart';
 import '../provider/auth_provider.dart';
 import '../widgets/premium_auth_ui.dart';
 
@@ -72,7 +70,6 @@ class _OtpScreenState extends State<OtpScreen> {
     }
 
     setState(() => _isVerifying = true);
-    final router = GoRouter.of(context);
     final messenger = ScaffoldMessenger.of(context);
 
     final success = await auth.verifyOtp(code);
@@ -81,11 +78,7 @@ class _OtpScreenState extends State<OtpScreen> {
     setState(() => _isVerifying = false);
 
     if (success) {
-      final kyc = context.read<KycFlowProvider>();
-      await kyc.loadStatus();
-      if (!mounted) return;
-      unawaited(refreshAllProviders(context));
-      router.go(OnboardingFlowNavigator.routeAfterAuthentication(auth, kyc));
+      await AuthFlowNavigation.afterPhoneOtp(context);
       return;
     }
 
@@ -159,11 +152,11 @@ class _OtpScreenState extends State<OtpScreen> {
         children: [
           const Spacer(),
           PremiumAuthHero(
-            pill: 'Verification',
+            pill: 'Step 1 · Phone OTP',
             headline: 'ENTER\nOTP',
             body: AppEnv.showDevOtpHints && auth.otpIsConsoleMode
                 ? 'Dev mode: SMS is not configured. Use the OTP shown below or in the Django terminal.'
-                : 'We sent a 6-digit code to +91 ${_maskedPhone(auth.phoneNumber)}',
+                : 'We sent a 6-digit code to +91 ${_maskedPhone(auth.phoneNumber)}. New numbers continue to email verification next.',
             showLogo: false,
             belowBody: Column(
               children: [

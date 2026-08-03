@@ -5,13 +5,11 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
-import '../../../../core/api/refresh_providers.dart';
 import '../../../../core/config/app_env.dart';
 import '../../../../core/constants/routes.dart';
-import '../../../../core/navigation/onboarding_flow_navigator.dart';
+import '../../../../core/navigation/auth_flow_navigation.dart';
 import '../../../../core/theme/colors.dart';
 import '../../../../core/widgets/otp_box.dart';
-import '../../../kyc/presentation/provider/kyc_flow_provider.dart';
 import '../provider/auth_provider.dart';
 import '../widgets/premium_auth_ui.dart';
 
@@ -57,7 +55,6 @@ class _VerifyEmailOtpScreenState extends State<VerifyEmailOtpScreen> {
     if (code.length != 6 || auth.isLoading) return;
 
     setState(() => _isVerifying = true);
-    final router = GoRouter.of(context);
     final messenger = ScaffoldMessenger.of(context);
 
     final success = await auth.verifyEmailOtp(code);
@@ -66,11 +63,7 @@ class _VerifyEmailOtpScreenState extends State<VerifyEmailOtpScreen> {
     setState(() => _isVerifying = false);
 
     if (success) {
-      final kyc = context.read<KycFlowProvider>();
-      await kyc.loadStatus();
-      if (!mounted) return;
-      unawaited(refreshAllProviders(context));
-      router.go(OnboardingFlowNavigator.routeAfterAuthentication(auth, kyc));
+      await AuthFlowNavigation.afterEmailOtp(context);
       return;
     }
 

@@ -7,13 +7,11 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/api/api_config.dart';
-import '../../../../core/api/refresh_providers.dart';
 import '../../../../core/constants/dimensions.dart';
-import '../../../../core/navigation/onboarding_flow_navigator.dart';
+import '../../../../core/navigation/auth_flow_navigation.dart';
 import '../../../../core/theme/colors.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/widgets/custom_dialog.dart';
-import '../../../kyc/presentation/provider/kyc_flow_provider.dart';
 import '../provider/auth_provider.dart';
 import '../widgets/premium_auth_ui.dart';
 
@@ -126,11 +124,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
     if (!mounted) return;
 
     if (success) {
-      final kyc = context.read<KycFlowProvider>();
-      await kyc.loadStatus();
-      if (!mounted) return;
-      unawaited(refreshAllProviders(context));
-      context.go(OnboardingFlowNavigator.routeAfterProfileComplete(kyc));
+      await AuthFlowNavigation.afterProfileComplete(context);
     } else {
       AppSnackbar.error(context, auth.error ?? 'Could not save profile');
     }

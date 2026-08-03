@@ -65,6 +65,18 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> _syncPendingEmailState() async {
+    _pendingEmail = await TokenStorage.getPendingEmail() ?? '';
+    if (_user?.emailVerified == true) {
+      _pendingEmail = '';
+      await TokenStorage.savePendingEmail('');
+      return;
+    }
+    if (_pendingEmail.isEmpty && (_user?.email.isNotEmpty ?? false)) {
+      _pendingEmail = _user!.email.trim().toLowerCase();
+    }
+  }
+
   void _applyDevSession({UserModel? user}) {
     _isAuthenticated = true;
     _user = user ??
@@ -171,6 +183,7 @@ class AuthProvider extends ChangeNotifier {
     try {
       _user = await _api.verifyOtp(_phoneNumber, code);
       _isAuthenticated = true;
+      await _syncPendingEmailState();
       _isLoading = false;
       notifyListeners();
       return true;
