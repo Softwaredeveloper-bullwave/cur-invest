@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/charts/lightweight_chart.dart';
 import '../../../../core/charts/tradingview_chart.dart';
+import '../../../../core/utils/formatters.dart';
 import '../../../../models/stock_model.dart';
 import 'chart_interval_selector.dart';
+import 'dhan_chart_toolbar.dart';
 import 'premium_chart_toolbar.dart';
 
 /// Interval label shown in UI → backend candle interval.
@@ -16,7 +18,6 @@ const stockChartIntervals = <({String label, String apiInterval})>[
   (label: '1M', apiInterval: '90d'),
 ];
 
-/// Dhan-style dark chart shell background.
 const Color _dhanChartBg = Color(0xFF0B0E11);
 const Color _dhanChartBorder = Color(0xFF1E2329);
 
@@ -27,6 +28,7 @@ class StockDetailChart extends StatefulWidget {
   final bool isLoading;
   final String selectedLabel;
   final ValueChanged<String> onIntervalSelected;
+  final double? lastPrice;
 
   const StockDetailChart({
     super.key,
@@ -36,6 +38,7 @@ class StockDetailChart extends StatefulWidget {
     required this.isLoading,
     required this.selectedLabel,
     required this.onIntervalSelected,
+    this.lastPrice,
   });
 
   @override
@@ -46,6 +49,7 @@ class _StockDetailChartState extends State<StockDetailChart> {
   MarketChartType _chartType = MarketChartType.candlestick;
   bool _showVolume = true;
   bool _showSma = false;
+  CandleModel? _crosshairCandle;
 
   String get _apiInterval {
     for (final item in stockChartIntervals) {
@@ -54,15 +58,30 @@ class _StockDetailChartState extends State<StockDetailChart> {
     return '1d';
   }
 
+  CandleModel? get _displayCandle {
+    if (_crosshairCandle != null) return _crosshairCandle;
+    if (widget.candles.isEmpty) return null;
+    return widget.candles.last;
+  }
+
+  String _formatVol(int vol) {
+    if (vol >= 10000000) return '${(vol / 10000000).toStringAsFixed(2)}Cr';
+    if (vol >= 100000) return '${(vol / 100000).toStringAsFixed(2)}L';
+    if (vol >= 1000) return '${(vol / 1000).toStringAsFixed(1)}K';
+    return vol.toString();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final candle = _displayCandle;
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final chartHeight = constraints.maxWidth >= 700
-            ? 380.0
+            ? 340.0
             : constraints.maxWidth < 380
-            ? 260.0
-            : 310.0;
+            ? 240.0
+            : 290.0;
 
         return Container(
           decoration: BoxDecoration(
@@ -98,6 +117,22 @@ class _StockDetailChartState extends State<StockDetailChart> {
                   ],
                 ),
               ),
+              DhanChartToolbar(
+                chartType: _chartType,
+                onChartTypeChanged: (v) => setState(() => _chartType = v),
+                showVolume: _showVolume,
+                onVolumeChanged: (v) => setState(() => _showVolume = v),
+                showSma: _showSma,
+                onSmaChanged: (v) => setState(() => _showSma = v),
+              ),
+              ChartOhlcStrip(
+                open: candle != null ? IndexFormatter.format(candle.open) : null,
+                high: candle != null ? IndexFormatter.format(candle.high) : null,
+                low: candle != null ? IndexFormatter.format(candle.low) : null,
+                close: candle != null ? IndexFormatter.format(candle.close) : null,
+                volume: candle != null ? _formatVol(candle.volume) : null,
+                isBullish: candle?.isBullish ?? true,
+              ),
               SizedBox(
                 height: chartHeight,
                 child: Stack(
@@ -113,6 +148,8 @@ class _StockDetailChartState extends State<StockDetailChart> {
                       chartType: _chartType,
                       showVolume: _showVolume,
                       showSma: _showSma,
+                      lastPrice: widget.lastPrice,
+                      onCrosshair: (c) => setState(() => _crosshairCandle = c),
                     ),
                     if (widget.isLoading)
                       const Positioned.fill(
@@ -149,6 +186,7 @@ class _StockDetailChartState extends State<StockDetailChart> {
           intervalLabel: widget.selectedLabel,
           apiInterval: _apiInterval,
           candles: widget.candles,
+          lastPrice: widget.lastPrice,
           initialType: _chartType,
           initialShowVolume: _showVolume,
           initialShowSma: _showSma,
@@ -164,6 +202,7 @@ class _FullscreenStockChart extends StatefulWidget {
   final String intervalLabel;
   final String apiInterval;
   final List<CandleModel> candles;
+  final double? lastPrice;
   final MarketChartType initialType;
   final bool initialShowVolume;
   final bool initialShowSma;
@@ -174,6 +213,7 @@ class _FullscreenStockChart extends StatefulWidget {
     required this.intervalLabel,
     required this.apiInterval,
     required this.candles,
+    this.lastPrice,
     required this.initialType,
     required this.initialShowVolume,
     required this.initialShowSma,
@@ -227,6 +267,7 @@ class _FullscreenStockChartState extends State<_FullscreenStockChart> {
                       chartType: _chartType,
                       showVolume: _showVolume,
                       showSma: _showSma,
+                      lastPrice: widget.lastPrice,
                     ),
                   ),
                 ),

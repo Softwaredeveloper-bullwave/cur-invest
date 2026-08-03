@@ -23,6 +23,8 @@ class TradingViewChart extends StatelessWidget {
   final MarketChartType chartType;
   final bool showVolume;
   final bool showSma;
+  final double? lastPrice;
+  final ValueChanged<CandleModel?>? onCrosshair;
 
   const TradingViewChart({
     super.key,
@@ -37,6 +39,8 @@ class TradingViewChart extends StatelessWidget {
     this.chartType = MarketChartType.candlestick,
     this.showVolume = true,
     this.showSma = false,
+    this.lastPrice,
+    this.onCrosshair,
   });
 
   String get _tvSymbol => isCommodity
@@ -130,6 +134,8 @@ class TradingViewChart extends StatelessWidget {
       chartType: chartType,
       showVolume: showVolume,
       showSma: showSma,
+      lastPrice: lastPrice,
+      onCrosshair: onCrosshair,
     );
   }
 }

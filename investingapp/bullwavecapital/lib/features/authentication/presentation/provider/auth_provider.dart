@@ -213,10 +213,10 @@ class AuthProvider extends ChangeNotifier {
         _pendingEmail = _user!.email.trim().toLowerCase();
       }
 
-      // Keep session while registration/KYC is in progress (profile done, KYC pending).
-      if (!_hasSignedInSession &&
-          hasCompletedRegistration &&
-          !isRegistrationFlow) {
+      // Keep session only for an active signed-in visit — not a stale registration token.
+      if (!_hasSignedInSession && hasCompletedRegistration) {
+        await TokenStorage.setRegistrationInProgress(false);
+        _flowMode = AuthFlowMode.signIn;
         await logout();
         return false;
       }
@@ -420,9 +420,9 @@ class AuthProvider extends ChangeNotifier {
         referralCode: referralCode.trim(),
       );
       if (_flowMode == AuthFlowMode.registration) {
-        await TokenStorage.setRegistrationInProgress(true);
-        _hasSignedInSession = false;
-        await TokenStorage.setSignedInSession(false);
+        await TokenStorage.setRegistrationInProgress(false);
+        _flowMode = AuthFlowMode.signIn;
+        await markSignedInSession();
       }
       _isLoading = false;
       notifyListeners();

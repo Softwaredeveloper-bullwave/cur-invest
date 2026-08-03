@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../constants/routes.dart';
 import '../api/refresh_providers.dart';
 import '../../features/authentication/presentation/provider/auth_provider.dart';
 import '../../features/kyc/presentation/provider/kyc_flow_provider.dart';
@@ -39,7 +40,9 @@ class AuthFlowNavigation {
       await kyc.loadStatus();
       if (!context.mounted) return;
       if (auth.hasCompletedRegistration) {
-        router.go(OnboardingFlowNavigator.routeAfterProfileComplete(kyc));
+        auth.endRegistration();
+        await auth.markSignedInSession();
+        router.go(AppRoutes.home);
       } else {
         router.go(OnboardingFlowNavigator.routeAfterAuthentication(auth, kyc));
       }
@@ -62,7 +65,9 @@ class AuthFlowNavigation {
       await kyc.loadStatus();
       if (!context.mounted) return;
       if (auth.hasCompletedRegistration) {
-        router.go(OnboardingFlowNavigator.routeAfterProfileComplete(kyc));
+        auth.endRegistration();
+        await auth.markSignedInSession();
+        router.go(AppRoutes.home);
       } else {
         router.go(OnboardingFlowNavigator.routeAfterAuthentication(auth, kyc));
       }
@@ -78,12 +83,15 @@ class AuthFlowNavigation {
 
   static Future<void> afterProfileComplete(BuildContext context) async {
     if (!context.mounted) return;
+    final auth = context.read<AuthProvider>();
     final kyc = context.read<KycFlowProvider>();
     final router = GoRouter.of(context);
 
+    auth.endRegistration();
+    await auth.markSignedInSession();
     await kyc.loadStatus();
     if (!context.mounted) return;
-    router.go(OnboardingFlowNavigator.routeAfterProfileComplete(kyc));
+    router.go(AppRoutes.home);
     unawaited(refreshAllProviders(context));
   }
 

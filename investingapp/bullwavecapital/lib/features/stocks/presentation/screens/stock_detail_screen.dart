@@ -175,6 +175,7 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
                             isLoading: _chartLoading,
                             selectedLabel: _intervalLabel,
                             onIntervalSelected: _onIntervalChange,
+                            lastPrice: stock.ltp,
                           ),
                         ),
                         const SizedBox(height: 12),

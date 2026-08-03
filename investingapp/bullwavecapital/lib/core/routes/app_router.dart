@@ -176,7 +176,8 @@ class AppRouter {
 
   static String _manualKycRoute(KycFlowProvider kyc) {
     if (kyc.usesAutomatedKyc || kyc.status.panVerified) {
-      return OnboardingFlowNavigator.routeAfterProfileComplete(kyc);
+      return OnboardingFlowNavigator.nextIncompleteKycStep(kyc) ??
+          AppRoutes.kycStatus;
     }
     if (kyc.manualStatus.isVerified) return AppRoutes.home;
     if (kyc.manualStatus.isPending) return AppRoutes.kycPending;
@@ -190,8 +191,7 @@ class AppRouter {
       path == AppRoutes.kycRejected ||
       path == AppRoutes.kycStatus;
 
-  static String _postAuthDestination(KycFlowProvider kyc) =>
-      OnboardingFlowNavigator.routeAfterProfileComplete(kyc);
+  static String _postAuthDestination(KycFlowProvider kyc) => AppRoutes.home;
 
   static GoRouter create(
     AuthProvider auth,
@@ -214,19 +214,12 @@ class AppRouter {
       // Splash handles its own routing animation.
       if (path == AppRoutes.splash) return null;
 
-      // Profile done but still registering (KYC pending) — do not bounce to Login/OTP.
+      // Mid-registration email/profile only — never auto-resume KYC on cold start.
       if (auth.isAuthenticated &&
           auth.hasCompletedRegistration &&
-          !auth.hasSignedInSession &&
           auth.isRegistrationFlow) {
-        if (_isKycOnboardingPath(path) ||
-            path == AppRoutes.completeProfile ||
-            path == AppRoutes.verifyEmail ||
-            path == AppRoutes.verifyEmailOtp) {
-          return null;
-        }
         if (_isPublicAuthRoute(path)) {
-          return OnboardingFlowNavigator.routeAfterProfileComplete(kyc);
+          return AppRoutes.home;
         }
       }
 
@@ -279,9 +272,6 @@ class AppRouter {
             path != AppRoutes.otp) {
           return AppRoutes.home;
         }
-        if (auth.isRegistrationFlow && auth.hasCompletedRegistration) {
-          return OnboardingFlowNavigator.routeAfterProfileComplete(kyc);
-        }
         return OnboardingFlowNavigator.routeAfterAuthentication(auth, kyc);
       }
 
@@ -294,15 +284,8 @@ class AppRouter {
               path == AppRoutes.kycPending ||
               path == AppRoutes.kycRejected) &&
           (kyc.usesAutomatedKyc || kyc.status.panVerified)) {
-        return OnboardingFlowNavigator.routeAfterProfileComplete(kyc);
-      }
-
-      if (!kyc.isFullyVerified &&
-          kyc.usesAutomatedKyc &&
-          (auth.needsRegistrationFlow ||
-              (auth.isRegistrationFlow && auth.hasCompletedRegistration)) &&
-          OnboardingFlowNavigator.shouldBlockShellUntilKycComplete(path)) {
-        return OnboardingFlowNavigator.routeAfterProfileComplete(kyc);
+        return OnboardingFlowNavigator.nextIncompleteKycStep(kyc) ??
+            AppRoutes.kycStatus;
       }
 
       if (!kyc.isFullyVerified && _requiresKyc(path)) {

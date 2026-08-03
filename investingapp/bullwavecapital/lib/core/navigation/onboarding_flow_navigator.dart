@@ -80,8 +80,8 @@ class OnboardingFlowNavigator {
   }
 
   static String routeAfterProfileComplete(KycFlowProvider kyc) {
-    if (!kyc.usesAutomatedKyc) return kyc.verificationRoute;
-    return nextIncompleteKycStep(kyc) ?? AppRoutes.home;
+    // Profile is done — browse the app; complete KYC from Profile or when trading.
+    return AppRoutes.home;
   }
 
   /// First incomplete automated KYC step, or null when fully verified.
