@@ -23,22 +23,29 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   late final TextEditingController _phoneController;
   final _formKey = GlobalKey<FormState>();
+  bool _launchConfigured = false;
 
   @override
   void initState() {
     super.initState();
-    final auth = context.read<AuthProvider>();
-    _phoneController = TextEditingController(text: auth.phoneNumber);
+    _phoneController = TextEditingController(
+      text: context.read<AuthProvider>().phoneNumber,
+    );
+  }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_launchConfigured) return;
+    _launchConfigured = true;
+
+    final auth = context.read<AuthProvider>();
     final registered = GoRouterState.of(context).uri.queryParameters['registered'];
     if (registered == '1') {
       auth.beginSignIn();
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        auth.setLoginSuccessMessage(
-          'Registration complete. Sign in with your mobile number to continue.',
-        );
-      });
+      auth.setLoginSuccessMessage(
+        'Registration complete. Sign in with your mobile number to continue.',
+      );
     } else if (!auth.isRegistrationFlow) {
       auth.beginSignIn();
     }
@@ -401,12 +408,13 @@ class _RegistrationPhoneStep extends StatelessWidget {
         onNext: onContinue,
         isLoading: auth.isLoading,
       ),
-      child: Form(
-        key: formKey,
-        child: Column(
-          children: [
-            const Spacer(),
-            PremiumAuthHero(
+      child: PremiumAuthScrollBody(
+        child: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              PremiumAuthHero(
               pill: 'Step 1 · Phone',
               headline: 'CREATE\nACCOUNT',
               body: 'Enter your mobile number. We\'ll send a secure 6-digit OTP to verify you.',
@@ -509,9 +517,10 @@ class _RegistrationPhoneStep extends StatelessWidget {
                 ],
               ),
             ),
-            const Spacer(flex: 2),
+            const SizedBox(height: 24),
           ],
         ),
+      ),
       ),
     );
   }

@@ -21,6 +21,12 @@ from kyc.bank_manual_service import (
     reject_bank_review,
     serialize_bank_request,
 )
+from kyc.fno_service import (
+    FnoError,
+    approve_fno_request,
+    reject_fno_request,
+    serialize_fno_admin_request,
+)
 from kyc.identity_review_service import (
     IdentityReviewError,
     approve_manual_bank,
@@ -33,7 +39,7 @@ from kyc.identity_review_service import (
 )
 from kyc.manual_service import ManualKycError, approve_kyc_request, reject_kyc_request, serialize_request
 from kyc.masking import mask_account_number, mask_pan
-from kyc.models import BankVerificationRequest, KYCRequest, KycProfile, VerificationAuditLog
+from kyc.models import BankVerificationRequest, FnoEligibilityRequest, KYCRequest, KycProfile, VerificationAuditLog
 from kyc.selfie_service import (
     SelfieError,
     approve_selfie,
@@ -47,7 +53,9 @@ from core.error_reporting import safe_context, sanitize_text
 from .models import AdminActionAudit, AdminBroadcast, AdminNotification, ApplicationErrorEvent
 from . import reporting
 from .broadcast_service import send_broadcast, serialize_broadcast
+from .kyc_documents import profile_document_fields
 from .kyc_display import admin_kyc_status, admin_pan_status
+from .media_urls import admin_file_url
 from .notifications_service import notification_summary, serialize_notification, sync_admin_notifications
 from .support_service import (
     admin_reopen_ticket,
@@ -282,7 +290,13 @@ class UserDeleteView(AdminPanelAPIView):
         return Response({'success': True})
 
 
-def _serialize_kyc_profile_row(row: KycProfile) -> dict:
+def _serialize_kyc_profile_row(row: KycProfile, request=None) -> dict:
+    doc_fields = profile_document_fields(row.user, row, request) if request else {
+        'selfieUrl': '',
+        'documents': [],
+        'panDocumentUrls': [],
+        'hasDocuments': False,
+    }
     return {
         'userId': str(row.user_id),
         'phone': row.user.phone,
@@ -312,7 +326,32 @@ def _serialize_kyc_profile_row(row: KycProfile) -> dict:
         'readyForFinalApproval': ready_for_final_kyc_approval(row),
         'finalKycApprovedAt': row.final_kyc_approved_at.isoformat() if row.final_kyc_approved_at else None,
         'updatedAt': row.updated_at.isoformat(),
+        **doc_fields,
     }
+
+
+def _serialize_pan_for_admin(row: KYCRequest, request) -> dict:
+    item = serialize_request(row, request)
+    pan_url = admin_file_url(request, row.pan_image)
+    extra_urls = [admin_file_url(request, img.image) for img in row.images.all()]
+    item['pan_image_url'] = pan_url
+    item['pan_image_urls'] = ([pan_url, *extra_urls] if pan_url else extra_urls)
+    return item
+
+
+def _serialize_selfie_for_admin(profile: KycProfile, request) -> dict:
+    item = serialize_selfie_review(profile, request)
+    if profile.selfie_image:
+        item['selfieUrl'] = admin_file_url(request, profile.selfie_image)
+    item['documents'] = profile_document_fields(profile.user, profile, request)['documents']
+    return item
+
+
+def _serialize_fno_for_admin(row: FnoEligibilityRequest, request) -> dict:
+    item = serialize_fno_admin_request(row, request)
+    if row.document:
+        item['document_url'] = admin_file_url(request, row.document)
+    return item
 
 
 class KycOverviewView(AdminPanelAPIView):
@@ -323,7 +362,7 @@ class KycOverviewView(AdminPanelAPIView):
             pan_rows = pan_rows.filter(status=status_filter)
         pan_results = []
         for row in pan_rows[:200]:
-            item = serialize_request(row, request)
+            item = _serialize_pan_for_admin(row, request)
             item['user'] = {'phone': row.user.phone, 'name': row.user.name, 'email': row.user.email}
             pan_results.append(item)
         bank_status = str(request.query_params.get('bankStatus') or 'pending').lower()
@@ -336,15 +375,25 @@ class KycOverviewView(AdminPanelAPIView):
         ).order_by('-selfie_uploaded_at')
         if selfie_status != 'all':
             selfie_rows = selfie_rows.filter(selfie_status=selfie_status)
-        identity_rows = [
-            serialize_identity_review(row, request)
-            for row in KycProfile.objects.select_related('user').order_by('-updated_at')[:500]
-            if profile_needs_identity_admin_attention(row)
-        ][:200]
+        identity_rows = []
+        for row in KycProfile.objects.select_related('user').order_by('-updated_at')[:500]:
+            if not profile_needs_identity_admin_attention(row):
+                continue
+            item = serialize_identity_review(row, request)
+            if row.selfie_image:
+                item['selfieUrl'] = admin_file_url(request, row.selfie_image)
+            item['documents'] = profile_document_fields(row.user, row, request)['documents']
+            identity_rows.append(item)
+            if len(identity_rows) >= 200:
+                break
         profiles = [
-            _serialize_kyc_profile_row(row)
+            _serialize_kyc_profile_row(row, request)
             for row in KycProfile.objects.select_related('user').order_by('-updated_at')[:200]
         ]
+        fno_status = str(request.query_params.get('fnoStatus') or FnoEligibilityRequest.Status.PENDING).upper()
+        fno_rows = FnoEligibilityRequest.objects.select_related('user', 'reviewed_by').order_by('-created_at')
+        if fno_status != 'ALL':
+            fno_rows = fno_rows.filter(status=fno_status)
         return Response(
             {
                 'summary': reporting.kyc_summary(),
@@ -353,9 +402,12 @@ class KycOverviewView(AdminPanelAPIView):
                     serialize_bank_request(row, reveal_account=True) for row in bank_rows[:200]
                 ],
                 'selfieRequests': [
-                    serialize_selfie_review(row, request) for row in selfie_rows[:200]
+                    _serialize_selfie_for_admin(row, request) for row in selfie_rows[:200]
                 ],
                 'identityReviews': identity_rows,
+                'fnoRequests': [
+                    _serialize_fno_for_admin(row, request) for row in fno_rows[:200]
+                ],
                 'profiles': profiles,
             }
         )
@@ -419,7 +471,7 @@ class KycProfileListView(AdminPanelAPIView):
         rows = KycProfile.objects.select_related('user').order_by('-updated_at')
         if status_filter:
             rows = rows.filter(overall_status=status_filter)
-        data = [_serialize_kyc_profile_row(row) for row in rows[:200]]
+        data = [_serialize_kyc_profile_row(row, request) for row in rows[:200]]
         return Response({'results': data, 'count': len(data)})
 
 
@@ -431,7 +483,7 @@ class PanReviewListView(AdminPanelAPIView):
             rows = rows.filter(status=status_filter)
         results = []
         for row in rows[:200]:
-            item = serialize_request(row, request)
+            item = _serialize_pan_for_admin(row, request)
             item['user'] = {
                 'id': str(row.user_id),
                 'phone': row.user.phone,
@@ -474,6 +526,50 @@ class PanReviewDecisionView(AdminPanelAPIView):
             summary=summary,
         )
         return Response({'success': True, 'request': serialize_request(row, request)})
+
+
+class FnoReviewListView(AdminPanelAPIView):
+    def get(self, request):
+        status_filter = str(request.query_params.get('status') or FnoEligibilityRequest.Status.PENDING).upper()
+        rows = FnoEligibilityRequest.objects.select_related('user', 'reviewed_by').order_by('-created_at')
+        if status_filter != 'ALL':
+            rows = rows.filter(status=status_filter)
+        results = [serialize_fno_admin_request(row, request) for row in rows[:200]]
+        _audit(
+            request,
+            action='fno_queue_view',
+            target_type='FnoEligibilityRequest',
+            target_id='list',
+            summary=f'Viewed {len(results)} F&O review records.',
+        )
+        return Response({'results': results, 'count': len(results)})
+
+
+class FnoReviewDecisionView(AdminPanelAPIView):
+    def post(self, request, pk, decision):
+        try:
+            row = FnoEligibilityRequest.objects.select_related('user').get(pk=pk)
+            if decision == 'approve':
+                row = approve_fno_request(row, request.user)
+                summary = f'F&O request approved ({row.get_proof_type_display()}).'
+            elif decision == 'reject':
+                reason = request.data.get('reason') or request.data.get('rejectionReason') or ''
+                row = reject_fno_request(row, request.user, reason)
+                summary = f'F&O request rejected: {reason}'
+            else:
+                return Response({'detail': 'Unsupported decision.'}, status=400)
+        except FnoEligibilityRequest.DoesNotExist:
+            return Response({'detail': 'F&O request not found.'}, status=404)
+        except FnoError as exc:
+            return Response({'detail': str(exc)}, status=400)
+        _audit(
+            request,
+            action=f'fno_{decision}',
+            target_type='FnoEligibilityRequest',
+            target_id=row.id,
+            summary=summary,
+        )
+        return Response({'success': True, 'request': serialize_fno_admin_request(row, request)})
 
 
 class BankReviewListView(AdminPanelAPIView):

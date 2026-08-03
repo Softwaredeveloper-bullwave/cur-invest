@@ -16,6 +16,10 @@ const stockChartIntervals = <({String label, String apiInterval})>[
   (label: '1M', apiInterval: '90d'),
 ];
 
+/// Dhan-style dark chart shell background.
+const Color _dhanChartBg = Color(0xFF0B0E11);
+const Color _dhanChartBorder = Color(0xFF1E2329);
+
 class StockDetailChart extends StatefulWidget {
   final String symbol;
   final String exchange;
@@ -55,44 +59,82 @@ class _StockDetailChartState extends State<StockDetailChart> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final chartHeight = constraints.maxWidth >= 700
-            ? 420.0
+            ? 380.0
             : constraints.maxWidth < 380
-            ? 280.0
-            : 330.0;
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            PremiumChartToolbar(
-              chartType: _chartType,
-              onChartTypeChanged: (value) => setState(() => _chartType = value),
-              showVolume: _showVolume,
-              onVolumeChanged: (value) => setState(() => _showVolume = value),
-              showSma: _showSma,
-              onSmaChanged: (value) => setState(() => _showSma = value),
-              onFullscreen: _openFullscreen,
-            ),
-            const SizedBox(height: 10),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: TradingViewChart(
-                symbol: widget.symbol,
-                exchange: widget.exchange,
-                intervalLabel: widget.selectedLabel,
-                apiInterval: _apiInterval,
-                fallbackCandles: widget.candles,
-                isLoading: widget.isLoading,
-                height: chartHeight,
-                chartType: _chartType,
-                showVolume: _showVolume,
-                showSma: _showSma,
+            ? 260.0
+            : 310.0;
+
+        return Container(
+          decoration: BoxDecoration(
+            color: _dhanChartBg,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: _dhanChartBorder),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(8, 8, 4, 0),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: ChartIntervalSelector(
+                        selectedLabel: widget.selectedLabel,
+                        onSelected: widget.onIntervalSelected,
+                        dhanStyle: true,
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: _openFullscreen,
+                      tooltip: 'Fullscreen chart',
+                      icon: const Icon(
+                        Icons.open_in_full_rounded,
+                        size: 18,
+                        color: Color(0xFF8B949E),
+                      ),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            ChartIntervalSelector(
-              selectedLabel: widget.selectedLabel,
-              onSelected: widget.onIntervalSelected,
-            ),
-          ],
+              SizedBox(
+                height: chartHeight,
+                child: Stack(
+                  children: [
+                    TradingViewChart(
+                      symbol: widget.symbol,
+                      exchange: widget.exchange,
+                      intervalLabel: widget.selectedLabel,
+                      apiInterval: _apiInterval,
+                      fallbackCandles: widget.candles,
+                      isLoading: widget.isLoading,
+                      height: chartHeight,
+                      chartType: _chartType,
+                      showVolume: _showVolume,
+                      showSma: _showSma,
+                    ),
+                    if (widget.isLoading)
+                      const Positioned.fill(
+                        child: ColoredBox(
+                          color: Color(0x880B0E11),
+                          child: Center(
+                            child: SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Color(0xFF00C853),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         );
       },
     );
@@ -149,9 +191,9 @@ class _FullscreenStockChartState extends State<_FullscreenStockChart> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF050503),
+      backgroundColor: _dhanChartBg,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF050503),
+        backgroundColor: _dhanChartBg,
         foregroundColor: Colors.white,
         title: Text('${widget.symbol} · ${widget.intervalLabel}'),
       ),

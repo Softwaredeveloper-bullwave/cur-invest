@@ -135,7 +135,10 @@ class _HomeScreenState extends State<HomeScreen> {
           return const SafeArea(
             child: Padding(
               padding: EdgeInsets.all(AppDimensions.paddingMd),
-              child: LoadingList(itemCount: 6, itemHeight: 80),
+              child: SingleChildScrollView(
+                physics: AlwaysScrollableScrollPhysics(),
+                child: LoadingList(itemCount: 6, itemHeight: 80),
+              ),
             ),
           );
         }

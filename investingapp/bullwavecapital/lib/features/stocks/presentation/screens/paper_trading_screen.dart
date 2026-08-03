@@ -61,19 +61,32 @@ class _PaperTradingScreenState extends State<PaperTradingScreen> {
   }
 
   Future<void> _load() async {
-    final market = context.read<StockMarketProvider>();
-    final features = context.read<StockFeaturesProvider>();
-    final paperExtras = context.read<PaperCompetitionProvider>();
-    final wallet = context.read<WalletProvider>();
+    if (!mounted) return;
     setState(() => _isLoading = true);
-    await market.ensureLoaded();
-    await Future.wait([
-      features.refreshPaperTrades(),
-      features.refreshScalperOrders(),
-      paperExtras.refresh(),
-      wallet.loadData(),
-    ]);
-    if (mounted) setState(() => _isLoading = false);
+    try {
+      final market = context.read<StockMarketProvider>();
+      final features = context.read<StockFeaturesProvider>();
+      final paperExtras = context.read<PaperCompetitionProvider>();
+      final wallet = context.read<WalletProvider>();
+      await market.ensureLoaded();
+      await Future.wait([
+        features.refreshPaperTrades(),
+        features.refreshScalperOrders(),
+        paperExtras.refresh(),
+        wallet.loadData(),
+      ]);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not refresh paper trading data. Pull to retry.'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   Future<void> _place(String side) async {
@@ -109,7 +122,9 @@ class _PaperTradingScreenState extends State<PaperTradingScreen> {
       body: _isLoading
           ? const Padding(
               padding: EdgeInsets.all(20),
-              child: LoadingList(itemCount: 4, itemHeight: 72),
+              child: SingleChildScrollView(
+                child: LoadingList(itemCount: 4, itemHeight: 64),
+              ),
             )
           : RefreshIndicator(
               color: AppColors.brandOrange,
@@ -251,47 +266,74 @@ class _PracticeFundsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.appColors;
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: AppDecorations.card(context),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 46,
-            height: 46,
+            width: 42,
+            height: 42,
             decoration: BoxDecoration(
               color: AppColors.green.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(12),
             ),
             child: const Icon(
               Icons.account_balance_wallet_outlined,
               color: AppColors.green,
+              size: 22,
             ),
           ),
-          const SizedBox(width: 13),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Practice Funds',
-                  style: TextStyle(color: colors.textMuted, fontSize: 12),
+                Row(
+                  children: [
+                    Text(
+                      'Practice Funds',
+                      style: TextStyle(color: colors.textMuted, fontSize: 12),
+                    ),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: AppColors.green.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(
+                          color: AppColors.green.withValues(alpha: 0.25),
+                        ),
+                      ),
+                      child: const Text(
+                        'VIRTUAL',
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.green,
+                          letterSpacing: 0.6,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 3),
+                const SizedBox(height: 4),
                 Text(
                   CurrencyFormatter.format(balance),
                   style: const TextStyle(
-                    fontSize: 22,
+                    fontSize: 24,
                     fontWeight: FontWeight.w900,
+                    height: 1.1,
                   ),
                 ),
+                const SizedBox(height: 4),
                 Text(
-                  'Automatically refills to ₹1,00,000 below ${CurrencyFormatter.format(refillThreshold)}',
-                  style: TextStyle(color: colors.textSecondary, fontSize: 11),
+                  'Refills to ₹1,00,000 below ${CurrencyFormatter.format(refillThreshold)}',
+                  style: TextStyle(color: colors.textSecondary, fontSize: 11, height: 1.35),
                 ),
               ],
             ),
           ),
-          const Chip(label: Text('VIRTUAL', style: TextStyle(fontSize: 10))),
         ],
       ),
     );
@@ -303,8 +345,14 @@ class _PaperFeatureGrid extends StatelessWidget {
 
   const _PaperFeatureGrid({required this.activeScalperOrders});
 
+  static const _tileHeight = 52.0;
+
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+    final width = MediaQuery.sizeOf(context).width;
+    final crossAxisCount = width >= 820 ? 4 : (width >= 560 ? 3 : 2);
+
     final items = [
       (
         'Stocks',
@@ -355,47 +403,96 @@ class _PaperFeatureGrid extends StatelessWidget {
       children: [
         Text(
           'Practice Every Market',
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w900,
+              ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Tap a market to practice with virtual funds.',
+          style: TextStyle(color: colors.textMuted, fontSize: 12),
         ),
         const SizedBox(height: 10),
         GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           itemCount: items.length,
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            childAspectRatio: 2.15,
-            crossAxisSpacing: 10,
-            mainAxisSpacing: 10,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            crossAxisSpacing: 8,
+            mainAxisSpacing: 8,
+            mainAxisExtent: _tileHeight,
           ),
           itemBuilder: (context, index) {
             final item = items[index];
-            return InkWell(
-              borderRadius: BorderRadius.circular(14),
+            return _PaperMarketTile(
+              label: item.$1,
+              icon: item.$2,
+              color: item.$3,
               onTap: () => _openPaperHubLink(context, item.$4),
-              child: Container(
-                padding: const EdgeInsets.all(13),
-                decoration: AppDecorations.card(context),
-                child: Row(
-                  children: [
-                    Icon(item.$2, color: item.$3, size: 24),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        item.$1,
-                        style: const TextStyle(fontWeight: FontWeight.w800),
-                      ),
-                    ),
-                    const Icon(Icons.chevron_right_rounded, size: 18),
-                  ],
-                ),
-              ),
             );
           },
         ),
       ],
+    );
+  }
+}
+
+class _PaperMarketTile extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _PaperMarketTile({
+    required this.label,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.appColors;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Ink(
+          decoration: AppDecorations.card(context).copyWith(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          child: Row(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(9),
+                ),
+                child: Icon(icon, color: color, size: 17),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                    color: colors.textPrimary,
+                  ),
+                ),
+              ),
+              Icon(Icons.chevron_right_rounded, size: 16, color: colors.textMuted),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

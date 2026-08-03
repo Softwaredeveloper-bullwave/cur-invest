@@ -211,3 +211,87 @@ class AdminBroadcastTests(APITestCase):
         notif = Notification.objects.get(user=self.user_one, type='support')
         self.assertEqual(notif.reference_id, str(ticket.id))
         self.assertIn('We are looking into this.', notif.message)
+
+
+@override_settings(ADMIN_PANEL_DEV_NO_AUTH=False)
+class AdminPanelFnoReviewTests(APITestCase):
+    def setUp(self):
+        self.admin = User.objects.create_user(phone='9000000101', name='Admin', is_staff=True)
+        self.admin.set_password('Strong-Test-Password-123!')
+        self.admin.save(update_fields=['password'])
+        self.user = User.objects.create_user(phone='9000000102', name='Trader User')
+
+    def _submit_fno_document(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        self.client.force_authenticate(self.user)
+        document = SimpleUploadedFile(
+            'bank_statement.jpg',
+            b'fake-image-content',
+            content_type='image/jpeg',
+        )
+        response = self.client.post(
+            '/api/v1/fno/submit/',
+            {'proof_type': 'bank_statement', 'document': document},
+            format='multipart',
+        )
+        self.assertEqual(response.status_code, 201, response.data)
+        from kyc.models import FnoEligibilityRequest
+
+        return FnoEligibilityRequest.objects.get(user=self.user)
+
+    def test_staff_can_approve_fno_request_from_admin_panel(self):
+        row = self._submit_fno_document()
+        self.assertEqual(row.status, 'PENDING')
+
+        self.client.force_authenticate(self.user)
+        forbidden = self.client.post(f'/api/v1/admin-panel/kyc/fno/{row.id}/approve/', {}, format='json')
+        self.assertEqual(forbidden.status_code, 403)
+
+        self.client.force_authenticate(self.admin)
+        approved = self.client.post(f'/api/v1/admin-panel/kyc/fno/{row.id}/approve/', {}, format='json')
+        self.assertEqual(approved.status_code, 200, approved.data)
+
+        row.refresh_from_db()
+        self.user.refresh_from_db()
+        self.assertEqual(row.status, 'APPROVED')
+        self.assertEqual(self.user.fno_status, User.FnoStatus.VERIFIED)
+
+    def test_kyc_overview_includes_fno_queue(self):
+        row = self._submit_fno_document()
+        self.client.force_authenticate(self.admin)
+        response = self.client.get('/api/v1/admin-panel/kyc/overview/')
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertGreaterEqual(response.data['summary']['fnoPending'], 1)
+        ids = [item['id'] for item in response.data['fnoRequests']]
+        self.assertIn(str(row.id), ids)
+        self.assertTrue(response.data['fnoRequests'][0]['document_url'])
+
+
+@override_settings(ADMIN_PANEL_DEV_NO_AUTH=False, BACKEND_PUBLIC_URL='http://127.0.0.1:8000')
+class AdminPanelKycDocumentTests(APITestCase):
+    def setUp(self):
+        self.admin = User.objects.create_user(phone='9000000201', name='Admin', is_staff=True)
+        self.user = User.objects.create_user(phone='9000000202', name='Doc User')
+        self.profile = KycProfile.objects.create(user=self.user, mobile_verified=True)
+
+    def test_profile_row_includes_selfie_document_url(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        self.profile.selfie_image = SimpleUploadedFile(
+            'selfie.jpg',
+            b'fake-selfie',
+            content_type='image/jpeg',
+        )
+        self.profile.selfie_status = KycProfile.SelfieStatus.COMPLETED
+        self.profile.save()
+
+        self.client.force_authenticate(self.admin)
+        response = self.client.get('/api/v1/admin-panel/kyc/overview/')
+        self.assertEqual(response.status_code, 200, response.data)
+        profile_row = next(
+            row for row in response.data['profiles'] if row['phone'] == self.user.phone
+        )
+        self.assertTrue(profile_row['hasDocuments'])
+        self.assertTrue(profile_row['selfieUrl'].startswith('http://127.0.0.1:8000/media/'))
+        self.assertGreaterEqual(len(profile_row['documents']), 1)

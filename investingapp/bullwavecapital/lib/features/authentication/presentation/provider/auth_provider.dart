@@ -35,6 +35,7 @@ class AuthProvider extends ChangeNotifier {
   bool? _phoneIsRegistered;
   AuthFlowMode _flowMode = AuthFlowMode.signIn;
   String? _loginSuccessMessage;
+  bool _hasSignedInSession = false;
 
   String get phoneNumber => _phoneNumber;
   String get pendingEmail => _pendingEmail;
@@ -50,6 +51,11 @@ class AuthProvider extends ChangeNotifier {
   bool get isRegistrationFlow => _flowMode == AuthFlowMode.registration;
   bool get isSignInFlow => _flowMode == AuthFlowMode.signIn;
   String? get loginSuccessMessage => _loginSuccessMessage;
+  bool get hasSignedInSession => _hasSignedInSession;
+
+  /// True when splash may open Home without showing Login.
+  bool get canAutoEnterApp =>
+      _isAuthenticated && hasCompletedRegistration && _hasSignedInSession;
 
   /// Account was created on this sign-in (phone was not in the system before).
   bool get isNewUser => _isNewUser;
@@ -101,11 +107,13 @@ class AuthProvider extends ChangeNotifier {
   void beginRegistration() {
     _flowMode = AuthFlowMode.registration;
     _loginSuccessMessage = null;
+    unawaited(TokenStorage.setRegistrationInProgress(true));
     notifyListeners();
   }
 
   void endRegistration() {
     _flowMode = AuthFlowMode.signIn;
+    unawaited(TokenStorage.setRegistrationInProgress(false));
     notifyListeners();
   }
 
@@ -122,6 +130,19 @@ class AuthProvider extends ChangeNotifier {
   void clearError() {
     _error = null;
     notifyListeners();
+  }
+
+  Future<void> markSignedInSession() async {
+    _hasSignedInSession = true;
+    await TokenStorage.setSignedInSession(true);
+    notifyListeners();
+  }
+
+  Future<void> _loadSessionFlags() async {
+    _hasSignedInSession = await TokenStorage.hasSignedInSession();
+    if (await TokenStorage.isRegistrationInProgress()) {
+      _flowMode = AuthFlowMode.registration;
+    }
   }
 
   Future<void> _syncPendingEmailState() async {
@@ -171,7 +192,16 @@ class AuthProvider extends ChangeNotifier {
     }
 
     await _api.init();
+    await _loadSessionFlags();
     _pendingEmail = await TokenStorage.getPendingEmail() ?? '';
+    final accessToken = await TokenStorage.getAccessToken();
+    if (accessToken == null || accessToken.isEmpty) {
+      _isAuthenticated = false;
+      _user = null;
+      notifyListeners();
+      return false;
+    }
+
     try {
       _user = await _api.getProfile();
       _isAuthenticated = true;
@@ -182,13 +212,19 @@ class AuthProvider extends ChangeNotifier {
       } else if (_pendingEmail.isEmpty && (_user?.email.isNotEmpty ?? false)) {
         _pendingEmail = _user!.email.trim().toLowerCase();
       }
+
+      // Keep session while registration/KYC is in progress (profile done, KYC pending).
+      if (!_hasSignedInSession &&
+          hasCompletedRegistration &&
+          !isRegistrationFlow) {
+        await logout();
+        return false;
+      }
+
       notifyListeners();
-      return true;
+      return _isAuthenticated;
     } catch (_) {
-      _isAuthenticated = false;
-      _user = null;
-      _pendingEmail = '';
-      notifyListeners();
+      await logout();
       return false;
     }
   }
@@ -264,6 +300,15 @@ class AuthProvider extends ChangeNotifier {
       _isNewUser = result.isNewUser;
       _isAuthenticated = true;
       await _syncPendingEmailState();
+      if (_flowMode == AuthFlowMode.signIn && hasCompletedRegistration) {
+        await markSignedInSession();
+        await TokenStorage.setRegistrationInProgress(false);
+        _flowMode = AuthFlowMode.signIn;
+      } else if (_flowMode == AuthFlowMode.registration) {
+        await TokenStorage.setSignedInSession(false);
+        _hasSignedInSession = false;
+        await TokenStorage.setRegistrationInProgress(true);
+      }
       _isLoading = false;
       notifyListeners();
       return true;
@@ -374,6 +419,11 @@ class AuthProvider extends ChangeNotifier {
         dateOfBirth: dateOfBirth,
         referralCode: referralCode.trim(),
       );
+      if (_flowMode == AuthFlowMode.registration) {
+        await TokenStorage.setRegistrationInProgress(true);
+        _hasSignedInSession = false;
+        await TokenStorage.setSignedInSession(false);
+      }
       _isLoading = false;
       notifyListeners();
       return true;
@@ -465,7 +515,9 @@ class AuthProvider extends ChangeNotifier {
     _isNewUser = false;
     _phoneIsRegistered = null;
     _flowMode = AuthFlowMode.signIn;
-    await TokenStorage.savePendingEmail('');
+    _hasSignedInSession = false;
+    await TokenStorage.setSignedInSession(false);
+    await TokenStorage.setRegistrationInProgress(false);
     _termsAccepted = false;
     notifyListeners();
   }

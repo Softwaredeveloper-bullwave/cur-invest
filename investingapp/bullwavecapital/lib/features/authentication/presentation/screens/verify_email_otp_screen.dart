@@ -135,10 +135,11 @@ class _VerifyEmailOtpScreenState extends State<VerifyEmailOtpScreen> {
         isLoading: isBusy,
         nextIcon: Icons.check_rounded,
       ),
-      child: Column(
-        children: [
-          const Spacer(),
-          PremiumAuthHero(
+      child: PremiumAuthScrollBody(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            PremiumAuthHero(
             pill: 'Step 2 · Email',
             headline: 'ENTER\nCODE',
             body: email.isEmpty
@@ -178,7 +179,7 @@ class _VerifyEmailOtpScreenState extends State<VerifyEmailOtpScreen> {
               ],
             ),
           ),
-          const Spacer(flex: 2),
+          const SizedBox(height: 16),
           if (email.isNotEmpty)
             Padding(
               padding: const EdgeInsets.fromLTRB(32, 0, 32, 8),
@@ -194,6 +195,7 @@ class _VerifyEmailOtpScreenState extends State<VerifyEmailOtpScreen> {
               ),
             ),
         ],
+      ),
       ),
     );
   }

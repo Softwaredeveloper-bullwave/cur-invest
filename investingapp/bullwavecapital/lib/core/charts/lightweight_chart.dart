@@ -57,8 +57,8 @@ class LightweightMarketChart extends StatelessWidget {
               'time': _epochSeconds(candle.time),
               'value': candle.volume,
               'color': candle.isBullish
-                  ? 'rgba(24,201,100,.42)'
-                  : 'rgba(255,90,103,.42)',
+                  ? 'rgba(0,200,83,.35)'
+                  : 'rgba(239,83,80,.35)',
             },
           )
           .toList(growable: false),

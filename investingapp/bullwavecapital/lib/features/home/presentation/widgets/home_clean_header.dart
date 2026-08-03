@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
+import '../../../../core/constants/brand.dart';
 import 'home_theme_a.dart';
 
 class HomeCleanHeader extends StatelessWidget {
@@ -28,15 +29,15 @@ class HomeCleanHeader extends StatelessWidget {
           child: Column(
             children: [
               Text(
-                'BullWave',
+                AppBrand.name,
                 textAlign: TextAlign.center,
-                style: ThemeAType.heading(size: 22, color: p.textDark),
+                style: ThemeAType.heading(size: 20, color: p.textDark),
               ),
               const SizedBox(height: 2),
               Text(
-                'Invest',
+                AppBrand.acronym,
                 style: ThemeAType.label(size: 12, color: p.textGrey)
-                    .copyWith(letterSpacing: 2.0, fontWeight: FontWeight.w500),
+                    .copyWith(letterSpacing: 2.0, fontWeight: FontWeight.w600),
               ),
             ],
           ),

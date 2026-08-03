@@ -22,6 +22,8 @@ from .views import (
     AdminSupportTicketDetailView,
     AdminSupportTicketListView,
     FinalKycDecisionView,
+    FnoReviewDecisionView,
+    FnoReviewListView,
     IdentityUpiDecisionView,
     KycOverviewView,
     KycProfileListView,
@@ -65,6 +67,12 @@ urlpatterns = [
         'kyc/pan/<uuid:pk>/<str:decision>/',
         PanReviewDecisionView.as_view(),
         name='admin-panel-pan-decision',
+    ),
+    path('kyc/fno/', FnoReviewListView.as_view(), name='admin-panel-fno-reviews'),
+    path(
+        'kyc/fno/<uuid:pk>/<str:decision>/',
+        FnoReviewDecisionView.as_view(),
+        name='admin-panel-fno-decision',
     ),
     path('kyc/bank/', BankReviewListView.as_view(), name='admin-panel-bank-reviews'),
     path(

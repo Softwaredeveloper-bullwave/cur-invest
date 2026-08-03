@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../../core/constants/brand.dart';
 import '../../../../core/theme/colors.dart';
 import '../../../../core/widgets/app_brand_logo.dart';
 import 'premium_auth_ui.dart';
@@ -74,51 +75,69 @@ class _SplashAnimationState extends State<SplashAnimation>
       child: AnimatedBuilder(
         animation: _controller,
         builder: (context, _) {
-          return Column(
-            children: [
-              const Spacer(flex: 2),
-              FadeTransition(
-                opacity: _logoFade,
-                child: ScaleTransition(
-                  scale: _logoScale,
-                  child: const AppBrandLogo(size: 96, showShadow: true),
-                ),
+          return SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight: MediaQuery.sizeOf(context).height * 0.55,
               ),
-              const SizedBox(height: 32),
-              FadeTransition(
-                opacity: _contentFade,
-                child: Column(
-                  children: [
-                    const PremiumPillTag(label: 'Today'),
-                    const SizedBox(height: 28),
-                    Text(
-                      'BULLWAVE\nCAPITAL',
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.inter(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 36,
-                        height: 1.08,
-                        letterSpacing: -0.8,
-                      ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  FadeTransition(
+                    opacity: _logoFade,
+                    child: ScaleTransition(
+                      scale: _logoScale,
+                      child: const CapitalBullWaveHeroLogo(height: 168),
                     ),
-                    const SizedBox(height: 20),
-                    Text(
-                      'Invest smarter. Trade faster.\nGrow wealth with confidence.',
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.inter(
-                        color: Colors.white.withValues(alpha: 0.55),
-                        fontSize: 15,
-                        height: 1.65,
-                      ),
+                  ),
+                  const SizedBox(height: 28),
+                  FadeTransition(
+                    opacity: _contentFade,
+                    child: Column(
+                      children: [
+                        const PremiumPillTag(label: 'CBW'),
+                        const SizedBox(height: 20),
+                        Text(
+                          'CAPITAL\nBULLWAVE',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.inter(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 34,
+                            height: 1.08,
+                            letterSpacing: -0.8,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          AppBrand.fullName,
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.inter(
+                            color: AppColors.brandCyan.withValues(alpha: 0.9),
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
+                            letterSpacing: 0.4,
+                          ),
+                        ),
+                        const SizedBox(height: 18),
+                        Text(
+                          AppBrand.tagline,
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.inter(
+                            color: Colors.white.withValues(alpha: 0.55),
+                            fontSize: 15,
+                            height: 1.65,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        _LiveStatRow(opacity: _contentFade.value),
+                      ],
                     ),
-                    const SizedBox(height: 28),
-                    _LiveStatRow(opacity: _contentFade.value),
-                  ],
-                ),
+                  ),
+                ],
               ),
-              const Spacer(flex: 3),
-            ],
+            ),
           );
         },
       ),

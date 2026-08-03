@@ -7,12 +7,17 @@ import 'stock_detail_chart.dart';
 class ChartIntervalSelector extends StatelessWidget {
   final String selectedLabel;
   final ValueChanged<String> onSelected;
+  final bool dhanStyle;
 
   const ChartIntervalSelector({
     super.key,
     required this.selectedLabel,
     required this.onSelected,
+    this.dhanStyle = false,
   });
+
+  static const _dhanSelected = Color(0xFF00C853);
+  static const _dhanMuted = Color(0xFF8B949E);
 
   @override
   Widget build(BuildContext context) {
@@ -20,10 +25,38 @@ class ChartIntervalSelector extends StatelessWidget {
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 8),
+      padding: EdgeInsets.symmetric(horizontal: dhanStyle ? 4 : 8),
       child: Row(
         children: stockChartIntervals.map((item) {
           final selected = item.label == selectedLabel;
+          if (dhanStyle) {
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 2),
+              child: InkWell(
+                onTap: () => onSelected(item.label),
+                borderRadius: BorderRadius.circular(6),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: selected ? _dhanSelected.withValues(alpha: 0.14) : Colors.transparent,
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(
+                      color: selected ? _dhanSelected.withValues(alpha: 0.5) : Colors.transparent,
+                    ),
+                  ),
+                  child: Text(
+                    item.label,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 12,
+                      color: selected ? _dhanSelected : _dhanMuted,
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }
+
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
             child: Material(

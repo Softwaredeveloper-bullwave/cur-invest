@@ -12,7 +12,7 @@ from django.utils import timezone
 from accounts.models import KycDocument, User
 from engagement.models import Notification, SupportTicket
 from finance.models import PaymentOrder, Wallet, WalletTransaction
-from kyc.models import BankVerificationRequest, KYCRequest, KycProfile, VerificationAuditLog
+from kyc.models import BankVerificationRequest, FnoEligibilityRequest, KYCRequest, KycProfile, VerificationAuditLog
 from payments.models import PayoutRecord
 from stocks.models import CommodityTrade, OptionTrade, PaperTrade
 
@@ -68,6 +68,15 @@ def kyc_summary() -> dict:
         'documentsPending': KycDocument.objects.filter(status=KycDocument.Status.PENDING).count(),
         'profilesPending': KycProfile.objects.filter(overall_status=KycProfile.OverallStatus.PENDING).count(),
         'profilesVerified': KycProfile.objects.filter(overall_status=KycProfile.OverallStatus.VERIFIED).count(),
+        'fnoPending': FnoEligibilityRequest.objects.filter(
+            status=FnoEligibilityRequest.Status.PENDING
+        ).count(),
+        'fnoApproved': FnoEligibilityRequest.objects.filter(
+            status=FnoEligibilityRequest.Status.APPROVED
+        ).count(),
+        'fnoRejected': FnoEligibilityRequest.objects.filter(
+            status=FnoEligibilityRequest.Status.REJECTED
+        ).count(),
     }
 
 

@@ -52,6 +52,48 @@ function Status({ value }: { value?: string }) {
   return <span className={`status status-${normalized}`}>{normalized.replaceAll('_', ' ')}</span>
 }
 
+function DocumentLinks({ row }: { row: Json }) {
+  const docs = (Array.isArray(row.documents) ? row.documents : []) as Json[]
+  const fallbackUrls = [
+    ...(Array.isArray(row.panDocumentUrls) ? (row.panDocumentUrls as string[]) : []),
+    ...(Array.isArray(row.pan_image_urls) ? (row.pan_image_urls as string[]) : []),
+    ...(row.selfieUrl ? [String(row.selfieUrl)] : []),
+    ...(row.document_url ? [String(row.document_url)] : []),
+  ].filter(Boolean)
+
+  const links = docs.length
+    ? docs.map((doc) => ({
+        key: `${doc.type}-${doc.url}`,
+        label: String(doc.label || doc.type || 'Document'),
+        url: String(doc.url || ''),
+      }))
+    : fallbackUrls.map((url, idx) => ({
+        key: `${url}-${idx}`,
+        label: idx === 0 && row.selfieUrl === url ? 'Selfie' : `Document ${idx + 1}`,
+        url,
+      }))
+
+  if (!links.length) {
+    return <small className="muted">No files uploaded</small>
+  }
+
+  return (
+    <div className="doc-link-stack">
+      {links.map((link) => (
+        <a
+          key={link.key}
+          className="document-link"
+          href={link.url}
+          target="_blank"
+          rel="noreferrer"
+        >
+          {link.label}
+        </a>
+      ))}
+    </div>
+  )
+}
+
 function Login({ onLogin }: { onLogin: () => void }) {
   const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
@@ -121,7 +163,7 @@ function SummaryRow({ summary }: { summary: Json }) {
       {summary.blocked != null && <Metric label="Blocked" value={summary.blocked as number} tone="danger" />}
       {summary.kycPending != null && <Metric label="Pending KYC" value={summary.kycPending as number} tone="warning" />}
       {summary.panPending != null && <Metric label="PAN pending" value={summary.panPending as number} tone="warning" />}
-      {summary.bankPending != null && <Metric label="Bank pending" value={summary.bankPending as number} tone="warning" />}
+      {summary.fnoPending != null && <Metric label="F&O pending" value={summary.fnoPending as number} tone="warning" />}
     </div>
   )
 }
@@ -183,6 +225,7 @@ function Dashboard({ data, onNavigate }: { data: Json; onNavigate: (tab: Tab) =>
         <Metric label="Pending KYC" value={Number(users.kycPending ?? 0)} tone="warning" tab="kyc" onNavigate={onNavigate} />
         <Metric label="Verified KYC" value={Number(users.kycVerified ?? 0)} tone="positive" tab="kyc" onNavigate={onNavigate} />
         <Metric label="Bank reviews" value={Number(reviews.bankPending ?? 0)} tone="warning" tab="kyc" onNavigate={onNavigate} />
+        <Metric label="F&O reviews" value={Number(reviews.fnoPending ?? 0)} tone="warning" tab="kyc" onNavigate={onNavigate} />
         <Metric label="Revenue (paid)" value={money(moneyData.paidTotal)} tone="positive" tab="money" onNavigate={onNavigate} />
         <Metric label="Open support" value={Number((data.support as Json)?.openTickets ?? 0)} tone="warning" tab="support" onNavigate={onNavigate} />
       </div>
@@ -364,6 +407,7 @@ function KycPage({ data, reload }: { data: Json; reload: (opts?: { silent?: bool
   const bankRows = (data.bankRequests as Json[]) || []
   const identityRows = (data.identityReviews as Json[]) || []
   const selfieRows = (data.selfieRequests as Json[]) || []
+  const fnoRows = (data.fnoRequests as Json[]) || []
   const profiles = (data.profiles as Json[]) || []
   const [actionError, setActionError] = useState('')
 
@@ -391,6 +435,18 @@ function KycPage({ data, reload }: { data: Json; reload: (opts?: { silent?: bool
     await runAction(async () => {
       await api(`/kyc/bank/${id}/${decision}/`, {
         method: 'POST', body: decision === 'approve' ? { note } : { reason: note },
+      })
+      await reload({ silent: true })
+    })
+  }
+
+  async function fnoDecide(id: string, decision: 'approve' | 'reject') {
+    const reason = decision === 'reject' ? window.prompt('Rejection reason') : ''
+    if (decision === 'reject' && (!reason || reason.trim().length < 3)) return
+    await runAction(async () => {
+      await api(`/kyc/fno/${id}/${decision}/`, {
+        method: 'POST',
+        body: decision === 'reject' ? { reason } : {},
       })
       await reload({ silent: true })
     })
@@ -492,6 +548,48 @@ function KycPage({ data, reload }: { data: Json; reload: (opts?: { silent?: bool
         <Metric label="Selfie pending" value={Number(summary.selfiePending ?? 0)} tone="warning" />
         <Metric label="Selfie verified" value={Number(summary.selfieVerified ?? 0)} tone="positive" />
         <Metric label="Selfie rejected" value={Number(summary.selfieRejected ?? 0)} tone="danger" />
+        <Metric label="F&O pending" value={Number(summary.fnoPending ?? 0)} tone="warning" />
+        <Metric label="F&O approved" value={Number(summary.fnoApproved ?? 0)} tone="positive" />
+        <Metric label="F&O rejected" value={Number(summary.fnoRejected ?? 0)} tone="danger" />
+      </div>
+
+      <div className="section-title compact"><h2><LineChart size={18} /> F&O document reviews</h2></div>
+      <p className="muted" style={{ margin: '0 0 16px' }}>
+        Users upload bank statements, Form 16, or ITR for F&amp;O access. Review each document and approve or reject manually.
+      </p>
+      <div className="review-grid">
+        {fnoRows.map((row) => (
+          <article className="review-card" key={String(row.id)}>
+            <div className="review-head">
+              <div>
+                <strong>{String(row.user_name || (row.user as Json)?.name || 'Unnamed')}</strong>
+                <small>{String(row.user_phone || (row.user as Json)?.phone)}</small>
+              </div>
+              <Status value={String(row.status)} />
+            </div>
+            <dl>
+              <dt>Proof type</dt><dd>{String(row.proof_label || row.proof_type)}</dd>
+              <dt>Portfolio value</dt><dd>{money(row.portfolio_value)}</dd>
+              <dt>Submitted</dt><dd>{date(String(row.created_at))}</dd>
+              {row.reviewed_at ? <><dt>Reviewed</dt><dd>{date(String(row.reviewed_at))}</dd></> : null}
+              {row.rejection_reason ? <><dt>Reason</dt><dd>{String(row.rejection_reason)}</dd></> : null}
+            </dl>
+            {row.document_url ? (
+              <a className="document-link" href={String(row.document_url)} target="_blank" rel="noreferrer">
+                Open uploaded document
+              </a>
+            ) : (
+              <small className="muted">No document file attached.</small>
+            )}
+            {row.status === 'PENDING' && (
+              <div className="actions">
+                <button className="approve" onClick={() => fnoDecide(String(row.id), 'approve')}><CheckCircle2 size={15} /> Approve F&O</button>
+                <button className="reject" onClick={() => fnoDecide(String(row.id), 'reject')}><XCircle size={15} /> Reject</button>
+              </div>
+            )}
+          </article>
+        ))}
+        {!fnoRows.length && <Empty text="No F&O document reviews pending." />}
       </div>
 
       <div className="section-title compact"><h2><FileCheck2 size={18} /> PAN requests</h2></div>
@@ -504,9 +602,7 @@ function KycPage({ data, reload }: { data: Json; reload: (opts?: { silent?: bool
             </div>
             <dl><dt>PAN</dt><dd className="mono">{String(row.pan_number || row.panNumber)}</dd>
               <dt>DOB</dt><dd>{String(row.dob)}</dd><dt>Submitted</dt><dd>{date(String(row.created_at || row.createdAt))}</dd></dl>
-            {(Array.isArray(row.pan_image_urls) ? row.pan_image_urls : Array.isArray(row.panImageUrls) ? row.panImageUrls : []).map((url: string) => (
-              <a key={url} className="document-link" href={url} target="_blank" rel="noreferrer">Open PAN document</a>
-            ))}
+            <DocumentLinks row={row} />
             {row.status === 'PENDING' && (
               <div className="actions">
                 <button className="approve" onClick={() => panDecide(String(row.id), 'approve')}><CheckCircle2 size={15} /> Approve</button>
@@ -568,6 +664,7 @@ function KycPage({ data, reload }: { data: Json; reload: (opts?: { silent?: bool
             {row.selfieUrl ? (
               <a className="document-link" href={String(row.selfieUrl)} target="_blank" rel="noreferrer">Open selfie</a>
             ) : null}
+            <DocumentLinks row={row} />
             <div className="actions">
               {bankPending(row) ? (
                 <button className="approve" onClick={() => bankApprove(String(row.userId))}><CheckCircle2 size={15} /> Approve bank</button>
@@ -609,6 +706,7 @@ function KycPage({ data, reload }: { data: Json; reload: (opts?: { silent?: bool
             {row.selfieUrl ? (
               <a className="document-link" href={String(row.selfieUrl)} target="_blank" rel="noreferrer">Open selfie</a>
             ) : null}
+            <DocumentLinks row={row} />
             {row.selfieStatus === 'completed' && (
               <div className="actions">
                 <button className="approve" onClick={() => selfieDecide(String(row.userId), 'approve')}><CheckCircle2 size={15} /> Approve</button>
@@ -626,7 +724,7 @@ function KycPage({ data, reload }: { data: Json; reload: (opts?: { silent?: bool
       <div className="section-title compact"><h2>All KYC profiles</h2></div>
       <div className="table-wrap">
         <table>
-          <thead><tr><th>User</th><th>PAN</th><th>Aadhaar</th><th>Bank</th><th>Selfie</th><th>UPI</th><th>Overall</th><th>Actions</th></tr></thead>
+          <thead><tr><th>User</th><th>PAN</th><th>Aadhaar</th><th>Bank</th><th>Selfie</th><th>UPI</th><th>Overall</th><th>Documents</th><th>Actions</th></tr></thead>
           <tbody>
             {profiles.map((row) => (
               <tr key={String(row.userId)}>
@@ -637,6 +735,7 @@ function KycPage({ data, reload }: { data: Json; reload: (opts?: { silent?: bool
                 <td><Status value={String(row.selfieStatus || 'pending')} /></td>
                 <td><span className="mono">{String(row.upiVpa || '—')}</span><Status value={String(row.upiStatus)} /></td>
                 <td><Status value={String(row.overallStatus)} /></td>
+                <td><DocumentLinks row={row} /></td>
                 <td><div className="actions">
                   {bankPending(row) ? (
                     <button className="approve" onClick={() => bankApprove(String(row.userId))}><CheckCircle2 size={15} /> Approve bank</button>

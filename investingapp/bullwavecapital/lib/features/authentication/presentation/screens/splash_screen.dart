@@ -36,12 +36,14 @@ class _SplashScreenState extends State<SplashScreen> {
     ]);
     if (!mounted) return;
 
-    if (auth.isAuthenticated && auth.hasCompletedRegistration) {
-      auth.beginSignIn();
+    if (auth.isAuthenticated &&
+        auth.hasCompletedRegistration &&
+        auth.isRegistrationFlow) {
+      auth.beginRegistration();
       await kyc.loadStatus();
       if (!mounted) return;
       unawaited(refreshAllProviders(context));
-      context.go(AppRoutes.home);
+      context.go(OnboardingFlowNavigator.routeAfterProfileComplete(kyc));
       return;
     }
 
@@ -57,6 +59,10 @@ class _SplashScreenState extends State<SplashScreen> {
     }
 
     auth.beginSignIn();
+    if (auth.isAuthenticated) {
+      await auth.logout();
+    }
+    if (!mounted) return;
     context.go(AppRoutes.login);
   }
 

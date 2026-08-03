@@ -150,23 +150,24 @@ class _OtpScreenState extends State<OtpScreen> {
         isLoading: isBusy,
         nextIcon: Icons.check_rounded,
       ),
-      child: Column(
-        children: [
-          const Spacer(),
-          PremiumAuthHero(
-            pill: isRegistration
-                ? 'Step 1 · Phone OTP'
-                : (isReturningPhone ? 'Welcome back' : 'Sign in'),
-            headline: isRegistration ? 'VERIFY\nPHONE' : 'ENTER\nOTP',
-            body: AppEnv.showDevOtpHints && auth.otpIsConsoleMode
-                ? 'Dev mode: SMS is not configured. Use the OTP shown below or in the Django terminal.'
-                : isRegistration
-                    ? 'Enter the 6-digit code sent to +91 ${_maskedPhone(auth.phoneNumber)}. '
-                        'Next you\'ll verify email and complete your profile.'
-                    : 'Enter the 6-digit code sent to +91 ${_maskedPhone(auth.phoneNumber)} to sign in.',
-            showLogo: false,
-            belowBody: Column(
-              children: [
+      child: PremiumAuthScrollBody(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            PremiumAuthHero(
+                pill: isRegistration
+                    ? 'Step 1 · Phone OTP'
+                    : (isReturningPhone ? 'Welcome back' : 'Sign in'),
+                headline: isRegistration ? 'VERIFY\nPHONE' : 'ENTER\nOTP',
+                body: AppEnv.showDevOtpHints && auth.otpIsConsoleMode
+                    ? 'Dev mode: SMS is not configured. Use the OTP shown below or in the Django terminal.'
+                    : isRegistration
+                        ? 'Enter the 6-digit code sent to +91 ${_maskedPhone(auth.phoneNumber)}. '
+                            'Next you\'ll verify email and complete your profile.'
+                        : 'Enter the 6-digit code sent to +91 ${_maskedPhone(auth.phoneNumber)} to sign in.',
+                showLogo: false,
+                belowBody: Column(
+                  children: [
                 if (AppEnv.showDevOtpHints && auth.otpIsConsoleMode)
                   Container(
                     width: double.infinity,
@@ -262,12 +263,12 @@ class _OtpScreenState extends State<OtpScreen> {
                           fontSize: 13,
                         ),
                       ),
-              ],
-            ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          const Spacer(flex: 2),
-        ],
-      ),
+        ),
     );
   }
 }

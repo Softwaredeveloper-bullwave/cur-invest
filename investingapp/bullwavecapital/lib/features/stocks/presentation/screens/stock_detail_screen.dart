@@ -177,29 +177,9 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
                             onIntervalSelected: _onIntervalChange,
                           ),
                         ),
-                        const SizedBox(height: 24),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          child: TechnicalIndicatorsPanel(indicators: indicators),
-                        ),
-                        const SizedBox(height: 20),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          child: Text(
-                            'Market Stats',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w800,
-                                ),
-                          ),
-                        ),
                         const SizedBox(height: 12),
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          child: _StatsGrid(stock: stock),
-                        ),
-                        const SizedBox(height: 20),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
                           child: Row(
                             children: [
                               Expanded(
@@ -223,6 +203,16 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
                               ),
                             ],
                           ),
+                        ),
+                        const SizedBox(height: 16),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: _StatsGrid(stock: stock),
+                        ),
+                        const SizedBox(height: 20),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: TechnicalIndicatorsPanel(indicators: indicators),
                         ),
                       ],
                     ),
@@ -352,24 +342,24 @@ class _StatsGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final items = [
-      _StatItem('Open', IndexFormatter.format(stock.open), Icons.lock_open_rounded),
-      _StatItem('High', IndexFormatter.format(stock.high), Icons.north_east_rounded, AppColors.green),
-      _StatItem('Low', IndexFormatter.format(stock.low), Icons.south_east_rounded, AppColors.red),
-      _StatItem('Prev Close', IndexFormatter.format(stock.previousClose), Icons.history_rounded),
-      _StatItem('Volume', '${(stock.volume / 100000).toStringAsFixed(2)}L', Icons.bar_chart_rounded),
-      _StatItem('P/E', stock.pe.toStringAsFixed(1), Icons.analytics_outlined),
-      _StatItem('52W High', IndexFormatter.format(stock.week52High), Icons.arrow_upward_rounded, AppColors.green),
-      _StatItem('52W Low', IndexFormatter.format(stock.week52Low), Icons.arrow_downward_rounded, AppColors.red),
+      _StatItem('Open', IndexFormatter.format(stock.open)),
+      _StatItem('High', IndexFormatter.format(stock.high), AppColors.green),
+      _StatItem('Low', IndexFormatter.format(stock.low), AppColors.red),
+      _StatItem('Prev', IndexFormatter.format(stock.previousClose)),
+      _StatItem('Vol', '${(stock.volume / 100000).toStringAsFixed(2)}L'),
+      _StatItem('P/E', stock.pe.toStringAsFixed(1)),
+      _StatItem('52H', IndexFormatter.format(stock.week52High), AppColors.green),
+      _StatItem('52L', IndexFormatter.format(stock.week52Low), AppColors.red),
     ];
 
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        mainAxisSpacing: 10,
-        crossAxisSpacing: 10,
-        childAspectRatio: 2.2,
+        crossAxisCount: 4,
+        mainAxisSpacing: 6,
+        crossAxisSpacing: 6,
+        mainAxisExtent: 52,
       ),
       itemCount: items.length,
       itemBuilder: (context, i) => _StatCard(item: items[i]),
@@ -380,10 +370,9 @@ class _StatsGrid extends StatelessWidget {
 class _StatItem {
   final String label;
   final String value;
-  final IconData icon;
   final Color? accent;
 
-  const _StatItem(this.label, this.value, this.icon, [this.accent]);
+  const _StatItem(this.label, this.value, [this.accent]);
 }
 
 class _StatCard extends StatelessWidget {
@@ -394,35 +383,39 @@ class _StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
-    final accent = item.accent ?? AppColors.brandOrange;
+    final valueColor = item.accent ?? colors.textPrimary;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: AppDecorations.card(context),
-      child: Row(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+      decoration: BoxDecoration(
+        color: colors.surfaceSecondary.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: colors.border.withValues(alpha: 0.45)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: AppDecorations.iconBadge(accent),
-            child: Icon(item.icon, size: 18, color: accent),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  item.label,
-                  style: TextStyle(fontSize: 11, color: colors.textMuted, fontWeight: FontWeight.w600),
-                ),
-                Text(
-                  item.value,
-                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+          Text(
+            item.label,
+            style: TextStyle(
+              fontSize: 10,
+              color: colors.textMuted,
+              fontWeight: FontWeight.w600,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 2),
+          Text(
+            item.value,
+            style: TextStyle(
+              fontWeight: FontWeight.w800,
+              fontSize: 12,
+              color: valueColor,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -445,23 +438,34 @@ class _ActionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(12),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          decoration: AppDecorations.card(context),
-          child: Column(
+          height: 44,
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: color.withValues(alpha: 0.35)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: AppDecorations.iconBadge(color),
-                child: Icon(icon, color: color, size: 22),
+              Icon(icon, color: color, size: 18),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                  color: colors.textPrimary,
+                ),
               ),
-              const SizedBox(height: 8),
-              Text(label, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
             ],
           ),
         ),

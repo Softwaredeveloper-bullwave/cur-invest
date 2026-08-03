@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../../core/constants/brand.dart';
 import '../../../../core/theme/app_theme_extension.dart';
 import '../../../../core/theme/colors.dart';
 import '../../../../core/theme/premium_background.dart';
@@ -63,6 +64,36 @@ class PremiumAuthShell extends StatelessWidget {
   }
 }
 
+/// Scrollable auth body — avoids RenderFlex overflow when dev banners / chips add height.
+class PremiumAuthScrollBody extends StatelessWidget {
+  const PremiumAuthScrollBody({
+    super.key,
+    required this.child,
+    this.padding = const EdgeInsets.only(bottom: 12),
+  });
+
+  final Widget child;
+  final EdgeInsets padding;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          padding: padding,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [child],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
 class PremiumBrandHeader extends StatelessWidget {
   final Widget? trailing;
 
@@ -74,17 +105,32 @@ class PremiumBrandHeader extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(24, 12, 16, 0),
       child: Row(
         children: [
-          const AppBrandLogo(size: 32, showShadow: false, rounded: true),
+          const AppBrandLogo(size: 36, showShadow: false, rounded: true),
           const SizedBox(width: 10),
-          Text(
-            'BullWave',
-            style: GoogleFonts.inter(
-              color: Colors.white,
-              fontWeight: FontWeight.w800,
-              fontSize: 20,
-              fontStyle: FontStyle.italic,
-              letterSpacing: -0.5,
-            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                AppBrand.name,
+                style: GoogleFonts.inter(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 17,
+                  fontStyle: FontStyle.italic,
+                  letterSpacing: -0.4,
+                ),
+              ),
+              Text(
+                AppBrand.acronym,
+                style: GoogleFonts.inter(
+                  color: AppColors.brandCyan.withValues(alpha: 0.85),
+                  fontWeight: FontWeight.w700,
+                  fontSize: 10,
+                  letterSpacing: 1.2,
+                ),
+              ),
+            ],
           ),
           const Spacer(),
           ?trailing,

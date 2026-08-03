@@ -38,8 +38,22 @@ class LoadingList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: List.generate(itemCount, (_) => LoadingCard(height: itemHeight)),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const margin = AppDimensions.paddingSm;
+        final slotHeight = itemHeight + margin;
+        final visibleCount = constraints.hasBoundedHeight
+            ? (constraints.maxHeight / slotHeight).floor().clamp(1, itemCount)
+            : itemCount;
+
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: List.generate(
+            visibleCount,
+            (_) => LoadingCard(height: itemHeight),
+          ),
+        );
+      },
     );
   }
 }

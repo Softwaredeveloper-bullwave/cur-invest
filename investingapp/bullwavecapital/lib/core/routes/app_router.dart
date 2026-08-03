@@ -214,6 +214,31 @@ class AppRouter {
       // Splash handles its own routing animation.
       if (path == AppRoutes.splash) return null;
 
+      // Profile done but still registering (KYC pending) — do not bounce to Login/OTP.
+      if (auth.isAuthenticated &&
+          auth.hasCompletedRegistration &&
+          !auth.hasSignedInSession &&
+          auth.isRegistrationFlow) {
+        if (_isKycOnboardingPath(path) ||
+            path == AppRoutes.completeProfile ||
+            path == AppRoutes.verifyEmail ||
+            path == AppRoutes.verifyEmailOtp) {
+          return null;
+        }
+        if (_isPublicAuthRoute(path)) {
+          return OnboardingFlowNavigator.routeAfterProfileComplete(kyc);
+        }
+      }
+
+      // Registration finished — must sign in via Login before Home.
+      if (auth.isAuthenticated &&
+          auth.hasCompletedRegistration &&
+          !auth.hasSignedInSession &&
+          !auth.isRegistrationFlow) {
+        if (path == AppRoutes.login || path == AppRoutes.otp) return null;
+        return AppRoutes.login;
+      }
+
       // Registration intro slides — only while registering, not on every launch.
       if (!app.hasCompletedOnboarding && auth.isRegistrationFlow) {
         if (path == AppRoutes.onboarding || path == AppRoutes.login) return null;
@@ -249,8 +274,13 @@ class AppRouter {
       }
 
       if (_isPublicAuthRoute(path) || path == AppRoutes.completeProfile) {
-        if (auth.hasCompletedRegistration) {
+        if (auth.canAutoEnterApp &&
+            path != AppRoutes.login &&
+            path != AppRoutes.otp) {
           return AppRoutes.home;
+        }
+        if (auth.isRegistrationFlow && auth.hasCompletedRegistration) {
+          return OnboardingFlowNavigator.routeAfterProfileComplete(kyc);
         }
         return OnboardingFlowNavigator.routeAfterAuthentication(auth, kyc);
       }
@@ -269,7 +299,8 @@ class AppRouter {
 
       if (!kyc.isFullyVerified &&
           kyc.usesAutomatedKyc &&
-          auth.needsRegistrationFlow &&
+          (auth.needsRegistrationFlow ||
+              (auth.isRegistrationFlow && auth.hasCompletedRegistration)) &&
           OnboardingFlowNavigator.shouldBlockShellUntilKycComplete(path)) {
         return OnboardingFlowNavigator.routeAfterProfileComplete(kyc);
       }

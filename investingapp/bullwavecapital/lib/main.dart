@@ -8,6 +8,7 @@ import 'core/api/dev_auth_service.dart';
 import 'core/api/token_storage.dart';
 import 'core/charts/tradingview_config.dart';
 import 'core/config/dev_config.dart';
+import 'core/constants/brand.dart';
 import 'core/routes/app_router.dart';
 import 'core/services/app_error_reporter.dart';
 import 'core/theme/app_theme.dart';
@@ -130,7 +131,7 @@ class _BullWaveAppState extends State<BullWaveApp> {
       child: Consumer<AppProvider>(
         builder: (context, appProvider, _) {
           return MaterialApp.router(
-            title: 'BullWave Invest',
+            title: AppBrand.fullName,
             debugShowCheckedModeBanner: false,
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,

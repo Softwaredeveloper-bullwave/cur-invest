@@ -35,6 +35,18 @@ class AuthFlowNavigation {
       return;
     }
 
+    if (auth.isRegistrationFlow) {
+      await kyc.loadStatus();
+      if (!context.mounted) return;
+      if (auth.hasCompletedRegistration) {
+        router.go(OnboardingFlowNavigator.routeAfterProfileComplete(kyc));
+      } else {
+        router.go(OnboardingFlowNavigator.routeAfterAuthentication(auth, kyc));
+      }
+      unawaited(refreshAllProviders(context));
+      return;
+    }
+
     router.go(OnboardingFlowNavigator.routeAfterAuthentication(auth, kyc));
     unawaited(kyc.loadStatus());
     unawaited(refreshAllProviders(context));
@@ -47,8 +59,13 @@ class AuthFlowNavigation {
     final router = GoRouter.of(context);
 
     if (auth.isRegistrationFlow) {
-      router.go(OnboardingFlowNavigator.routeAfterAuthentication(auth, kyc));
-      unawaited(kyc.loadStatus());
+      await kyc.loadStatus();
+      if (!context.mounted) return;
+      if (auth.hasCompletedRegistration) {
+        router.go(OnboardingFlowNavigator.routeAfterProfileComplete(kyc));
+      } else {
+        router.go(OnboardingFlowNavigator.routeAfterAuthentication(auth, kyc));
+      }
       unawaited(refreshAllProviders(context));
       return;
     }

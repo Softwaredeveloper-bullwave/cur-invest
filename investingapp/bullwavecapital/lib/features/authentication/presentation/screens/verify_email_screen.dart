@@ -78,65 +78,67 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
         onNext: _continue,
         isLoading: auth.isLoading,
       ),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          children: [
-            const Spacer(),
-            PremiumAuthHero(
-            pill: 'Step 2 · Email',
-            headline: 'VERIFY\nEMAIL',
-            body:
-                'Enter your email address. We\'ll send a secure 6-digit code — required for all new accounts.',
-              showLogo: false,
-              belowBody: Column(
-                children: [
-                  if (phone.isNotEmpty)
-                    PremiumAuthStatusChip(
-                      icon: Icons.phone_android_rounded,
-                      label: 'Phone verified',
-                      value: '+91 ${_maskedPhone(phone)}',
-                      accent: AppColors.greenSoft,
+      child: PremiumAuthScrollBody(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              PremiumAuthHero(
+                pill: 'Step 2 · Email',
+                headline: 'VERIFY\nEMAIL',
+                body:
+                    'Enter your email address. We\'ll send a secure 6-digit code — required for all new accounts.',
+                showLogo: false,
+                belowBody: Column(
+                  children: [
+                    if (phone.isNotEmpty)
+                      PremiumAuthStatusChip(
+                        icon: Icons.phone_android_rounded,
+                        label: 'Phone verified',
+                        value: '+91 ${_maskedPhone(phone)}',
+                        accent: AppColors.greenSoft,
+                      ),
+                    if (phone.isNotEmpty) const SizedBox(height: 16),
+                    if (AppEnv.showDevOtpHints && auth.emailOtpIsConsoleMode)
+                      PremiumAuthDevBanner(
+                        message:
+                            'SMTP not configured — the verification code will appear on the next screen.',
+                      ),
+                    PremiumAuthInputField(
+                      controller: _emailController,
+                      label: 'Email address',
+                      hint: 'you@email.com',
+                      prefixIcon: Icons.alternate_email_rounded,
+                      keyboardType: TextInputType.emailAddress,
+                      validator: (value) {
+                        final email = (value ?? '').trim();
+                        if (email.isEmpty) return 'Enter your email address';
+                        if (!email.contains('@') || !email.contains('.')) {
+                          return 'Enter a valid email address';
+                        }
+                        return null;
+                      },
                     ),
-                  if (phone.isNotEmpty) const SizedBox(height: 16),
-                  if (AppEnv.showDevOtpHints && auth.emailOtpIsConsoleMode)
-                    PremiumAuthDevBanner(
-                      message:
-                          'SMTP not configured — the verification code will appear on the next screen.',
-                    ),
-                  PremiumAuthInputField(
-                    controller: _emailController,
-                    label: 'Email address',
-                    hint: 'you@email.com',
-                    prefixIcon: Icons.alternate_email_rounded,
-                    keyboardType: TextInputType.emailAddress,
-                    validator: (value) {
-                      final email = (value ?? '').trim();
-                      if (email.isEmpty) return 'Enter your email address';
-                      if (!email.contains('@') || !email.contains('.')) {
-                        return 'Enter a valid email address';
-                      }
-                      return null;
-                    },
-                  ),
-                ],
-              ),
-            ),
-            const Spacer(flex: 2),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(32, 0, 32, 8),
-              child: Text(
-                'We never share your email with third parties.',
-                textAlign: TextAlign.center,
-                style: GoogleFonts.inter(
-                  color: Colors.white.withValues(alpha: 0.42),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  height: 1.5,
+                  ],
                 ),
               ),
-            ),
-          ],
+              const SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(32, 0, 32, 8),
+                child: Text(
+                  'We never share your email with third parties.',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.inter(
+                    color: Colors.white.withValues(alpha: 0.42),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    height: 1.5,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

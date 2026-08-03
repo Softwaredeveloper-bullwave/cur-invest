@@ -3,7 +3,9 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../core/constants/brand.dart';
 import '../../../../core/constants/routes.dart';
+import '../../../../core/widgets/app_brand_logo.dart';
 import '../../../profile/presentation/provider/app_provider.dart';
 import '../widgets/premium_auth_ui.dart';
 
@@ -23,11 +25,12 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   static const _pages = [
     _OnboardingPageData(
       pill: 'Welcome',
-      headline: 'A NEW ERA\nOF INVESTING',
+      headline: 'CAPITAL\nBULLWAVE',
       quote:
-          'Wealth isn\'t built in a day. It\'s built in the decisions you make — every market open, every goal set, every step forward.',
+          'Welcome to ${AppBrand.fullName}. Wealth is built in the decisions you make — every market open, every goal set, every step forward.',
       glow: Color(0xFF3B82F6),
       glowSecondary: Color(0xFF6366F1),
+      showLogo: true,
     ),
     _OnboardingPageData(
       pill: 'Markets',
@@ -150,17 +153,39 @@ class _OnboardingScreenState extends State<OnboardingScreen>
             opacity: _fadeController,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 32),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Spacer(flex: 2),
-                  PremiumPillTag(label: data.pill),
-                  const SizedBox(height: 28),
-                  PremiumAuthHeadline(text: data.headline),
-                  const SizedBox(height: 24),
-                  PremiumAuthBody(text: data.quote),
-                  const Spacer(flex: 3),
-                ],
+              child: SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: MediaQuery.sizeOf(context).height * 0.48,
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (data.showLogo) ...[
+                        const CapitalBullWaveHeroLogo(height: 140),
+                        const SizedBox(height: 24),
+                      ],
+                      PremiumPillTag(label: data.pill),
+                      const SizedBox(height: 24),
+                      PremiumAuthHeadline(text: data.headline),
+                      if (index == 0) ...[
+                        const SizedBox(height: 10),
+                        Text(
+                          AppBrand.acronym,
+                          style: GoogleFonts.inter(
+                            color: Colors.white.withValues(alpha: 0.72),
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15,
+                            letterSpacing: 2.4,
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 20),
+                      PremiumAuthBody(text: data.quote),
+                      const SizedBox(height: 24),
+                    ],
+                  ),
+                ),
               ),
             ),
           );
@@ -176,6 +201,7 @@ class _OnboardingPageData {
   final String quote;
   final Color glow;
   final Color glowSecondary;
+  final bool showLogo;
 
   const _OnboardingPageData({
     required this.pill,
@@ -183,5 +209,6 @@ class _OnboardingPageData {
     required this.quote,
     required this.glow,
     required this.glowSecondary,
+    this.showLogo = false,
   });
 }

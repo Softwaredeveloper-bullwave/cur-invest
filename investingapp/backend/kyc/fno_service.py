@@ -92,6 +92,23 @@ def serialize_fno_request(req: FnoEligibilityRequest, request=None) -> dict:
     }
 
 
+def serialize_fno_admin_request(req: FnoEligibilityRequest, request=None) -> dict:
+    data = serialize_fno_request(req, request)
+    user = req.user
+    data['user'] = {
+        'id': str(user.id),
+        'phone': user.phone,
+        'name': user.name,
+        'email': user.email or '',
+    }
+    data['user_name'] = user.name or ''
+    data['user_phone'] = user.phone or ''
+    data['user_email'] = user.email or ''
+    data['reviewed_by_name'] = req.reviewed_by.name if req.reviewed_by else ''
+    data['requires_upload'] = req.proof_type in DOCUMENT_PROOF_TYPES
+    return data
+
+
 def get_fno_me_payload(user: User, request=None) -> dict:
     latest = user.fno_requests.order_by('-created_at').first()
     portfolio_value = _portfolio_current_value(user)
