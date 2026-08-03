@@ -8,11 +8,10 @@ import '../../../../core/api/refresh_providers.dart';
 import '../../../../core/constants/routes.dart';
 import '../../../../core/navigation/onboarding_flow_navigator.dart';
 import '../../../kyc/presentation/provider/kyc_flow_provider.dart';
-import '../../../profile/presentation/provider/app_provider.dart';
 import '../provider/auth_provider.dart';
 import '../widgets/splash_animation.dart';
 
-/// Entry screen — always shown first, then routes to onboarding or auth.
+/// Entry screen — restores session to Home, or opens Login.
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -29,7 +28,6 @@ class _SplashScreenState extends State<SplashScreen> {
 
   Future<void> _navigateNext() async {
     final auth = context.read<AuthProvider>();
-    final app = context.read<AppProvider>();
     final kyc = context.read<KycFlowProvider>();
 
     await Future.wait([
@@ -38,30 +36,27 @@ class _SplashScreenState extends State<SplashScreen> {
     ]);
     if (!mounted) return;
 
-    if (!app.hasCompletedOnboarding) {
-      if (auth.isAuthenticated) {
-        await auth.logout();
-      }
+    if (auth.isAuthenticated && auth.hasCompletedRegistration) {
+      auth.beginSignIn();
+      await kyc.loadStatus();
       if (!mounted) return;
-      context.go(AppRoutes.onboarding);
+      unawaited(refreshAllProviders(context));
+      context.go(AppRoutes.home);
       return;
     }
 
-    if (auth.isAuthenticated) {
+    if (auth.isAuthenticated && auth.needsRegistrationFlow) {
+      auth.beginRegistration();
       await kyc.loadStatus();
       if (!mounted) return;
       unawaited(refreshAllProviders(context));
       context.go(
-        OnboardingFlowNavigator.routeAfterSplash(
-          hasCompletedOnboarding: app.hasCompletedOnboarding,
-          isAuthenticated: auth.isAuthenticated,
-          auth: auth,
-          kyc: kyc,
-        ),
+        OnboardingFlowNavigator.routeAfterAuthentication(auth, kyc),
       );
       return;
     }
 
+    auth.beginSignIn();
     context.go(AppRoutes.login);
   }
 

@@ -8,8 +8,9 @@ import '../api/refresh_providers.dart';
 import '../../features/authentication/presentation/provider/auth_provider.dart';
 import '../../features/kyc/presentation/provider/kyc_flow_provider.dart';
 import 'onboarding_flow_navigator.dart';
+import 'registration_completion.dart';
 
-/// Central post-auth navigation — new users → registration; returning users → home.
+/// Central post-auth navigation — sign-in vs registration stay separate.
 class AuthFlowNavigation {
   AuthFlowNavigation._();
 
@@ -19,16 +20,23 @@ class AuthFlowNavigation {
     final kyc = context.read<KycFlowProvider>();
     final router = GoRouter.of(context);
 
-    if (auth.needsRegistrationFlow) {
-      router.go(OnboardingFlowNavigator.routeAfterAuthentication(auth, kyc));
-      unawaited(kyc.loadStatus());
+    if (auth.isSignInFlow) {
+      if (!auth.hasCompletedRegistration) {
+        auth.beginRegistration();
+        router.go(OnboardingFlowNavigator.routeAfterAuthentication(auth, kyc));
+        unawaited(kyc.loadStatus());
+        unawaited(refreshAllProviders(context));
+        return;
+      }
+      await kyc.loadStatus();
+      if (!context.mounted) return;
+      router.go(OnboardingFlowNavigator.routeForReturningUser(kyc));
       unawaited(refreshAllProviders(context));
       return;
     }
 
-    await kyc.loadStatus();
-    if (!context.mounted) return;
-    router.go(OnboardingFlowNavigator.routeForReturningUser(kyc));
+    router.go(OnboardingFlowNavigator.routeAfterAuthentication(auth, kyc));
+    unawaited(kyc.loadStatus());
     unawaited(refreshAllProviders(context));
   }
 
@@ -38,7 +46,7 @@ class AuthFlowNavigation {
     final kyc = context.read<KycFlowProvider>();
     final router = GoRouter.of(context);
 
-    if (auth.needsRegistrationFlow) {
+    if (auth.isRegistrationFlow) {
       router.go(OnboardingFlowNavigator.routeAfterAuthentication(auth, kyc));
       unawaited(kyc.loadStatus());
       unawaited(refreshAllProviders(context));
@@ -60,5 +68,9 @@ class AuthFlowNavigation {
     if (!context.mounted) return;
     router.go(OnboardingFlowNavigator.routeAfterProfileComplete(kyc));
     unawaited(refreshAllProviders(context));
+  }
+
+  static Future<void> afterKycMilestone(BuildContext context) async {
+    await RegistrationCompletion.maybeFinishRegistration(context);
   }
 }

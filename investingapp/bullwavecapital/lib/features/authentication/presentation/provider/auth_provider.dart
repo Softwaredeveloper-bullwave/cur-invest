@@ -10,6 +10,8 @@ import '../../../../core/api/dev_auth_service.dart';
 import '../../../../core/api/token_storage.dart';
 import '../../../../models/user_model.dart';
 
+enum AuthFlowMode { signIn, registration }
+
 class AuthProvider extends ChangeNotifier {
   final _api = BullwaveApi.instance;
 
@@ -31,6 +33,8 @@ class AuthProvider extends ChangeNotifier {
   String _emailOtpMode = 'email';
   bool _isNewUser = false;
   bool? _phoneIsRegistered;
+  AuthFlowMode _flowMode = AuthFlowMode.signIn;
+  String? _loginSuccessMessage;
 
   String get phoneNumber => _phoneNumber;
   String get pendingEmail => _pendingEmail;
@@ -42,6 +46,10 @@ class AuthProvider extends ChangeNotifier {
   String? get devOtp => AppEnv.showDevOtpHints ? _devOtp : null;
   bool get otpIsConsoleMode => _otpMode == 'console';
   bool get emailOtpIsConsoleMode => _emailOtpMode == 'console';
+  AuthFlowMode get flowMode => _flowMode;
+  bool get isRegistrationFlow => _flowMode == AuthFlowMode.registration;
+  bool get isSignInFlow => _flowMode == AuthFlowMode.signIn;
+  String? get loginSuccessMessage => _loginSuccessMessage;
 
   /// Account was created on this sign-in (phone was not in the system before).
   bool get isNewUser => _isNewUser;
@@ -87,6 +95,32 @@ class AuthProvider extends ChangeNotifier {
 
   void setTermsAccepted(bool value) {
     _termsAccepted = value;
+    notifyListeners();
+  }
+
+  void beginRegistration() {
+    _flowMode = AuthFlowMode.registration;
+    _loginSuccessMessage = null;
+    notifyListeners();
+  }
+
+  void endRegistration() {
+    _flowMode = AuthFlowMode.signIn;
+    notifyListeners();
+  }
+
+  void beginSignIn() {
+    _flowMode = AuthFlowMode.signIn;
+    notifyListeners();
+  }
+
+  void setLoginSuccessMessage(String? message) {
+    _loginSuccessMessage = message;
+    notifyListeners();
+  }
+
+  void clearError() {
+    _error = null;
     notifyListeners();
   }
 
@@ -176,6 +210,13 @@ class AuthProvider extends ChangeNotifier {
       _devOtp = result.devOtp;
       _otpMode = result.otpMode;
       _phoneIsRegistered = result.isRegistered;
+      if (_flowMode == AuthFlowMode.signIn && !result.isRegistered) {
+        _error =
+            'No account found for this number. Tap Register to create an account.';
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      }
       _isLoading = false;
       notifyListeners();
       return true;
@@ -209,6 +250,16 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
     try {
       final result = await _api.verifyOtp(_phoneNumber, code);
+      if (_flowMode == AuthFlowMode.signIn && result.isNewUser) {
+        await _api.logout();
+        _error =
+            'This number is not registered yet. Please use Register to create an account.';
+        _isLoading = false;
+        _isAuthenticated = false;
+        _user = null;
+        notifyListeners();
+        return false;
+      }
       _user = result.user;
       _isNewUser = result.isNewUser;
       _isAuthenticated = true;
@@ -413,6 +464,7 @@ class AuthProvider extends ChangeNotifier {
     _pendingEmail = '';
     _isNewUser = false;
     _phoneIsRegistered = null;
+    _flowMode = AuthFlowMode.signIn;
     await TokenStorage.savePendingEmail('');
     _termsAccepted = false;
     notifyListeners();

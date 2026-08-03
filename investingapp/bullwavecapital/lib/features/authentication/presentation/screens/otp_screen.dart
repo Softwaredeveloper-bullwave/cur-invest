@@ -136,7 +136,8 @@ class _OtpScreenState extends State<OtpScreen> {
     final canResend = _secondsRemaining == 0 && !_isResending;
     final isBusy = auth.isLoading || _isVerifying;
     final canVerify = _otp.replaceAll(RegExp(r'\D'), '').length == 6 && !isBusy;
-    final isReturningPhone = auth.phoneIsRegistered;
+    final isReturningPhone = auth.phoneIsRegistered && auth.isSignInFlow;
+    final isRegistration = auth.isRegistrationFlow;
 
     return PremiumAuthShell(
       glowPrimary: const Color(0xFF22D3EE),
@@ -153,14 +154,16 @@ class _OtpScreenState extends State<OtpScreen> {
         children: [
           const Spacer(),
           PremiumAuthHero(
-            pill: isReturningPhone ? 'Welcome back' : 'Step 1 · Create account',
-            headline: isReturningPhone ? 'SIGN IN' : 'VERIFY\nPHONE',
+            pill: isRegistration
+                ? 'Step 1 · Phone OTP'
+                : (isReturningPhone ? 'Welcome back' : 'Sign in'),
+            headline: isRegistration ? 'VERIFY\nPHONE' : 'ENTER\nOTP',
             body: AppEnv.showDevOtpHints && auth.otpIsConsoleMode
                 ? 'Dev mode: SMS is not configured. Use the OTP shown below or in the Django terminal.'
-                : isReturningPhone
-                    ? 'Enter the 6-digit code sent to +91 ${_maskedPhone(auth.phoneNumber)} to open your account.'
-                    : 'Enter the 6-digit code sent to +91 ${_maskedPhone(auth.phoneNumber)}. '
-                        'Next you\'ll verify email and complete your profile.',
+                : isRegistration
+                    ? 'Enter the 6-digit code sent to +91 ${_maskedPhone(auth.phoneNumber)}. '
+                        'Next you\'ll verify email and complete your profile.'
+                    : 'Enter the 6-digit code sent to +91 ${_maskedPhone(auth.phoneNumber)} to sign in.',
             showLogo: false,
             belowBody: Column(
               children: [

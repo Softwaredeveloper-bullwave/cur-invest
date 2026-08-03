@@ -12,6 +12,7 @@ import 'package:provider/provider.dart';
 
 import '../../../../core/constants/routes.dart';
 import '../../../../core/navigation/onboarding_flow_navigator.dart';
+import '../../../../core/navigation/registration_completion.dart';
 import '../../../../core/theme/colors.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/widgets/primary_button.dart';
@@ -156,6 +157,11 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
       }
       if (s.finalKycApproved || s.isFullyVerified) {
         _pollTimer?.cancel();
+        if (context.read<AuthProvider>().isRegistrationFlow) {
+          await RegistrationCompletion.returnToLoginAfterRegistration(context);
+          return;
+        }
+        if (!mounted) return;
         OnboardingFlowNavigator.goToNextKycStep(context, context.read<KycFlowProvider>());
       }
       setState(() {});

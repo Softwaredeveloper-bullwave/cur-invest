@@ -214,15 +214,19 @@ class AppRouter {
       // Splash handles its own routing animation.
       if (path == AppRoutes.splash) return null;
 
-      // Step 2 — onboarding slides (first launch).
-      if (!app.hasCompletedOnboarding) {
-        if (path == AppRoutes.onboarding) return null;
+      // Registration intro slides — only while registering, not on every launch.
+      if (!app.hasCompletedOnboarding && auth.isRegistrationFlow) {
+        if (path == AppRoutes.onboarding || path == AppRoutes.login) return null;
         return AppRoutes.onboarding;
       }
 
-      // Step 3–4 — phone login + OTP.
+      // Must sign in before any protected screen.
       if (!auth.isAuthenticated) {
-        if (path == AppRoutes.login || path == AppRoutes.otp) return null;
+        if (path == AppRoutes.login ||
+            path == AppRoutes.otp ||
+            (path == AppRoutes.onboarding && auth.isRegistrationFlow)) {
+          return null;
+        }
         return AppRoutes.login;
       }
 

@@ -1,9 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
 import '../constants/routes.dart';
 import '../../features/authentication/presentation/provider/auth_provider.dart';
 import '../../features/kyc/presentation/provider/kyc_flow_provider.dart';
+import 'registration_completion.dart';
 
 /// Splash → onboarding → phone OTP → email OTP → profile → KYC steps → home.
 class OnboardingFlowNavigator {
@@ -109,6 +113,11 @@ class OnboardingFlowNavigator {
   }
 
   static void goToNextKycStep(BuildContext context, KycFlowProvider kyc) {
+    final auth = context.read<AuthProvider>();
+    if (auth.isRegistrationFlow && kyc.isFullyVerified) {
+      unawaited(RegistrationCompletion.returnToLoginAfterRegistration(context));
+      return;
+    }
     context.go(nextIncompleteKycStep(kyc) ?? AppRoutes.home);
   }
 
