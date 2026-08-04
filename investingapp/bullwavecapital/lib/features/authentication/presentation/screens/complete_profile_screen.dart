@@ -85,7 +85,11 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
         AppSnackbar.error(context, ImagePickHelper.permissionDeniedMessage(source));
         return;
       }
-      final file = await ImagePickHelper.pickImage(source: source, requestPermission: false);
+      final file = await ImagePickHelper.pickImage(
+        source: source,
+        requestPermission: false,
+        context: context,
+      );
       if (file == null) return;
       final bytes = await file.readAsBytes();
       if (!mounted) return;
