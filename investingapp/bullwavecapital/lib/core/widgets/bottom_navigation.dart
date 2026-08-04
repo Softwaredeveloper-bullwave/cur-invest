@@ -1,12 +1,12 @@
 import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter/services.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
-import '../theme/theme_a.dart';
+import '../theme/colors.dart';
 
-/// Animated curved bottom bar — sliding lime bubble + top notch (BullWave theme).
+/// Figma-style floating bottom nav — concave notch, centered lime bubble.
 class AppBottomNavigation extends StatefulWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
@@ -17,6 +17,19 @@ class AppBottomNavigation extends StatefulWidget {
     required this.onTap,
   });
 
+  static const bubbleRadius = 28.0;
+  static const barHeight = 62.0;
+  static const cornerRadius = 31.0;
+  static const horizontalInset = 18.0;
+
+  /// Protrusion above bar top (half bubble + small gap).
+  static const topProtrusion = bubbleRadius + 4.0;
+
+  static double get totalHeight => barHeight + topProtrusion;
+
+  /// Bubble center sits in the middle of the notch valley (between lip & dip).
+  static double bubbleCenterFromBarBottom(double R) => barHeight - R * 0.5;
+
   @override
   State<AppBottomNavigation> createState() => _AppBottomNavigationState();
 }
@@ -24,18 +37,12 @@ class AppBottomNavigation extends StatefulWidget {
 class _AppBottomNavigationState extends State<AppBottomNavigation>
     with SingleTickerProviderStateMixin {
   static const _items = [
-    (PhosphorIcons.house, 'Home'),
-    (PhosphorIcons.chartLineUp, 'Markets'),
-    (PhosphorIcons.chartPie, 'Portfolio'),
-    (PhosphorIcons.wallet, 'Wallet'),
-    (PhosphorIcons.user, 'Profile'),
+    PhosphorIcons.house,
+    PhosphorIcons.chartLineUp,
+    PhosphorIcons.chartPie,
+    PhosphorIcons.wallet,
+    PhosphorIcons.user,
   ];
-
-  static const _barHeight = 62.0;
-  static const _bubbleSize = 54.0;
-  static const _bubbleLift = 24.0;
-  static const _notchSpread = 34.0;
-  static const _cornerRadius = 28.0;
 
   late AnimationController _controller;
   late double _fromIndex;
@@ -48,7 +55,7 @@ class _AppBottomNavigationState extends State<AppBottomNavigation>
     _toIndex = widget.currentIndex.toDouble();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 420),
+      duration: const Duration(milliseconds: 360),
     )..value = 1;
   }
 
@@ -69,265 +76,198 @@ class _AppBottomNavigationState extends State<AppBottomNavigation>
   }
 
   double get _animatedIndex {
-    final t = Curves.easeOutCubic.transform(_controller.value);
-    return lerpDouble(_fromIndex, _toIndex, t) ?? _toIndex;
+    final t = Curves.easeInOutCubic.transform(_controller.value);
+    return lerpDouble(_fromIndex, _toIndex, t)!;
+  }
+
+  void _onTap(int index) {
+    if (index == widget.currentIndex) return;
+    HapticFeedback.selectionClick();
+    widget.onTap(index);
   }
 
   @override
   Widget build(BuildContext context) {
-    final p = context.palette;
+    const R = AppBottomNavigation.bubbleRadius;
+    final bottomPad = MediaQuery.paddingOf(context).bottom;
 
-    return SafeArea(
-      top: false,
-      minimum: const EdgeInsets.fromLTRB(14, 0, 14, 10),
-      child: SizedBox(
-        height: _barHeight + _bubbleLift + 8,
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final width = constraints.maxWidth;
-            final itemWidth = width / _items.length;
-            final centerX = itemWidth * _animatedIndex + itemWidth / 2;
-            final bubbleBottom = _barHeight - _bubbleSize * 0.42 + _bubbleLift;
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        AppBottomNavigation.horizontalInset,
+        0,
+        AppBottomNavigation.horizontalInset,
+        bottomPad + 6,
+      ),
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, _) {
+          return SizedBox(
+            height: AppBottomNavigation.totalHeight,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final width = constraints.maxWidth;
+                final slot = width / _items.length;
+                final cx = slot * _animatedIndex + slot / 2;
+                final bubbleCenterY =
+                    AppBottomNavigation.bubbleCenterFromBarBottom(R);
+                final bubbleBottom = bubbleCenterY - R;
 
-            return Stack(
-              clipBehavior: Clip.none,
-              alignment: Alignment.bottomCenter,
-              children: [
-                // Soft glow under active bubble
-                Positioned(
-                  left: centerX - 36,
-                  bottom: bubbleBottom - 6,
-                  child: AnimatedBuilder(
-                    animation: _controller,
-                    builder: (context, _) {
-                      return Container(
-                        width: 72,
-                        height: 28,
+                return Stack(
+                  clipBehavior: Clip.none,
+                  alignment: Alignment.bottomCenter,
+                  children: [
+                    // Shadow only under the pill (not full-width band)
+                    Positioned(
+                      left: 2,
+                      right: 2,
+                      bottom: 0,
+                      height: AppBottomNavigation.barHeight,
+                      child: DecoratedBox(
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(40),
-                          color: p.primary.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(
+                            AppBottomNavigation.cornerRadius,
+                          ),
                           boxShadow: [
                             BoxShadow(
-                              color: p.primary.withValues(alpha: p.isDark ? 0.35 : 0.28),
-                              blurRadius: 28,
-                              spreadRadius: 2,
+                              color: Colors.black.withValues(alpha: 0.4),
+                              blurRadius: 20,
+                              offset: const Offset(0, 6),
                             ),
                           ],
                         ),
-                      );
-                    },
-                  ),
-                ),
-
-                // Bar + notch
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  height: _barHeight,
-                  child: CustomPaint(
-                    painter: _CurvedNavBarPainter(
-                      centerX: centerX,
-                      notchSpread: _notchSpread,
-                      cornerRadius: _cornerRadius,
-                      fill: p.card,
-                      border: p.borderLight,
-                      shadow: p.isDark
-                          ? p.primary.withValues(alpha: 0.07)
-                          : const Color(0xFF0A0A0A).withValues(alpha: 0.1),
+                      ),
                     ),
-                    child: Row(
-                      children: List.generate(_items.length, (i) {
-                        final active = i == widget.currentIndex;
-                        final (_, label) = _items[i];
-                        final inactiveColor =
-                            p.isDark ? const Color(0xFF9CAAB8) : p.textMuted;
 
-                        return Expanded(
-                          child: GestureDetector(
-                            onTap: () => widget.onTap(i),
-                            behavior: HitTestBehavior.opaque,
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                SizedBox(
-                                  height: active ? 26 : 30,
-                                  child: active
-                                      ? null
-                                      : Icon(
-                                          _items[i].$1,
-                                          size: 22,
-                                          color: inactiveColor,
-                                        ),
-                                ),
-                                const SizedBox(height: 2),
-                                AnimatedDefaultTextStyle(
-                                  duration: const Duration(milliseconds: 220),
-                                  style: GoogleFonts.inter(
-                                    fontSize: active ? 11.5 : 10.5,
-                                    fontWeight:
-                                        active ? FontWeight.w700 : FontWeight.w500,
-                                    color: active ? p.primary : inactiveColor,
-                                    height: 1.1,
-                                    letterSpacing: active ? 0.15 : 0,
+                    // Pill bar + notch
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      height: AppBottomNavigation.barHeight,
+                      child: CustomPaint(
+                        painter: _FigmaBarPainter(
+                          centerX: cx,
+                          bubbleRadius: R,
+                          cornerRadius: AppBottomNavigation.cornerRadius,
+                          barColor: AppColors.surfaceSecondary,
+                        ),
+                      ),
+                    ),
+
+                    // Inactive icons
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      height: AppBottomNavigation.barHeight,
+                      child: Row(
+                        children: List.generate(_items.length, (i) {
+                          if (i == widget.currentIndex) {
+                            return const Expanded(child: SizedBox());
+                          }
+                          return Expanded(
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: () => _onTap(i),
+                                customBorder: const CircleBorder(),
+                                child: Center(
+                                  child: Icon(
+                                    _items[i],
+                                    size: 23,
+                                    color: Colors.white.withValues(alpha: 0.7),
                                   ),
-                                  child: Text(
-                                    label,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
                                 ),
-                                const SizedBox(height: 10),
-                              ],
+                              ),
                             ),
-                          ),
-                        );
-                      }),
+                          );
+                        }),
+                      ),
                     ),
-                  ),
-                ),
 
-                // Active bubble + icon
-                AnimatedBuilder(
-                  animation: _controller,
-                  builder: (context, _) {
-                    return Positioned(
-                      left: centerX - _bubbleSize / 2,
+                    // Bubble centered in notch
+                    Positioned(
+                      left: cx - R,
                       bottom: bubbleBottom,
+                      width: R * 2,
+                      height: R * 2,
                       child: GestureDetector(
-                        onTap: () => widget.onTap(widget.currentIndex),
-                        child: Container(
-                          width: _bubbleSize,
-                          height: _bubbleSize,
+                        onTap: () => _onTap(widget.currentIndex),
+                        behavior: HitTestBehavior.opaque,
+                        child: DecoratedBox(
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                p.primary,
-                                Color.lerp(p.primary, p.primaryDark, 0.12)!,
-                              ],
-                            ),
-                            border: Border.all(
-                              color: p.primary.withValues(alpha: 0.55),
-                              width: 1.2,
-                            ),
+                            color: AppColors.brandPrimary,
                             boxShadow: [
                               BoxShadow(
-                                color: p.primary.withValues(alpha: 0.45),
-                                blurRadius: 18,
-                                offset: const Offset(0, 6),
-                              ),
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.25),
-                                blurRadius: 8,
+                                color: AppColors.brandPrimary.withValues(alpha: 0.4),
+                                blurRadius: 14,
                                 offset: const Offset(0, 3),
                               ),
                             ],
                           ),
-                          child: Icon(
-                            _items[widget.currentIndex].$1,
-                            size: 26,
-                            color: p.primaryDark,
+                          child: Center(
+                            child: Icon(
+                              _items[widget.currentIndex],
+                              size: 24,
+                              color: AppColors.brandPrimaryDark,
+                            ),
                           ),
                         ),
                       ),
-                    );
-                  },
-                ),
-              ],
-            );
-          },
-        ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          );
+        },
       ),
     );
   }
 }
 
-class _CurvedNavBarPainter extends CustomPainter {
-  _CurvedNavBarPainter({
+class _FigmaBarPainter extends CustomPainter {
+  _FigmaBarPainter({
     required this.centerX,
-    required this.notchSpread,
+    required this.bubbleRadius,
     required this.cornerRadius,
-    required this.fill,
-    required this.border,
-    required this.shadow,
+    required this.barColor,
   });
 
   final double centerX;
-  final double notchSpread;
+  final double bubbleRadius;
   final double cornerRadius;
-  final Color fill;
-  final Color border;
-  final Color shadow;
+  final Color barColor;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final path = _barPath(size);
-    canvas.drawShadow(path, shadow, 14, false);
-
-    canvas.drawPath(
-      path,
-      Paint()
-        ..color = fill
-        ..style = PaintingStyle.fill,
-    );
-
-    canvas.drawPath(
-      path,
-      Paint()
-        ..color = border
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1,
-    );
-  }
-
-  Path _barPath(Size size) {
     final w = size.width;
     final h = size.height;
     final r = cornerRadius;
-    final left = centerX - notchSpread;
-    final right = centerX + notchSpread;
-    const dip = 14.0;
+    final R = bubbleRadius;
+    final cx = centerX.clamp(r + R + 2, w - r - R - 2);
 
     final path = Path()
       ..moveTo(0, h)
       ..lineTo(0, r)
       ..quadraticBezierTo(0, 0, r, 0)
-      ..lineTo(left, 0);
-
-    // Concave notch hugging the bubble
-    path.cubicTo(
-      left + 8,
-      0,
-      centerX - 18,
-      dip,
-      centerX,
-      dip,
-    );
-    path.cubicTo(
-      centerX + 18,
-      dip,
-      right - 8,
-      0,
-      right,
-      0,
-    );
-
-    path
+      ..lineTo(cx - R, 0)
+      ..arcToPoint(
+        Offset(cx + R, 0),
+        radius: Radius.circular(R),
+        clockwise: false,
+      )
       ..lineTo(w - r, 0)
       ..quadraticBezierTo(w, 0, w, r)
       ..lineTo(w, h)
       ..close();
 
-    return path;
+    canvas.drawPath(path, Paint()..color = barColor);
   }
 
   @override
-  bool shouldRepaint(covariant _CurvedNavBarPainter oldDelegate) {
-    return oldDelegate.centerX != centerX ||
-        oldDelegate.fill != fill ||
-        oldDelegate.border != border;
+  bool shouldRepaint(covariant _FigmaBarPainter oldDelegate) {
+    return oldDelegate.centerX != centerX;
   }
 }

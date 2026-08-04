@@ -51,11 +51,17 @@ class MainShell extends StatelessWidget {
             bottom: ShellLayout.fabBottomOffset,
             right: ShellLayout.fabRightOffset,
           ),
+          // Floating nav — no Scaffold bottomNavigationBar slot (avoids black band).
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: AppBottomNavigation(
+              currentIndex: _currentIndex(context),
+              onTap: (index) => _onTap(context, index),
+            ),
+          ),
         ],
-      ),
-      bottomNavigationBar: AppBottomNavigation(
-        currentIndex: _currentIndex(context),
-        onTap: (index) => _onTap(context, index),
       ),
     );
   }

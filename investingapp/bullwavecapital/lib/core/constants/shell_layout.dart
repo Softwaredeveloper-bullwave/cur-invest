@@ -2,8 +2,9 @@
 class ShellLayout {
   ShellLayout._();
 
-  /// Bottom nav bar height + bubble lift + outer padding.
-  static const double bottomNavHeight = 96;
+  /// Bottom nav total height + safe padding (sync with AppBottomNavigation.totalHeight).
+  /// Floating nav: bar + notch bubble protrusion + safe area.
+  static const double bottomNavHeight = 94;
 
   /// Gap between bottom nav top edge and FAB bottom edge.
   static const double fabAboveNavGap = 16;
