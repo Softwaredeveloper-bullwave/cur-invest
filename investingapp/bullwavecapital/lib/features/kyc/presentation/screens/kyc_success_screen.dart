@@ -40,17 +40,17 @@ class KycSuccessScreen extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 finishingRegistration
-                    ? 'Your identity verification is complete. Sign in with your registered mobile number to start using BullWave.'
+                    ? 'Your identity verification is complete. You can now explore markets and start investing.'
                     : 'Your PAN, bank account, and name have been verified. You can now explore markets and start investing.',
                 style: Theme.of(context).textTheme.bodyMedium,
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: AppDimensions.paddingXl),
               PrimaryButton(
-                label: finishingRegistration ? 'Continue to sign in' : 'Start Investing',
+                label: finishingRegistration ? 'Go to Home' : 'Start Investing',
                 onPressed: () async {
                   if (finishingRegistration) {
-                    await RegistrationCompletion.returnToLoginAfterRegistration(context);
+                    await RegistrationCompletion.finishAndGoHome(context);
                     return;
                   }
                   if (context.mounted) context.go(AppRoutes.invest);

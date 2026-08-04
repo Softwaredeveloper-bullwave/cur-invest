@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../constants/routes.dart';
 import '../../features/authentication/presentation/provider/auth_provider.dart';
+import '../../features/kyc/domain/kyc_models.dart';
 import '../../features/kyc/presentation/provider/kyc_flow_provider.dart';
 import 'registration_completion.dart';
 
@@ -83,7 +84,23 @@ class OnboardingFlowNavigator {
     return nextIncompleteKycStep(kyc) ?? AppRoutes.panVerification;
   }
 
-  /// Ordered onboarding KYC: PAN → Aadhaar → Bank → UPI → Selfie → Home.
+  /// UPI + live selfie are one manual admin-review step.
+  static bool _identityStepComplete(
+    KycStatusModel status,
+    bool upiRequired,
+  ) {
+    final upiDone = !upiRequired ||
+        status.upiVerified ||
+        status.paymentReviewPending ||
+        (status.upiManual &&
+            status.upiStatus == 'pending' &&
+            status.upiVpaMasked.isNotEmpty);
+    final selfieDone =
+        status.selfieVerified || status.selfieReviewPending;
+    return upiDone && selfieDone;
+  }
+
+  /// Ordered onboarding KYC: PAN → Aadhaar → Bank → UPI+Selfie → Home.
   static String? nextIncompleteKycStep(KycFlowProvider kyc) {
     final status = kyc.status;
 
@@ -95,14 +112,9 @@ class OnboardingFlowNavigator {
         status.bankDraftReady;
     if (!bankDone) return AppRoutes.bankVerificationKyc;
 
-    if (kyc.upiRequired) {
-      final upiDone = status.upiVerified || status.paymentReviewPending;
-      if (!upiDone) return AppRoutes.upiVerification;
+    if (!_identityStepComplete(status, kyc.upiRequired)) {
+      return AppRoutes.identityVerification;
     }
-
-    final selfieDone =
-        status.selfieVerified || status.selfieReviewPending;
-    if (!selfieDone) return AppRoutes.selfieVerification;
 
     if (status.manualFinalApprovalRequired && !status.finalKycApproved) {
       return AppRoutes.kycPending;
@@ -135,10 +147,8 @@ class OnboardingFlowNavigator {
   static String previousKycStep(KycFlowProvider kyc, {String? currentRoute}) {
     final current = currentRoute ?? nextIncompleteKycStep(kyc);
     return switch (current) {
-      AppRoutes.nameMatch => AppRoutes.selfieVerification,
-      AppRoutes.selfieVerification => kyc.upiRequired
-          ? AppRoutes.upiVerification
-          : AppRoutes.bankVerificationKyc,
+      AppRoutes.nameMatch ||
+      AppRoutes.selfieVerification ||
       AppRoutes.upiVerification ||
       AppRoutes.identityVerification =>
         AppRoutes.bankVerificationKyc,
@@ -175,9 +185,10 @@ class OnboardingFlowNavigator {
       AppRoutes.panVerification => 'Continue to PAN Verification',
       AppRoutes.aadhaarVerificationKyc => 'Continue to Aadhaar Verification',
       AppRoutes.bankVerificationKyc => 'Continue to Bank Verification',
-      AppRoutes.selfieVerification => 'Continue to Selfie Verification',
-      AppRoutes.identityVerification => 'Continue to Identity Verification',
-      AppRoutes.upiVerification => 'Continue to UPI Verification',
+      AppRoutes.identityVerification ||
+      AppRoutes.selfieVerification ||
+      AppRoutes.upiVerification =>
+        'Continue to UPI & Selfie Verification',
       AppRoutes.nameMatch => 'Continue to Name Match',
       _ => 'Continue to Home',
     };

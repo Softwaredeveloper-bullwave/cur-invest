@@ -35,7 +35,7 @@ class _NameMatchScreenState extends State<NameMatchScreen> {
 
     final s = kyc.status;
     if (!s.selfieVerified) {
-      context.go(AppRoutes.selfieVerification);
+      context.go(AppRoutes.identityVerification);
       return;
     }
     if (s.nameMatchPassed) {

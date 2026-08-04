@@ -212,7 +212,7 @@ class AuthProvider extends ChangeNotifier {
       await TokenStorage.setRegistrationInProgress(false);
     }
     _termsAccepted = false;
-    notifyListeners();
+    WidgetsBinding.instance.addPostFrameCallback((_) => notifyListeners());
   }
 
   Future<bool> tryRestoreSession() async {

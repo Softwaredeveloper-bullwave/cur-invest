@@ -104,10 +104,6 @@ import '../../features/kyc/presentation/screens/aadhaar_verification_screen.dart
 
 import '../../features/kyc/presentation/screens/bank_verification_kyc_screen.dart';
 
-import '../../features/kyc/presentation/screens/selfie_verification_screen.dart';
-
-import '../../features/kyc/presentation/screens/upi_verification_screen.dart';
-
 import '../../features/kyc/presentation/screens/identity_verification_screen.dart';
 import '../../features/kyc/presentation/screens/name_match_screen.dart';
 
@@ -463,13 +459,12 @@ class AppRouter {
 
       GoRoute(
         path: AppRoutes.selfieVerification,
-
-        builder: (context, state) => const SelfieVerificationScreen(),
+        redirect: (context, state) => AppRoutes.identityVerification,
       ),
 
       GoRoute(
         path: AppRoutes.upiVerification,
-        builder: (context, state) => const UpiVerificationScreen(),
+        redirect: (context, state) => AppRoutes.identityVerification,
       ),
 
       GoRoute(

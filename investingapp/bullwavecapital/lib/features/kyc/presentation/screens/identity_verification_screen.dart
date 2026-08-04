@@ -158,7 +158,7 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
       if (s.finalKycApproved || s.isFullyVerified) {
         _pollTimer?.cancel();
         if (context.read<AuthProvider>().isRegistrationFlow) {
-          await RegistrationCompletion.returnToLoginAfterRegistration(context);
+          await RegistrationCompletion.finishAndGoHome(context);
           return;
         }
         if (!mounted) return;
@@ -183,13 +183,16 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
       _usePickerFallback = false;
     });
 
-    if (!kIsWeb && !_isDesktop) {
+    if (!kIsWeb) {
       final permission = await Permission.camera.request();
-      if (!permission.isGranted || !mounted) {
+      if (!permission.isGranted && !permission.isLimited) {
+        if (!mounted) return;
         setState(() {
-          _cameraError = 'Camera permission is required. Enable it in System Settings → Privacy → Camera.';
+          _cameraError = _isDesktop
+              ? 'Camera permission is required. Enable it in System Settings → Privacy → Camera, then tap below.'
+              : 'Camera permission is required. Enable it in Settings and try again.';
           _cameraInitializing = false;
-          _usePickerFallback = false;
+          _usePickerFallback = true;
         });
         return;
       }
@@ -200,63 +203,79 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
       if (cameras.isEmpty) {
         if (!mounted) return;
         setState(() {
-          _cameraError = 'No camera found on this device.';
+          _cameraError = 'No camera found. Use the button below to capture a selfie.';
           _cameraInitializing = false;
-          _usePickerFallback = _isDesktop;
+          _usePickerFallback = true;
         });
         return;
       }
-      final front = cameras.firstWhere(
-        (c) => c.lensDirection == CameraLensDirection.front,
-        orElse: () => cameras.first,
-      );
 
-      await _controller?.dispose();
-      final useJpegFormat = defaultTargetPlatform == TargetPlatform.android ||
-          defaultTargetPlatform == TargetPlatform.iOS;
-      final controller = useJpegFormat
-          ? CameraController(
-              front,
-              _isDesktop ? ResolutionPreset.medium : ResolutionPreset.high,
-              enableAudio: false,
-              imageFormatGroup: ImageFormatGroup.jpeg,
-            )
-          : CameraController(
-              front,
-              _isDesktop ? ResolutionPreset.medium : ResolutionPreset.high,
-              enableAudio: false,
-            );
-      await controller.initialize().timeout(const Duration(seconds: 12));
-      if (!mounted) {
-        await controller.dispose();
-        return;
+      final ordered = <CameraDescription>[
+        ...cameras.where((c) => c.lensDirection == CameraLensDirection.front),
+        ...cameras.where((c) => c.lensDirection != CameraLensDirection.front),
+      ];
+
+      Object? lastError;
+      for (final camera in ordered) {
+        try {
+          await _initCameraController(camera);
+          return;
+        } catch (e) {
+          lastError = e;
+        }
       }
-      setState(() {
-        _controller = controller;
-        _cameraReady = true;
-        _cameraError = null;
-        _cameraInitializing = false;
-        _usePickerFallback = false;
-      });
+
+      throw lastError ?? StateError('Could not open camera');
     } on TimeoutException {
       if (!mounted) return;
       setState(() {
-        _cameraError = 'Camera took too long to start. Tap the preview to retry.';
+        _cameraError = 'Camera took too long to start. Tap below to retry or use the system camera.';
         _cameraReady = false;
         _cameraInitializing = false;
-        _usePickerFallback = false;
+        _usePickerFallback = true;
       });
-    } catch (e) {
+    } catch (_) {
       if (!mounted) return;
       setState(() {
         _cameraError = kIsWeb
             ? 'Could not open camera. Allow camera access in your browser and reload.'
-            : 'Could not open camera. Tap the preview to retry.';
+            : 'Could not open the in-app camera. Use the button below to capture a live selfie.';
         _cameraReady = false;
         _cameraInitializing = false;
-        _usePickerFallback = false;
+        _usePickerFallback = true;
       });
     }
+  }
+
+  Future<void> _initCameraController(CameraDescription camera) async {
+    await _controller?.dispose();
+    final useJpegFormat = defaultTargetPlatform == TargetPlatform.android ||
+        defaultTargetPlatform == TargetPlatform.iOS;
+    final preset = _isDesktop ? ResolutionPreset.low : ResolutionPreset.high;
+    final controller = useJpegFormat
+        ? CameraController(
+            camera,
+            preset,
+            enableAudio: false,
+            imageFormatGroup: ImageFormatGroup.jpeg,
+          )
+        : CameraController(
+            camera,
+            preset,
+            enableAudio: false,
+          );
+    await controller.initialize().timeout(const Duration(seconds: 12));
+    if (!mounted) {
+      await controller.dispose();
+      return;
+    }
+    setState(() {
+      _controller = controller;
+      _cameraReady = true;
+      _cameraError = null;
+      _cameraInitializing = false;
+      _usePickerFallback = false;
+    });
   }
 
   Future<void> _startLiveCamera() async {
@@ -450,6 +469,19 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
                       onPressed: _startLiveCamera,
                       child: const Text('Turn on camera'),
                     ),
+                    if (_usePickerFallback) ...[
+                      const SizedBox(height: 8),
+                      OutlinedButton(
+                        onPressed: _captureWithPicker,
+                        child: const Text('Open system camera'),
+                      ),
+                    ],
+                  ] else if (_usePickerFallback && !_cameraInitializing) ...[
+                    const SizedBox(height: 12),
+                    OutlinedButton(
+                      onPressed: _captureWithPicker,
+                      child: const Text('Open system camera'),
+                    ),
                   ],
                 ],
               ),
@@ -512,11 +544,19 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
                                   onPressed: _submitting
                                       ? null
                                       : (_capturedBytes == null
-                                          ? (_cameraReady ? _captureSelfie : _startLiveCamera)
+                                          ? (_cameraReady
+                                              ? _captureSelfie
+                                              : (_usePickerFallback
+                                                  ? _captureWithPicker
+                                                  : _startLiveCamera))
                                           : _retakeSelfie),
                                   child: Text(
                                     _capturedBytes == null
-                                        ? (_cameraReady ? 'Capture selfie' : 'Turn on camera')
+                                        ? (_cameraReady
+                                            ? 'Capture selfie'
+                                            : (_usePickerFallback
+                                                ? 'Open camera'
+                                                : 'Turn on camera'))
                                         : 'Retake',
                                   ),
                                 ),

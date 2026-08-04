@@ -39,16 +39,18 @@ class _LoginScreenState extends State<LoginScreen> {
     if (_launchConfigured) return;
     _launchConfigured = true;
 
-    final auth = context.read<AuthProvider>();
-    final registered = GoRouterState.of(context).uri.queryParameters['registered'];
-    if (registered == '1') {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final auth = context.read<AuthProvider>();
+      final registered =
+          GoRouterState.of(context).uri.queryParameters['registered'];
       auth.beginSignIn();
-      auth.setLoginSuccessMessage(
-        'Registration complete. Sign in with your mobile number to continue.',
-      );
-    } else {
-      auth.beginSignIn();
-    }
+      if (registered == '1') {
+        auth.setLoginSuccessMessage(
+          'Registration complete. Sign in with your mobile number to continue.',
+        );
+      }
+    });
   }
 
   @override
