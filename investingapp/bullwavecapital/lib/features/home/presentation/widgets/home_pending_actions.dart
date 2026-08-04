@@ -17,6 +17,7 @@ enum _PendingActionState { actionRequired, inReview, rejected }
 class _PendingActionItem {
   final String title;
   final String subtitle;
+  final String actionLabel;
   final IconData icon;
   final Color accent;
   final VoidCallback onTap;
@@ -26,6 +27,7 @@ class _PendingActionItem {
   const _PendingActionItem({
     required this.title,
     required this.subtitle,
+    required this.actionLabel,
     required this.icon,
     required this.accent,
     required this.onTap,
@@ -51,19 +53,20 @@ class HomePendingActionsSection extends StatelessWidget {
       final user = auth.user;
       String subtitle;
       if (auth.needsEmailVerification) {
-        subtitle = 'Verify your email to secure your account';
+        subtitle = 'Verify your email to secure your account and unlock all features.';
       } else if (auth.needsProfileSetup) {
-        subtitle = 'Add your name and photo to finish setup';
+        subtitle = 'Add your name and photo — it only takes a minute to finish.';
       } else if (user != null && user.name.trim().isEmpty) {
-        subtitle = 'Add your name to personalise your account';
+        subtitle = 'Add your name to personalise your BullWave experience.';
       } else {
-        subtitle = 'A few details left — takes under 2 minutes';
+        subtitle = 'A few details left — complete setup to start investing.';
       }
 
       items.add(
         _PendingActionItem(
           title: 'Complete your profile',
           subtitle: subtitle,
+          actionLabel: 'Continue setup',
           icon: PhosphorIcons.userCircle,
           accent: AppColors.brandCyan,
           state: _PendingActionState.actionRequired,
@@ -88,7 +91,8 @@ class HomePendingActionsSection extends StatelessWidget {
             title: 'KYC verification failed',
             subtitle: kyc.manualStatus.rejectionReason.isNotEmpty
                 ? kyc.manualStatus.rejectionReason
-                : 'Please resubmit your documents',
+                : 'Please resubmit your documents so we can verify your account.',
+            actionLabel: 'Resubmit KYC',
             icon: PhosphorIcons.warningCircle,
             accent: AppColors.red,
             state: _PendingActionState.rejected,
@@ -99,7 +103,9 @@ class HomePendingActionsSection extends StatelessWidget {
         items.add(
           _PendingActionItem(
             title: 'KYC under review',
-            subtitle: 'We\'ll notify you once verification is complete',
+            subtitle:
+                'Your documents are with our team. We\'ll notify you as soon as verification is complete — usually within 24 hours.',
+            actionLabel: 'View status',
             icon: PhosphorIcons.hourglass,
             accent: AppColors.brandOrange,
             state: _PendingActionState.inReview,
@@ -111,7 +117,9 @@ class HomePendingActionsSection extends StatelessWidget {
         items.add(
           _PendingActionItem(
             title: 'Complete KYC verification',
-            subtitle: 'Required to invest, add funds, and trade',
+            subtitle:
+                'Verify your identity to invest in stocks, add funds to your wallet, and start trading.',
+            actionLabel: 'Verify now',
             icon: PhosphorIcons.shieldCheck,
             accent: HomeThemeA.primary,
             state: _PendingActionState.actionRequired,
@@ -132,7 +140,8 @@ class HomePendingActionsSection extends StatelessWidget {
             title: 'F&O access declined',
             subtitle: fno.status.latestRequest?.rejectionReason?.isNotEmpty == true
                 ? fno.status.latestRequest!.rejectionReason!
-                : 'Submit income or portfolio proof to retry',
+                : 'Submit income or portfolio proof to unlock futures & options trading.',
+            actionLabel: 'Try again',
             icon: PhosphorIcons.chartLineDown,
             accent: AppColors.red,
             state: _PendingActionState.rejected,
@@ -143,7 +152,9 @@ class HomePendingActionsSection extends StatelessWidget {
         items.add(
           _PendingActionItem(
             title: 'F&O verification in progress',
-            subtitle: 'Your documents are being reviewed by our team',
+            subtitle:
+                'Your F&O documents are being reviewed. You\'ll get access to index & stock options once approved.',
+            actionLabel: 'View status',
             icon: PhosphorIcons.chartLineUp,
             accent: AppColors.brandOrange,
             state: _PendingActionState.inReview,
@@ -154,7 +165,9 @@ class HomePendingActionsSection extends StatelessWidget {
         items.add(
           _PendingActionItem(
             title: 'Enable F&O trading',
-            subtitle: 'Trade index & stock options after quick verification',
+            subtitle:
+                'Trade Nifty, Bank Nifty & stock options. Submit a quick income or portfolio proof to get started.',
+            actionLabel: 'Enable F&O',
             icon: PhosphorIcons.chartLineUp,
             accent: AppColors.brandPink,
             state: _PendingActionState.actionRequired,
@@ -197,48 +210,114 @@ class HomePendingActionsSection extends StatelessWidget {
     final items = _buildItems(context, auth, kyc, fno);
     if (items.isEmpty) return const SizedBox.shrink();
 
-    final p = context.palette;
-
     return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
+      padding: const EdgeInsets.only(bottom: 6),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Text(
-                'Complete your setup',
-                style: GoogleFonts.inter(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 16,
-                  letterSpacing: -0.3,
-                  color: p.textDark,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: HomeThemeA.primary.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(999),
-                  border: Border.all(color: HomeThemeA.primary.withValues(alpha: 0.35)),
-                ),
-                child: Text(
-                  '${items.length}',
-                  style: GoogleFonts.inter(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                    color: HomeThemeA.primaryDark,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
+          const _SetupSectionHeader(),
+          const SizedBox(height: 12),
           ...items.map(
             (item) => Padding(
-              padding: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.only(bottom: 12),
               child: _PendingActionCard(item: item),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SetupSectionHeader extends StatelessWidget {
+  const _SetupSectionHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        gradient: LinearGradient(
+          colors: [
+            HomeThemeA.primary.withValues(alpha: 0.22),
+            HomeThemeA.primary.withValues(alpha: 0.06),
+          ],
+        ),
+        border: Border.all(color: HomeThemeA.primary.withValues(alpha: 0.45)),
+        boxShadow: [
+          BoxShadow(
+            color: HomeThemeA.primary.withValues(alpha: 0.12),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: HomeThemeA.primary.withValues(alpha: 0.25),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: HomeThemeA.primary.withValues(alpha: 0.5)),
+            ),
+            child: const Icon(
+              PhosphorIcons.lightning,
+              color: HomeThemeA.primaryDark,
+              size: 18,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Complete your setup',
+                  style: GoogleFonts.inter(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 15,
+                    letterSpacing: -0.3,
+                    color: p.textDark,
+                  ),
+                ),
+                Text(
+                  'Finish these steps to unlock full access',
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    color: p.textGrey,
+                    height: 1.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: HomeThemeA.primary,
+              borderRadius: BorderRadius.circular(999),
+              boxShadow: [
+                BoxShadow(
+                  color: HomeThemeA.primary.withValues(alpha: 0.45),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Text(
+              'ACTION',
+              style: GoogleFonts.inter(
+                fontSize: 10,
+                fontWeight: FontWeight.w900,
+                color: HomeThemeA.primaryDark,
+                letterSpacing: 0.6,
+              ),
             ),
           ),
         ],
@@ -252,132 +331,363 @@ class _PendingActionCard extends StatelessWidget {
 
   const _PendingActionCard({required this.item});
 
+  String get _statusLabel {
+    return switch (item.state) {
+      _PendingActionState.inReview => 'IN REVIEW',
+      _PendingActionState.rejected => 'ACTION NEEDED',
+      _PendingActionState.actionRequired => 'PENDING',
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
     final isReview = item.state == _PendingActionState.inReview;
     final isRejected = item.state == _PendingActionState.rejected;
+    final progress = item.progress;
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: item.onTap,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(22),
         child: Ink(
+          height: 132,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
-            color: p.card,
+            borderRadius: BorderRadius.circular(22),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                item.accent.withValues(alpha: 0.22),
+                p.card,
+                p.card.withValues(alpha: 0.95),
+              ],
+            ),
             border: Border.all(
-              color: item.accent.withValues(alpha: isRejected ? 0.45 : 0.28),
+              color: item.accent.withValues(alpha: isRejected ? 0.65 : 0.48),
+              width: 1.5,
             ),
             boxShadow: [
               BoxShadow(
-                color: item.accent.withValues(alpha: 0.08),
-                blurRadius: 16,
-                offset: const Offset(0, 6),
+                color: item.accent.withValues(alpha: 0.22),
+                blurRadius: 24,
+                spreadRadius: -4,
+                offset: const Offset(0, 8),
+              ),
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.25),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
-          child: IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(22),
+            child: Stack(
               children: [
-                Container(
-                  width: 4,
-                  decoration: BoxDecoration(
-                    color: item.accent,
-                    borderRadius: const BorderRadius.horizontal(
-                      left: Radius.circular(18),
+                Positioned(
+                  right: -24,
+                  top: -24,
+                  child: Container(
+                    width: 100,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: item.accent.withValues(alpha: 0.1),
                     ),
                   ),
                 ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 12, 10, 12),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: item.accent.withValues(alpha: 0.14),
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(
-                              color: item.accent.withValues(alpha: 0.25),
+                Positioned(
+                  left: -16,
+                  bottom: -20,
+                  child: Container(
+                    width: 72,
+                    height: 72,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: item.accent.withValues(alpha: 0.07),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: 52,
+                            height: 52,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  item.accent.withValues(alpha: 0.35),
+                                  item.accent.withValues(alpha: 0.12),
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: item.accent.withValues(alpha: 0.45),
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: item.accent.withValues(alpha: 0.25),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Icon(item.icon, color: item.accent, size: 26),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        item.title,
+                                        style: GoogleFonts.inter(
+                                          fontWeight: FontWeight.w900,
+                                          fontSize: 16,
+                                          letterSpacing: -0.35,
+                                          color: p.textDark,
+                                          height: 1.15,
+                                        ),
+                                      ),
+                                    ),
+                                    _StatusPill(
+                                      label: _statusLabel,
+                                      accent: item.accent,
+                                      isReview: isReview,
+                                      isRejected: isRejected,
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 5),
+                                Text(
+                                  item.subtitle,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12,
+                                    height: 1.4,
+                                    color: p.textGrey,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          child: Icon(item.icon, color: item.accent, size: 22),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                item.title,
-                                style: GoogleFonts.inter(
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 14,
-                                  color: p.textDark,
-                                  height: 1.2,
-                                ),
-                              ),
-                              const SizedBox(height: 3),
-                              Text(
-                                item.subtitle,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: GoogleFonts.inter(
-                                  fontSize: 11.5,
-                                  height: 1.35,
-                                  color: p.textGrey,
-                                ),
-                              ),
-                              if (item.progress != null &&
-                                  item.state == _PendingActionState.actionRequired) ...[
-                                const SizedBox(height: 8),
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(999),
-                                  child: LinearProgressIndicator(
-                                    value: item.progress,
-                                    minHeight: 4,
-                                    backgroundColor: item.accent.withValues(alpha: 0.12),
-                                    color: item.accent,
+                          if (progress != null && isReview) ...[
+                            const SizedBox(width: 8),
+                            _ProgressRing(
+                              progress: progress,
+                              accent: item.accent,
+                            ),
+                          ],
+                        ],
+                      ),
+                      const Spacer(),
+                      Row(
+                        children: [
+                          if (progress != null &&
+                              item.state == _PendingActionState.actionRequired) ...[
+                            Expanded(
+                              flex: 2,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '${(progress * 100).round()}% complete',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                      color: item.accent,
+                                    ),
                                   ),
-                                ),
-                              ],
-                              if (isReview) ...[
-                                const SizedBox(height: 6),
-                                Text(
-                                  'In review',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w700,
-                                    color: item.accent,
+                                  const SizedBox(height: 4),
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(999),
+                                    child: LinearProgressIndicator(
+                                      value: progress,
+                                      minHeight: 6,
+                                      backgroundColor:
+                                          item.accent.withValues(alpha: 0.15),
+                                      color: item.accent,
+                                    ),
                                   ),
-                                ),
-                              ],
-                            ],
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                          ] else if (isReview) ...[
+                            Icon(
+                              PhosphorIcons.clock,
+                              size: 14,
+                              color: item.accent,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Usually verified within 24h',
+                              style: GoogleFonts.inter(
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w600,
+                                color: item.accent.withValues(alpha: 0.9),
+                              ),
+                            ),
+                            const Spacer(),
+                          ] else
+                            const Spacer(),
+                          _ActionButton(
+                            label: item.actionLabel,
+                            accent: item.accent,
+                            isRejected: isRejected,
                           ),
-                        ),
-                        const SizedBox(width: 6),
-                        Icon(
-                          isReview
-                              ? PhosphorIcons.clock
-                              : PhosphorIcons.caretRight,
-                          size: isReview ? 18 : 16,
-                          color: isRejected
-                              ? AppColors.red
-                              : p.textMuted.withValues(alpha: 0.85),
-                        ),
-                      ],
-                    ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _StatusPill extends StatelessWidget {
+  final String label;
+  final Color accent;
+  final bool isReview;
+  final bool isRejected;
+
+  const _StatusPill({
+    required this.label,
+    required this.accent,
+    required this.isReview,
+    required this.isRejected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bg = isRejected
+        ? AppColors.red
+        : isReview
+            ? accent
+            : HomeThemeA.primary;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(999),
+        boxShadow: [
+          BoxShadow(
+            color: bg.withValues(alpha: 0.45),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Text(
+        label,
+        style: GoogleFonts.inter(
+          fontSize: 9,
+          fontWeight: FontWeight.w900,
+          color: isRejected ? Colors.white : HomeThemeA.primaryDark,
+          letterSpacing: 0.5,
+        ),
+      ),
+    );
+  }
+}
+
+class _ProgressRing extends StatelessWidget {
+  final double progress;
+  final Color accent;
+
+  const _ProgressRing({required this.progress, required this.accent});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 44,
+      height: 44,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          CircularProgressIndicator(
+            value: progress,
+            strokeWidth: 4,
+            backgroundColor: accent.withValues(alpha: 0.15),
+            color: accent,
+          ),
+          Text(
+            '${(progress * 100).round()}%',
+            style: GoogleFonts.inter(
+              fontSize: 9,
+              fontWeight: FontWeight.w800,
+              color: accent,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ActionButton extends StatelessWidget {
+  final String label;
+  final Color accent;
+  final bool isRejected;
+
+  const _ActionButton({
+    required this.label,
+    required this.accent,
+    required this.isRejected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final fg = isRejected ? Colors.white : HomeThemeA.primaryDark;
+    final bg = isRejected ? AppColors.red : HomeThemeA.primary;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(999),
+        boxShadow: [
+          BoxShadow(
+            color: bg.withValues(alpha: 0.4),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            label,
+            style: GoogleFonts.inter(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w800,
+              color: fg,
+            ),
+          ),
+          const SizedBox(width: 4),
+          Icon(PhosphorIcons.arrowRight, size: 12, color: fg),
+        ],
       ),
     );
   }

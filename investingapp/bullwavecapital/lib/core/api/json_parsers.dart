@@ -624,6 +624,15 @@ EducationCatalogModel parseEducationCatalog(Map<String, dynamic> json) {
 InvestmentDocQuiz parseEducationQuiz(Map<String, dynamic> json) =>
     InvestmentDocQuiz.fromJson(json);
 
+InvestmentDocCategory parseEducationCategory(Map<String, dynamic> json) =>
+    InvestmentDocCategory.fromJson(json);
+
+InvestmentDocArticle parseEducationArticle(Map<String, dynamic> json) =>
+    InvestmentDocArticle.fromJson(json);
+
+QuizAttemptResult parseQuizAttemptResult(Map<String, dynamic> json) =>
+    QuizAttemptResult.fromJson(json);
+
 TraderNoteModel parseTraderNote(Map<String, dynamic> json) => TraderNoteModel(
       id: json['id']?.toString() ?? '',
       title: json['title'] as String? ?? '',

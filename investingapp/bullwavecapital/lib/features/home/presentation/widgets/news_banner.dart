@@ -23,8 +23,6 @@ class NewsHeadlineTicker extends StatefulWidget {
 
 class _NewsHeadlineTickerState extends State<NewsHeadlineTicker>
     with SingleTickerProviderStateMixin {
-  static const _newsYellow = Color(0xFFFFD60A);
-
   static const _fallbackHeadlines = [
     {'title': 'Nifty 50 eyes fresh highs as FII inflows strengthen', 'subtitle': 'Markets'},
     {'title': 'RBI holds repo rate steady; stance remains accommodative', 'subtitle': 'Policy'},
@@ -67,13 +65,11 @@ class _NewsHeadlineTickerState extends State<NewsHeadlineTicker>
   void _setupMarquee() {
     if (!mounted) return;
 
-    final style = _headlineStyle();
-    // Duplicate once so short feeds still exceed the viewport and keep scrolling.
     final base = _joinedHeadlines;
     final loopText = '$base     •     ';
 
     final painter = TextPainter(
-      text: TextSpan(text: loopText, style: style),
+      text: TextSpan(text: loopText, style: _headlineStyle(context)),
       textDirection: TextDirection.ltr,
       maxLines: 1,
     )..layout();
@@ -101,20 +97,19 @@ class _NewsHeadlineTickerState extends State<NewsHeadlineTicker>
     super.dispose();
   }
 
-  TextStyle _headlineStyle() {
-    return const TextStyle(
-      fontSize: 13.5,
+  TextStyle _headlineStyle(BuildContext context) {
+    final p = context.palette;
+    return ThemeAType.body(size: 13.5, color: p.textDark).copyWith(
       fontWeight: FontWeight.w600,
       height: 1.2,
-      letterSpacing: 0.15,
-      color: _newsYellow,
+      letterSpacing: 0.1,
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    final style = _headlineStyle();
+    final style = _headlineStyle(context);
     final fallback = _joinedHeadlines;
 
     return ScaleTap(
@@ -153,7 +148,7 @@ class _NewsHeadlineTickerState extends State<NewsHeadlineTicker>
                 child: Icon(
                   PhosphorIcons.caretRight,
                   size: 16,
-                  color: _newsYellow.withValues(alpha: 0.75),
+                  color: p.textMuted,
                 ),
               ),
             ],
@@ -256,11 +251,11 @@ class _LiveBadgeState extends State<_LiveBadge> {
             height: _pulse ? 6 : 5,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: widget.palette.negative,
+              color: widget.palette.positive,
               boxShadow: [
                 BoxShadow(
-                  color: widget.palette.negative.withValues(alpha: 0.4),
-                  blurRadius: 4,
+                  color: widget.palette.positive.withValues(alpha: 0.45),
+                  blurRadius: 6,
                 ),
               ],
             ),
@@ -268,8 +263,8 @@ class _LiveBadgeState extends State<_LiveBadge> {
           const SizedBox(width: 4),
           Text(
             'LIVE',
-            style: ThemeAType.label(size: 10, color: widget.palette.negative)
-                .copyWith(letterSpacing: 0.6),
+            style: ThemeAType.label(size: 10, color: widget.palette.positive)
+                .copyWith(letterSpacing: 0.6, fontWeight: FontWeight.w800),
           ),
         ],
       ),

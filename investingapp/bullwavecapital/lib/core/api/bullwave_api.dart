@@ -1305,6 +1305,33 @@ class BullwaveApi {
     return parseEducationQuiz(data);
   }
 
+  Future<InvestmentDocCategory> getEducationCategory(String slug) async {
+    final data =
+        await _client.get('/education/categories/$slug/') as Map<String, dynamic>;
+    return parseEducationCategory(data);
+  }
+
+  Future<InvestmentDocArticle> getEducationArticle(
+    String categorySlug,
+    String articleSlug,
+  ) async {
+    final data = await _client.get(
+          '/education/categories/$categorySlug/articles/$articleSlug/',
+        ) as Map<String, dynamic>;
+    return parseEducationArticle(data);
+  }
+
+  Future<QuizAttemptResult> submitEducationQuiz(
+    String quizSlug,
+    List<int?> answers,
+  ) async {
+    final data = await _client.post(
+          '/education/quizzes/$quizSlug/submit/',
+          body: {'answers': answers},
+        ) as Map<String, dynamic>;
+    return parseQuizAttemptResult(data);
+  }
+
   Future<List<CopyTraderModel>> getCopyTraders({
     String? risk,
     String? q,

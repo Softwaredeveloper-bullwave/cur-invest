@@ -10,7 +10,7 @@ class HomeSearchBar extends StatelessWidget {
   const HomeSearchBar({
     super.key,
     required this.onTap,
-    this.hint = 'Search stocks & markets',
+    this.hint = 'Search stocks, indices & F&O',
   });
 
   @override
@@ -21,18 +21,37 @@ class HomeSearchBar extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(16),
         child: Ink(
-          height: 48,
-          decoration: p.cardDecoration(radius: 999),
+          height: 50,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            color: p.card.withValues(alpha: 0.9),
+            border: Border.all(color: p.primary.withValues(alpha: 0.22)),
+            boxShadow: [
+              BoxShadow(
+                color: p.primary.withValues(alpha: 0.06),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 18),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
               children: [
-                Icon(
-                  PhosphorIcons.magnifyingGlass,
-                  size: 20,
-                  color: p.textGrey,
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: p.primarySoft,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    PhosphorIcons.magnifyingGlass,
+                    size: 18,
+                    color: p.primaryDark,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -41,6 +60,7 @@ class HomeSearchBar extends StatelessWidget {
                     style: ThemeAType.secondary(size: 14, color: p.textGrey),
                   ),
                 ),
+                Icon(PhosphorIcons.slidersHorizontal, size: 16, color: p.textMuted),
               ],
             ),
           ),

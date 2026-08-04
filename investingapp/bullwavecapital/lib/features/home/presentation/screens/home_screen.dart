@@ -29,6 +29,7 @@ import '../widgets/home_theme_a.dart';
 import '../widgets/home_balance_cards.dart';
 import '../widgets/home_clean_header.dart';
 import '../widgets/home_ipo_section.dart';
+import '../widgets/home_hero_background.dart';
 import '../widgets/home_pending_actions.dart';
 import '../widgets/home_quick_actions.dart';
 import '../widgets/home_recent_activity.dart';
@@ -158,7 +159,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
         final portfolio = provider.portfolio;
         final notificationCount = context.watch<NotificationProvider>().unreadCount;
+        final userName = context.watch<AuthProvider>().user?.displayName;
         final plans = _featuredPlansForHome(provider);
+        final allQuickActions = _homeQuickActions(context);
         return SafeArea(
           child: RefreshIndicator(
             color: AppColors.brandCyan,
@@ -171,108 +174,47 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: double.infinity,
-                    color: context.palette.bg,
-                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        HomeCleanHeader(
-                          notificationCount: notificationCount,
-                          onMenuTap: () => _showQuickMenu(context),
-                          onNotificationTap: () => context.push(AppRoutes.notifications),
-                        ),
-                        const SizedBox(height: 14),
-                        const HomePendingActionsSection(),
-                        const SizedBox(height: 14),
-                        HomeSearchBar(
-                          onTap: () => context.go(AppRoutes.invest),
-                        ),
-                        const SizedBox(height: 22),
-                        HomePrimaryActionsRow(
-                          actions: [
-                            HomeQuickAction(
-                              icon: PhosphorIcons.chartLineUp,
-                              label: 'Markets',
-                              color: HomeThemeA.primary,
-                              onTap: () => context.go(AppRoutes.invest),
-                            ),
-                            HomeQuickAction(
-                              icon: PhosphorIcons.wallet,
-                              label: 'Wallet',
-                              color: HomeThemeA.primary,
-                              onTap: () => context.go(AppRoutes.wallet),
-                            ),
-                            HomeQuickAction(
-                              icon: PhosphorIcons.flag,
-                              label: 'Goals',
-                              color: HomeThemeA.primary,
-                              onTap: () => context.push(AppRoutes.goalPlans),
-                            ),
-                            HomeQuickAction(
-                              icon: PhosphorIcons.piggyBank,
-                              label: 'Plans',
-                              color: HomeThemeA.primary,
-                              onTap: () => context.push(AppRoutes.featuredPlansList),
-                            ),
-                            HomeQuickAction(
-                              icon: PhosphorIcons.bookmarkSimple,
-                              label: 'Saved',
-                              color: HomeThemeA.primary,
-                              onTap: () => context.push(AppRoutes.watchlist),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 20),
-                        NewsHeadlineTicker(
-                          headlines: provider.marketNews,
-                          onTap: () => context.push(AppRoutes.stockNews),
-                        ),
-                        const SizedBox(height: 16),
-                        HomeBalanceCards(
-                          portfolioValue: portfolio.currentValue,
-                          walletBalance: portfolio.walletBalance,
-                          dayPnl: portfolio.dayPnl,
-                          onPortfolioTap: () => context.go(AppRoutes.portfolio),
-                          onWalletTap: () => context.go(AppRoutes.wallet),
-                        ),
-                        const SizedBox(height: 20),
-                        HomeSecondaryActionsRow(
-                          actions: [
-                            HomeQuickAction(
-                              icon: PhosphorIcons.calendarBlank,
-                              label: 'IPO',
-                              color: AppColors.brandCyan,
-                              onTap: () => context.push(AppRoutes.ipoCalendar),
-                            ),
-                            HomeQuickAction(
-                              icon: PhosphorIcons.flask,
-                              label: 'Paper',
-                              color: AppColors.brandOrange,
-                              onTap: () => context.push(AppRoutes.paperTrading),
-                            ),
-                            HomeQuickAction(
-                              icon: PhosphorIcons.bell,
-                              label: 'Alerts',
-                              color: AppColors.brandPink,
-                              onTap: () => context.push(AppRoutes.priceAlerts),
-                            ),
-                            HomeQuickAction(
-                              icon: PhosphorIcons.repeat,
-                              label: 'SIP',
-                              color: HomeThemeA.primary,
-                              onTap: () => context.push(AppRoutes.sipTracker),
-                            ),
-                            HomeQuickAction(
-                              icon: PhosphorIcons.newspaper,
-                              label: 'News',
-                              color: AppColors.blue,
-                              onTap: () => context.push(AppRoutes.stockNews),
-                            ),
-                          ],
-                        ),
-                      ],
+                  HomeHeroBackground(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          HomeCleanHeader(
+                            notificationCount: notificationCount,
+                            userName: userName,
+                            onMenuTap: () => _showQuickMenu(context),
+                            onNotificationTap: () => context.push(AppRoutes.notifications),
+                          ),
+                          const SizedBox(height: 18),
+                          const HomePendingActionsSection(),
+                          const SizedBox(height: 20),
+                          HomeBalanceCards(
+                            portfolioValue: portfolio.currentValue,
+                            walletBalance: portfolio.walletBalance,
+                            dayPnl: portfolio.dayPnl,
+                            onPortfolioTap: () => context.go(AppRoutes.portfolio),
+                            onWalletTap: () => context.go(AppRoutes.wallet),
+                          ),
+                          const SizedBox(height: 20),
+                          HomeSearchBar(
+                            onTap: () => context.go(AppRoutes.invest),
+                          ),
+                          const SizedBox(height: 18),
+                          Text(
+                            'Quick access',
+                            style: context.typeLabel(12, context.palette.textMuted)
+                                .copyWith(fontWeight: FontWeight.w700, letterSpacing: 0.4),
+                          ),
+                          const SizedBox(height: 10),
+                          HomeQuickActionsCarousel(actions: allQuickActions),
+                          const SizedBox(height: 18),
+                          NewsHeadlineTicker(
+                            headlines: provider.marketNews,
+                            onTap: () => context.push(AppRoutes.stockNews),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                   if (provider.error != null)
@@ -385,6 +327,71 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _openFeaturedPlan(BuildContext context, InvestmentPlanModel plan) {
     context.push('${AppRoutes.featuredPlan}/${plan.id}', extra: plan);
+  }
+
+  List<HomeQuickAction> _homeQuickActions(BuildContext context) {
+    return [
+      HomeQuickAction(
+        icon: PhosphorIcons.chartLineUp,
+        label: 'Markets',
+        color: HomeThemeA.primary,
+        onTap: () => context.go(AppRoutes.invest),
+      ),
+      HomeQuickAction(
+        icon: PhosphorIcons.wallet,
+        label: 'Wallet',
+        color: AppColors.brandCyan,
+        onTap: () => context.go(AppRoutes.wallet),
+      ),
+      HomeQuickAction(
+        icon: PhosphorIcons.flag,
+        label: 'Goals',
+        color: AppColors.brandPink,
+        onTap: () => context.push(AppRoutes.goalPlans),
+      ),
+      HomeQuickAction(
+        icon: PhosphorIcons.piggyBank,
+        label: 'Plans',
+        color: AppColors.brandOrange,
+        onTap: () => context.push(AppRoutes.featuredPlansList),
+      ),
+      HomeQuickAction(
+        icon: PhosphorIcons.bookmarkSimple,
+        label: 'Watchlist',
+        color: AppColors.blue,
+        onTap: () => context.push(AppRoutes.watchlist),
+      ),
+      HomeQuickAction(
+        icon: PhosphorIcons.calendarBlank,
+        label: 'IPO',
+        color: AppColors.brandCyan,
+        onTap: () => context.push(AppRoutes.ipoCalendar),
+      ),
+      HomeQuickAction(
+        icon: PhosphorIcons.flask,
+        label: 'Paper',
+        color: AppColors.brandOrange,
+        onTap: () => context.push(AppRoutes.paperTrading),
+      ),
+      HomeQuickAction(
+        icon: PhosphorIcons.bell,
+        label: 'Alerts',
+        color: AppColors.brandPink,
+        onTap: () => context.push(AppRoutes.priceAlerts),
+      ),
+      HomeQuickAction(
+        icon: PhosphorIcons.repeat,
+        label: 'SIP',
+        color: HomeThemeA.primary,
+        onTap: () => context.push(AppRoutes.sipTracker),
+      ),
+      HomeQuickAction(
+        icon: PhosphorIcons.newspaper,
+        label: 'News',
+        color: AppColors.blue,
+        onTap: () => context.push(AppRoutes.stockNews),
+      ),
+    ];
   }
 }
 

@@ -23,45 +23,62 @@ class MarketOverview extends StatelessWidget {
     return Container(
       width: double.infinity,
       color: p.bg,
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Flexible(
-                child: Text('Market Live', style: context.typeSection(), maxLines: 1, overflow: TextOverflow.ellipsis),
+              Expanded(
+                child: Text(
+                  'Market Live',
+                  style: context.typeSection(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: p.primaryPillDecoration(),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 5,
-                      height: 5,
-                      decoration: BoxDecoration(
-                        color: p.positive,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: p.primary.withValues(alpha: 0.5),
-                            blurRadius: 4,
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 5),
-                    Text(
-                      'Live',
-                      style: context.typeLabel(12, p.positive),
-                    ),
-                  ],
+              TextButton(
+                onPressed: () {},
+                style: TextButton.styleFrom(
+                  padding: EdgeInsets.zero,
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: Text(
+                  'See all',
+                  style: context.typeLabel(12, p.primaryDark),
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 4),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: p.primaryPillDecoration(),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 6,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: p.positive,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: p.positive.withValues(alpha: 0.5),
+                        blurRadius: 6,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  'Indices updating live',
+                  style: context.typeLabel(11, p.positive),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 14),
           if (indices.isEmpty)
@@ -71,7 +88,7 @@ class MarketOverview extends StatelessWidget {
             )
           else
             SizedBox(
-              height: 106,
+              height: 112,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: indices.length,
@@ -80,8 +97,8 @@ class MarketOverview extends StatelessWidget {
                   final item = indices[index];
                   final expiryIso = expiryFor?.call(item);
                   return SizedBox(
-                    width: 136,
-                    height: 106,
+                    width: 142,
+                    height: 112,
                     child: _MarketLiveCard(
                       label: item.shortName,
                       value: IndexFormatter.format(item.value),
@@ -123,9 +140,19 @@ class _MarketLiveCard extends StatelessWidget {
 
     return Container(
       height: double.infinity,
-      decoration: HomeThemeA.cardDecoration(
-        context,
-        shadowTint: isPositive ? p.primary : p.negative,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(HomeThemeA.cardRadius),
+        color: p.card,
+        border: Border.all(
+          color: (isPositive ? p.positive : p.negative).withValues(alpha: 0.18),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: (isPositive ? p.primary : p.negative).withValues(alpha: 0.06),
+            blurRadius: 14,
+            offset: const Offset(0, 5),
+          ),
+        ],
       ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(14, 10, 10, 10),

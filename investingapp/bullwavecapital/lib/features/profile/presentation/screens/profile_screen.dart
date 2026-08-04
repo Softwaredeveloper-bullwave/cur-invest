@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/api/api_config.dart';
 import '../../../../core/constants/routes.dart';
@@ -8,7 +9,9 @@ import '../../../../core/constants/shell_layout.dart';
 import '../../../../core/theme/colors.dart';
 import '../../../../core/theme/theme_a.dart';
 import '../../../../core/widgets/custom_dialog.dart';
+import '../../../../core/widgets/page_hero_background.dart';
 import '../../../../core/widgets/profile_tile.dart';
+import '../../../../core/widgets/shell_highlight_actions.dart';
 import '../../../authentication/presentation/provider/auth_provider.dart';
 import '../../../kyc/presentation/provider/kyc_flow_provider.dart';
 
@@ -43,111 +46,172 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     return SafeArea(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(24),
-              decoration: context.palette.cardDecoration(radius: 28),
+            PageHeroBackground(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  GestureDetector(
-                    onTap: () => context.push(AppRoutes.editProfile),
-                    child: Stack(
+                  Text(
+                    'Profile',
+                    style: ThemeAType.heading(size: 28, color: p.textDark),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Account & preferences',
+                    style: ThemeAType.secondary(size: 14, color: p.textGrey),
+                  ),
+                  const SizedBox(height: 18),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(24),
+                    decoration: p.heroCardDecoration(radius: 28),
+                    child: Column(
                       children: [
-                        Container(
-                          width: 88,
-                          height: 88,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: p.primaryLight,
-                            border: Border.all(color: p.borderLight, width: 2),
-                          ),
-                          child: CircleAvatar(
-                            radius: 40,
-                            backgroundColor: Colors.transparent,
-                            backgroundImage: avatarUrl.isNotEmpty
-                                ? CachedNetworkImageProvider(avatarUrl)
-                                : null,
-                            child: avatarUrl.isEmpty
-                                ? Icon(Icons.person_rounded, size: 40, color: p.primaryDark)
-                                : null,
+                        GestureDetector(
+                          onTap: () => context.push(AppRoutes.editProfile),
+                          child: Stack(
+                            children: [
+                              Container(
+                                width: 88,
+                                height: 88,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.white.withValues(alpha: 0.12),
+                                  border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 2),
+                                ),
+                                child: CircleAvatar(
+                                  radius: 40,
+                                  backgroundColor: Colors.transparent,
+                                  backgroundImage: avatarUrl.isNotEmpty
+                                      ? CachedNetworkImageProvider(avatarUrl)
+                                      : null,
+                                  child: avatarUrl.isEmpty
+                                      ? Icon(Icons.person_rounded, size: 40, color: p.heroCardFg)
+                                      : null,
+                                ),
+                              ),
+                              Positioned(
+                                bottom: 0,
+                                right: 0,
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: BoxDecoration(
+                                    color: p.primary,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(Icons.edit, size: 14, color: p.onPrimary),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        Positioned(
-                          bottom: 0,
-                          right: 0,
-                          child: Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: p.primary,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(Icons.edit, size: 14, color: p.onPrimary),
+                        const SizedBox(height: 14),
+                        Text(
+                          displayName,
+                          style: ThemeAType.sectionTitle(color: p.heroCardFg, size: 20),
+                        ),
+                        if (user.city.isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            user.city,
+                            style: ThemeAType.secondary(size: 14, color: p.heroCardMuted),
                           ),
+                        ],
+                        const SizedBox(height: 4),
+                        Text(
+                          '+91 ${user.phone}',
+                          style: ThemeAType.body(size: 15, color: p.heroCardFg),
+                        ),
+                        if (user.email.isNotEmpty)
+                          Text(
+                            user.email,
+                            style: ThemeAType.secondary(size: 14, color: p.heroCardMuted),
+                          ),
+                        if (user.bio.isNotEmpty) ...[
+                          const SizedBox(height: 10),
+                          Text(
+                            user.bio,
+                            textAlign: TextAlign.center,
+                            style: ThemeAType.secondary(size: 14, color: p.heroCardMuted),
+                          ),
+                        ],
+                        const SizedBox(height: 16),
+                        Wrap(
+                          alignment: WrapAlignment.center,
+                          spacing: 10,
+                          runSpacing: 10,
+                          children: [
+                            _StatusBadge(label: 'PAN', status: user.panStatus),
+                            _StatusBadge(label: 'KYC', status: user.kycStatus),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        OutlinedButton.icon(
+                          onPressed: () => context.push(AppRoutes.editProfile),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: p.heroCardFg,
+                            side: BorderSide(color: p.heroCardFg.withValues(alpha: 0.35)),
+                          ),
+                          icon: const Icon(Icons.edit_outlined, size: 18),
+                          label: const Text('Edit Profile'),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 18),
                   Text(
-                    displayName,
-                    style: context.typeSection(20),
+                    'Quick access',
+                    style: context.typeLabel(12, p.textMuted)
+                        .copyWith(fontWeight: FontWeight.w700, letterSpacing: 0.4),
                   ),
-                  if (user.city.isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      user.city,
-                      style: context.typeSecondary(14),
-                    ),
-                  ],
-                  const SizedBox(height: 4),
-                  Text(
-                    '+91 ${user.phone}',
-                    style: context.typeBody(15),
-                  ),
-                  if (user.email.isNotEmpty)
-                    Text(
-                      user.email,
-                      style: context.typeSecondary(14),
-                    ),
-                  if (user.bio.isNotEmpty) ...[
-                    const SizedBox(height: 10),
-                    Text(
-                      user.bio,
-                      textAlign: TextAlign.center,
-                      style: context.typeSecondary(14),
-                    ),
-                  ],
-                  const SizedBox(height: 16),
-                  Wrap(
-                    alignment: WrapAlignment.center,
-                    spacing: 10,
-                    runSpacing: 10,
-                    children: [
-                      _StatusBadge(label: 'PAN', status: user.panStatus),
-                      _StatusBadge(label: 'KYC', status: user.kycStatus),
+                  const SizedBox(height: 10),
+                  ShellHighlightActionsRow(
+                    actions: [
+                      ShellHighlightAction(
+                        icon: PhosphorIcons.userCircle,
+                        label: 'Edit',
+                        color: AppColors.brandPrimary,
+                        onTap: () => context.push(AppRoutes.editProfile),
+                      ),
+                      ShellHighlightAction(
+                        icon: PhosphorIcons.shieldCheck,
+                        label: 'KYC',
+                        color: AppColors.green,
+                        onTap: () => context.push(AppRoutes.kyc),
+                      ),
+                      ShellHighlightAction(
+                        icon: PhosphorIcons.bank,
+                        label: 'Bank',
+                        color: AppColors.brandCyan,
+                        onTap: () => context.push(AppRoutes.bankDetails),
+                      ),
+                      ShellHighlightAction(
+                        icon: PhosphorIcons.gear,
+                        label: 'Settings',
+                        color: AppColors.blue,
+                        onTap: () => context.push(AppRoutes.settings),
+                      ),
+                      ShellHighlightAction(
+                        icon: PhosphorIcons.headset,
+                        label: 'Support',
+                        color: AppColors.brandOrange,
+                        onTap: () => context.push(AppRoutes.support),
+                      ),
                     ],
-                  ),
-                  const SizedBox(height: 16),
-                  OutlinedButton.icon(
-                    onPressed: () => context.push(AppRoutes.editProfile),
-                    icon: const Icon(Icons.edit_outlined, size: 18),
-                    label: const Text('Edit Profile'),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 20),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Account',
-                style: context.typeSection(16),
-              ),
-            ),
-            const SizedBox(height: 10),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const AppSectionHeader(title: 'Account'),
+                  const SizedBox(height: 10),
             ProfileTile(
               icon: Icons.person_outline,
               title: 'Edit Profile',
@@ -189,15 +253,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               title: 'Notifications',
               onTap: () => context.push(AppRoutes.notifications),
             ),
-            const SizedBox(height: 8),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'More',
-                style: context.typeSection(16),
-              ),
-            ),
-            const SizedBox(height: 10),
+                  const SizedBox(height: 8),
+                  const AppSectionHeader(title: 'More'),
+                  const SizedBox(height: 10),
             ProfileTile(
               icon: Icons.headset_mic_outlined,
               title: 'Support',
@@ -242,7 +300,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 }
               },
             ),
-            SizedBox(height: ShellLayout.contentBottomInset),
+                  SizedBox(height: ShellLayout.contentBottomInset),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -259,18 +320,31 @@ class _StatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
+    final normalized = status.trim().toLowerCase();
+    final verified = normalized.contains('verified') || normalized.contains('complete');
+    final pending = normalized.contains('pending') || normalized.contains('review');
+    final color = verified
+        ? AppColors.green
+        : pending
+            ? AppColors.yellow
+            : AppColors.red;
+
     return Container(
       constraints: const BoxConstraints(maxWidth: 220),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: AppColors.green.withValues(alpha: 0.12),
+        color: color.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: AppColors.green.withValues(alpha: 0.2)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.check_circle_rounded, color: AppColors.green, size: 16),
+          Icon(
+            verified ? Icons.check_circle_rounded : Icons.info_outline_rounded,
+            color: color,
+            size: 16,
+          ),
           const SizedBox(width: 6),
           Flexible(
             child: Text(

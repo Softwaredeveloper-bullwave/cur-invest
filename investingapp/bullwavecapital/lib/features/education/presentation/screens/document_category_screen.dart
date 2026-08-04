@@ -19,59 +19,133 @@ class DocumentCategoryScreen extends StatefulWidget {
 }
 
 class _DocumentCategoryScreenState extends State<DocumentCategoryScreen> {
+  InvestmentDocCategory? _category;
+  bool _loading = true;
+  String? _loadError;
+
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<EducationProvider>().loadCatalog();
+    _load();
+  }
+
+  Future<void> _load({bool force = false}) async {
+    setState(() {
+      _loading = true;
+      _loadError = null;
+    });
+    final education = context.read<EducationProvider>();
+    final category = await education.fetchCategory(widget.categoryId, force: force);
+    if (!mounted) return;
+    setState(() {
+      _category = category;
+      _loadError = category == null ? (education.error ?? 'Category not found') : null;
+      _loading = false;
     });
   }
 
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    final education = context.watch<EducationProvider>();
-    final category = education.categoryById(widget.categoryId);
 
-    if (education.isLoading && category == null) {
+    if (_loading) {
       return Scaffold(
         appBar: const CustomAppBar(title: 'Documents'),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
 
+    final category = _category;
     if (category == null) {
       return Scaffold(
         appBar: const CustomAppBar(title: 'Documents'),
-        body: const Center(child: Text('Category not found')),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.menu_book_outlined, size: 48, color: p.textMuted),
+                const SizedBox(height: 12),
+                Text(
+                  _loadError ?? 'Category not found',
+                  textAlign: TextAlign.center,
+                  style: ThemeAType.body(color: p.textGrey),
+                ),
+                const SizedBox(height: 16),
+                FilledButton(onPressed: () => _load(force: true), child: const Text('Retry')),
+              ],
+            ),
+          ),
+        ),
       );
     }
 
     final isQuizCategory = category.id == 'quizzes';
+    final items = isQuizCategory ? category.quizzes.length : category.articles.length;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: CustomAppBar(title: category.title),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
-        children: [
-          Text(category.subtitle, style: ThemeAType.body(color: p.textGrey)),
-          const SizedBox(height: 16),
-          if (isQuizCategory)
-            ...category.quizzes.map(
-              (quiz) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: _QuizListTile(quiz: quiz),
-              ),
-            )
-          else
-            ...category.articles.map(
-              (article) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: _ArticleListTile(article: article),
+      body: RefreshIndicator(
+        onRefresh: () => _load(force: true),
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+          children: [
+            Text(category.subtitle, style: ThemeAType.body(color: p.textGrey)),
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: p.primaryPillDecoration(),
+              child: Text(
+                isQuizCategory
+                    ? '${category.quizzes.length} quiz${category.quizzes.length == 1 ? '' : 'zes'} available'
+                    : '${category.articles.length} investing note${category.articles.length == 1 ? '' : 's'}',
+                style: ThemeAType.label(size: 11, color: p.primaryDark),
               ),
             ),
-        ],
+            const SizedBox(height: 16),
+            if (items == 0)
+              GlassCard(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    Icon(
+                      isQuizCategory ? Icons.quiz_outlined : Icons.article_outlined,
+                      size: 40,
+                      color: p.textMuted,
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      isQuizCategory ? 'No quizzes yet' : 'No notes yet',
+                      style: ThemeAType.cardTitle(color: p.textDark),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Content updates automatically when admins publish new material.',
+                      textAlign: TextAlign.center,
+                      style: ThemeAType.body(color: p.textGrey, size: 13),
+                    ),
+                  ],
+                ),
+              )
+            else if (isQuizCategory)
+              ...category.quizzes.map(
+                (quiz) => Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: _QuizListTile(quiz: quiz),
+                ),
+              )
+            else
+              ...category.articles.map(
+                (article) => Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: _ArticleListTile(article: article),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -110,6 +184,15 @@ class _ArticleListTile extends StatelessWidget {
             article.summary,
             style: ThemeAType.body(color: p.textGrey, size: 14),
           ),
+          if (article.preview.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              article.preview,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: ThemeAType.secondary(size: 12, color: p.textMuted),
+            ),
+          ],
         ],
       ),
     );
@@ -124,7 +207,10 @@ class _QuizListTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
+    final education = context.watch<EducationProvider>();
+    final attempt = education.latestAttemptFor(quiz.id);
     final questionCount = quiz.questions.length;
+
     return GlassCard(
       onTap: () => context.push(AppRoutes.documentQuizPath(quiz.id)),
       padding: const EdgeInsets.all(16),
@@ -154,6 +240,24 @@ class _QuizListTile extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
+                if (attempt != null) ...[
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: (attempt.percent >= 50 ? p.positive : p.negative)
+                          .withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      'Last score: ${attempt.score}/${attempt.total} (${attempt.percent}%)',
+                      style: ThemeAType.label(
+                        size: 10,
+                        color: attempt.percent >= 50 ? p.positive : p.negative,
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

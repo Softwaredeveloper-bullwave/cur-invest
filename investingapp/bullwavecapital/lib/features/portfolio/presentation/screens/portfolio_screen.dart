@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/constants/dimensions.dart';
 import '../../../../core/constants/routes.dart';
@@ -7,14 +8,15 @@ import '../../../../core/constants/shell_layout.dart';
 import '../../../../core/theme/colors.dart';
 import '../../../../core/theme/theme_a.dart';
 import '../../../../core/utils/formatters.dart';
-import '../../../../core/widgets/kyc_completion_banner.dart';
 import '../../../../core/widgets/loading_card.dart';
-import '../../../../core/widgets/money_text.dart';
+import '../../../../core/widgets/page_hero_background.dart';
 import '../../../../core/widgets/portfolio_card.dart';
 import '../../../../core/widgets/premium_ui_kit.dart';
 import '../../../../core/widgets/robinhood_card.dart';
 import '../../../../core/widgets/icon_badge.dart';
+import '../../../../core/widgets/shell_highlight_actions.dart';
 import '../../../../models/transaction_model.dart';
+import '../../../home/presentation/widgets/home_pending_actions.dart';
 import '../../../transactions/presentation/provider/transaction_provider.dart';
 import '../../../stocks/presentation/provider/stock_portfolio_provider.dart';
 import '../../../stocks/presentation/utils/stock_trading_flow.dart';
@@ -72,56 +74,111 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
             onRefresh: _refreshPrices,
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  ShellPageHeader(
-                    title: 'Portfolio',
-                    subtitle: stockPortfolio.holdingsCount > 0
-                        ? '${stockPortfolio.holdingsCount} active holdings'
-                        : 'Track stocks & goal plans',
-                    trailing: stockPortfolio.holdingsCount > 0
-                        ? Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                            decoration: BoxDecoration(
-                              color: AppColors.brandPrimary.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(999),
-                              border: Border.all(color: AppColors.brandPrimary.withValues(alpha: 0.3)),
+                  PageHeroBackground(
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ShellPageHeader(
+                          title: 'Portfolio',
+                          subtitle: stockPortfolio.holdingsCount > 0
+                              ? '${stockPortfolio.holdingsCount} active holdings'
+                              : 'Track stocks & goal plans',
+                          trailing: stockPortfolio.holdingsCount > 0
+                              ? Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.brandPrimary.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(999),
+                                    border: Border.all(
+                                      color: AppColors.brandPrimary.withValues(alpha: 0.3),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    '${stockPortfolio.holdingsCount} stocks',
+                                    style: const TextStyle(
+                                      color: AppColors.brandPrimary,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                )
+                              : null,
+                        ),
+                        const SizedBox(height: 14),
+                        const HomePendingActionsSection(),
+                        if (stockPortfolio.error != null) ...[
+                          const SizedBox(height: 12),
+                          PremiumAlertBanner(
+                            message: stockPortfolio.error!,
+                            type: PremiumAlertType.error,
+                            actionLabel: 'Retry',
+                            onAction: () => _reload(),
+                          ),
+                        ],
+                        const SizedBox(height: 16),
+                        PortfolioSummaryCard(
+                          totalInvestment: summary.totalInvested,
+                          currentValue: summary.currentValue,
+                          totalProfit: summary.totalPnl,
+                          todayPnl: summary.dayPnl,
+                          todayPnlPercent: summary.dayPnlPercent,
+                          highlighted: true,
+                        ),
+                        const SizedBox(height: 18),
+                        Text(
+                          'Quick access',
+                          style: context.typeLabel(12, context.palette.textMuted)
+                              .copyWith(fontWeight: FontWeight.w700, letterSpacing: 0.4),
+                        ),
+                        const SizedBox(height: 10),
+                        ShellHighlightActionsRow(
+                          actions: [
+                            ShellHighlightAction(
+                              icon: PhosphorIcons.chartLineUp,
+                              label: 'Markets',
+                              color: AppColors.brandPrimary,
+                              onTap: () => context.go(AppRoutes.invest),
                             ),
-                            child: Text(
-                              '${stockPortfolio.holdingsCount} stocks',
-                              style: const TextStyle(
-                                color: AppColors.brandPrimary,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 11,
+                            if (hasHoldings)
+                              ShellHighlightAction(
+                                icon: PhosphorIcons.chartDonut,
+                                label: 'Analytics',
+                                color: AppColors.blue,
+                                onTap: () => context.push(AppRoutes.portfolioAnalytics),
                               ),
+                            ShellHighlightAction(
+                              icon: PhosphorIcons.flask,
+                              label: 'Paper',
+                              color: AppColors.brandOrange,
+                              onTap: () => context.push(AppRoutes.paperTrading),
                             ),
-                          )
-                        : null,
-                  ),
-                  const SizedBox(height: 12),
-                  const KycCompletionBanner(),
-                  const SizedBox(height: 8),
-                  if (stockPortfolio.error != null)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: PremiumAlertBanner(
-                        message: stockPortfolio.error!,
-                        type: PremiumAlertType.error,
-                        actionLabel: 'Retry',
-                        onAction: () => _reload(),
-                      ),
+                            ShellHighlightAction(
+                              icon: PhosphorIcons.currencyInr,
+                              label: 'Dividends',
+                              color: AppColors.green,
+                              onTap: () => context.push(AppRoutes.dividendTracker),
+                            ),
+                            ShellHighlightAction(
+                              icon: PhosphorIcons.repeat,
+                              label: 'SIP',
+                              color: AppColors.brandCyan,
+                              onTap: () => context.push(AppRoutes.sipTracker),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                  PortfolioSummaryCard(
-                    totalInvestment: summary.totalInvested,
-                    currentValue: summary.currentValue,
-                    totalProfit: summary.totalPnl,
-                    todayPnl: summary.dayPnl,
-                    todayPnlPercent: summary.dayPnlPercent,
                   ),
-                  const SizedBox(height: 24),
-                  SectionHeader(
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                  AppSectionHeader(
                     title: 'Holdings',
                     actionLabel: hasHoldings ? 'Analytics' : null,
                     onAction: hasHoldings ? () => context.push(AppRoutes.portfolioAnalytics) : null,
@@ -200,7 +257,7 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                     ),
                   if (stockPortfolio.recentTrades.isNotEmpty) ...[
                     const SizedBox(height: AppDimensions.paddingLg),
-                    SectionHeader(
+                    AppSectionHeader(
                       title: 'Recent Orders',
                       actionLabel: 'All',
                       onAction: () => context.push(AppRoutes.paperTrading),
@@ -217,7 +274,7 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                   ],
                   if (hasHoldings && stockPortfolio.sectorAllocation.isNotEmpty) ...[
                     const SizedBox(height: AppDimensions.paddingLg),
-                    SectionHeader(title: 'Sector Allocation'),
+                    const AppSectionHeader(title: 'Sector Allocation'),
                     const SizedBox(height: AppDimensions.paddingSm),
                     ...stockPortfolio.sectorAllocation.map(
                       (item) => Padding(
@@ -255,29 +312,9 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                       ),
                     ),
                   ],
-                  const SizedBox(height: AppDimensions.paddingMd),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: GradientActionButton(
-                          label: 'Dividends',
-                          outlined: true,
-                          onTap: () => context.push(AppRoutes.dividendTracker),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: GradientActionButton(
-                          label: 'SIP Tracker',
-                          outlined: true,
-                          onTap: () => context.push(AppRoutes.sipTracker),
-                        ),
-                      ),
-                    ],
-                  ),
                   if (hasPlans) ...[
                     const SizedBox(height: AppDimensions.paddingLg),
-                    SectionHeader(title: 'Investment Plans'),
+                    const AppSectionHeader(title: 'Investment Plans'),
                     const SizedBox(height: AppDimensions.paddingSm),
                     ...planPortfolio.allocations.map(
                       (item) => Padding(
@@ -319,7 +356,7 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          SectionHeader(title: 'Recent Activity'),
+                          AppSectionHeader(title: 'Recent Activity'),
                           const SizedBox(height: AppDimensions.paddingSm),
                           ...recent.map(
                             (txn) => Padding(
@@ -358,6 +395,9 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                         ],
                       );
                     },
+                  ),
+                      ],
+                    ),
                   ),
                 ],
               ),

@@ -1,6 +1,12 @@
 from django.contrib import admin
 
-from .models import EducationArticle, EducationCategory, EducationQuiz, EducationQuizQuestion
+from .models import (
+    EducationArticle,
+    EducationCategory,
+    EducationQuiz,
+    EducationQuizAttempt,
+    EducationQuizQuestion,
+)
 
 
 class EducationArticleInline(admin.TabularInline):
@@ -41,3 +47,11 @@ class EducationArticleAdmin(admin.ModelAdmin):
     list_display = ('title', 'category', 'level', 'read_minutes', 'is_active')
     list_filter = ('category', 'level', 'is_active')
     search_fields = ('title', 'slug')
+
+
+@admin.register(EducationQuizAttempt)
+class EducationQuizAttemptAdmin(admin.ModelAdmin):
+    list_display = ('user', 'quiz', 'score', 'total', 'completed_at')
+    list_filter = ('quiz', 'completed_at')
+    search_fields = ('user__phone', 'quiz__title')
+    readonly_fields = ('completed_at',)

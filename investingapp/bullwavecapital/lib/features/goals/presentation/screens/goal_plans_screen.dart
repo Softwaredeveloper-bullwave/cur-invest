@@ -8,6 +8,7 @@ import '../../../../core/theme/app_theme_extension.dart';
 import '../../../../core/theme/colors.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/widgets/custom_app_bar.dart';
+import '../../../../core/widgets/page_hero_background.dart';
 import '../../../../core/widgets/premium_ui_kit.dart';
 import '../../../../core/widgets/scale_tap.dart';
 import '../../../../models/goal_plan_model.dart';
@@ -62,20 +63,33 @@ class _GoalPlansScreenState extends State<GoalPlansScreen> {
             color: AppColors.brandPink,
             onRefresh: provider.load,
             child: ListView(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+              padding: EdgeInsets.zero,
               physics: const AlwaysScrollableScrollPhysics(),
               children: [
-                _HeroBanner(returnTiers: provider.returnTiers),
-                if (provider.error != null) ...[
-                  const SizedBox(height: 14),
-                  PremiumAlertBanner(
-                    message: provider.error!,
-                    type: PremiumAlertType.warning,
-                    actionLabel: 'Retry',
-                    onAction: provider.load,
+                PageHeroBackground(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _HeroBanner(returnTiers: provider.returnTiers),
+                      if (provider.error != null) ...[
+                        const SizedBox(height: 14),
+                        PremiumAlertBanner(
+                          message: provider.error!,
+                          type: PremiumAlertType.warning,
+                          actionLabel: 'Retry',
+                          onAction: provider.load,
+                        ),
+                      ],
+                    ],
                   ),
-                ],
-                const SizedBox(height: 28),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                const SizedBox(height: 8),
                 _SectionHeader(
                   title: 'Choose a goal',
                   subtitle: 'Pick a life milestone and start saving monthly',
@@ -130,6 +144,9 @@ class _GoalPlansScreenState extends State<GoalPlansScreen> {
                     ),
                   ),
                 ],
+                    ],
+                  ),
+                ),
               ],
             ),
           );

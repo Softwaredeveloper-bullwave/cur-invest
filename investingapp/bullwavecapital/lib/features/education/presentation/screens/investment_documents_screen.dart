@@ -21,7 +21,7 @@ class _InvestmentDocumentsScreenState extends State<InvestmentDocumentsScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<EducationProvider>().loadCatalog();
+      context.read<EducationProvider>().ensureLoaded();
     });
   }
 
@@ -34,7 +34,7 @@ class _InvestmentDocumentsScreenState extends State<InvestmentDocumentsScreen> {
       appBar: const CustomAppBar(title: 'Research Vault'),
       body: Consumer<EducationProvider>(
         builder: (context, education, _) {
-          if (education.isLoading && education.categories.isEmpty) {
+          if (education.isLoading && !education.hasLoaded) {
             return const Center(child: CircularProgressIndicator());
           }
 
@@ -104,12 +104,33 @@ class _InvestmentDocumentsScreenState extends State<InvestmentDocumentsScreen> {
                 const SizedBox(height: 20),
                 Text('Topics', style: ThemeAType.sectionTitle(color: p.textDark)),
                 const SizedBox(height: 12),
-                ...categories.map(
-                  (category) => Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: _CategoryTile(category: category),
+                if (categories.isEmpty)
+                  GlassCard(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      children: [
+                        Icon(Icons.cloud_off_outlined, size: 40, color: p.textMuted),
+                        const SizedBox(height: 10),
+                        Text(
+                          'No topics loaded yet',
+                          style: ThemeAType.cardTitle(color: p.textDark),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Pull to refresh or ask admin to run seed_education on the server.',
+                          textAlign: TextAlign.center,
+                          style: ThemeAType.body(color: p.textGrey, size: 13),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  ...categories.map(
+                    (category) => Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: _CategoryTile(category: category),
+                    ),
                   ),
-                ),
               ],
             ),
           );

@@ -7,7 +7,8 @@ import '../../../../core/constants/shell_layout.dart';
 import '../../../../core/theme/colors.dart';
 import '../../../../core/theme/theme_a.dart';
 import '../../../../core/widgets/icon_badge.dart';
-import '../../../../core/widgets/kyc_completion_banner.dart';
+import '../../../../core/widgets/page_hero_background.dart';
+import '../../../home/presentation/widgets/home_pending_actions.dart';
 import '../../../../core/widgets/premium_ui_kit.dart';
 import '../../../fno/fno_navigation.dart';
 import '../../../home/presentation/provider/home_provider.dart';
@@ -168,36 +169,46 @@ class _StockMarketsScreenState extends State<StockMarketsScreen> {
             child: CustomScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-                  sliver: SliverList(
-                    delegate: SliverChildListDelegate([
-                      ShellPageHeader(
-                        title: 'Markets',
-                        subtitle: market.marketProvider.isNotEmpty
-                            ? 'Live via ${market.marketProvider}'
-                            : 'NSE · Premium market intelligence',
-                        trailing: const LivePriceBadge(),
-                      ),
-                      if (market.isUsingDemoData) ...[
-                        const SizedBox(height: 10),
-                        const PremiumAlertBanner(
-                          message:
-                              'Showing demo NSE prices. Start Django on port 8000 for live Kotak Neo / Finnhub quotes.',
-                          type: PremiumAlertType.info,
+                SliverToBoxAdapter(
+                  child: PageHeroBackground(
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ShellPageHeader(
+                          title: 'Markets',
+                          subtitle: market.marketProvider.isNotEmpty
+                              ? 'Live via ${market.marketProvider}'
+                              : 'NSE · Premium market intelligence',
+                          trailing: const LivePriceBadge(),
                         ),
-                      ] else if (market.marketError != null) ...[
-                        const SizedBox(height: 10),
-                        PremiumAlertBanner(
-                          message: market.marketError!,
-                          type: PremiumAlertType.warning,
-                          actionLabel: stocks.isEmpty ? 'Retry' : null,
-                          onAction: stocks.isEmpty ? () => market.refresh() : null,
-                        ),
+                        if (market.isUsingDemoData) ...[
+                          const SizedBox(height: 10),
+                          const PremiumAlertBanner(
+                            message:
+                                'Showing demo NSE prices. Start Django on port 8000 for live Kotak Neo / Finnhub quotes.',
+                            type: PremiumAlertType.info,
+                          ),
+                        ] else if (market.marketError != null) ...[
+                          const SizedBox(height: 10),
+                          PremiumAlertBanner(
+                            message: market.marketError!,
+                            type: PremiumAlertType.warning,
+                            actionLabel: stocks.isEmpty ? 'Retry' : null,
+                            onAction: stocks.isEmpty ? () => market.refresh() : null,
+                          ),
+                        ],
+                        const SizedBox(height: 12),
+                        const HomePendingActionsSection(),
+                        if (!searching) ...[
+                          const SizedBox(height: 14),
+                          MarketsPremiumOverview(
+                            indices: market.marketIndices,
+                            embedded: true,
+                          ),
+                        ],
                       ],
-                      const SizedBox(height: 12),
-                      const KycCompletionBanner(),
-                    ]),
+                    ),
                   ),
                 ),
                 SliverPersistentHeader(
@@ -236,7 +247,6 @@ class _StockMarketsScreenState extends State<StockMarketsScreen> {
                       ),
                     ),
                 ] else ...[
-                  SliverToBoxAdapter(child: MarketsPremiumOverview(indices: market.marketIndices)),
                   SliverToBoxAdapter(child: MarketsFnoIndicesSection(liveIndices: market.marketIndices)),
                   SliverToBoxAdapter(
                     child: MarketsQuickActions(

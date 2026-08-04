@@ -4,7 +4,9 @@ from .views import (
     EducationArticleDetailView,
     EducationCatalogView,
     EducationCategoryDetailView,
+    EducationQuizAttemptsView,
     EducationQuizDetailView,
+    EducationQuizSubmitView,
 )
 
 urlpatterns = [
@@ -16,4 +18,6 @@ urlpatterns = [
         name='education-article',
     ),
     path('education/quizzes/<slug:quiz_slug>/', EducationQuizDetailView.as_view(), name='education-quiz'),
+    path('education/quizzes/<slug:quiz_slug>/submit/', EducationQuizSubmitView.as_view(), name='education-quiz-submit'),
+    path('education/quizzes/<slug:quiz_slug>/attempts/', EducationQuizAttemptsView.as_view(), name='education-quiz-attempts'),
 ]

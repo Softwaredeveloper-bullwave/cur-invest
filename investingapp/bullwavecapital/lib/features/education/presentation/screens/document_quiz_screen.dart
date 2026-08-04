@@ -20,11 +20,13 @@ class DocumentQuizScreen extends StatefulWidget {
 class _DocumentQuizScreenState extends State<DocumentQuizScreen> {
   int _index = 0;
   int? _selected;
-  int _score = 0;
   bool _answered = false;
   bool _finished = false;
   bool _loading = true;
+  bool _submitting = false;
   InvestmentDocQuiz? _quiz;
+  QuizAttemptResult? _result;
+  final List<int?> _answers = [];
 
   @override
   void initState() {
@@ -34,11 +36,14 @@ class _DocumentQuizScreenState extends State<DocumentQuizScreen> {
 
   Future<void> _loadQuiz() async {
     final provider = context.read<EducationProvider>();
-    await provider.loadCatalog();
-    final quiz = await provider.fetchQuiz(widget.quizId);
+    final quiz = await provider.fetchQuiz(widget.quizId, force: true);
     if (!mounted) return;
     setState(() {
       _quiz = quiz;
+      if (quiz != null) {
+        _answers.clear();
+        _answers.addAll(List.filled(quiz.questions.length, null));
+      }
       _loading = false;
     });
   }
@@ -46,24 +51,84 @@ class _DocumentQuizScreenState extends State<DocumentQuizScreen> {
   void _submitAnswer() {
     final quiz = _quiz;
     if (quiz == null || _selected == null || _answered) return;
-    final correct = _selected == quiz.questions[_index].correctIndex;
     setState(() {
+      _answers[_index] = _selected;
       _answered = true;
-      if (correct) _score++;
     });
+  }
+
+  Future<void> _finishQuiz() async {
+    final quiz = _quiz;
+    if (quiz == null || _submitting) return;
+
+    if (!_answered && _selected != null) {
+      _answers[_index] = _selected;
+    }
+
+    setState(() => _submitting = true);
+    final provider = context.read<EducationProvider>();
+    final result = await provider.submitQuiz(widget.quizId, _answers);
+    if (!mounted) return;
+    setState(() {
+      _submitting = false;
+      _result = result ?? _buildLocalResult(quiz);
+      _finished = true;
+    });
+  }
+
+  QuizAttemptResult _buildLocalResult(InvestmentDocQuiz quiz) {
+    final results = <QuizQuestionResult>[];
+    var score = 0;
+    for (var i = 0; i < quiz.questions.length; i++) {
+      final q = quiz.questions[i];
+      final selected = i < _answers.length ? _answers[i] : null;
+      final isCorrect = selected != null && selected == q.correctIndex;
+      if (isCorrect) score++;
+      results.add(QuizQuestionResult(
+        prompt: q.prompt,
+        options: q.options,
+        selectedIndex: selected,
+        correctIndex: q.correctIndex,
+        isCorrect: isCorrect,
+        explanation: q.explanation,
+      ));
+    }
+    final total = quiz.questions.length;
+    return QuizAttemptResult(
+      attemptId: '',
+      quizSlug: quiz.id,
+      quizTitle: quiz.title,
+      score: score,
+      total: total,
+      percent: total == 0 ? 0 : ((score / total) * 100).round(),
+      results: results,
+    );
   }
 
   void _next() {
     final quiz = _quiz;
     if (quiz == null) return;
     if (_index >= quiz.questions.length - 1) {
-      setState(() => _finished = true);
+      _finishQuiz();
       return;
     }
     setState(() {
       _index++;
+      _selected = _answers[_index];
+      _answered = _selected != null;
+    });
+  }
+
+  void _retry() {
+    final quiz = _quiz;
+    if (quiz == null) return;
+    setState(() {
+      _index = 0;
       _selected = null;
       _answered = false;
+      _finished = false;
+      _result = null;
+      _answers.fillRange(0, _answers.length, null);
     });
   }
 
@@ -80,30 +145,40 @@ class _DocumentQuizScreenState extends State<DocumentQuizScreen> {
     if (quiz == null || quiz.questions.isEmpty) {
       return Scaffold(
         appBar: const CustomAppBar(title: 'Quiz'),
-        body: const Center(child: Text('Quiz not found')),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('Quiz not found or has no questions'),
+                const SizedBox(height: 16),
+                FilledButton(onPressed: _loadQuiz, child: const Text('Retry')),
+              ],
+            ),
+          ),
+        ),
       );
     }
 
-    if (_finished) {
+    if (_finished && _result != null) {
       return _ResultsView(
-        quiz: quiz,
-        score: _score,
-        onRetry: () => setState(() {
-          _index = 0;
-          _selected = null;
-          _score = 0;
-          _answered = false;
-          _finished = false;
-        }),
+        result: _result!,
+        onRetry: _retry,
+      );
+    }
+
+    if (_submitting) {
+      return Scaffold(
+        appBar: CustomAppBar(title: quiz.title),
+        body: const Center(child: CircularProgressIndicator()),
       );
     }
 
     final question = quiz.questions[_index];
     final p = context.palette;
     final progress = (_index + 1) / quiz.questions.length;
-    final prompt = question.prompt.isNotEmpty
-        ? question.prompt
-        : 'Question ${_index + 1}';
+    final prompt = question.prompt.isNotEmpty ? question.prompt : 'Question ${_index + 1}';
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -189,7 +264,7 @@ class _DocumentQuizScreenState extends State<DocumentQuizScreen> {
                 ? _next
                 : (_selected == null ? null : _submitAnswer),
             child: Text(_answered
-                ? (_index >= quiz.questions.length - 1 ? 'See results' : 'Next question')
+                ? (_index >= quiz.questions.length - 1 ? 'Submit & see marks' : 'Next question')
                 : 'Check answer'),
           ),
         ],
@@ -199,52 +274,168 @@ class _DocumentQuizScreenState extends State<DocumentQuizScreen> {
 }
 
 class _ResultsView extends StatelessWidget {
-  final InvestmentDocQuiz quiz;
-  final int score;
+  final QuizAttemptResult result;
   final VoidCallback onRetry;
 
   const _ResultsView({
-    required this.quiz,
-    required this.score,
+    required this.result,
     required this.onRetry,
   });
 
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    final total = quiz.questions.length;
-    final pct = total == 0 ? 0 : ((score / total) * 100).round();
-    final message = pct >= 80
+    final message = result.percent >= 80
         ? 'Excellent — strong grasp of the material!'
-        : pct >= 50
+        : result.percent >= 50
             ? 'Good effort — re-read weak topics in Documents.'
             : 'Keep learning — start with Beginner guides and retry.';
 
     return Scaffold(
       backgroundColor: Colors.transparent,
-      appBar: CustomAppBar(title: quiz.title),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          children: [
-            const Spacer(),
-            Icon(
-              pct >= 50 ? Icons.emoji_events_outlined : Icons.menu_book_outlined,
-              size: 64,
-              color: ThemeA.primary,
+      appBar: CustomAppBar(title: result.quizTitle),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+        children: [
+          GlassCard(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              children: [
+                Icon(
+                  result.percent >= 50 ? Icons.emoji_events_outlined : Icons.menu_book_outlined,
+                  size: 56,
+                  color: ThemeA.primary,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Your marks',
+                  style: ThemeAType.secondary(size: 13, color: p.textMuted),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${result.score} / ${result.total}',
+                  style: ThemeAType.sectionTitle(size: 32, color: p.textDark),
+                ),
+                Text(
+                  '${result.percent}%',
+                  style: ThemeAType.sectionTitle(color: ThemeA.primary),
+                ),
+                const SizedBox(height: 10),
+                Text(message, textAlign: TextAlign.center, style: ThemeAType.body(color: p.textGrey)),
+              ],
             ),
-            const SizedBox(height: 16),
-            Text('$score / $total correct', style: ThemeAType.sectionTitle(size: 28, color: p.textDark)),
-            Text('$pct%', style: ThemeAType.sectionTitle(color: ThemeA.primary)),
-            const SizedBox(height: 12),
-            Text(message, textAlign: TextAlign.center, style: ThemeAType.body(color: p.textGrey)),
-            const Spacer(),
-            FilledButton(onPressed: onRetry, child: const Text('Retry quiz')),
-            const SizedBox(height: 10),
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Back to Documents')),
-          ],
-        ),
+          ),
+          const SizedBox(height: 20),
+          Text('Answer review', style: ThemeAType.sectionTitle(color: p.textDark, size: 16)),
+          const SizedBox(height: 12),
+          ...result.results.asMap().entries.map((entry) {
+            final idx = entry.key;
+            final item = entry.value;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: _ReviewCard(index: idx + 1, item: item),
+            );
+          }),
+          const SizedBox(height: 8),
+          FilledButton(onPressed: onRetry, child: const Text('Retry quiz')),
+          const SizedBox(height: 10),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Back to Documents')),
+        ],
       ),
+    );
+  }
+}
+
+class _ReviewCard extends StatelessWidget {
+  final int index;
+  final QuizQuestionResult item;
+
+  const _ReviewCard({required this.index, required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final statusColor = item.isCorrect ? AppColors.green : AppColors.error;
+    final selectedLabel = item.selectedIndex != null && item.selectedIndex! < item.options.length
+        ? item.options[item.selectedIndex!]
+        : 'Not answered';
+    final correctLabel = item.correctIndex < item.options.length
+        ? item.options[item.correctIndex]
+        : '—';
+
+    return GlassCard(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: statusColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  item.isCorrect ? 'Correct' : 'Wrong',
+                  style: ThemeAType.label(size: 10, color: statusColor),
+                ),
+              ),
+              const Spacer(),
+              Text('Q$index', style: ThemeAType.label(size: 11, color: p.textMuted)),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(item.prompt, style: ThemeAType.cardTitle(color: p.textDark, size: 14)),
+          const SizedBox(height: 10),
+          _AnswerRow(
+            label: 'Your answer',
+            value: selectedLabel,
+            color: item.isCorrect ? AppColors.green : AppColors.error,
+          ),
+          const SizedBox(height: 6),
+          _AnswerRow(
+            label: 'Correct answer',
+            value: correctLabel,
+            color: AppColors.green,
+          ),
+          if (item.explanation.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Text(
+              item.explanation,
+              style: ThemeAType.secondary(size: 13, color: p.textGrey).copyWith(height: 1.4),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _AnswerRow extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+
+  const _AnswerRow({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 100,
+          child: Text(label, style: ThemeAType.label(size: 12, color: color)),
+        ),
+        Expanded(
+          child: Text(value, style: ThemeAType.body(size: 13)),
+        ),
+      ],
     );
   }
 }

@@ -31,8 +31,13 @@ class MarketOverviewItem {
 
 class MarketsPremiumOverview extends StatelessWidget {
   final List<MarketIndexModel> indices;
+  final bool embedded;
 
-  const MarketsPremiumOverview({super.key, required this.indices});
+  const MarketsPremiumOverview({
+    super.key,
+    required this.indices,
+    this.embedded = false,
+  });
 
   static const _extras = [
     ('India VIX', 11.42, -2.18, false),
@@ -81,7 +86,7 @@ class MarketsPremiumOverview extends StatelessWidget {
     final marketOpen = isIndianMarketOpen();
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+      padding: embedded ? EdgeInsets.zero : const EdgeInsets.fromLTRB(20, 8, 20, 0),
       child: RepaintBoundary(
         child: GlassCard(
           radius: 24,
@@ -94,7 +99,7 @@ class MarketsPremiumOverview extends StatelessWidget {
                   Expanded(
                     child: Text(
                       'Market Overview',
-                      style: ThemeAType.sectionTitle(color: p.textDark, size: 18),
+                      style: ThemeAType.sectionTitle(color: p.textDark, size: embedded ? 16 : 18),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),

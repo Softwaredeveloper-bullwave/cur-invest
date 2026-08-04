@@ -24,45 +24,35 @@ class HomePrimaryActionsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        for (var i = 0; i < actions.length; i++) ...[
-          if (i > 0) const SizedBox(width: 6),
-          Expanded(child: _PrimaryActionTile(action: actions[i])),
-        ],
-      ],
-    );
+    return HomeQuickActionsCarousel(actions: actions);
   }
 }
 
-class _PrimaryActionTile extends StatelessWidget {
-  final HomeQuickAction action;
+/// Horizontally scrollable quick actions — cleaner than cramped 5-column rows.
+class HomeQuickActionsCarousel extends StatelessWidget {
+  final List<HomeQuickAction> actions;
+  final bool compact;
 
-  const _PrimaryActionTile({required this.action});
+  const HomeQuickActionsCarousel({
+    super.key,
+    required this.actions,
+    this.compact = false,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final p = context.palette;
-    return ScaleTap(
-      onTap: action.onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 50,
-            height: 50,
-            decoration: p.iconCircleDecoration(),
-            child: Icon(action.icon, size: 22, color: p.primaryDark),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            action.label,
-            style: context.typeLabel(13),
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
+    return SizedBox(
+      height: compact ? 88 : 96,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: actions.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 10),
+        itemBuilder: (context, index) {
+          return _CarouselActionTile(
+            action: actions[index],
+            compact: compact,
+          );
+        },
       ),
     );
   }
@@ -75,45 +65,60 @@ class HomeSecondaryActionsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        for (var i = 0; i < actions.length; i++) ...[
-          if (i > 0) const SizedBox(width: 6),
-          Expanded(child: _SecondaryActionTile(action: actions[i])),
-        ],
-      ],
-    );
+    return HomeQuickActionsCarousel(actions: actions, compact: true);
   }
 }
 
-class _SecondaryActionTile extends StatelessWidget {
+class _CarouselActionTile extends StatelessWidget {
   final HomeQuickAction action;
+  final bool compact;
 
-  const _SecondaryActionTile({required this.action});
+  const _CarouselActionTile({
+    required this.action,
+    required this.compact,
+  });
 
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
+    final size = compact ? 44.0 : 50.0;
+
     return ScaleTap(
       onTap: action.onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 46,
-            height: 46,
-            decoration: p.cardDecoration(radius: 23),
-            child: Icon(action.icon, size: 20, color: p.textDark),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            action.label,
-            style: context.typeLabel(12),
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
+      child: SizedBox(
+        width: compact ? 68 : 72,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: size,
+              height: size,
+              decoration: BoxDecoration(
+                color: p.card,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: action.color.withValues(alpha: 0.28),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: action.color.withValues(alpha: 0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Icon(action.icon, size: compact ? 20 : 22, color: action.color),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              action.label,
+              style: context.typeLabel(compact ? 11 : 12),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -37,14 +37,16 @@ class MarketsSectionHeader extends StatelessWidget {
             ),
           ),
           if (actionLabel != null && onAction != null)
-            TextButton(
-              onPressed: onAction,
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                minimumSize: Size.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            GestureDetector(
+              onTap: onAction,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: p.primaryPillDecoration(),
+                child: Text(
+                  actionLabel!,
+                  style: ThemeAType.label(size: 13, color: p.primaryDark),
+                ),
               ),
-              child: Text(actionLabel!, style: ThemeAType.action(size: 14, color: p.primary)),
             ),
         ],
       ),

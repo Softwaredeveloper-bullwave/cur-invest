@@ -16,6 +16,7 @@ class PortfolioSummaryCard extends StatelessWidget {
   final double totalProfit;
   final double todayPnl;
   final double? todayPnlPercent;
+  final bool highlighted;
 
   const PortfolioSummaryCard({
     super.key,
@@ -24,11 +25,102 @@ class PortfolioSummaryCard extends StatelessWidget {
     required this.totalProfit,
     required this.todayPnl,
     this.todayPnlPercent,
+    this.highlighted = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
+    final p = context.palette;
+
+    if (highlighted) {
+      final pnlPositive = todayPnl >= 0;
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
+        decoration: p.heroCardDecoration(),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(Icons.pie_chart_rounded, size: 20, color: p.heroCardFg),
+                ),
+                const Spacer(),
+                if (todayPnl != 0)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: (pnlPositive ? p.positive : p.negative).withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(
+                        color: (pnlPositive ? p.positive : p.negative).withValues(alpha: 0.35),
+                      ),
+                    ),
+                    child: Text(
+                      '${pnlPositive ? '+' : ''}${CurrencyFormatter.formatCompact(todayPnl)} today',
+                      style: ThemeAType.label(
+                        size: 11,
+                        color: pnlPositive ? const Color(0xFF4ADE80) : const Color(0xFFFF6B6B),
+                      ).copyWith(fontWeight: FontWeight.w800),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Portfolio Value',
+              style: ThemeAType.secondary(size: 13, color: p.heroCardMuted),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              CurrencyFormatter.format(currentValue),
+              style: ThemeAType.price(size: 34, color: p.heroCardFg),
+            ),
+            if (todayPnlPercent != null) ...[
+              const SizedBox(height: 4),
+              Text(
+                '${todayPnlPercent! >= 0 ? '+' : ''}${todayPnlPercent!.toStringAsFixed(2)}% today',
+                style: TextStyle(
+                  color: pnlPositive ? const Color(0xFF4ADE80) : const Color(0xFFFF6B6B),
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+            const SizedBox(height: 18),
+            Row(
+              children: [
+                Expanded(
+                  child: _HeroStatItem(
+                    label: 'Invested',
+                    value: CurrencyFormatter.formatCompact(totalInvestment),
+                    fg: p.heroCardFg,
+                    muted: p.heroCardMuted,
+                  ),
+                ),
+                Expanded(
+                  child: _HeroStatItem(
+                    label: 'Total P&L',
+                    value: CurrencyFormatter.formatCompact(totalProfit),
+                    fg: p.heroCardFg,
+                    muted: p.heroCardMuted,
+                    valueColor: totalProfit >= 0 ? const Color(0xFF4ADE80) : const Color(0xFFFF6B6B),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
 
     return PortfolioCard(
       child: Column(
@@ -88,6 +180,37 @@ class PortfolioSummaryCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _HeroStatItem extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color fg;
+  final Color muted;
+  final Color? valueColor;
+
+  const _HeroStatItem({
+    required this.label,
+    required this.value,
+    required this.fg,
+    required this.muted,
+    this.valueColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: ThemeAType.secondary(size: 12, color: muted)),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: ThemeAType.cardTitle(size: 16, color: valueColor ?? fg),
+        ),
+      ],
     );
   }
 }

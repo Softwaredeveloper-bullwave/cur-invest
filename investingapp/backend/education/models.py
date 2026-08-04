@@ -86,3 +86,27 @@ class EducationQuizQuestion(models.Model):
 
     def __str__(self):
         return self.prompt[:60]
+
+
+class EducationQuizAttempt(models.Model):
+    """Persisted quiz score and per-question answers for a user."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        'accounts.User',
+        on_delete=models.CASCADE,
+        related_name='quiz_attempts',
+    )
+    quiz = models.ForeignKey(
+        EducationQuiz, on_delete=models.CASCADE, related_name='attempts'
+    )
+    score = models.PositiveSmallIntegerField(default=0)
+    total = models.PositiveSmallIntegerField(default=0)
+    answers = models.JSONField(default=list, help_text='List of selected option indices')
+    completed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-completed_at']
+
+    def __str__(self):
+        return f'{self.user_id} — {self.quiz.title} ({self.score}/{self.total})'

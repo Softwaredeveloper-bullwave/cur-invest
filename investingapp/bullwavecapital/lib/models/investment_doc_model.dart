@@ -186,3 +186,74 @@ class EducationCatalogModel {
 
   const EducationCatalogModel({required this.updatedAt, required this.categories});
 }
+
+class QuizQuestionResult {
+  final String prompt;
+  final List<String> options;
+  final int? selectedIndex;
+  final int correctIndex;
+  final bool isCorrect;
+  final String explanation;
+
+  const QuizQuestionResult({
+    required this.prompt,
+    required this.options,
+    required this.selectedIndex,
+    required this.correctIndex,
+    required this.isCorrect,
+    required this.explanation,
+  });
+
+  factory QuizQuestionResult.fromJson(Map<String, dynamic> json) {
+    final optionsRaw = json['options'] as List<dynamic>? ?? [];
+    final selected = json['selectedIndex'];
+    return QuizQuestionResult(
+      prompt: json['prompt'] as String? ?? '',
+      options: optionsRaw.map((e) => e.toString()).toList(),
+      selectedIndex: selected == null ? null : _int(selected),
+      correctIndex: _int(json['correctIndex']),
+      isCorrect: json['isCorrect'] as bool? ?? false,
+      explanation: json['explanation'] as String? ?? '',
+    );
+  }
+}
+
+class QuizAttemptResult {
+  final String attemptId;
+  final String quizSlug;
+  final String quizTitle;
+  final int score;
+  final int total;
+  final int percent;
+  final List<QuizQuestionResult> results;
+  final DateTime? completedAt;
+
+  const QuizAttemptResult({
+    required this.attemptId,
+    required this.quizSlug,
+    required this.quizTitle,
+    required this.score,
+    required this.total,
+    required this.percent,
+    required this.results,
+    this.completedAt,
+  });
+
+  factory QuizAttemptResult.fromJson(Map<String, dynamic> json) {
+    final resultsRaw = json['results'] as List<dynamic>? ?? [];
+    return QuizAttemptResult(
+      attemptId: json['attemptId']?.toString() ?? '',
+      quizSlug: json['quizSlug'] as String? ?? '',
+      quizTitle: json['quizTitle'] as String? ?? '',
+      score: _int(json['score']),
+      total: _int(json['total']),
+      percent: _int(json['percent']),
+      results: resultsRaw
+          .map((e) => QuizQuestionResult.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      completedAt: json['completedAt'] != null
+          ? DateTime.tryParse(json['completedAt'].toString())
+          : null,
+    );
+  }
+}
