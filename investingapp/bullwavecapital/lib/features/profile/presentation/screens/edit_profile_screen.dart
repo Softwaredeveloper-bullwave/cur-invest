@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import '../../../../core/api/api_config.dart';
 import '../../../../core/constants/dimensions.dart';
 import '../../../../core/theme/colors.dart';
+import '../../../../core/utils/image_pick_helper.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/widgets/custom_app_bar.dart';
 import '../../../../core/widgets/custom_dialog.dart';
@@ -55,15 +56,33 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> _pickImage(ImageSource source) async {
-    final picker = ImagePicker();
-    final file = await picker.pickImage(source: source, maxWidth: 1024, maxHeight: 1024, imageQuality: 85);
-    if (file == null) return;
-    final bytes = await file.readAsBytes();
-    setState(() {
-      _pickedImageBytes = bytes;
-      _pickedImageName = file.name;
-      _removeAvatar = false;
-    });
+    try {
+      final allowed = await ImagePickHelper.ensurePermission(source);
+      if (!allowed) {
+        if (!mounted) return;
+        AppSnackbar.error(context, ImagePickHelper.permissionDeniedMessage(source));
+        return;
+      }
+      final file = await ImagePickHelper.pickImage(source: source, requestPermission: false);
+      if (file == null) return;
+      final bytes = await file.readAsBytes();
+      if (!mounted) return;
+      setState(() {
+        _pickedImageBytes = bytes;
+        _pickedImageName = file.name.isNotEmpty ? file.name : 'avatar.jpg';
+        _removeAvatar = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      AppSnackbar.error(context, ImagePickHelper.pickFailedMessage(source));
+    }
+  }
+
+  Future<void> _onPhotoOptionSelected(BuildContext sheetContext, ImageSource source) async {
+    Navigator.pop(sheetContext);
+    await Future<void>.delayed(const Duration(milliseconds: 350));
+    if (!mounted) return;
+    await _pickImage(source);
   }
 
   Future<void> _pickDate() async {
@@ -253,7 +272,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   void _showPhotoOptions() {
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       builder: (ctx) => SafeArea(
         child: Column(
@@ -262,18 +281,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             ListTile(
               leading: const Icon(Icons.photo_library_outlined),
               title: const Text('Choose from gallery'),
-              onTap: () {
-                Navigator.pop(ctx);
-                _pickImage(ImageSource.gallery);
-              },
+              onTap: () => _onPhotoOptionSelected(ctx, ImageSource.gallery),
             ),
             ListTile(
               leading: const Icon(Icons.photo_camera_outlined),
               title: const Text('Take a photo'),
-              onTap: () {
-                Navigator.pop(ctx);
-                _pickImage(ImageSource.camera);
-              },
+              onTap: () => _onPhotoOptionSelected(ctx, ImageSource.camera),
             ),
             if (_pickedImageBytes != null || (context.read<AuthProvider>().user?.avatarUrl.isNotEmpty ?? false))
               ListTile(

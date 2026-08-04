@@ -34,6 +34,8 @@
 		<true/>
 	</dict>
 	<key>NSCameraUsageDescription</key>
-	<string>BullWave needs camera access to capture your live selfie for KYC verification.</string>
+	<string>BullWave needs camera access to capture your profile photo.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>BullWave needs photo library access to choose your profile picture.</string>
 </dict>
 </plist>
