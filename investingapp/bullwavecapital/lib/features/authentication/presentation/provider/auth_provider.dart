@@ -190,19 +190,29 @@ class AuthProvider extends ChangeNotifier {
       await _bootstrapDevSession();
       return;
     }
-    beginSignIn();
     await _api.init();
+    final resumeKycOnboarding = await TokenStorage.isRegistrationInProgress();
+    beginSignIn();
     final accessToken = await TokenStorage.getAccessToken();
     if (accessToken != null && accessToken.isNotEmpty) {
-      await logout();
-    } else {
-      _isAuthenticated = false;
-      _user = null;
-      _hasSignedInSession = false;
-      await TokenStorage.setSignedInSession(false);
-      await TokenStorage.setRegistrationInProgress(false);
-      notifyListeners();
+      await _api.logout();
     }
+    _isAuthenticated = false;
+    _user = null;
+    _phoneNumber = '';
+    _pendingEmail = '';
+    _isNewUser = false;
+    _phoneIsRegistered = null;
+    _hasSignedInSession = false;
+    await TokenStorage.setSignedInSession(false);
+    if (resumeKycOnboarding) {
+      _flowMode = AuthFlowMode.registration;
+      await TokenStorage.setRegistrationInProgress(true);
+    } else {
+      await TokenStorage.setRegistrationInProgress(false);
+    }
+    _termsAccepted = false;
+    notifyListeners();
   }
 
   Future<bool> tryRestoreSession() async {
@@ -434,9 +444,9 @@ class AuthProvider extends ChangeNotifier {
         referralCode: referralCode.trim(),
       );
       if (_flowMode == AuthFlowMode.registration) {
-        await TokenStorage.setRegistrationInProgress(false);
-        _flowMode = AuthFlowMode.signIn;
-        await markSignedInSession();
+        await TokenStorage.setRegistrationInProgress(true);
+        _hasSignedInSession = false;
+        await TokenStorage.setSignedInSession(false);
       }
       _isLoading = false;
       notifyListeners();

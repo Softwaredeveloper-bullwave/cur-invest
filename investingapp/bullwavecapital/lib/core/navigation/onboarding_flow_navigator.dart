@@ -80,59 +80,71 @@ class OnboardingFlowNavigator {
   }
 
   static String routeAfterProfileComplete(KycFlowProvider kyc) {
-    // Profile is done — browse the app; complete KYC from Profile or when trading.
-    return AppRoutes.home;
+    return nextIncompleteKycStep(kyc) ?? AppRoutes.panVerification;
   }
 
-  /// First incomplete automated KYC step, or null when fully verified.
+  /// Ordered onboarding KYC: PAN → Aadhaar → Bank → UPI → Selfie → Home.
   static String? nextIncompleteKycStep(KycFlowProvider kyc) {
     final status = kyc.status;
+
     if (!status.panVerified) return AppRoutes.panVerification;
     if (!status.aadhaarVerified) return AppRoutes.aadhaarVerificationKyc;
-    if (!status.canProceedToIdentity) return AppRoutes.bankVerificationKyc;
 
-    final useCombinedIdentity = status.upiManual || kyc.upiRequired;
-    if (useCombinedIdentity) {
-      final identityDone = status.upiVerified && status.selfieVerified;
-      final awaitingAdmin = status.identityReviewPending ||
-          status.selfieReviewPending ||
-          (status.manualFinalApprovalRequired && !status.finalKycApproved);
-      if (!identityDone || awaitingAdmin) {
-        return AppRoutes.identityVerification;
-      }
-    } else {
-      if (!status.selfieVerified) return AppRoutes.selfieVerification;
+    final bankDone = status.bankVerified ||
+        status.bankReviewPending ||
+        status.bankDraftReady;
+    if (!bankDone) return AppRoutes.bankVerificationKyc;
+
+    if (kyc.upiRequired) {
+      final upiDone = status.upiVerified || status.paymentReviewPending;
+      if (!upiDone) return AppRoutes.upiVerification;
     }
 
-    if (status.manualFinalApprovalRequired) {
-      if (!status.finalKycApproved) return AppRoutes.identityVerification;
-      return null;
+    final selfieDone =
+        status.selfieVerified || status.selfieReviewPending;
+    if (!selfieDone) return AppRoutes.selfieVerification;
+
+    if (status.manualFinalApprovalRequired && !status.finalKycApproved) {
+      return AppRoutes.kycPending;
     }
-    if (!status.nameMatchPassed) return AppRoutes.nameMatch;
+
+    if (!status.nameMatchPassed &&
+        status.bankVerified &&
+        status.selfieVerified) {
+      return AppRoutes.nameMatch;
+    }
+
     return null;
   }
 
   static void goToNextKycStep(BuildContext context, KycFlowProvider kyc) {
     final auth = context.read<AuthProvider>();
-    if (auth.isRegistrationFlow && kyc.isFullyVerified) {
-      unawaited(RegistrationCompletion.returnToLoginAfterRegistration(context));
+    final next = nextIncompleteKycStep(kyc);
+    if (next == null) {
+      if (auth.isRegistrationFlow) {
+        unawaited(RegistrationCompletion.finishAndGoHome(context));
+      } else {
+        context.go(AppRoutes.home);
+      }
       return;
     }
-    context.go(nextIncompleteKycStep(kyc) ?? AppRoutes.home);
+    context.go(next);
   }
 
   /// Route for the step before [currentRoute] in the automated KYC flow.
   static String previousKycStep(KycFlowProvider kyc, {String? currentRoute}) {
     final current = currentRoute ?? nextIncompleteKycStep(kyc);
     return switch (current) {
-      AppRoutes.identityVerification ||
-      AppRoutes.selfieVerification ||
-      AppRoutes.upiVerification =>
+      AppRoutes.nameMatch => AppRoutes.selfieVerification,
+      AppRoutes.selfieVerification => kyc.upiRequired
+          ? AppRoutes.upiVerification
+          : AppRoutes.bankVerificationKyc,
+      AppRoutes.upiVerification ||
+      AppRoutes.identityVerification =>
         AppRoutes.bankVerificationKyc,
-      AppRoutes.nameMatch => AppRoutes.identityVerification,
       AppRoutes.bankVerificationKyc => AppRoutes.aadhaarVerificationKyc,
       AppRoutes.aadhaarVerificationKyc => AppRoutes.panVerification,
-      AppRoutes.panVerification => AppRoutes.kycStatus,
+      AppRoutes.panVerification => AppRoutes.completeProfile,
       _ => AppRoutes.kycStatus,
     };
   }

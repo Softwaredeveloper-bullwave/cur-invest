@@ -106,6 +106,8 @@ import '../../features/kyc/presentation/screens/bank_verification_kyc_screen.dar
 
 import '../../features/kyc/presentation/screens/selfie_verification_screen.dart';
 
+import '../../features/kyc/presentation/screens/upi_verification_screen.dart';
+
 import '../../features/kyc/presentation/screens/identity_verification_screen.dart';
 import '../../features/kyc/presentation/screens/name_match_screen.dart';
 
@@ -214,13 +216,14 @@ class AppRouter {
       // Splash handles its own routing animation.
       if (path == AppRoutes.splash) return null;
 
-      // Mid-registration email/profile only — never auto-resume KYC on cold start.
+      // New users must finish KYC before Home; returning users may browse.
       if (auth.isAuthenticated &&
+          auth.isRegistrationFlow &&
           auth.hasCompletedRegistration &&
-          auth.isRegistrationFlow) {
-        if (_isPublicAuthRoute(path)) {
-          return AppRoutes.home;
-        }
+          !kyc.isFullyVerified &&
+          OnboardingFlowNavigator.shouldBlockShellUntilKycComplete(path)) {
+        return OnboardingFlowNavigator.nextIncompleteKycStep(kyc) ??
+            AppRoutes.panVerification;
       }
 
       // Registration finished — must sign in via Login before Home.
@@ -466,7 +469,7 @@ class AppRouter {
 
       GoRoute(
         path: AppRoutes.upiVerification,
-        redirect: (context, state) => AppRoutes.identityVerification,
+        builder: (context, state) => const UpiVerificationScreen(),
       ),
 
       GoRoute(

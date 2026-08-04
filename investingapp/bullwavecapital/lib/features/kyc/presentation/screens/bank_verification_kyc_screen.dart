@@ -105,10 +105,10 @@ class _BankVerificationKycScreenState extends State<BankVerificationKycScreen>
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Bank account verified! Welcome back.'),
+          content: Text('Bank account verified! Continuing…'),
         ),
       );
-      context.go(AppRoutes.home);
+      OnboardingFlowNavigator.goToNextKycStep(context, kyc);
       return;
     }
 
@@ -383,8 +383,9 @@ class _BankVerificationKycScreenState extends State<BankVerificationKycScreen>
                     BankVerificationResultCard(status: status, showMethod: false),
                     const SizedBox(height: 16),
                     PrimaryButton(
-                      label: 'Continue to identity verification',
-                      onPressed: () => context.push(AppRoutes.identityVerification),
+                      label: 'Continue',
+                      onPressed: () =>
+                          OnboardingFlowNavigator.goToNextKycStep(context, kyc),
                     ),
                   ] else ...[
                     BankVerificationResultCard(status: status),
@@ -393,11 +394,19 @@ class _BankVerificationKycScreenState extends State<BankVerificationKycScreen>
                       onPressed: _startUpdate,
                       child: const Text('Update Bank Account'),
                     ),
-                    if (kyc.upiRequired && !status.upiVerified && status.canProceedToIdentity) ...[
+                    if (kyc.upiRequired && !status.upiVerified) ...[
                       const SizedBox(height: 12),
                       PrimaryButton(
-                        label: 'Continue to identity verification',
-                        onPressed: () => context.push(AppRoutes.identityVerification),
+                        label: 'Continue to UPI Verification',
+                        onPressed: () =>
+                            OnboardingFlowNavigator.goToNextKycStep(context, kyc),
+                      ),
+                    ] else if (!status.selfieVerified) ...[
+                      const SizedBox(height: 12),
+                      PrimaryButton(
+                        label: 'Continue to Selfie Verification',
+                        onPressed: () =>
+                            OnboardingFlowNavigator.goToNextKycStep(context, kyc),
                       ),
                     ] else if (!status.nameMatchPassed) ...[
                       const SizedBox(height: 12),
@@ -409,7 +418,8 @@ class _BankVerificationKycScreenState extends State<BankVerificationKycScreen>
                       const SizedBox(height: 12),
                       PrimaryButton(
                         label: 'Continue',
-                        onPressed: () => context.go(AppRoutes.home),
+                        onPressed: () =>
+                            OnboardingFlowNavigator.goToNextKycStep(context, kyc),
                       ),
                     ],
                   ],

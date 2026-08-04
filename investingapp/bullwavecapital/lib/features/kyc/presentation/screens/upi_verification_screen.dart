@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../core/navigation/onboarding_flow_navigator.dart';
 import '../../../../core/constants/routes.dart';
 import '../../../../core/theme/app_theme_extension.dart';
 import '../../../../core/theme/colors.dart';
@@ -113,9 +114,9 @@ class _UpiVerificationScreenState extends State<UpiVerificationScreen>
       await context.read<NotificationProvider>().loadData();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Bank & UPI verified! Welcome back.')),
+        const SnackBar(content: Text('Bank & UPI verified! Continuing…')),
       );
-      context.go(AppRoutes.home);
+      OnboardingFlowNavigator.goToNextKycStep(context, kyc);
       return;
     }
 
@@ -150,7 +151,7 @@ class _UpiVerificationScreenState extends State<UpiVerificationScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('UPI ID verified successfully.')),
         );
-        context.push(AppRoutes.nameMatch);
+        OnboardingFlowNavigator.goToNextKycStep(context, kyc);
       }
       return;
     }

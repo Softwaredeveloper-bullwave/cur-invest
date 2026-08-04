@@ -30,9 +30,19 @@ class AuthFlowNavigation {
       return;
     }
 
-    await auth.markSignedInSession();
     await kyc.loadStatus();
     if (!context.mounted) return;
+
+    if (auth.isRegistrationFlow && !kyc.isFullyVerified) {
+      router.go(
+        OnboardingFlowNavigator.nextIncompleteKycStep(kyc) ??
+            AppRoutes.panVerification,
+      );
+      unawaited(refreshAllProviders(context));
+      return;
+    }
+
+    await auth.markSignedInSession();
     router.go(OnboardingFlowNavigator.routeForReturningUser(kyc));
     unawaited(refreshAllProviders(context));
   }
@@ -43,37 +53,20 @@ class AuthFlowNavigation {
     final kyc = context.read<KycFlowProvider>();
     final router = GoRouter.of(context);
 
-    if (auth.isRegistrationFlow) {
-      await kyc.loadStatus();
-      if (!context.mounted) return;
-      if (auth.hasCompletedRegistration) {
-        auth.endRegistration();
-        await auth.markSignedInSession();
-        router.go(AppRoutes.home);
-      } else {
-        router.go(OnboardingFlowNavigator.routeAfterAuthentication(auth, kyc));
-      }
-      unawaited(refreshAllProviders(context));
-      return;
-    }
-
     await kyc.loadStatus();
     if (!context.mounted) return;
-    router.go(OnboardingFlowNavigator.routeForReturningUser(kyc));
+    router.go(OnboardingFlowNavigator.routeAfterAuthentication(auth, kyc));
     unawaited(refreshAllProviders(context));
   }
 
   static Future<void> afterProfileComplete(BuildContext context) async {
     if (!context.mounted) return;
-    final auth = context.read<AuthProvider>();
     final kyc = context.read<KycFlowProvider>();
     final router = GoRouter.of(context);
 
-    auth.endRegistration();
-    await auth.markSignedInSession();
     await kyc.loadStatus();
     if (!context.mounted) return;
-    router.go(AppRoutes.home);
+    router.go(OnboardingFlowNavigator.routeAfterProfileComplete(kyc));
     unawaited(refreshAllProviders(context));
   }
 
