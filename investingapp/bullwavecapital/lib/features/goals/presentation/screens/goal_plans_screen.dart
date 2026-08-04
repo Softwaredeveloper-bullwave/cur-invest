@@ -14,6 +14,8 @@ import '../../../../models/goal_plan_model.dart';
 import '../../data/goal_return_tiers.dart';
 import '../provider/goal_plan_provider.dart';
 import '../widgets/goal_return_widgets.dart';
+import '../widgets/goal_template_artwork.dart';
+import '../widgets/goal_template_icon.dart';
 
 class GoalPlansScreen extends StatefulWidget {
   const GoalPlansScreen({super.key});
@@ -101,7 +103,7 @@ class _GoalPlansScreenState extends State<GoalPlansScreen> {
                       crossAxisCount: 2,
                       mainAxisSpacing: 14,
                       crossAxisSpacing: 14,
-                      childAspectRatio: 0.82,
+                      childAspectRatio: 0.78,
                     ),
                     itemCount: templates.length,
                     itemBuilder: (context, index) {
@@ -392,20 +394,10 @@ class _TemplateCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        template.color.withValues(alpha: 0.28),
-                        template.color.withValues(alpha: 0.1),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: template.color.withValues(alpha: 0.3)),
-                  ),
-                  child: Icon(template.iconData, color: template.color, size: 22),
+                GoalTemplateIcon(
+                  category: template.category,
+                  color: template.color,
+                  legacyIcon: template.icon,
                 ),
                 const Spacer(),
                 GoalReturnBadge(
@@ -414,7 +406,14 @@ class _TemplateCard extends StatelessWidget {
                 ),
               ],
             ),
-            const Spacer(),
+            const SizedBox(height: 10),
+            Expanded(
+              child: GoalTemplateArtwork(
+                category: template.category,
+                color: template.color,
+              ),
+            ),
+            const SizedBox(height: 10),
             Text(
               template.name,
               style: GoogleFonts.inter(
@@ -522,14 +521,10 @@ class _GoalProgressCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: goal.color.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Icon(Icons.flag_rounded, color: goal.color, size: 18),
+                  GoalTemplateIcon(
+                    category: goal.category,
+                    color: goal.color,
+                    size: 36,
                   ),
                   const SizedBox(width: 10),
                   Expanded(

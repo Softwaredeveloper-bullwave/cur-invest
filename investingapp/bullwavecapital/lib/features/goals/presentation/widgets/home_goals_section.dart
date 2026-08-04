@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 import '../../../../core/constants/routes.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../models/goal_plan_model.dart';
+import 'goal_template_icon.dart';
 import '../../../home/presentation/widgets/home_theme_a.dart';
 
 class HomeGoalsSection extends StatelessWidget {
@@ -66,16 +66,10 @@ class _GoalChip extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Container(
-                    width: 32,
-                    height: 32,
-                    alignment: Alignment.center,
-                    decoration: HomeThemeA.iconCircleDecoration(context),
-                    child: Icon(
-                      PhosphorIcons.flag,
-                      size: 16,
-                      color: HomeThemeA.primaryDark,
-                    ),
+                  GoalTemplateIcon(
+                    category: goal.category,
+                    color: goal.color,
+                    size: 32,
                   ),
                   const SizedBox(width: 8),
                   Expanded(

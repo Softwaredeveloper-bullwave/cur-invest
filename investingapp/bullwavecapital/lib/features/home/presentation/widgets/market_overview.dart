@@ -1,14 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
+import '../../../../core/constants/fno_index_catalog.dart';
+import '../../../../core/widgets/expiry_highlight.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../models/market_index_model.dart';
 import 'home_theme_a.dart';
 
 class MarketOverview extends StatelessWidget {
   final List<MarketIndexModel> indices;
+  final String? Function(MarketIndexModel index)? expiryFor;
 
-  const MarketOverview({super.key, required this.indices});
+  const MarketOverview({
+    super.key,
+    required this.indices,
+    this.expiryFor,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -64,21 +71,23 @@ class MarketOverview extends StatelessWidget {
             )
           else
             SizedBox(
-              height: 92,
+              height: 106,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: indices.length,
                 separatorBuilder: (_, _) => const SizedBox(width: 10),
                 itemBuilder: (context, index) {
                   final item = indices[index];
+                  final expiryIso = expiryFor?.call(item);
                   return SizedBox(
-                    width: 132,
-                    height: 92,
+                    width: 136,
+                    height: 106,
                     child: _MarketLiveCard(
                       label: item.shortName,
                       value: IndexFormatter.format(item.value),
                       change: IndexFormatter.formatPercent(item.changePercent),
                       isPositive: item.isPositive,
+                      expiryIso: expiryIso,
                     ),
                   );
                 },
@@ -95,18 +104,22 @@ class _MarketLiveCard extends StatelessWidget {
   final String value;
   final String change;
   final bool isPositive;
+  final String? expiryIso;
 
   const _MarketLiveCard({
     required this.label,
     required this.value,
     required this.change,
     required this.isPositive,
+    this.expiryIso,
   });
 
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
     final changeColor = isPositive ? p.positive : p.negative;
+    final fnoSymbol = FnoIndexCatalog.symbolForMarketIndex(label);
+    final showExpiry = expiryIso != null && expiryIso!.isNotEmpty;
 
     return Container(
       height: double.infinity,
@@ -115,7 +128,7 @@ class _MarketLiveCard extends StatelessWidget {
         shadowTint: isPositive ? p.primary : p.negative,
       ),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 11, 12, 11),
+        padding: const EdgeInsets.fromLTRB(14, 10, 10, 10),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
@@ -146,7 +159,14 @@ class _MarketLiveCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 5),
+                  if (showExpiry && fnoSymbol != null) ...[
+                    const SizedBox(height: 4),
+                    ExpiryHighlight(
+                      expiryIso: expiryIso!,
+                      style: ExpiryHighlightStyle.compact,
+                    ),
+                  ],
+                  const SizedBox(height: 4),
                   FittedBox(
                     fit: BoxFit.scaleDown,
                     alignment: Alignment.centerLeft,
@@ -180,7 +200,7 @@ class _MarketLiveCard extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: 4),
             _MiniSparkline(isPositive: isPositive, color: changeColor),
           ],
         ),

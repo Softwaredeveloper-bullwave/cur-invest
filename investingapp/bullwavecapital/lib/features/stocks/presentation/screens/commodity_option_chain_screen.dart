@@ -5,6 +5,7 @@ import '../../../../core/theme/app_decorations.dart';
 import '../../../../core/theme/app_theme_extension.dart';
 import '../../../../core/theme/colors.dart';
 import '../../../../core/utils/formatters.dart';
+import '../../../../core/widgets/expiry_highlight.dart';
 import '../../../../core/widgets/app_screen_background.dart';
 import '../../../../core/widgets/custom_app_bar.dart';
 import '../../../../core/widgets/loading_card.dart';
@@ -202,7 +203,7 @@ class _CommodityOptionChainScreenState extends State<CommodityOptionChainScreen>
                       if (expiries.isNotEmpty) ...[
                         const SizedBox(height: 12),
                         SizedBox(
-                          height: 40,
+                          height: 46,
                           child: ListView.separated(
                             scrollDirection: Axis.horizontal,
                             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -211,34 +212,15 @@ class _CommodityOptionChainScreenState extends State<CommodityOptionChainScreen>
                             itemBuilder: (_, i) {
                               final expiry = expiries[i];
                               final selected = expiry == selectedExpiry;
-                              return Material(
-                                color: selected
-                                    ? AppColors.brandOrange.withValues(alpha: 0.16)
-                                    : colors.surfaceSecondary,
-                                borderRadius: BorderRadius.circular(10),
-                                child: InkWell(
-                                  onTap: loading
-                                      ? null
-                                      : () => provider.loadOptionChain(_commodityId, expiry: expiry),
-                                  borderRadius: BorderRadius.circular(10),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(10),
-                                      border: Border.all(
-                                        color: selected ? AppColors.brandOrange : colors.border,
-                                      ),
-                                    ),
-                                    child: Text(
-                                      DateFormatter.expiryLabel(expiry),
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: 12,
-                                        color: selected ? AppColors.brandOrange : colors.textSecondary,
-                                      ),
-                                    ),
-                                  ),
-                                ),
+                              return ExpirySelectorChip(
+                                expiryIso: expiry,
+                                selected: selected,
+                                onTap: loading
+                                    ? null
+                                    : () => provider.loadOptionChain(
+                                          _commodityId,
+                                          expiry: expiry,
+                                        ),
                               );
                             },
                           ),

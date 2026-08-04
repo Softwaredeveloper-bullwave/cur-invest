@@ -12,8 +12,7 @@ import '../../../../core/theme/app_theme_extension.dart';
 
 import '../../../../core/theme/colors.dart';
 
-import '../../../../core/utils/formatters.dart';
-
+import '../../../../core/widgets/expiry_highlight.dart';
 import '../../../../core/widgets/custom_app_bar.dart';
 import '../../../../core/widgets/loading_card.dart';
 
@@ -80,8 +79,6 @@ class _OptionChainScreenState extends State<OptionChainScreen> {
 
     await _load();
   }
-
-  String _formatExpiry(String iso) => DateFormatter.expiryLabel(iso);
 
   @override
   Widget build(BuildContext context) {
@@ -187,13 +184,14 @@ class _OptionChainScreenState extends State<OptionChainScreen> {
                       symbol: sym,
                       spot: spot,
                       contracts: chain,
+                      selectedExpiry: selectedExpiry,
                     ),
 
                     if (expiries.isNotEmpty) ...[
                       const SizedBox(height: 12),
 
                       SizedBox(
-                        height: 44,
+                        height: 46,
 
                         child: ListView.separated(
                           scrollDirection: Axis.horizontal,
@@ -206,61 +204,17 @@ class _OptionChainScreenState extends State<OptionChainScreen> {
 
                           itemBuilder: (_, i) {
                             final expiry = expiries[i];
-
                             final selected = expiry == selectedExpiry;
 
-                            return Material(
-                              color: selected
-                                  ? AppColors.brandOrange.withValues(
-                                      alpha: 0.15,
-                                    )
-                                  : colors.surfaceSecondary,
-
-                              borderRadius: BorderRadius.circular(999),
-
-                              child: InkWell(
-                                onTap: loading
-                                    ? null
-                                    : () => features.loadOptionChain(
+                            return ExpirySelectorChip(
+                              expiryIso: expiry,
+                              selected: selected,
+                              onTap: loading
+                                  ? null
+                                  : () => features.loadOptionChain(
                                         sym,
                                         expiry: expiry,
                                       ),
-
-                                borderRadius: BorderRadius.circular(999),
-
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 14,
-                                    vertical: 8,
-                                  ),
-
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(999),
-
-                                    border: Border.all(
-                                      color: selected
-                                          ? AppColors.brandOrange
-                                          : colors.border.withValues(
-                                              alpha: 0.7,
-                                            ),
-                                    ),
-                                  ),
-
-                                  child: Text(
-                                    _formatExpiry(expiry),
-
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w700,
-
-                                      fontSize: 12,
-
-                                      color: selected
-                                          ? AppColors.brandOrange
-                                          : colors.textSecondary,
-                                    ),
-                                  ),
-                                ),
-                              ),
                             );
                           },
                         ),

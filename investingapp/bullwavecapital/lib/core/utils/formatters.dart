@@ -75,12 +75,16 @@ class DateFormatter {
 
   static String expiryLabel(String iso) {
     final d = parseDateOnly(iso);
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final date = DateTime(d.year, d.month, d.day);
+    if (date == today) return 'Today';
+    if (date == today.add(const Duration(days: 1))) return 'Tomorrow';
     const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     const months = [
       'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
       'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
     ];
-    final now = DateTime.now();
     final showYear = d.year != now.year;
     final dayPart = '${d.day} ${months[d.month - 1]}${showYear ? ' ${d.year}' : ''}';
     return '${weekdays[d.weekday - 1]}, $dayPart';

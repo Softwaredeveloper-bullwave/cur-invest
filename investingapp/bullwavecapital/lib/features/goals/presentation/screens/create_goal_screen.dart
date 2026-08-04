@@ -10,6 +10,7 @@ import '../../../../core/widgets/primary_button.dart';
 import '../../../../models/goal_plan_model.dart';
 import '../../data/goal_templates_catalog.dart';
 import '../widgets/goal_return_widgets.dart';
+import '../widgets/goal_template_icon.dart';
 import '../../../kyc/presentation/provider/kyc_flow_provider.dart';
 import '../provider/goal_plan_provider.dart';
 
@@ -76,7 +77,12 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
             padding: const EdgeInsets.all(20),
             children: [
               ListTile(
-                leading: CircleAvatar(backgroundColor: t.color.withValues(alpha: 0.15), child: Icon(t.iconData, color: t.color)),
+                leading: GoalTemplateIcon(
+                  category: t.category,
+                  color: t.color,
+                  size: 44,
+                  legacyIcon: t.icon,
+                ),
                 title: Text(t.name, style: const TextStyle(fontWeight: FontWeight.w800)),
                 subtitle: Text(t.tagline),
               ),

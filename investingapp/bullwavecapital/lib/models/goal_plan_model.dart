@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../core/constants/goal_template_icons.dart';
+
 class GoalReturnTierModel {
   final String id;
   final String name;
@@ -54,22 +56,8 @@ class GoalTemplateModel {
     this.maxDurationMonths = 24,
   });
 
-  IconData get iconData {
-    switch (icon) {
-      case 'home':
-        return Icons.home_rounded;
-      case 'elderly':
-        return Icons.elderly_rounded;
-      case 'school':
-        return Icons.school_rounded;
-      case 'favorite':
-        return Icons.favorite_rounded;
-      case 'directions_car':
-        return Icons.directions_car_rounded;
-      default:
-        return Icons.savings_rounded;
-    }
-  }
+  IconData get iconData =>
+      GoalTemplateIcons.fromLegacy(icon, category);
 }
 
 class UserGoalPlanModel {

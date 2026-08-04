@@ -21,6 +21,18 @@ class FnoIndexCatalog {
   }
 
   static bool isIndex(String symbol) => bySymbol(symbol) != null;
+
+  /// Maps home/market index labels (NIFTY, BANK NIFTY, SENSEX) to F&O symbols.
+  static String? symbolForMarketIndex(String shortName) {
+    final normalized = shortName.toUpperCase().replaceAll(RegExp(r'\s+'), '');
+    if (normalized.contains('BANKNIFTY') ||
+        (normalized.contains('BANK') && normalized.contains('NIFTY'))) {
+      return 'BANKNIFTY';
+    }
+    if (normalized.contains('SENSEX')) return 'SENSEX';
+    if (normalized.contains('NIFTY')) return 'NIFTY';
+    return null;
+  }
 }
 
 class FnoIndexMeta {

@@ -8,6 +8,7 @@ import '../../../../core/theme/app_theme_extension.dart';
 import '../../../../core/theme/colors.dart';
 import '../../../../core/theme/theme_a.dart';
 import '../../../../core/utils/formatters.dart';
+import '../../../../core/widgets/expiry_highlight.dart';
 import '../../../../core/widgets/custom_app_bar.dart';
 import '../../../../core/widgets/loading_card.dart';
 import '../../../../models/stock_model.dart';
@@ -141,6 +142,7 @@ class _IndexFnoHubScreenState extends State<IndexFnoHubScreen>
                 meta: _meta,
                 spot: spot,
                 loading: loading && chain.isEmpty,
+                selectedExpiry: selectedExpiry,
               ),
               Material(
                 color: p.card.withValues(alpha: 0.5),
@@ -200,11 +202,13 @@ class _IndexHeader extends StatelessWidget {
   final FnoIndexMeta meta;
   final double spot;
   final bool loading;
+  final String selectedExpiry;
 
   const _IndexHeader({
     required this.meta,
     required this.spot,
     required this.loading,
+    this.selectedExpiry = '',
   });
 
   @override
@@ -226,6 +230,13 @@ class _IndexHeader extends StatelessWidget {
                   '${meta.exchange} · Index F&O',
                   style: ThemeAType.body(color: p.textGrey, size: 12),
                 ),
+                if (selectedExpiry.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  ExpiryHighlight(
+                    expiryIso: selectedExpiry,
+                    style: ExpiryHighlightStyle.banner,
+                  ),
+                ],
               ],
             ),
           ),
@@ -584,11 +595,16 @@ class _OptionChainTab extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        OptionChainSummary(symbol: symbol, spot: spot, contracts: chain),
+        OptionChainSummary(
+          symbol: symbol,
+          spot: spot,
+          contracts: chain,
+          selectedExpiry: selectedExpiry,
+        ),
         if (expiries.isNotEmpty) ...[
           const SizedBox(height: 8),
           SizedBox(
-            height: 40,
+            height: 46,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -597,14 +613,10 @@ class _OptionChainTab extends StatelessWidget {
               itemBuilder: (_, i) {
                 final expiry = expiries[i];
                 final selected = expiry == selectedExpiry;
-                return FilterChip(
+                return ExpirySelectorChip(
+                  expiryIso: expiry,
                   selected: selected,
-                  label: Text(
-                    DateFormatter.expiryLabel(expiry),
-                    style: const TextStyle(fontSize: 11),
-                  ),
-                  onSelected: loading ? null : (_) => onExpiry(expiry),
-                  selectedColor: AppColors.brandPrimary.withValues(alpha: 0.15),
+                  onTap: loading ? null : () => onExpiry(expiry),
                 );
               },
             ),

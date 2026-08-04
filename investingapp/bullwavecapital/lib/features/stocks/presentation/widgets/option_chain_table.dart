@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/widgets/expiry_highlight.dart';
 import '../../../../core/theme/app_theme_extension.dart';
 import '../../../../core/theme/colors.dart';
 import '../../../../core/utils/formatters.dart';
@@ -389,12 +390,14 @@ class OptionChainSummary extends StatelessWidget {
   final double spot;
   final List<OptionContractModel> contracts;
   final String symbol;
+  final String? selectedExpiry;
 
   const OptionChainSummary({
     super.key,
     required this.spot,
     required this.contracts,
     required this.symbol,
+    this.selectedExpiry,
   });
 
   @override
@@ -434,6 +437,13 @@ class OptionChainSummary extends StatelessWidget {
                   color: colors.textSecondary,
                 ),
               ),
+              if (selectedExpiry != null && selectedExpiry!.isNotEmpty) ...[
+                const SizedBox(width: 8),
+                ExpiryHighlight(
+                  expiryIso: selectedExpiry!,
+                  style: ExpiryHighlightStyle.banner,
+                ),
+              ],
               const Spacer(),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),

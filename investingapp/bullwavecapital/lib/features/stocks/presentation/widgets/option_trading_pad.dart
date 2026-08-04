@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../../../../core/navigation/app_navigation.dart';
 import '../../../../core/theme/app_decorations.dart';
+import '../../../../core/widgets/expiry_highlight.dart';
 import '../../../../core/theme/app_theme_extension.dart';
 import '../../../../core/theme/colors.dart';
 import '../../../../core/utils/formatters.dart';
@@ -273,12 +274,23 @@ class _OptionTradingPadState extends State<OptionTradingPad> {
                               fontSize: 16,
                             ),
                           ),
-                          Text(
-                            'Exp ${optionExpiryLabel(contract.expiry)} • Lot $lot',
-                            style: TextStyle(
-                              color: colors.textSecondary,
-                              fontSize: 12,
-                            ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              ExpiryHighlight.fromDateTime(
+                                contract.expiry,
+                                style: ExpiryHighlightStyle.chip,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Lot $lot',
+                                style: TextStyle(
+                                  color: colors.textSecondary,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),

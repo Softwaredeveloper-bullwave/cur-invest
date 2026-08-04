@@ -6,6 +6,7 @@ import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/constants/dimensions.dart';
+import '../../../../core/constants/fno_index_catalog.dart';
 import '../../../../core/constants/routes.dart';
 import '../../../../core/constants/shell_layout.dart';
 import '../../../../core/navigation/registration_completion.dart';
@@ -17,6 +18,9 @@ import '../../../../models/investment_model.dart';
 import '../../../goals/presentation/provider/goal_plan_provider.dart';
 import '../../../goals/presentation/widgets/home_goals_section.dart';
 import '../../../investment/data/featured_plans_catalog.dart';
+import '../../../fno/presentation/provider/fno_flow_provider.dart';
+import '../../../kyc/presentation/provider/kyc_flow_provider.dart';
+import '../../../authentication/presentation/provider/auth_provider.dart';
 import '../../../notifications/presentation/provider/notification_provider.dart';
 import '../../../stocks/presentation/provider/stock_features_provider.dart';
 import '../../../stocks/presentation/provider/stock_market_provider.dart';
@@ -25,6 +29,7 @@ import '../widgets/home_theme_a.dart';
 import '../widgets/home_balance_cards.dart';
 import '../widgets/home_clean_header.dart';
 import '../widgets/home_ipo_section.dart';
+import '../widgets/home_pending_actions.dart';
 import '../widgets/home_quick_actions.dart';
 import '../widgets/home_recent_activity.dart';
 import '../widgets/home_search_bar.dart';
@@ -57,7 +62,11 @@ class _HomeScreenState extends State<HomeScreen> {
     final features = context.read<StockFeaturesProvider>();
     await Future.wait([
       features.refreshIpoCalendar(limit: 6),
+      features.prefetchHomeIndexExpiries(),
       context.read<StockMarketProvider>().ensureLoaded(),
+      context.read<KycFlowProvider>().loadStatus(),
+      context.read<FnoFlowProvider>().ensureLoaded(),
+      context.read<AuthProvider>().refreshProfile(),
     ]);
   }
 
@@ -153,7 +162,10 @@ class _HomeScreenState extends State<HomeScreen> {
         return SafeArea(
           child: RefreshIndicator(
             color: AppColors.brandCyan,
-            onRefresh: provider.refresh,
+            onRefresh: () async {
+              await provider.refresh();
+              await _loadEngagement();
+            },
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               child: Column(
@@ -171,6 +183,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           onMenuTap: () => _showQuickMenu(context),
                           onNotificationTap: () => context.push(AppRoutes.notifications),
                         ),
+                        const SizedBox(height: 14),
+                        const HomePendingActionsSection(),
                         const SizedBox(height: 14),
                         HomeSearchBar(
                           onTap: () => context.go(AppRoutes.invest),
@@ -271,7 +285,20 @@ class _HomeScreenState extends State<HomeScreen> {
                         onAction: () => provider.refresh(),
                       ),
                     ),
-                  MarketOverview(indices: provider.marketIndices),
+                  Consumer<StockFeaturesProvider>(
+                    builder: (context, features, _) {
+                      return MarketOverview(
+                        indices: provider.marketIndices,
+                        expiryFor: (index) {
+                          final symbol =
+                              FnoIndexCatalog.symbolForMarketIndex(index.shortName);
+                          if (symbol == null) return null;
+                          final expiry = features.optionSelectedExpiry(symbol);
+                          return expiry.isNotEmpty ? expiry : null;
+                        },
+                      );
+                    },
+                  ),
                   Consumer<StockMarketProvider>(
                     builder: (context, market, _) {
                       if (market.trendingStocks.isEmpty) {

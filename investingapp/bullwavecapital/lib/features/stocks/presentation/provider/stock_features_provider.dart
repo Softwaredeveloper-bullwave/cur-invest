@@ -100,6 +100,26 @@ class StockFeaturesProvider extends ChangeNotifier {
   String optionSelectedExpiry(String symbol) =>
       _chainState(symbol).selectedExpiry;
 
+  static const _homeIndexSymbols = ['NIFTY', 'SENSEX', 'BANKNIFTY'];
+
+  /// Fast-fetch nearest F&O expiry for home market cards (no full chain load).
+  Future<void> prefetchHomeIndexExpiries() async {
+    await Future.wait(_homeIndexSymbols.map(_prefetchIndexExpiry));
+  }
+
+  Future<void> _prefetchIndexExpiry(String symbol) async {
+    final state = _chainState(symbol);
+    if (state.selectedExpiry.isNotEmpty) return;
+    try {
+      final chain = await _api.getOptionChain(symbol, fast: true);
+      state.expiries = chain.expiryDates;
+      state.selectedExpiry = chain.selectedExpiry.isNotEmpty
+          ? chain.selectedExpiry
+          : (chain.expiryDates.isNotEmpty ? chain.expiryDates.first : '');
+      notifyListeners();
+    } catch (_) {}
+  }
+
   StockFeaturesProvider() {
     loadAll();
   }
