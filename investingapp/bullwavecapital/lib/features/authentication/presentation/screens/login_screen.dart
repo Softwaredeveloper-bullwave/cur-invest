@@ -46,7 +46,7 @@ class _LoginScreenState extends State<LoginScreen> {
       auth.setLoginSuccessMessage(
         'Registration complete. Sign in with your mobile number to continue.',
       );
-    } else if (!auth.isRegistrationFlow) {
+    } else {
       auth.beginSignIn();
     }
   }
@@ -78,6 +78,14 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!mounted) return;
 
     if (success) {
+      if (auth.isRegistrationFlow && !auth.phoneIsRegistered) {
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text('New number — complete email & profile after OTP.'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
       auth.setLoginSuccessMessage(null);
       if (AppEnv.showDevOtpHints && auth.otpIsConsoleMode && auth.devOtp != null) {
         messenger.showSnackBar(
@@ -107,18 +115,11 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
-    if (auth.isRegistrationFlow) {
-      return _RegistrationPhoneStep(
-        formKey: _formKey,
-        phoneController: _phoneController,
-        onContinue: _sendOtpAndContinue,
-      );
-    }
+
     return _SignInView(
       formKey: _formKey,
       phoneController: _phoneController,
       onSignIn: _sendOtpAndContinue,
-      onRegister: _startRegistration,
     );
   }
 }
@@ -128,13 +129,11 @@ class _SignInView extends StatelessWidget {
     required this.formKey,
     required this.phoneController,
     required this.onSignIn,
-    required this.onRegister,
   });
 
   final GlobalKey<FormState> formKey;
   final TextEditingController phoneController;
   final VoidCallback onSignIn;
-  final VoidCallback onRegister;
 
   @override
   Widget build(BuildContext context) {
@@ -150,12 +149,13 @@ class _SignInView extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
           children: [
             const SizedBox(height: 24),
-            const PremiumPillTag(label: 'Secure sign in'),
+            const PremiumPillTag(label: 'Phone verification'),
             const SizedBox(height: 20),
-            const PremiumAuthHeadline(text: 'WELCOME\nBACK'),
+            PremiumAuthHeadline(text: 'WELCOME\nBACK'),
             const SizedBox(height: 12),
             PremiumAuthBody(
-              text: 'Sign in with the mobile number linked to your BullWave account.',
+              text:
+                  'Enter your mobile number. We\'ll send a 6-digit OTP — existing users sign in, new numbers continue to account setup.',
             ),
             if (auth.loginSuccessMessage != null) ...[
               const SizedBox(height: 16),
@@ -317,38 +317,14 @@ class _SignInView extends StatelessWidget {
                         child: CircularProgressIndicator(strokeWidth: 2.2, color: Colors.white),
                       )
                     : Text(
-                        'Sign in with OTP',
+                        'Continue with OTP',
                         style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 16),
                       ),
               ),
             ),
             const SizedBox(height: 20),
-            Center(
-              child: TextButton(
-                onPressed: auth.isLoading ? null : onRegister,
-                child: Text.rich(
-                  TextSpan(
-                    text: 'New to BullWave? ',
-                    style: GoogleFonts.inter(
-                      color: Colors.white.withValues(alpha: 0.55),
-                      fontSize: 14,
-                    ),
-                    children: const [
-                      TextSpan(
-                        text: 'Register',
-                        style: TextStyle(
-                          color: AppColors.brandCyan,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
             Text(
-              'Your session stays active until you sign out.',
+              'New numbers are registered automatically after OTP verification.',
               textAlign: TextAlign.center,
               style: GoogleFonts.inter(
                 color: Colors.white.withValues(alpha: 0.35),

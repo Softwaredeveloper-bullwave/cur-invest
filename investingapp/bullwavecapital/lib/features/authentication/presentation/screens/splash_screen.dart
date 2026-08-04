@@ -5,13 +5,12 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/api/refresh_providers.dart';
+import '../../../../core/config/dev_config.dart';
 import '../../../../core/constants/routes.dart';
-import '../../../../core/navigation/onboarding_flow_navigator.dart';
-import '../../../kyc/presentation/provider/kyc_flow_provider.dart';
 import '../provider/auth_provider.dart';
 import '../widgets/splash_animation.dart';
 
-/// Entry screen — restores session to Home, or opens Login.
+/// Entry screen — always opens phone login (Home only in dev shortcut).
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -28,36 +27,19 @@ class _SplashScreenState extends State<SplashScreen> {
 
   Future<void> _navigateNext() async {
     final auth = context.read<AuthProvider>();
-    final kyc = context.read<KycFlowProvider>();
 
     await Future.wait([
       Future.delayed(const Duration(milliseconds: 2800)),
-      auth.tryRestoreSession(),
+      auth.prepareForLoginScreen(),
     ]);
     if (!mounted) return;
 
-    if (auth.canAutoEnterApp) {
-      unawaited(kyc.loadStatus());
+    if (DevConfig.enabled && auth.isAuthenticated) {
       unawaited(refreshAllProviders(context));
       context.go(AppRoutes.home);
       return;
     }
 
-    if (auth.isAuthenticated && auth.needsRegistrationFlow) {
-      auth.beginRegistration();
-      unawaited(kyc.loadStatus());
-      unawaited(refreshAllProviders(context));
-      context.go(
-        OnboardingFlowNavigator.routeAfterAuthentication(auth, kyc),
-      );
-      return;
-    }
-
-    auth.beginSignIn();
-    if (auth.isAuthenticated) {
-      await auth.logout();
-    }
-    if (!mounted) return;
     context.go(AppRoutes.login);
   }
 

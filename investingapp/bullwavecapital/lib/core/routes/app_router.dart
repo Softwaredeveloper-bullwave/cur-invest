@@ -272,7 +272,10 @@ class AppRouter {
             path != AppRoutes.otp) {
           return AppRoutes.home;
         }
-        return OnboardingFlowNavigator.routeAfterAuthentication(auth, kyc);
+        if (auth.isAuthenticated && !auth.hasCompletedRegistration) {
+          return OnboardingFlowNavigator.routeAfterAuthentication(auth, kyc);
+        }
+        return null;
       }
 
       if (kyc.isFullyVerified && _isManualKycRoute(path)) {

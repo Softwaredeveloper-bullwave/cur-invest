@@ -185,6 +185,26 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> prepareForLoginScreen() async {
+    if (DevConfig.enabled) {
+      await _bootstrapDevSession();
+      return;
+    }
+    beginSignIn();
+    await _api.init();
+    final accessToken = await TokenStorage.getAccessToken();
+    if (accessToken != null && accessToken.isNotEmpty) {
+      await logout();
+    } else {
+      _isAuthenticated = false;
+      _user = null;
+      _hasSignedInSession = false;
+      await TokenStorage.setSignedInSession(false);
+      await TokenStorage.setRegistrationInProgress(false);
+      notifyListeners();
+    }
+  }
+
   Future<bool> tryRestoreSession() async {
     if (DevConfig.enabled) {
       await _bootstrapDevSession();
@@ -247,11 +267,7 @@ class AuthProvider extends ChangeNotifier {
       _otpMode = result.otpMode;
       _phoneIsRegistered = result.isRegistered;
       if (_flowMode == AuthFlowMode.signIn && !result.isRegistered) {
-        _error =
-            'No account found for this number. Tap Register to create an account.';
-        _isLoading = false;
-        notifyListeners();
-        return false;
+        beginRegistration();
       }
       _isLoading = false;
       notifyListeners();
@@ -286,24 +302,22 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
     try {
       final result = await _api.verifyOtp(_phoneNumber, code);
-      if (_flowMode == AuthFlowMode.signIn && result.isNewUser) {
-        await _api.logout();
-        _error =
-            'This number is not registered yet. Please use Register to create an account.';
-        _isLoading = false;
-        _isAuthenticated = false;
-        _user = null;
-        notifyListeners();
-        return false;
-      }
       _user = result.user;
       _isNewUser = result.isNewUser;
       _isAuthenticated = true;
       await _syncPendingEmailState();
-      if (_flowMode == AuthFlowMode.signIn && hasCompletedRegistration) {
-        await markSignedInSession();
-        await TokenStorage.setRegistrationInProgress(false);
-        _flowMode = AuthFlowMode.signIn;
+
+      if (_flowMode == AuthFlowMode.signIn) {
+        if (hasCompletedRegistration) {
+          await markSignedInSession();
+          await TokenStorage.setRegistrationInProgress(false);
+          _flowMode = AuthFlowMode.signIn;
+        } else {
+          beginRegistration();
+          _hasSignedInSession = false;
+          await TokenStorage.setSignedInSession(false);
+          await TokenStorage.setRegistrationInProgress(true);
+        }
       } else if (_flowMode == AuthFlowMode.registration) {
         await TokenStorage.setSignedInSession(false);
         _hasSignedInSession = false;

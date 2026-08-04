@@ -21,37 +21,19 @@ class AuthFlowNavigation {
     final kyc = context.read<KycFlowProvider>();
     final router = GoRouter.of(context);
 
-    if (auth.isSignInFlow) {
-      if (!auth.hasCompletedRegistration) {
-        auth.beginRegistration();
-        router.go(OnboardingFlowNavigator.routeAfterAuthentication(auth, kyc));
-        unawaited(kyc.loadStatus());
-        unawaited(refreshAllProviders(context));
-        return;
-      }
+    if (!auth.hasCompletedRegistration) {
+      if (!auth.isRegistrationFlow) auth.beginRegistration();
       await kyc.loadStatus();
       if (!context.mounted) return;
-      router.go(OnboardingFlowNavigator.routeForReturningUser(kyc));
+      router.go(OnboardingFlowNavigator.routeAfterAuthentication(auth, kyc));
       unawaited(refreshAllProviders(context));
       return;
     }
 
-    if (auth.isRegistrationFlow) {
-      await kyc.loadStatus();
-      if (!context.mounted) return;
-      if (auth.hasCompletedRegistration) {
-        auth.endRegistration();
-        await auth.markSignedInSession();
-        router.go(AppRoutes.home);
-      } else {
-        router.go(OnboardingFlowNavigator.routeAfterAuthentication(auth, kyc));
-      }
-      unawaited(refreshAllProviders(context));
-      return;
-    }
-
-    router.go(OnboardingFlowNavigator.routeAfterAuthentication(auth, kyc));
-    unawaited(kyc.loadStatus());
+    await auth.markSignedInSession();
+    await kyc.loadStatus();
+    if (!context.mounted) return;
+    router.go(OnboardingFlowNavigator.routeForReturningUser(kyc));
     unawaited(refreshAllProviders(context));
   }
 
