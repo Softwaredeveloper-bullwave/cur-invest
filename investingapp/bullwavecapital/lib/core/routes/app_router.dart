@@ -286,6 +286,9 @@ class AppRouter {
               path == AppRoutes.kycPending ||
               path == AppRoutes.kycRejected) &&
           (kyc.usesAutomatedKyc || kyc.status.panVerified)) {
+        if (kyc.isFullyVerified) {
+          return AppRoutes.home;
+        }
         return OnboardingFlowNavigator.nextIncompleteKycStep(kyc) ??
             AppRoutes.kycStatus;
       }

@@ -521,14 +521,23 @@ function KycPage({ data, reload }: { data: Json; reload: (opts?: { silent?: bool
   }
 
   async function selfieDecide(userId: string, decision: 'approve' | 'reject') {
-    const note = window.prompt(decision === 'approve' ? 'Optional note' : 'Rejection reason', '')
-    if (note === null || (decision === 'reject' && note.trim().length < 3)) return
-    await runAction(async () => {
-      await api(`/kyc/selfie/${userId}/${decision}/`, {
-        method: 'POST', body: decision === 'approve' ? { note } : { reason: note },
+    if (decision === 'reject') {
+      const reason = window.prompt('Rejection reason', '') ?? ''
+      if (reason.trim().length < 3) return
+      await runAction(async () => {
+        await api(`/kyc/selfie/${userId}/reject/`, { method: 'POST', body: { reason } })
+        await reload({ silent: true })
       })
+      return
+    }
+    await runAction(async () => {
+      await api(`/kyc/selfie/${userId}/approve/`, { method: 'POST', body: { note: '' } })
       await reload({ silent: true })
     })
+  }
+
+  function selfieAwaitingReview(row: Json) {
+    return String(row.selfieStatus || '').toLowerCase() === 'completed'
   }
 
   return (
@@ -675,7 +684,7 @@ function KycPage({ data, reload }: { data: Json; reload: (opts?: { silent?: bool
                   <button className="reject" onClick={() => upiReject(String(row.userId))}><XCircle size={15} /> Reject UPI</button>
                 </>
               ) : null}
-              {row.selfieStatus === 'completed' ? (
+              {selfieAwaitingReview(row) ? (
                 <>
                   <button className="approve" onClick={() => selfieDecide(String(row.userId), 'approve')}><CheckCircle2 size={15} /> Approve selfie</button>
                   <button className="reject" onClick={() => selfieDecide(String(row.userId), 'reject')}><XCircle size={15} /> Reject selfie</button>
@@ -707,7 +716,7 @@ function KycPage({ data, reload }: { data: Json; reload: (opts?: { silent?: bool
               <a className="document-link" href={String(row.selfieUrl)} target="_blank" rel="noreferrer">Open selfie</a>
             ) : null}
             <DocumentLinks row={row} />
-            {row.selfieStatus === 'completed' && (
+            {selfieAwaitingReview(row) && (
               <div className="actions">
                 <button className="approve" onClick={() => selfieDecide(String(row.userId), 'approve')}><CheckCircle2 size={15} /> Approve</button>
                 <button className="reject" onClick={() => selfieDecide(String(row.userId), 'reject')}><XCircle size={15} /> Reject</button>

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
@@ -6,6 +8,7 @@ import 'package:provider/provider.dart';
 import '../../../../core/constants/dimensions.dart';
 import '../../../../core/constants/routes.dart';
 import '../../../../core/constants/shell_layout.dart';
+import '../../../../core/navigation/registration_completion.dart';
 import '../../../../core/theme/colors.dart';
 import '../../../../core/widgets/loading_card.dart';
 import '../../../../core/widgets/premium_ui_kit.dart';
@@ -43,6 +46,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(RegistrationCompletion.maybeFinishRegistration(context));
       _checkGoalReminders();
       _loadEngagement();
     });

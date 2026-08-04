@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/constants/routes.dart';
+import '../../../../core/navigation/registration_completion.dart';
 import '../../../../core/theme/app_decorations.dart';
 import '../../../../core/theme/colors.dart';
 import '../../../../core/theme/app_theme_extension.dart';
@@ -39,11 +40,15 @@ class _KycPendingScreenState extends State<KycPendingScreen> {
   Future<void> _refresh() async {
     if (!mounted) return;
     final kyc = context.read<KycFlowProvider>();
-    await kyc.loadManualStatus();
+    await kyc.loadStatus();
     if (!mounted) return;
+
     if (kyc.isFullyVerified) {
-      context.go(AppRoutes.home);
-    } else if (kyc.manualStatus.isRejected) {
+      await RegistrationCompletion.finishAndGoHome(context);
+      return;
+    }
+
+    if (kyc.manualStatus.isRejected) {
       context.go(AppRoutes.kycRejected);
     }
   }
@@ -53,6 +58,11 @@ class _KycPendingScreenState extends State<KycPendingScreen> {
     final kyc = context.watch<KycFlowProvider>();
     final colors = context.appColors;
     final req = kyc.manualStatus.latestRequest;
+    final automated = kyc.usesAutomatedKyc;
+    final awaitingFinal =
+        automated &&
+        kyc.status.manualFinalApprovalRequired &&
+        !kyc.status.finalKycApproved;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -86,13 +96,17 @@ class _KycPendingScreenState extends State<KycPendingScreen> {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'Verification under review',
+                    awaitingFinal ? 'Final review in progress' : 'Verification under review',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w900),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'We’ve received your PAN details. Our team is reviewing your documents.',
+                    awaitingFinal
+                        ? 'UPI, selfie, and bank checks are done. An admin will complete your account verification shortly.'
+                        : automated
+                            ? 'Your KYC steps are submitted. Our team is completing the final verification.'
+                            : 'We’ve received your PAN details. Our team is reviewing your documents.',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colors.textSecondary),
                   ),
@@ -114,13 +128,15 @@ class _KycPendingScreenState extends State<KycPendingScreen> {
                         ),
                         _StepRow(
                           title: 'Under review',
-                          subtitle: 'Checking PAN details & photos',
+                          subtitle: awaitingFinal
+                              ? 'Waiting for admin final approval'
+                              : 'Checking PAN details & photos',
                           done: true,
                         ),
                         _StepRow(
                           title: 'Approved',
                           subtitle: 'Unlock trading & portfolio',
-                          done: false,
+                          done: kyc.isFullyVerified,
                         ),
                       ],
                     ),

@@ -21,6 +21,7 @@ import '../../domain/kyc_models.dart';
 import '../provider/kyc_flow_provider.dart';
 import '../widgets/kyc_step_scaffold.dart';
 import '../widgets/kyc_widgets.dart';
+import '../widgets/selfie_capture_dialog.dart';
 import '../widgets/selfie_manual_review_panel.dart';
 
 /// Combined manual UPI + selfie step — both sent to admin for approval.
@@ -69,7 +70,9 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
       if (phone.length == 10 && _mobileController.text.isEmpty) {
         _mobileController.text = phone;
       }
-      _maybeInitCamera();
+      if (!_isDesktop) {
+        _maybeInitCamera();
+      }
       _startPolling();
     });
   }
@@ -183,14 +186,13 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
       _usePickerFallback = false;
     });
 
-    if (!kIsWeb) {
+    if (!kIsWeb && !_isDesktop) {
       final permission = await Permission.camera.request();
       if (!permission.isGranted && !permission.isLimited) {
         if (!mounted) return;
         setState(() {
-          _cameraError = _isDesktop
-              ? 'Camera permission is required. Enable it in System Settings → Privacy → Camera, then tap below.'
-              : 'Camera permission is required. Enable it in Settings and try again.';
+          _cameraError =
+              'Camera permission is required. Enable it in Settings and try again.';
           _cameraInitializing = false;
           _usePickerFallback = true;
         });
@@ -248,34 +250,67 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
   }
 
   Future<void> _initCameraController(CameraDescription camera) async {
-    await _controller?.dispose();
-    final useJpegFormat = defaultTargetPlatform == TargetPlatform.android ||
-        defaultTargetPlatform == TargetPlatform.iOS;
-    final preset = _isDesktop ? ResolutionPreset.low : ResolutionPreset.high;
-    final controller = useJpegFormat
-        ? CameraController(
-            camera,
-            preset,
-            enableAudio: false,
-            imageFormatGroup: ImageFormatGroup.jpeg,
-          )
-        : CameraController(
-            camera,
-            preset,
-            enableAudio: false,
-          );
-    await controller.initialize().timeout(const Duration(seconds: 12));
-    if (!mounted) {
-      await controller.dispose();
+    await _releaseCamera();
+
+    CameraController? trial;
+    try {
+      final useJpegFormat = defaultTargetPlatform == TargetPlatform.android ||
+          defaultTargetPlatform == TargetPlatform.iOS;
+      final preset = _isDesktop ? ResolutionPreset.medium : ResolutionPreset.high;
+      trial = useJpegFormat
+          ? CameraController(
+              camera,
+              preset,
+              enableAudio: false,
+              imageFormatGroup: ImageFormatGroup.jpeg,
+            )
+          : CameraController(
+              camera,
+              preset,
+              enableAudio: false,
+            );
+      await trial.initialize().timeout(const Duration(seconds: 10));
+      if (!mounted) {
+        await trial.dispose();
+        return;
+      }
+      setState(() {
+        _controller = trial;
+        _cameraReady = true;
+        _cameraError = null;
+        _cameraInitializing = false;
+        _usePickerFallback = false;
+      });
+    } catch (e) {
+      await trial?.dispose();
+      rethrow;
+    }
+  }
+
+  Future<void> _openSelfieCapture() async {
+    if (_capturedBytes != null) return;
+
+    if (_isDesktop) {
+      final bytes = await SelfieCaptureDialog.show(context);
+      if (!mounted || bytes == null) return;
+      await _releaseCamera();
+      setState(() {
+        _capturedBytes = bytes;
+        _cameraError = null;
+      });
       return;
     }
-    setState(() {
-      _controller = controller;
-      _cameraReady = true;
-      _cameraError = null;
-      _cameraInitializing = false;
-      _usePickerFallback = false;
-    });
+
+    if (!_cameraReady || _controller == null) {
+      await _startLiveCamera();
+    }
+    if (_cameraReady && _controller != null) {
+      await _captureSelfie();
+      return;
+    }
+    if (_usePickerFallback) {
+      await _captureWithPicker();
+    }
   }
 
   Future<void> _startLiveCamera() async {
@@ -339,6 +374,10 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
 
   Future<void> _retakeSelfie() async {
     setState(() => _capturedBytes = null);
+    if (_isDesktop) {
+      await _openSelfieCapture();
+      return;
+    }
     await _maybeInitCamera();
   }
 
@@ -438,8 +477,9 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
     }
 
     final showTapToStart = !_cameraInitializing && !_cameraReady;
+    final desktopPrompt = _isDesktop && _capturedBytes == null;
     return GestureDetector(
-      onTap: showTapToStart ? _startLiveCamera : null,
+      onTap: (showTapToStart || desktopPrompt) ? _openSelfieCapture : null,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
         child: ColoredBox(
@@ -457,9 +497,11 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
                   const SizedBox(height: 12),
                   Text(
                     _cameraError ??
-                        (showTapToStart
-                            ? 'Tap here to turn on your camera.'
-                            : 'Starting front camera…'),
+                        (desktopPrompt
+                            ? 'Tap here to open the camera and capture your selfie.'
+                            : showTapToStart
+                                ? 'Tap here to turn on your camera.'
+                                : 'Starting front camera…'),
                     textAlign: TextAlign.center,
                     style: TextStyle(color: Colors.white.withValues(alpha: 0.85), height: 1.4),
                   ),
@@ -543,20 +585,22 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
                                 child: OutlinedButton(
                                   onPressed: _submitting
                                       ? null
-                                      : (_capturedBytes == null
-                                          ? (_cameraReady
-                                              ? _captureSelfie
-                                              : (_usePickerFallback
-                                                  ? _captureWithPicker
-                                                  : _startLiveCamera))
-                                          : _retakeSelfie),
+                                      : () async {
+                                          if (_capturedBytes != null) {
+                                            await _retakeSelfie();
+                                          } else {
+                                            await _openSelfieCapture();
+                                          }
+                                        },
                                   child: Text(
                                     _capturedBytes == null
-                                        ? (_cameraReady
-                                            ? 'Capture selfie'
-                                            : (_usePickerFallback
-                                                ? 'Open camera'
-                                                : 'Turn on camera'))
+                                        ? (_isDesktop
+                                            ? 'Open camera'
+                                            : (_cameraReady
+                                                ? 'Capture selfie'
+                                                : (_usePickerFallback
+                                                    ? 'Open camera'
+                                                    : 'Turn on camera')))
                                         : 'Retake',
                                   ),
                                 ),
