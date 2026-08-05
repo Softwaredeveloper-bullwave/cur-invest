@@ -1,4 +1,4 @@
-"""SMS OTP delivery — MSG91, Twilio Messages, Twilio Verify, or console (dev)."""
+"""SMS OTP delivery — Infobip, MSG91, Twilio Messages, Twilio Verify, or console (dev)."""
 
 import json
 import logging
@@ -37,9 +37,18 @@ def _msg91_ready() -> bool:
     return bool(auth_key and template_id)
 
 
+def _infobip_ready() -> bool:
+    api_key = (getattr(settings, 'INFOBIP_API_KEY', '') or '').strip()
+    base_url = (getattr(settings, 'INFOBIP_BASE_URL', '') or '').strip()
+    sender = (getattr(settings, 'INFOBIP_SENDER', '') or '').strip()
+    return bool(api_key and base_url and sender)
+
+
 def resolve_sms_provider() -> str:
-    """Effective SMS provider — settings layer auto-promotes console → twilio/msg91 when keys exist."""
+    """Effective SMS provider — settings layer auto-promotes console when keys exist."""
     provider = (getattr(settings, 'SMS_PROVIDER', 'console') or 'console').lower().strip()
+    if provider == 'infobip' and not _infobip_ready():
+        return 'console'
     if provider == 'twilio' and not (_twilio_verify_ready() or _twilio_message_ready()):
         return 'console'
     if provider == 'msg91' and not _msg91_ready():
@@ -95,6 +104,31 @@ def is_live_sms() -> bool:
     return resolve_sms_provider() != 'console'
 
 
+def validate_infobip_config() -> list[str]:
+    """Return list of configuration problems (empty = OK)."""
+    provider = (getattr(settings, 'SMS_PROVIDER', 'console') or 'console').lower().strip()
+    if provider != 'infobip':
+        return []
+
+    problems = []
+    api_key = (getattr(settings, 'INFOBIP_API_KEY', '') or '').strip()
+    base_url = (getattr(settings, 'INFOBIP_BASE_URL', '') or '').strip()
+    sender = (getattr(settings, 'INFOBIP_SENDER', '') or '').strip()
+
+    if not api_key:
+        problems.append('INFOBIP_API_KEY is missing in backend/.env')
+    if not base_url:
+        problems.append(
+            'INFOBIP_BASE_URL is missing (copy from Infobip portal, e.g. https://xxxxx.api.infobip.com)'
+        )
+    elif not base_url.startswith('http'):
+        problems.append('INFOBIP_BASE_URL must start with https://')
+    if not sender:
+        problems.append('INFOBIP_SENDER is missing (approved alphanumeric sender ID, e.g. BULLWAVE)')
+
+    return problems
+
+
 def validate_twilio_config() -> list[str]:
     """Return list of configuration problems (empty = OK)."""
     provider = (getattr(settings, 'SMS_PROVIDER', 'console') or 'console').lower().strip()
@@ -131,18 +165,19 @@ def sms_config_status() -> dict:
     twilio_verify = uses_twilio_verify()
     mode = 'sms' if provider != 'console' else 'console'
     twilio_problems = validate_twilio_config()
-    ready = mode == 'sms' and not twilio_problems
+    infobip_problems = validate_infobip_config()
+    problems = twilio_problems + infobip_problems
+    ready = mode == 'sms' and not problems
 
     hints = []
-    if explicit == 'twilio' and twilio_problems:
+    if explicit == 'infobip' and infobip_problems:
+        hints.extend(infobip_problems)
+    elif explicit == 'twilio' and twilio_problems:
         hints.extend(twilio_problems)
     elif mode == 'console':
+        hints.append('OTP is NOT sent to the phone — add Infobip or Twilio keys to backend/.env.')
         hints.append(
-            'OTP is NOT sent to the phone — add Twilio keys to backend/.env (not investingapp/env).'
-        )
-        hints.append(
-            'Required: TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_SERVICE_SID (Verify) '
-            'or TWILIO_FROM_NUMBER (Messages). Set SMS_PROVIDER=twilio.'
+            'Infobip: SMS_PROVIDER=infobip, INFOBIP_API_KEY, INFOBIP_BASE_URL, INFOBIP_SENDER.'
         )
 
     return {
@@ -151,9 +186,11 @@ def sms_config_status() -> dict:
         'mode': mode,
         'ready': ready,
         'twilio_verify': twilio_verify,
+        'infobip_configured': _infobip_ready(),
         'msg91_configured': _msg91_ready(),
         'twilio_configured': _twilio_verify_ready() or _twilio_message_ready(),
         'twilio_problems': twilio_problems,
+        'infobip_problems': infobip_problems,
         'hints': hints,
         'env_file': str(getattr(settings, 'BASE_DIR', '')) + '/.env',
     }
@@ -186,7 +223,9 @@ def send_notification_sms(phone: str, message: str) -> None:
     body = (message or '').strip()
     if not phone or not body:
         return
-    if provider == 'twilio' and not uses_twilio_verify():
+    if provider == 'infobip':
+        _send_infobip_message(phone, body)
+    elif provider == 'twilio' and not uses_twilio_verify():
         _send_twilio_message(phone, body)
     elif provider == 'console':
         msg = f'[BullWave SMS] Phone: {phone} | {body}'
@@ -200,7 +239,9 @@ def send_notification_sms(phone: str, message: str) -> None:
 
 def send_otp_sms(phone: str, otp: str) -> None:
     provider = resolve_sms_provider()
-    if provider == 'msg91':
+    if provider == 'infobip':
+        _send_infobip(phone, otp)
+    elif provider == 'msg91':
         _send_msg91(phone, otp)
     elif provider == 'twilio':
         if uses_twilio_verify():
@@ -233,6 +274,88 @@ def check_otp_twilio_verify(phone: str, otp: str) -> bool:
 
     data = response.json()
     return (data.get('status') or '').lower() == 'approved'
+
+
+def _infobip_base_url() -> str:
+    base = (getattr(settings, 'INFOBIP_BASE_URL', '') or '').strip().rstrip('/')
+    if not base:
+        raise SMSError('INFOBIP_BASE_URL is required when SMS_PROVIDER=infobip')
+    return base
+
+
+def _infobip_headers() -> dict:
+    api_key = (getattr(settings, 'INFOBIP_API_KEY', '') or '').strip()
+    if not api_key:
+        raise SMSError('INFOBIP_API_KEY is required when SMS_PROVIDER=infobip')
+    return {
+        'Authorization': f'App {api_key}',
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+    }
+
+
+def _infobip_otp_body(otp: str) -> str:
+    template = (
+        getattr(settings, 'INFOBIP_OTP_MESSAGE', '')
+        or 'Your BullWave Capital OTP is {otp}. Valid for {minutes} minutes.'
+    ).strip()
+    return template.format(otp=otp, minutes=settings.OTP_EXPIRY_MINUTES)
+
+
+def _infobip_message_payload(phone: str, text: str) -> dict:
+    sender = (getattr(settings, 'INFOBIP_SENDER', '') or '').strip()
+    if not sender:
+        raise SMSError('INFOBIP_SENDER is required when SMS_PROVIDER=infobip')
+
+    to = _normalize_phone_e164(phone).lstrip('+')
+    message = {
+        'destinations': [{'to': to}],
+        'from': sender,
+        'text': text,
+    }
+
+    entity_id = (getattr(settings, 'INFOBIP_DLT_ENTITY_ID', '') or '').strip()
+    template_id = (getattr(settings, 'INFOBIP_DLT_TEMPLATE_ID', '') or '').strip()
+    if entity_id and template_id:
+        message['regional'] = {
+            'indiaDlt': {
+                'principalEntityId': entity_id,
+                'contentTemplateId': template_id,
+            }
+        }
+
+    return {'messages': [message]}
+
+
+def _send_infobip_message(phone: str, body: str) -> None:
+    url = f'{_infobip_base_url()}/sms/2/text/advanced'
+    payload = _infobip_message_payload(phone, body)
+    try:
+        with httpx.Client(timeout=20) as client:
+            response = client.post(url, json=payload, headers=_infobip_headers())
+    except httpx.HTTPError as exc:
+        raise SMSError(f'Infobip connection failed: {exc}') from exc
+
+    if response.is_error:
+        raise SMSError(f'Infobip error ({response.status_code}): {response.text[:300]}')
+
+    try:
+        data = response.json()
+        messages = data.get('messages') or []
+        if messages:
+            status = messages[0].get('status') or {}
+            group_id = status.get('groupId')
+            if group_id not in (None, 1, 3):
+                description = status.get('description') or status.get('name') or 'Unknown error'
+                raise SMSError(f'Infobip rejected message: {description}')
+    except json.JSONDecodeError:
+        pass
+
+    logger.info('Infobip SMS sent to +%s', _normalize_phone_e164(phone).lstrip('+'))
+
+
+def _send_infobip(phone: str, otp: str) -> None:
+    _send_infobip_message(phone, _infobip_otp_body(otp))
 
 
 def _send_console(phone: str, otp: str) -> None:

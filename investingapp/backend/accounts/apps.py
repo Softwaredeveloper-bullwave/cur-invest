@@ -15,6 +15,7 @@ class AccountsConfig(AppConfig):
             is_live_sms,
             local_lan_ip,
             sms_config_status,
+            validate_infobip_config,
             validate_twilio_config,
         )
 
@@ -22,7 +23,18 @@ class AccountsConfig(AppConfig):
         provider = status['provider']
         explicit = status['explicit_provider']
 
-        if explicit == 'twilio':
+        if explicit == 'infobip':
+            problems = validate_infobip_config()
+            if problems:
+                for problem in problems:
+                    logger.error('Infobip SMS misconfigured: %s', problem)
+                logger.error(
+                    'Fix Infobip keys in %s/.env then restart Django.',
+                    settings.BASE_DIR,
+                )
+            elif is_live_sms():
+                logger.info('SMS OTP → %s (live SMS to phone)', provider)
+        elif explicit == 'twilio':
             problems = validate_twilio_config()
             if problems:
                 for problem in problems:
@@ -38,7 +50,7 @@ class AccountsConfig(AppConfig):
         else:
             logger.warning(
                 'SMS OTP → dev/console mode — OTP is NOT sent to the phone. '
-                'Add Twilio keys to %s/.env and set SMS_PROVIDER=twilio.',
+                'Add Infobip keys to %s/.env and set SMS_PROVIDER=infobip.',
                 settings.BASE_DIR,
             )
 

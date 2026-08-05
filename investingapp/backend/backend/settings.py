@@ -291,8 +291,17 @@ TRADINGVIEW_CHARTING_LIBRARY_URL = config('TRADINGVIEW_CHARTING_LIBRARY_URL', de
 TRADINGVIEW_UDF_BASE_URL = config('TRADINGVIEW_UDF_BASE_URL', default='')
 TRADINGVIEW_DEFAULT_EXCHANGE = config('TRADINGVIEW_DEFAULT_EXCHANGE', default='NSE')
 
-# SMS OTP — console (dev), msg91, twilio
+# SMS OTP — console (dev), infobip, msg91, twilio
 _sms_provider_raw = _clean_env(config('SMS_PROVIDER', default='console')).lower()
+INFOBIP_API_KEY = _ascii_env(config('INFOBIP_API_KEY', default=''))
+INFOBIP_BASE_URL = _clean_env(config('INFOBIP_BASE_URL', default='')).rstrip('/')
+INFOBIP_SENDER = _clean_env(config('INFOBIP_SENDER', default=''))
+INFOBIP_OTP_MESSAGE = config(
+    'INFOBIP_OTP_MESSAGE',
+    default='Your BullWave Capital OTP is {otp}. Valid for {minutes} minutes.',
+)
+INFOBIP_DLT_ENTITY_ID = _clean_env(config('INFOBIP_DLT_ENTITY_ID', default=''))
+INFOBIP_DLT_TEMPLATE_ID = _clean_env(config('INFOBIP_DLT_TEMPLATE_ID', default=''))
 MSG91_AUTH_KEY = _ascii_env(config('MSG91_AUTH_KEY', default=''))
 MSG91_TEMPLATE_ID = _clean_env(config('MSG91_TEMPLATE_ID', default=''))
 TWILIO_ACCOUNT_SID = _ascii_env(config('TWILIO_ACCOUNT_SID', default=''))
@@ -306,6 +315,7 @@ TWILIO_OTP_MODE = _clean_env(config('TWILIO_OTP_MODE', default='verify')).lower(
 if TWILIO_FROM_NUMBER and not TWILIO_FROM_NUMBER.startswith('+'):
     TWILIO_FROM_NUMBER = f'+{TWILIO_FROM_NUMBER.lstrip("+")}'
 
+_infobip_ready = bool(INFOBIP_API_KEY and INFOBIP_BASE_URL and INFOBIP_SENDER)
 _twilio_ready = bool(
     TWILIO_ACCOUNT_SID
     and TWILIO_AUTH_TOKEN
@@ -314,7 +324,9 @@ _twilio_ready = bool(
 _msg91_ready = bool(MSG91_AUTH_KEY and MSG91_TEMPLATE_ID)
 
 if _sms_provider_raw == 'console':
-    if _twilio_ready:
+    if _infobip_ready:
+        SMS_PROVIDER = 'infobip'
+    elif _twilio_ready:
         SMS_PROVIDER = 'twilio'
     elif _msg91_ready:
         SMS_PROVIDER = 'msg91'
