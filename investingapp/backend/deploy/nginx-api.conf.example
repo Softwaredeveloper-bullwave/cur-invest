@@ -1,0 +1,54 @@
+# /etc/nginx/sites-available/bullwave-api
+# sudo ln -sf /etc/nginx/sites-available/bullwave-api /etc/nginx/sites-enabled/
+# sudo nginx -t && sudo systemctl reload nginx
+#
+# Certbot (first time):
+#   sudo certbot --nginx -d api.capitalbullwave.com
+
+upstream bullwave_gunicorn {
+    server 127.0.0.1:8000 fail_timeout=0;
+}
+
+server {
+    listen 80;
+    server_name api.capitalbullwave.com;
+
+    client_max_body_size 25M;
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl http2;
+    server_name api.capitalbullwave.com;
+
+    # certbot fills these paths after --nginx
+    ssl_certificate /etc/letsencrypt/live/api.capitalbullwave.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/api.capitalbullwave.com/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+    client_max_body_size 25M;
+
+    location /static/ {
+        alias /home/ubuntu/cur-invest/investingapp/backend/staticfiles/;
+    }
+
+    location /media/ {
+        alias /home/ubuntu/cur-invest/investingapp/backend/media/;
+    }
+
+    location / {
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_redirect off;
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 120s;
+        proxy_read_timeout 120s;
+        proxy_pass http://bullwave_gunicorn;
+    }
+}

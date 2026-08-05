@@ -20,6 +20,7 @@ class Command(BaseCommand):
         self.stdout.write(f"Mode={status['mode']} ({'live SMS' if status['mode'] == 'sms' else 'dev/console'})")
         self.stdout.write(f"Twilio Verify={status['twilio_verify']}")
         self.stdout.write(f"Infobip configured={status['infobip_configured']}")
+        self.stdout.write(f"Infobip DLT configured={status.get('infobip_dlt_configured')}")
         self.stdout.write(f"MSG91 configured={status['msg91_configured']}")
         self.stdout.write(f"Twilio configured={status['twilio_configured']}")
 

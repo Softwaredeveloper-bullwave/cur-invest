@@ -302,6 +302,7 @@ INFOBIP_OTP_MESSAGE = config(
 )
 INFOBIP_DLT_ENTITY_ID = _clean_env(config('INFOBIP_DLT_ENTITY_ID', default=''))
 INFOBIP_DLT_TEMPLATE_ID = _clean_env(config('INFOBIP_DLT_TEMPLATE_ID', default=''))
+INFOBIP_DLT_TELEMARKETER_ID = _clean_env(config('INFOBIP_DLT_TELEMARKETER_ID', default=''))
 MSG91_AUTH_KEY = _ascii_env(config('MSG91_AUTH_KEY', default=''))
 MSG91_TEMPLATE_ID = _clean_env(config('MSG91_TEMPLATE_ID', default=''))
 TWILIO_ACCOUNT_SID = _ascii_env(config('TWILIO_ACCOUNT_SID', default=''))

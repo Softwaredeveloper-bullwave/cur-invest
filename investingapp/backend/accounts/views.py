@@ -19,8 +19,10 @@ from core.integrations.cashfree_bypass import verify_bank_with_bypass, verify_pa
 from core.integrations.sms_service import (
     SMSError,
     check_otp_twilio_verify,
+    friendly_infobip_error,
     friendly_twilio_error,
     is_live_sms,
+    resolve_sms_provider,
     send_otp_sms,
     twilio_verify_delivery_blocked,
     twilio_message_ready,
@@ -169,7 +171,14 @@ class SendOTPView(APIView):
                 send_otp_sms(phone, otp)
             except SMSError as exc:
                 logger.error('SMS OTP failed for %s: %s', phone, exc)
-                return Response({'detail': str(exc)}, status=503)
+                provider = resolve_sms_provider()
+                if provider == 'infobip':
+                    detail = friendly_infobip_error(exc)
+                elif provider == 'twilio':
+                    detail = friendly_twilio_error(exc)
+                else:
+                    detail = str(exc)
+                return Response({'detail': detail}, status=503)
 
             payload = {
                 'success': True,

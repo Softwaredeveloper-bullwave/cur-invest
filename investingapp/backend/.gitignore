@@ -26,6 +26,7 @@ db.sqlite3
 db.sqlite3-journal
 staticfiles/
 media/
+run/tmp/
 
 # Test / coverage
 .pytest_cache/

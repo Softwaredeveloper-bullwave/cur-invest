@@ -104,6 +104,31 @@ def is_live_sms() -> bool:
     return resolve_sms_provider() != 'console'
 
 
+def _infobip_dlt_settings() -> tuple[str, str, str]:
+    entity_id = (getattr(settings, 'INFOBIP_DLT_ENTITY_ID', '') or '').strip()
+    template_id = (getattr(settings, 'INFOBIP_DLT_TEMPLATE_ID', '') or '').strip()
+    telemarketer_id = (getattr(settings, 'INFOBIP_DLT_TELEMARKETER_ID', '') or '').strip()
+    return entity_id, template_id, telemarketer_id
+
+
+def _india_dlt_ready() -> bool:
+    entity_id, template_id, _ = _infobip_dlt_settings()
+    return bool(entity_id and template_id)
+
+
+def friendly_infobip_error(exc: Exception) -> str:
+    text = str(exc or '')
+    lowered = text.lower()
+    if 'rejected' in lowered or 'undeliverable' in lowered:
+        return (
+            f'{text} Check INFOBIP_SENDER and INFOBIP_BASE_URL in backend/.env, '
+            'and confirm the sender is approved in your Infobip account.'
+        )
+    if 'unauthorized' in lowered or '401' in lowered:
+        return 'Infobip API key is invalid. Regenerate INFOBIP_API_KEY in the Infobip portal.'
+    return text
+
+
 def validate_infobip_config() -> list[str]:
     """Return list of configuration problems (empty = OK)."""
     provider = (getattr(settings, 'SMS_PROVIDER', 'console') or 'console').lower().strip()
@@ -124,7 +149,7 @@ def validate_infobip_config() -> list[str]:
     elif not base_url.startswith('http'):
         problems.append('INFOBIP_BASE_URL must start with https://')
     if not sender:
-        problems.append('INFOBIP_SENDER is missing (approved alphanumeric sender ID, e.g. BULLWAVE)')
+        problems.append('INFOBIP_SENDER is missing (approved sender ID from Infobip portal)')
 
     return problems
 
@@ -187,6 +212,7 @@ def sms_config_status() -> dict:
         'ready': ready,
         'twilio_verify': twilio_verify,
         'infobip_configured': _infobip_ready(),
+        'infobip_dlt_configured': _india_dlt_ready(),
         'msg91_configured': _msg91_ready(),
         'twilio_configured': _twilio_verify_ready() or _twilio_message_ready(),
         'twilio_problems': twilio_problems,
@@ -280,6 +306,9 @@ def _infobip_base_url() -> str:
     base = (getattr(settings, 'INFOBIP_BASE_URL', '') or '').strip().rstrip('/')
     if not base:
         raise SMSError('INFOBIP_BASE_URL is required when SMS_PROVIDER=infobip')
+    for suffix in ('/sms/2/text/advanced', '/sms/2/text', '/sms'):
+        if base.endswith(suffix):
+            base = base[: -len(suffix)].rstrip('/')
     return base
 
 
@@ -299,7 +328,12 @@ def _infobip_otp_body(otp: str) -> str:
         getattr(settings, 'INFOBIP_OTP_MESSAGE', '')
         or 'Your BullWave Capital OTP is {otp}. Valid for {minutes} minutes.'
     ).strip()
-    return template.format(otp=otp, minutes=settings.OTP_EXPIRY_MINUTES)
+    try:
+        return template.format(otp=otp, minutes=settings.OTP_EXPIRY_MINUTES)
+    except (KeyError, ValueError) as exc:
+        raise SMSError(
+            'INFOBIP_OTP_MESSAGE is invalid — use only {otp} and {minutes} placeholders.'
+        ) from exc
 
 
 def _infobip_message_payload(phone: str, text: str) -> dict:
@@ -314,44 +348,68 @@ def _infobip_message_payload(phone: str, text: str) -> dict:
         'text': text,
     }
 
-    entity_id = (getattr(settings, 'INFOBIP_DLT_ENTITY_ID', '') or '').strip()
-    template_id = (getattr(settings, 'INFOBIP_DLT_TEMPLATE_ID', '') or '').strip()
+    entity_id, template_id, telemarketer_id = _infobip_dlt_settings()
     if entity_id and template_id:
-        message['regional'] = {
-            'indiaDlt': {
-                'principalEntityId': entity_id,
-                'contentTemplateId': template_id,
-            }
+        india_dlt = {
+            'principalEntityId': entity_id,
+            'contentTemplateId': template_id,
         }
+        if telemarketer_id:
+            india_dlt['telemarketerId'] = telemarketer_id
+        message['regional'] = {'indiaDlt': india_dlt}
 
     return {'messages': [message]}
 
 
-def _send_infobip_message(phone: str, body: str) -> None:
+def _parse_infobip_send_response(data: dict) -> dict:
+    messages = data.get('messages') or []
+    if not messages:
+        return {}
+    entry = messages[0] or {}
+    status = entry.get('status') or {}
+    group_id = status.get('groupId')
+    group_name = status.get('groupName') or status.get('name') or ''
+    description = status.get('description') or group_name or 'Unknown status'
+    # 1=PENDING accepted, 3=DELIVERED; 2=UNDELIVERABLE, 4=EXPIRED, 5=REJECTED
+    if group_id in (2, 4, 5):
+        raise SMSError(f'Infobip rejected SMS: {description}')
+    return {
+        'messageId': entry.get('messageId'),
+        'status': description,
+        'groupId': group_id,
+        'groupName': group_name,
+    }
+
+
+def _send_infobip_message(phone: str, body: str) -> dict:
     url = f'{_infobip_base_url()}/sms/2/text/advanced'
     payload = _infobip_message_payload(phone, body)
     try:
-        with httpx.Client(timeout=20) as client:
+        with httpx.Client(timeout=30) as client:
             response = client.post(url, json=payload, headers=_infobip_headers())
     except httpx.HTTPError as exc:
         raise SMSError(f'Infobip connection failed: {exc}') from exc
 
     if response.is_error:
-        raise SMSError(f'Infobip error ({response.status_code}): {response.text[:300]}')
+        detail = response.text[:400]
+        if response.status_code == 401:
+            raise SMSError('Infobip API key rejected (401). Check INFOBIP_API_KEY.')
+        raise SMSError(f'Infobip error ({response.status_code}): {detail}')
 
     try:
         data = response.json()
-        messages = data.get('messages') or []
-        if messages:
-            status = messages[0].get('status') or {}
-            group_id = status.get('groupId')
-            if group_id not in (None, 1, 3):
-                description = status.get('description') or status.get('name') or 'Unknown error'
-                raise SMSError(f'Infobip rejected message: {description}')
-    except json.JSONDecodeError:
-        pass
+    except json.JSONDecodeError as exc:
+        raise SMSError(f'Infobip returned invalid JSON: {response.text[:200]}') from exc
 
-    logger.info('Infobip SMS sent to +%s', _normalize_phone_e164(phone).lstrip('+'))
+    meta = _parse_infobip_send_response(data)
+    to = _normalize_phone_e164(phone).lstrip('+')
+    logger.info(
+        'Infobip SMS accepted for +%s messageId=%s status=%s',
+        to,
+        meta.get('messageId', '?'),
+        meta.get('status', '?'),
+    )
+    return meta
 
 
 def _send_infobip(phone: str, otp: str) -> None:
