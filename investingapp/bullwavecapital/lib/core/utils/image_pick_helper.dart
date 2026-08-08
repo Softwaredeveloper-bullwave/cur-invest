@@ -8,17 +8,144 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+import '../theme/colors.dart';
+
 /// Gallery / camera picking with platform permissions and safe error handling.
 class ImagePickHelper {
   ImagePickHelper._();
 
   static final _picker = ImagePicker();
+  static bool? _cachedIosWithoutCamera;
 
   static bool get isDesktop =>
       !kIsWeb &&
       (defaultTargetPlatform == TargetPlatform.macOS ||
           defaultTargetPlatform == TargetPlatform.windows ||
           defaultTargetPlatform == TargetPlatform.linux);
+
+  /// Best-effort iOS Simulator check (Platform.environment is often empty on iOS).
+  static bool get isIosSimulator {
+    if (kIsWeb || !Platform.isIOS) return false;
+    const keys = [
+      'SIMULATOR_DEVICE_NAME',
+      'SIMULATOR_ROOT',
+      'SIMULATOR_UDID',
+      'IPHONE_SIMULATOR',
+    ];
+    for (final key in keys) {
+      if (Platform.environment.containsKey(key)) return true;
+    }
+    return _cachedIosWithoutCamera == true;
+  }
+
+  /// iOS Simulator / devices with no camera hardware exposed to the app.
+  static Future<bool> isIosWithoutCamera() async {
+    if (kIsWeb || !Platform.isIOS) return false;
+    if (_cachedIosWithoutCamera != null) return _cachedIosWithoutCamera!;
+    try {
+      final cameras = await availableCameras().timeout(const Duration(seconds: 4));
+      _cachedIosWithoutCamera = cameras.isEmpty;
+    } catch (_) {
+      _cachedIosWithoutCamera = true;
+    }
+    return _cachedIosWithoutCamera!;
+  }
+
+  static Future<bool> hasUsableCamera() async {
+    if (isDesktop) return true;
+    if (Platform.isIOS && await isIosWithoutCamera()) return false;
+    try {
+      final cameras = await availableCameras().timeout(const Duration(seconds: 5));
+      return cameras.isNotEmpty;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Selfie bytes for KYC — live camera on device; gallery on iOS Simulator.
+  static Future<Uint8List?> captureSelfie({
+    required BuildContext context,
+    double maxWidth = 1280,
+    int imageQuality = 85,
+  }) async {
+    if (isDesktop) {
+      final file = await pickImage(
+        source: ImageSource.camera,
+        context: context,
+        maxWidth: maxWidth,
+        imageQuality: imageQuality,
+        requestPermission: false,
+      );
+      if (file == null) return null;
+      return _compress(await file.readAsBytes(), maxWidth: maxWidth, quality: imageQuality);
+    }
+
+    if (Platform.isIOS && await isIosWithoutCamera()) {
+      return _pickFromGallery(
+        context,
+        maxWidth: maxWidth,
+        imageQuality: imageQuality,
+        simulatorMode: true,
+      );
+    }
+
+    final hasCamera = await hasUsableCamera();
+    if (!hasCamera) {
+      return _pickFromGallery(
+        context,
+        maxWidth: maxWidth,
+        imageQuality: imageQuality,
+        simulatorMode: false,
+      );
+    }
+
+    try {
+      final file = await pickImage(
+        source: ImageSource.camera,
+        maxWidth: maxWidth,
+        imageQuality: imageQuality,
+      );
+      if (file != null) {
+        return _compress(await file.readAsBytes(), maxWidth: maxWidth, quality: imageQuality);
+      }
+    } catch (_) {}
+
+    return _pickFromGallery(
+      context,
+      maxWidth: maxWidth,
+      imageQuality: imageQuality,
+      simulatorMode: Platform.isIOS,
+    );
+  }
+
+  /// Opens the photo library directly (simulator / no-camera fallback).
+  static Future<Uint8List?> _pickFromGallery(
+    BuildContext context, {
+    required double maxWidth,
+    required int imageQuality,
+    required bool simulatorMode,
+  }) async {
+    if (simulatorMode && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Simulator has no camera — pick a selfie photo from your Mac library.',
+          ),
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
+
+    final file = await pickImage(
+      source: ImageSource.gallery,
+      maxWidth: maxWidth,
+      imageQuality: imageQuality,
+      requestPermission: true,
+    );
+    if (file == null) return null;
+    return _compress(await file.readAsBytes(), maxWidth: maxWidth, quality: imageQuality);
+  }
+
 
   /// Desktop gallery uses [file_selector] — no photos permission needed.
   static bool get _galleryUsesFileSelector => isDesktop;
@@ -71,7 +198,8 @@ class ImagePickHelper {
       maxWidth: maxWidth,
       maxHeight: maxHeight,
       imageQuality: imageQuality,
-      preferredCameraDevice: CameraDevice.front,
+      preferredCameraDevice:
+          source == ImageSource.camera ? CameraDevice.front : CameraDevice.rear,
     );
   }
 

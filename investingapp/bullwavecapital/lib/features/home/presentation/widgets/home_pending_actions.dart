@@ -352,7 +352,7 @@ class _PendingActionCard extends StatelessWidget {
         onTap: item.onTap,
         borderRadius: BorderRadius.circular(22),
         child: Ink(
-          height: 132,
+          height: 140,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(22),
             gradient: LinearGradient(
@@ -411,9 +411,10 @@ class _PendingActionCard extends StatelessWidget {
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.max,
                     children: [
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -477,8 +478,8 @@ class _PendingActionCard extends StatelessWidget {
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
                                   style: GoogleFonts.inter(
-                                    fontSize: 12,
-                                    height: 1.4,
+                                    fontSize: 11.5,
+                                    height: 1.35,
                                     color: p.textGrey,
                                   ),
                                 ),

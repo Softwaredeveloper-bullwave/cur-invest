@@ -322,11 +322,13 @@ class _StatusBadge extends StatelessWidget {
     final p = context.palette;
     final normalized = status.trim().toLowerCase();
     final verified = normalized.contains('verified') || normalized.contains('complete');
-    final pending = normalized.contains('pending') || normalized.contains('review');
+    final pending = normalized.contains('pending') ||
+        normalized.contains('review') ||
+        normalized.contains('progress');
     final color = verified
-        ? AppColors.green
+        ? AppColors.greenSoft
         : pending
-            ? AppColors.yellow
+            ? AppColors.brandGold
             : AppColors.red;
 
     return Container(
@@ -349,7 +351,7 @@ class _StatusBadge extends StatelessWidget {
           Flexible(
             child: Text(
               '$label: $status',
-              style: context.typeLabel(13, p.textDark),
+              style: context.typeLabel(13, color),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),

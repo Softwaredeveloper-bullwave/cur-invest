@@ -24,6 +24,7 @@ ExecStart=/home/ubuntu/cur-invest/investingapp/backend/venv/bin/gunicorn \
   --workers 3 \
   --bind 127.0.0.1:8000 \
   --timeout 120 \
+  --worker-tmp-dir /home/ubuntu/cur-invest/investingapp/backend/run/tmp \
   --access-logfile - \
   --error-logfile - \
   backend.wsgi:application

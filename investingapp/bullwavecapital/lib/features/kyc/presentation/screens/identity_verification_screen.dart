@@ -6,11 +6,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image/image.dart' as img;
-import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/constants/routes.dart';
+import '../widgets/selfie_capture_dialog.dart';
 import '../../../../core/navigation/onboarding_flow_navigator.dart';
 import '../../../../core/navigation/registration_completion.dart';
 import '../../../../core/theme/colors.dart';
@@ -21,7 +21,6 @@ import '../../domain/kyc_models.dart';
 import '../provider/kyc_flow_provider.dart';
 import '../widgets/kyc_step_scaffold.dart';
 import '../widgets/kyc_widgets.dart';
-import '../widgets/selfie_capture_dialog.dart';
 import '../widgets/selfie_manual_review_panel.dart';
 
 /// Combined manual UPI + selfie step — both sent to admin for approval.
@@ -39,14 +38,12 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
   final _formKey = GlobalKey<FormState>();
   final _vpaController = TextEditingController();
   final _mobileController = TextEditingController();
-  final _imagePicker = ImagePicker();
   CameraController? _controller;
   Uint8List? _capturedBytes;
   bool _cameraReady = false;
   bool _cameraInitializing = false;
   String? _cameraError;
   bool _submitting = false;
-  bool _usePickerFallback = false;
   Timer? _pollTimer;
 
   bool get _isDesktop =>
@@ -89,7 +86,7 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (_usePickerFallback || _capturedBytes != null) return;
+    if (_capturedBytes != null) return;
     if (state == AppLifecycleState.inactive || state == AppLifecycleState.paused) {
       unawaited(_releaseCamera());
     } else if (state == AppLifecycleState.resumed) {
@@ -183,7 +180,6 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
       _cameraInitializing = true;
       _cameraReady = false;
       _cameraError = null;
-      _usePickerFallback = false;
     });
 
     if (!kIsWeb && !_isDesktop) {
@@ -194,7 +190,6 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
           _cameraError =
               'Camera permission is required. Enable it in Settings and try again.';
           _cameraInitializing = false;
-          _usePickerFallback = true;
         });
         return;
       }
@@ -205,9 +200,9 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
       if (cameras.isEmpty) {
         if (!mounted) return;
         setState(() {
-          _cameraError = 'No camera found. Use the button below to capture a selfie.';
+          _cameraError =
+              'No camera found. Live selfie is required — use a real phone (not Simulator).';
           _cameraInitializing = false;
-          _usePickerFallback = true;
         });
         return;
       }
@@ -231,20 +226,18 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
     } on TimeoutException {
       if (!mounted) return;
       setState(() {
-        _cameraError = 'Camera took too long to start. Tap below to retry or use the system camera.';
+        _cameraError = 'Camera took too long to start. Tap below to retry.';
         _cameraReady = false;
         _cameraInitializing = false;
-        _usePickerFallback = true;
       });
     } catch (_) {
       if (!mounted) return;
       setState(() {
         _cameraError = kIsWeb
             ? 'Could not open camera. Allow camera access in your browser and reload.'
-            : 'Could not open the in-app camera. Use the button below to capture a live selfie.';
+            : 'Could not open the live camera. Tap below to retry.';
         _cameraReady = false;
         _cameraInitializing = false;
-        _usePickerFallback = true;
       });
     }
   }
@@ -279,7 +272,6 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
         _cameraReady = true;
         _cameraError = null;
         _cameraInitializing = false;
-        _usePickerFallback = false;
       });
     } catch (e) {
       await trial?.dispose();
@@ -306,10 +298,6 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
     }
     if (_cameraReady && _controller != null) {
       await _captureSelfie();
-      return;
-    }
-    if (_usePickerFallback) {
-      await _captureWithPicker();
     }
   }
 
@@ -325,36 +313,10 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
     return Uint8List.fromList(img.encodeJpg(resized, quality: 78));
   }
 
-  Future<void> _captureWithPicker() async {
-    try {
-      final picked = await _imagePicker.pickImage(
-        source: ImageSource.camera,
-        preferredCameraDevice: CameraDevice.front,
-        imageQuality: 85,
-        maxWidth: 1280,
-      );
-      if (picked == null || !mounted) return;
-      final bytes = _compressSelfie(await picked.readAsBytes());
-      await _releaseCamera();
-      setState(() {
-        _capturedBytes = bytes;
-        _cameraError = null;
-      });
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not capture photo. Check camera permission and try again.')),
-      );
-    }
-  }
-
   Future<void> _captureSelfie() async {
     if (!_cameraReady || _controller == null) {
       await _startLiveCamera();
-      if (!_cameraReady || _controller == null) {
-        if (_usePickerFallback) await _captureWithPicker();
-        return;
-      }
+      if (!_cameraReady || _controller == null) return;
     }
 
     final controller = _controller!;
@@ -508,21 +470,12 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
                   if (_cameraError != null && !_cameraInitializing) ...[
                     const SizedBox(height: 12),
                     OutlinedButton(
-                      onPressed: _startLiveCamera,
-                      child: const Text('Turn on camera'),
-                    ),
-                    if (_usePickerFallback) ...[
-                      const SizedBox(height: 8),
-                      OutlinedButton(
-                        onPressed: _captureWithPicker,
-                        child: const Text('Open system camera'),
+                      onPressed: _isDesktop ? _openSelfieCapture : _startLiveCamera,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.brandPrimary,
+                        side: const BorderSide(color: AppColors.brandPrimary),
                       ),
-                    ],
-                  ] else if (_usePickerFallback && !_cameraInitializing) ...[
-                    const SizedBox(height: 12),
-                    OutlinedButton(
-                      onPressed: _captureWithPicker,
-                      child: const Text('Open system camera'),
+                      child: Text(_isDesktop ? 'Open live camera' : 'Turn on camera'),
                     ),
                   ],
                 ],
@@ -595,12 +548,8 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
                                   child: Text(
                                     _capturedBytes == null
                                         ? (_isDesktop
-                                            ? 'Open camera'
-                                            : (_cameraReady
-                                                ? 'Capture selfie'
-                                                : (_usePickerFallback
-                                                    ? 'Open camera'
-                                                    : 'Turn on camera')))
+                                            ? 'Open live camera'
+                                            : (_cameraReady ? 'Capture selfie' : 'Turn on camera'))
                                         : 'Retake',
                                   ),
                                 ),
@@ -723,7 +672,7 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Position your face in the frame. Only a live camera photo is accepted.',
+                    'Position your face in the frame. Live camera only — gallery uploads are not accepted. Our team manually verifies your selfie.',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.65),
                           height: 1.4,
