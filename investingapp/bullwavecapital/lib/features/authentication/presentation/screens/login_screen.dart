@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import '../../../../core/config/app_env.dart';
 import '../../../../core/constants/routes.dart';
 import '../../../../core/theme/colors.dart';
+import '../../../../core/widgets/legal_acceptance_widgets.dart';
 import '../../../profile/presentation/provider/app_provider.dart';
 import '../provider/auth_provider.dart';
 import '../widgets/premium_auth_ui.dart';
@@ -65,7 +66,9 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!auth.termsAccepted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please accept the Terms & Conditions to continue.'),
+          content: Text(
+            'Please agree to the Terms & Conditions and Privacy Policy to continue.',
+          ),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -259,47 +262,14 @@ class _SignInView extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: Checkbox(
-                    value: auth.termsAccepted,
-                    onChanged: auth.isLoading ? null : (v) => auth.setTermsAccepted(v ?? false),
-                    side: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
-                    activeColor: AppColors.brandPrimary,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: auth.isLoading ? null : () => auth.setTermsAccepted(!auth.termsAccepted),
-                    child: Text.rich(
-                      TextSpan(
-                        text: 'I agree to the ',
-                        style: GoogleFonts.inter(
-                          fontSize: 13,
-                          color: Colors.white.withValues(alpha: 0.5),
-                          height: 1.5,
-                        ),
-                        children: const [
-                          TextSpan(
-                            text: 'Terms & Conditions',
-                            style: TextStyle(color: AppColors.brandCyan, fontWeight: FontWeight.w600),
-                          ),
-                          TextSpan(text: ' and '),
-                          TextSpan(
-                            text: 'Privacy Policy',
-                            style: TextStyle(color: AppColors.brandCyan, fontWeight: FontWeight.w600),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 28),
+              child: LegalAcceptanceCheckbox(
+                value: auth.termsAccepted,
+                enabled: !auth.isLoading,
+                onChanged: auth.setTermsAccepted,
+                onToggle: () => auth.setTermsAccepted(!auth.termsAccepted),
+              ),
             ),
             const SizedBox(height: 28),
             SizedBox(
@@ -446,53 +416,10 @@ class _RegistrationPhoneStep extends StatelessWidget {
             const SizedBox(height: 24),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 28),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: Checkbox(
-                      value: auth.termsAccepted,
-                      onChanged: (v) => auth.setTermsAccepted(v ?? false),
-                      side: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
-                      activeColor: AppColors.brandPrimary,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () => auth.setTermsAccepted(!auth.termsAccepted),
-                      child: Text.rich(
-                        TextSpan(
-                          text: 'I agree to the ',
-                          style: GoogleFonts.inter(
-                            fontSize: 13,
-                            color: Colors.white.withValues(alpha: 0.5),
-                            height: 1.5,
-                          ),
-                          children: const [
-                            TextSpan(
-                              text: 'Terms & Conditions',
-                              style: TextStyle(
-                                color: AppColors.brandCyan,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            TextSpan(text: ' and '),
-                            TextSpan(
-                              text: 'Privacy Policy',
-                              style: TextStyle(
-                                color: AppColors.brandCyan,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+              child: LegalAcceptanceCheckbox(
+                value: auth.termsAccepted,
+                onChanged: auth.setTermsAccepted,
+                onToggle: () => auth.setTermsAccepted(!auth.termsAccepted),
               ),
             ),
             const SizedBox(height: 24),

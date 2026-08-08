@@ -3,9 +3,11 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/navigation/onboarding_flow_navigator.dart';
+import '../../../../core/storage/legal_consent_storage.dart';
 import '../../../../core/theme/colors.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/widgets/custom_app_bar.dart';
+import '../../../../core/widgets/legal_acceptance_widgets.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../../authentication/presentation/provider/auth_provider.dart';
 import '../provider/kyc_flow_provider.dart';
@@ -22,15 +24,20 @@ class PanVerificationScreen extends StatefulWidget {
 class _PanVerificationScreenState extends State<PanVerificationScreen> {
   final _panController = TextEditingController();
   final _nameController = TextEditingController();
+  bool _kycConsent = false;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      final stored = await LegalConsentStorage.hasKycConsent();
+      if (mounted) setState(() => _kycConsent = stored);
       if (!mounted) return;
       // Refresh from the database so an already-verified PAN shows the
       // verified state immediately instead of asking to verify again.
       context.read<KycFlowProvider>().loadKycStatus();
+      if (!mounted) return;
       final name = context.read<AuthProvider>().user?.name ?? '';
       if (name.isNotEmpty && _nameController.text.isEmpty) {
         _nameController.text = name;
@@ -46,6 +53,16 @@ class _PanVerificationScreenState extends State<PanVerificationScreen> {
   }
 
   Future<void> _verify() async {
+    if (!_kycConsent) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Please authorize KYC verification to continue.',
+          ),
+        ),
+      );
+      return;
+    }
     final pan = _panController.text.toUpperCase();
     if (!RegExp(r'^[A-Z]{5}[0-9]{4}[A-Z]$').hasMatch(pan)) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -84,6 +101,14 @@ class _PanVerificationScreenState extends State<PanVerificationScreen> {
                 ),
               const SizedBox(height: 24),
               if (!s.panVerified) ...[
+                KycConsentCard(
+                  value: _kycConsent,
+                  onChanged: (v) async {
+                    setState(() => _kycConsent = v);
+                    await LegalConsentStorage.setKycConsent(v);
+                  },
+                ),
+                const SizedBox(height: 20),
                 AppTextField(
                   controller: _panController,
                   label: 'PAN Number',
@@ -108,7 +133,7 @@ class _PanVerificationScreenState extends State<PanVerificationScreen> {
                 const SizedBox(height: 24),
                 PrimaryButton(
                   label: kyc.isLoading ? 'Verifying…' : 'Verify PAN',
-                  onPressed: kyc.isLoading ? null : _verify,
+                  onPressed: kyc.isLoading || !_kycConsent ? null : _verify,
                 ),
               ] else ...[
                 Container(

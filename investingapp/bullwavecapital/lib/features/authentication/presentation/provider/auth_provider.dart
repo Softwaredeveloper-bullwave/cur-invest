@@ -8,6 +8,7 @@ import '../../../../core/api/api_exception.dart';
 import '../../../../core/api/bullwave_api.dart';
 import '../../../../core/api/dev_auth_service.dart';
 import '../../../../core/api/token_storage.dart';
+import '../../../../core/storage/legal_consent_storage.dart';
 import '../../../../models/user_model.dart';
 
 enum AuthFlowMode { signIn, registration }
@@ -279,6 +280,7 @@ class AuthProvider extends ChangeNotifier {
       if (_flowMode == AuthFlowMode.signIn && !result.isRegistered) {
         beginRegistration();
       }
+      await LegalConsentStorage.recordTermsAcceptance();
       _isLoading = false;
       notifyListeners();
       return true;

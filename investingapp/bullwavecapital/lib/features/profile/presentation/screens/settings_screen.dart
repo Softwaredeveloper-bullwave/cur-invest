@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/constants/dimensions.dart';
+import '../../../../core/constants/legal_config.dart';
+import '../../../../core/constants/routes.dart';
 import '../../../../core/theme/colors.dart';
 import '../../../../core/widgets/custom_app_bar.dart';
 import '../../../../core/widgets/custom_dialog.dart';
@@ -37,12 +40,22 @@ class SettingsScreen extends StatelessWidget {
                 ),
               ),
               Card(
-                child: ListTile(
-                  leading: const Icon(Icons.privacy_tip_outlined),
-                  title: const Text('Privacy'),
-                  subtitle: const Text('Manage privacy settings'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => AppSnackbar.success(context, 'Privacy settings'),
+                child: Column(
+                  children: [
+                    ListTile(
+                      leading: const Icon(Icons.description_outlined),
+                      title: const Text('Terms & Conditions'),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => context.push(AppRoutes.terms),
+                    ),
+                    const Divider(height: 1),
+                    ListTile(
+                      leading: const Icon(Icons.privacy_tip_outlined),
+                      title: const Text('Privacy Policy'),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => context.push(AppRoutes.privacy),
+                    ),
+                  ],
                 ),
               ),
               Card(
@@ -72,7 +85,9 @@ class SettingsScreen extends StatelessWidget {
                     context,
                     title: 'Delete Account',
                     message:
-                        'This action is permanent. All your data will be deleted. Are you sure?',
+                        'This action is permanent. All your data will be deleted. '
+                        'You may also request deletion at ${LegalConfig.accountDeletionUrl}. '
+                        'Are you sure?',
                     confirmLabel: 'Delete',
                   );
                   if (confirm == true && context.mounted) {

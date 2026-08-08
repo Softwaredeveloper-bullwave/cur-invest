@@ -241,6 +241,8 @@ class AppRouter {
       if (!auth.isAuthenticated) {
         if (path == AppRoutes.login ||
             path == AppRoutes.otp ||
+            path == AppRoutes.terms ||
+            path == AppRoutes.privacy ||
             (path == AppRoutes.onboarding && auth.isRegistrationFlow)) {
           return null;
         }
