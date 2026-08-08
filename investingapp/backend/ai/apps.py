@@ -39,14 +39,22 @@ class AiConfig(AppConfig):
 
         if provider == 'openai' and (settings.OPENAI_API_KEY or '').strip():
             model = settings.OPENAI_MODEL
-            from .openai_client import validate_openai_key
-
-            ok, message = validate_openai_key()
-            if ok:
+            if getattr(settings, 'AI_SKIP_STARTUP_PROBE', False):
                 ready = True
-                logger.info('AI assistant ready (provider=%s, model=%s)', provider, model)
+                logger.info(
+                    'AI assistant configured (provider=%s, model=%s, startup probe skipped)',
+                    provider,
+                    model,
+                )
             else:
-                logger.warning('AI assistant configured but OpenAI key check failed: %s', message)
+                from .openai_client import validate_openai_key
+
+                ok, message = validate_openai_key()
+                if ok:
+                    ready = True
+                    logger.info('AI assistant ready (provider=%s, model=%s)', provider, model)
+                else:
+                    logger.warning('AI assistant configured but OpenAI key check failed: %s', message)
         elif provider == 'gemini' and (settings.GEMINI_API_KEY or '').strip():
             ready, model = True, settings.GEMINI_MODEL
             logger.info('AI assistant ready (provider=%s, model=%s)', provider, model)

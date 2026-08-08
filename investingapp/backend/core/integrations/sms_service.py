@@ -32,15 +32,19 @@ def _twofactor_otp_mode() -> str:
 
 
 def uses_2factor() -> bool:
-    return resolve_sms_provider() == '2factor' and _twofactor_ready()
+    return _explicit_sms_provider() == '2factor'
+
+
+def uses_2factor_live() -> bool:
+    return uses_2factor() and _twofactor_ready()
 
 
 def uses_2factor_autogen() -> bool:
-    return uses_2factor() and _twofactor_otp_mode() == 'autogen'
+    return uses_2factor_live() and _twofactor_otp_mode() == 'autogen'
 
 
 def uses_2factor_manual() -> bool:
-    return uses_2factor() and _twofactor_otp_mode() == 'manual'
+    return uses_2factor_live() and _twofactor_otp_mode() == 'manual'
 
 
 def _twilio_credentials_ready() -> bool:
@@ -72,11 +76,19 @@ def _infobip_ready() -> bool:
     return bool(api_key and base_url and sender)
 
 
-def resolve_sms_provider() -> str:
-    """Effective SMS provider — settings layer auto-promotes console when keys exist."""
+def _explicit_sms_provider() -> str:
+    """Configured provider from Django settings (before resolve fallbacks)."""
     provider = (getattr(settings, 'SMS_PROVIDER', 'console') or 'console').lower().strip()
-    if provider == '2factor' and not _twofactor_ready():
-        return 'console'
+    if provider in {'twofactor', 'two-factor', 'two_factor'}:
+        return '2factor'
+    return provider
+
+
+def resolve_sms_provider() -> str:
+    """Effective SMS provider for sending."""
+    provider = _explicit_sms_provider()
+    if provider == '2factor':
+        return '2factor'
     if provider == 'infobip' and not _infobip_ready():
         return 'console'
     if provider == 'twilio' and not (_twilio_verify_ready() or _twilio_message_ready()):
@@ -162,7 +174,7 @@ def friendly_2factor_error(exc: Exception) -> str:
 
 
 def validate_2factor_config() -> list[str]:
-    provider = (getattr(settings, 'SMS_PROVIDER', 'console') or 'console').lower().strip()
+    provider = _explicit_sms_provider()
     if provider != '2factor':
         return []
 
@@ -171,6 +183,8 @@ def validate_2factor_config() -> list[str]:
         problems.append('TWOFACTOR_API_KEY is missing in backend/.env')
     if not (getattr(settings, 'TWOFACTOR_OTP_TEMPLATE', '') or '').strip():
         problems.append('TWOFACTOR_OTP_TEMPLATE is missing (approved OTP template name from 2Factor)')
+    if not getattr(settings, 'SMS_OTP_ENABLED', True):
+        problems.append('SMS_OTP_ENABLED=False — OTP will not be sent via 2Factor (dev/console mode)')
     return problems
 
 
@@ -244,9 +258,11 @@ def validate_twilio_config() -> list[str]:
 
 def sms_config_status() -> dict:
     provider = resolve_sms_provider()
-    explicit = (getattr(settings, 'SMS_PROVIDER', 'console') or 'console').lower().strip()
+    explicit = _explicit_sms_provider()
     twilio_verify = uses_twilio_verify()
-    mode = 'sms' if provider != 'console' else 'console'
+    mode = 'sms' if provider != 'console' and not (explicit == '2factor' and not _twofactor_ready()) else 'console'
+    if explicit == '2factor' and _twofactor_ready():
+        mode = 'sms'
     twilio_problems = validate_twilio_config()
     infobip_problems = validate_infobip_config()
     twofactor_problems = validate_2factor_config()
@@ -425,6 +441,11 @@ def _normalize_phone_e164(phone: str) -> str:
 
 def send_notification_sms(phone: str, message: str) -> None:
     """Generic transactional SMS (KYC approved, etc.). Falls back to console in dev."""
+    explicit = _explicit_sms_provider()
+    if explicit == '2factor':
+        logger.info('[BullWave SMS] 2Factor is OTP-only — skipping transactional SMS to %s', phone)
+        return
+
     provider = resolve_sms_provider()
     body = (message or '').strip()
     if not phone or not body:
@@ -444,13 +465,16 @@ def send_notification_sms(phone: str, message: str) -> None:
 
 
 def send_otp_sms(phone: str, otp: str) -> None:
-    provider = resolve_sms_provider()
-    if provider == '2factor':
+    explicit = _explicit_sms_provider()
+    if explicit == '2factor':
         if uses_2factor_manual():
             send_2factor_manual_otp(phone, otp)
         else:
             send_2factor_autogen_otp(phone)
-    elif provider == 'infobip':
+        return
+
+    provider = resolve_sms_provider()
+    if provider == 'infobip':
         _send_infobip(phone, otp)
     elif provider == 'msg91':
         _send_msg91(phone, otp)

@@ -30,7 +30,9 @@ from core.integrations.sms_service import (
     send_otp_sms,
     twilio_verify_delivery_blocked,
     twilio_message_ready,
+    uses_2factor,
     uses_2factor_autogen,
+    uses_2factor_live,
     uses_2factor_manual,
     uses_twilio_verify,
 )
@@ -160,21 +162,33 @@ class SendOTPView(APIView):
 
             live = is_live_sms()
 
-            if settings.SMS_OTP_ENABLED and uses_2factor_autogen():
-                try:
-                    session_id = send_2factor_autogen_otp(phone)
-                    self._issue_2factor_session(phone, session_id)
-                except SMSError as exc:
-                    logger.error('2Factor AUTOGEN failed for %s: %s', phone, exc)
-                    return Response({'detail': friendly_2factor_error(exc)}, status=503)
-                return Response(
-                    {
-                        'success': True,
-                        'message': 'OTP sent successfully.',
-                        'otpMode': 'sms',
-                        **registration_hint,
-                    }
-                )
+            if settings.SMS_OTP_ENABLED and uses_2factor():
+                if not uses_2factor_live():
+                    return Response(
+                        {
+                            'detail': (
+                                '2Factor SMS OTP is selected but not configured. '
+                                'Set TWOFACTOR_API_KEY and TWOFACTOR_OTP_TEMPLATE in backend/.env, '
+                                'then restart the server.'
+                            ),
+                        },
+                        status=503,
+                    )
+                if uses_2factor_autogen():
+                    try:
+                        session_id = send_2factor_autogen_otp(phone)
+                        self._issue_2factor_session(phone, session_id)
+                    except SMSError as exc:
+                        logger.error('2Factor AUTOGEN failed for %s: %s', phone, exc)
+                        return Response({'detail': friendly_2factor_error(exc)}, status=503)
+                    return Response(
+                        {
+                            'success': True,
+                            'message': 'OTP sent successfully via 2Factor.',
+                            'otpMode': 'sms',
+                            **registration_hint,
+                        }
+                    )
 
             if settings.SMS_OTP_ENABLED and uses_twilio_verify():
                 try:
@@ -219,6 +233,11 @@ class SendOTPView(APIView):
                 if settings.SMS_OTP_ENABLED and uses_2factor_manual():
                     session_id = send_2factor_manual_otp(phone, otp)
                     self._attach_session_to_latest_otp(phone, session_id)
+                elif settings.SMS_OTP_ENABLED and uses_2factor():
+                    return Response(
+                        {'detail': '2Factor OTP could not be sent. Check server logs.'},
+                        status=503,
+                    )
                 else:
                     send_otp_sms(phone, otp)
             except SMSError as exc:
@@ -302,11 +321,9 @@ class VerifyOTPView(APIView):
 
         try:
             verified = False
-            if settings.SMS_OTP_ENABLED and uses_2factor_autogen():
+            if settings.SMS_OTP_ENABLED and uses_2factor():
                 verified = self._verify_2factor_otp(phone, otp)
-            elif settings.SMS_OTP_ENABLED and uses_2factor_manual():
-                verified = self._verify_2factor_otp(phone, otp)
-                if not verified:
+                if not verified and uses_2factor_manual():
                     verified = self._verify_db_otp(phone, otp)
             elif settings.SMS_OTP_ENABLED and uses_twilio_verify():
                 try:

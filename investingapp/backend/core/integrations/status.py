@@ -8,7 +8,7 @@ from services.providers.cashfree_secure_id import is_configured as cashfree_secu
 from services.providers.eko_kyc import is_configured as eko_kyc_configured
 
 from .razorpay_service import is_configured as razorpay_configured
-from .sms_service import resolve_sms_provider, uses_twilio_verify
+from .sms_service import resolve_sms_provider, sms_config_status, uses_2factor, uses_2factor_live, uses_twilio_verify
 
 
 def _kyc_provider_name() -> str:
@@ -102,7 +102,6 @@ def integration_status() -> dict:
     av = bool((getattr(settings, 'ALPHA_VANTAGE_API_KEY', '') or '').strip())
     finnhub = bool((getattr(settings, 'FINNHUB_API_KEY', '') or '').strip())
     provider = _market_provider()
-    sms_provider = resolve_sms_provider()
     ai_provider = (getattr(settings, 'AI_PROVIDER', 'ollama') or 'ollama').lower()
 
     ai_ready = ai_provider == 'ollama' or bool(
@@ -143,9 +142,15 @@ def integration_status() -> dict:
             'configured': cf.is_configured,
         },
         'sms_otp': {
-            'provider': 'twilio_verify' if uses_twilio_verify() else sms_provider,
-            'configured': sms_provider != 'console',
+            'provider': (
+                '2factor_autogen'
+                if uses_2factor_live()
+                else ('twilio_verify' if uses_twilio_verify() else resolve_sms_provider())
+            ),
+            'configured': uses_2factor_live() or resolve_sms_provider() != 'console',
+            'explicit': (getattr(settings, 'SMS_PROVIDER', 'console') or 'console').lower(),
             'twilio_verify': uses_twilio_verify(),
+            'twofactor': uses_2factor_live(),
         },
         'bank_validation': {
             'provider': _kyc_provider_name() if _kyc_verification_configured() else 'razorpay_ifsc',

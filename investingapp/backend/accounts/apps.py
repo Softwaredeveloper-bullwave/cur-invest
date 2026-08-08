@@ -15,6 +15,7 @@ class AccountsConfig(AppConfig):
             is_live_sms,
             local_lan_ip,
             sms_config_status,
+            validate_2factor_config,
             validate_infobip_config,
             validate_twilio_config,
         )
@@ -23,7 +24,18 @@ class AccountsConfig(AppConfig):
         provider = status['provider']
         explicit = status['explicit_provider']
 
-        if explicit == 'infobip':
+        if explicit == '2factor':
+            problems = validate_2factor_config()
+            if problems:
+                for problem in problems:
+                    logger.error('2Factor SMS misconfigured: %s', problem)
+                logger.error(
+                    'Fix 2Factor keys in %s/.env then restart Django.',
+                    settings.BASE_DIR,
+                )
+            elif is_live_sms():
+                logger.info('SMS OTP → 2factor (live SMS via 2Factor.in)')
+        elif explicit == 'infobip':
             problems = validate_infobip_config()
             if problems:
                 for problem in problems:

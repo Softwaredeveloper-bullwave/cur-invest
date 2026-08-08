@@ -234,6 +234,7 @@ SMS_EXPOSE_DEV_OTP = config('SMS_EXPOSE_DEV_OTP', default=not SMS_OTP_ENABLED, c
 
 # AI assistant — default: Ollama (local, free). See ai/ollama_client.py
 AI_PROVIDER = config('AI_PROVIDER', default='ollama')
+AI_SKIP_STARTUP_PROBE = config('AI_SKIP_STARTUP_PROBE', default=False, cast=bool)
 OPENAI_API_KEY = _ascii_env(config('OPENAI_API_KEY', default=''))
 OPENAI_ORG_ID = _ascii_env(config('OPENAI_ORG_ID', default=''))
 OPENAI_PROJECT_ID = _ascii_env(config('OPENAI_PROJECT_ID', default=''))
@@ -293,6 +294,8 @@ TRADINGVIEW_DEFAULT_EXCHANGE = config('TRADINGVIEW_DEFAULT_EXCHANGE', default='N
 
 # SMS OTP — console (dev), 2factor, infobip, msg91, twilio
 _sms_provider_raw = _clean_env(config('SMS_PROVIDER', default='console')).lower()
+if _sms_provider_raw in {'twofactor', 'two-factor', 'two_factor'}:
+    _sms_provider_raw = '2factor'
 TWOFACTOR_API_KEY = _ascii_env(config('TWOFACTOR_API_KEY', default=''))
 TWOFACTOR_OTP_TEMPLATE = _clean_env(config('TWOFACTOR_OTP_TEMPLATE', default='BullwaveClub_OTP'))
 TWOFACTOR_SENDER_ID = _clean_env(config('TWOFACTOR_SENDER_ID', default='BWCLUB'))

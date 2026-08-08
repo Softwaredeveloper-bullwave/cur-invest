@@ -60,4 +60,5 @@ else
 fi
 
 echo ""
-echo "Done. Test OTP: python manage.py test_infobip_sms YOUR_PHONE"
+echo "Done. Test OTP: python manage.py test_2factor_otp YOUR_PHONE"
+echo "Switch prod to 2Factor: bash deploy/update_sms_2factor.sh"
