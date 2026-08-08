@@ -291,8 +291,13 @@ TRADINGVIEW_CHARTING_LIBRARY_URL = config('TRADINGVIEW_CHARTING_LIBRARY_URL', de
 TRADINGVIEW_UDF_BASE_URL = config('TRADINGVIEW_UDF_BASE_URL', default='')
 TRADINGVIEW_DEFAULT_EXCHANGE = config('TRADINGVIEW_DEFAULT_EXCHANGE', default='NSE')
 
-# SMS OTP — console (dev), infobip, msg91, twilio
+# SMS OTP — console (dev), 2factor, infobip, msg91, twilio
 _sms_provider_raw = _clean_env(config('SMS_PROVIDER', default='console')).lower()
+TWOFACTOR_API_KEY = _ascii_env(config('TWOFACTOR_API_KEY', default=''))
+TWOFACTOR_OTP_TEMPLATE = _clean_env(config('TWOFACTOR_OTP_TEMPLATE', default='BullwaveClub_OTP'))
+TWOFACTOR_SENDER_ID = _clean_env(config('TWOFACTOR_SENDER_ID', default='BWCLUB'))
+# autogen = 2Factor generates OTP | manual = backend generates OTP and sends via template
+TWOFACTOR_OTP_MODE = _clean_env(config('TWOFACTOR_OTP_MODE', default='autogen')).lower() or 'autogen'
 INFOBIP_API_KEY = _ascii_env(config('INFOBIP_API_KEY', default=''))
 INFOBIP_BASE_URL = _clean_env(config('INFOBIP_BASE_URL', default='')).rstrip('/')
 INFOBIP_SENDER = _clean_env(config('INFOBIP_SENDER', default=''))
@@ -323,9 +328,12 @@ _twilio_ready = bool(
     and (TWILIO_SERVICE_SID or TWILIO_FROM_NUMBER)
 )
 _msg91_ready = bool(MSG91_AUTH_KEY and MSG91_TEMPLATE_ID)
+_twofactor_ready = bool(TWOFACTOR_API_KEY)
 
 if _sms_provider_raw == 'console':
-    if _infobip_ready:
+    if _twofactor_ready:
+        SMS_PROVIDER = '2factor'
+    elif _infobip_ready:
         SMS_PROVIDER = 'infobip'
     elif _twilio_ready:
         SMS_PROVIDER = 'twilio'

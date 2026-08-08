@@ -1,13 +1,13 @@
 import 'legal_config.dart';
 import 'legal_document_models.dart';
 
-const cbwTermsIntro = [
+List<String> get cbwTermsIntro => [
   'These Terms & Conditions ("Terms") govern your access to and use of the CBW (Capital Bull Wave) mobile application, website, and related services (collectively, the "Services") operated by ${LegalConfig.legalCompanyName} ("CBW", "we", "us", or "our").',
   'By registering for, accessing, or using the Services, you agree to be bound by these Terms. If you do not agree, do not use the Services.',
   'CBW provides financial and investment-related information, tools, and features. CBW does not guarantee profits, returns, or investment performance. Investments and trading involve financial risk, and you may lose money.',
 ];
 
-final cbwTermsSections = <LegalSection>[
+List<LegalSection> get cbwTermsSections => <LegalSection>[
   LegalSection(
     number: 1,
     title: 'About CBW',
@@ -429,7 +429,7 @@ final cbwTermsSections = <LegalSection>[
     title: 'Grievance and Customer Support',
     blocks: [
       LegalBlock(paragraphs: [
-        'For support inquiries, contact ${LegalConfig.supportEmail}.',
+        'For support inquiries, contact ${LegalConfig.supportEmail} or ${LegalConfig.supportPhone}.',
         'For privacy-related grievances, contact ${LegalConfig.privacyEmail}.',
         'Grievance Officer: ${LegalConfig.grievanceContact}',
         'Grievance Email: ${LegalConfig.grievanceEmail}',

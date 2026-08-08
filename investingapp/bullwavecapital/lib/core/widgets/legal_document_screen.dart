@@ -111,7 +111,17 @@ class LegalDocumentScreen extends StatelessWidget {
                   ]),
               const SizedBox(height: 24),
               Text(
-                'For questions, contact ${LegalConfig.supportEmail}. '
+                'Contact',
+                style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 8),
+              Text(LegalConfig.legalCompanyName, style: bodyStyle),
+              Text('Email: ${LegalConfig.supportEmail}', style: bodyStyle),
+              Text('Phone: ${LegalConfig.supportPhone}', style: bodyStyle),
+              Text('Address: ${LegalConfig.companyAddress}', style: bodyStyle),
+              Text('Website: ${LegalConfig.website}', style: bodyStyle),
+              const SizedBox(height: 12),
+              Text(
                 'Account deletion: ${LegalConfig.accountDeletionUrl}',
                 style: bodyStyle?.copyWith(color: AppColors.textSecondary, fontSize: 13),
               ),

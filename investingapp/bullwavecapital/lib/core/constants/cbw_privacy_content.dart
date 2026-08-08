@@ -7,7 +7,7 @@ const cbwPrivacyIntro = [
   'By using CBW and voluntarily providing information during registration, verification, or use of our Services, you acknowledge that you have read and understood this Privacy Policy.',
 ];
 
-final cbwPrivacySections = <LegalSection>[
+List<LegalSection> get cbwPrivacySections => <LegalSection>[
   LegalSection(
     number: 1,
     title: 'INFORMATION WE COLLECT',
@@ -392,6 +392,7 @@ final cbwPrivacySections = <LegalSection>[
         'App: ${LegalConfig.appDisplayName}',
         'Privacy Email: ${LegalConfig.privacyEmail}',
         'Support Email: ${LegalConfig.supportEmail}',
+        'Phone: ${LegalConfig.supportPhone}',
         'Website: ${LegalConfig.website}',
         'Registered Address: ${LegalConfig.companyAddress}',
         'Account Deletion: ${LegalConfig.accountDeletionUrl}',

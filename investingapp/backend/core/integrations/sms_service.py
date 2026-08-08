@@ -1,4 +1,4 @@
-"""SMS OTP delivery — Infobip, MSG91, Twilio Messages, Twilio Verify, or console (dev)."""
+"""SMS OTP delivery — 2Factor, Infobip, MSG91, Twilio Messages, Twilio Verify, or console (dev)."""
 
 import json
 import logging
@@ -13,6 +13,34 @@ logger = logging.getLogger('bullwave.integrations')
 
 class SMSError(Exception):
     pass
+
+
+def _twofactor_ready() -> bool:
+    api_key = (getattr(settings, 'TWOFACTOR_API_KEY', '') or '').strip()
+    return bool(api_key)
+
+
+def _twofactor_template() -> str:
+    return (
+        getattr(settings, 'TWOFACTOR_OTP_TEMPLATE', 'BullwaveClub_OTP') or 'BullwaveClub_OTP'
+    ).strip()
+
+
+def _twofactor_otp_mode() -> str:
+    mode = (getattr(settings, 'TWOFACTOR_OTP_MODE', 'autogen') or 'autogen').lower().strip()
+    return 'manual' if mode == 'manual' else 'autogen'
+
+
+def uses_2factor() -> bool:
+    return resolve_sms_provider() == '2factor' and _twofactor_ready()
+
+
+def uses_2factor_autogen() -> bool:
+    return uses_2factor() and _twofactor_otp_mode() == 'autogen'
+
+
+def uses_2factor_manual() -> bool:
+    return uses_2factor() and _twofactor_otp_mode() == 'manual'
 
 
 def _twilio_credentials_ready() -> bool:
@@ -47,6 +75,8 @@ def _infobip_ready() -> bool:
 def resolve_sms_provider() -> str:
     """Effective SMS provider — settings layer auto-promotes console when keys exist."""
     provider = (getattr(settings, 'SMS_PROVIDER', 'console') or 'console').lower().strip()
+    if provider == '2factor' and not _twofactor_ready():
+        return 'console'
     if provider == 'infobip' and not _infobip_ready():
         return 'console'
     if provider == 'twilio' and not (_twilio_verify_ready() or _twilio_message_ready()):
@@ -114,6 +144,34 @@ def _infobip_dlt_settings() -> tuple[str, str, str]:
 def _india_dlt_ready() -> bool:
     entity_id, template_id, _ = _infobip_dlt_settings()
     return bool(entity_id and template_id)
+
+
+def friendly_2factor_error(exc: Exception) -> str:
+    text = str(exc or '')
+    lowered = text.lower()
+    if 'invalid api key' in lowered or 'authentication' in lowered:
+        return '2Factor API key is invalid. Check TWOFACTOR_API_KEY in backend/.env.'
+    if 'insufficient' in lowered or 'balance' in lowered:
+        return '2Factor SMS OTP balance is insufficient. Recharge in the 2Factor dashboard.'
+    if 'template' in lowered:
+        return (
+            f'{text} Confirm TWOFACTOR_OTP_TEMPLATE matches your approved template name '
+            '(e.g. BullwaveClub_OTP).'
+        )
+    return text
+
+
+def validate_2factor_config() -> list[str]:
+    provider = (getattr(settings, 'SMS_PROVIDER', 'console') or 'console').lower().strip()
+    if provider != '2factor':
+        return []
+
+    problems = []
+    if not (getattr(settings, 'TWOFACTOR_API_KEY', '') or '').strip():
+        problems.append('TWOFACTOR_API_KEY is missing in backend/.env')
+    if not (getattr(settings, 'TWOFACTOR_OTP_TEMPLATE', '') or '').strip():
+        problems.append('TWOFACTOR_OTP_TEMPLATE is missing (approved OTP template name from 2Factor)')
+    return problems
 
 
 def friendly_infobip_error(exc: Exception) -> str:
@@ -191,32 +249,45 @@ def sms_config_status() -> dict:
     mode = 'sms' if provider != 'console' else 'console'
     twilio_problems = validate_twilio_config()
     infobip_problems = validate_infobip_config()
-    problems = twilio_problems + infobip_problems
+    twofactor_problems = validate_2factor_config()
+    problems = twilio_problems + infobip_problems + twofactor_problems
     ready = mode == 'sms' and not problems
 
     hints = []
     if explicit == 'infobip' and infobip_problems:
         hints.extend(infobip_problems)
+    elif explicit == '2factor' and twofactor_problems:
+        hints.extend(twofactor_problems)
     elif explicit == 'twilio' and twilio_problems:
         hints.extend(twilio_problems)
     elif mode == 'console':
-        hints.append('OTP is NOT sent to the phone — add Infobip or Twilio keys to backend/.env.')
+        hints.append('OTP is NOT sent to the phone — add 2Factor, Infobip, or Twilio keys to backend/.env.')
+        hints.append(
+            '2Factor: SMS_PROVIDER=2factor, TWOFACTOR_API_KEY, TWOFACTOR_OTP_TEMPLATE=BullwaveClub_OTP.'
+        )
         hints.append(
             'Infobip: SMS_PROVIDER=infobip, INFOBIP_API_KEY, INFOBIP_BASE_URL, INFOBIP_SENDER.'
         )
 
     return {
         'explicit_provider': explicit,
-        'provider': 'twilio_verify' if twilio_verify else provider,
+        'provider': (
+            'twilio_verify'
+            if twilio_verify
+            else ('2factor_autogen' if uses_2factor_autogen() else provider)
+        ),
         'mode': mode,
         'ready': ready,
         'twilio_verify': twilio_verify,
+        'twofactor_configured': _twofactor_ready(),
+        'twofactor_autogen': uses_2factor_autogen(),
         'infobip_configured': _infobip_ready(),
         'infobip_dlt_configured': _india_dlt_ready(),
         'msg91_configured': _msg91_ready(),
         'twilio_configured': _twilio_verify_ready() or _twilio_message_ready(),
         'twilio_problems': twilio_problems,
         'infobip_problems': infobip_problems,
+        'twofactor_problems': twofactor_problems,
         'hints': hints,
         'env_file': str(getattr(settings, 'BASE_DIR', '')) + '/.env',
     }
@@ -230,6 +301,115 @@ def local_lan_ip() -> str:
             return sock.getsockname()[0]
     except OSError:
         return ''
+
+
+def _normalize_phone_2factor(phone: str) -> str:
+    """2Factor expects 91XXXXXXXXXX (no + prefix)."""
+    digits = re.sub(r'\D', '', phone or '')
+    if len(digits) == 10:
+        return f'91{digits}'
+    if len(digits) == 12 and digits.startswith('91'):
+        return digits
+    if len(digits) == 11 and digits.startswith('0'):
+        return f'91{digits[1:]}'
+    return digits
+
+
+def _twofactor_base_url() -> str:
+    api_key = (getattr(settings, 'TWOFACTOR_API_KEY', '') or '').strip()
+    if not api_key:
+        raise SMSError('TWOFACTOR_API_KEY is required when SMS_PROVIDER=2factor')
+    return f'https://2factor.in/API/V1/{api_key}'
+
+
+def _parse_2factor_json(response: httpx.Response) -> dict:
+    if response.is_error:
+        detail = response.text[:300]
+        raise SMSError(f'2Factor HTTP error ({response.status_code}): {detail}')
+    try:
+        data = response.json()
+    except json.JSONDecodeError as exc:
+        raise SMSError(f'2Factor returned invalid JSON: {response.text[:200]}') from exc
+    if not isinstance(data, dict):
+        raise SMSError('2Factor returned an unexpected response.')
+    status = (data.get('Status') or data.get('status') or '').strip()
+    if status.lower() != 'success':
+        details = data.get('Details') or data.get('details') or data.get('Message') or status
+        raise SMSError(f'2Factor error: {details}')
+    return data
+
+
+def send_2factor_autogen_otp(phone: str) -> str:
+    """Trigger AUTOGEN OTP via 2Factor.in — returns session_id (Details field)."""
+    phone_2f = _normalize_phone_2factor(phone)
+    if len(phone_2f) != 12 or not phone_2f.startswith('91'):
+        raise SMSError('Enter a valid 10-digit Indian mobile number for 2Factor OTP.')
+
+    template = _twofactor_template()
+    url = f'{_twofactor_base_url()}/SMS/{phone_2f}/AUTOGEN/{template}'
+    try:
+        with httpx.Client(timeout=20) as client:
+            response = client.get(url)
+    except httpx.HTTPError as exc:
+        raise SMSError(f'2Factor connection failed: {exc}') from exc
+
+    data = _parse_2factor_json(response)
+    session_id = (data.get('Details') or data.get('details') or '').strip()
+    if not session_id:
+        raise SMSError('2Factor did not return a session id.')
+    logger.info('2Factor AUTOGEN OTP sent to +%s session=%s…', phone_2f, session_id[:8])
+    return session_id
+
+
+def send_2factor_manual_otp(phone: str, otp: str) -> str:
+    """Send backend-generated OTP through 2Factor template — returns session_id."""
+    phone_2f = _normalize_phone_2factor(phone)
+    if len(phone_2f) != 12 or not phone_2f.startswith('91'):
+        raise SMSError('Enter a valid 10-digit Indian mobile number for 2Factor OTP.')
+    if len(otp) != 6 or not otp.isdigit():
+        raise SMSError('OTP must be a 6-digit code for 2Factor manual mode.')
+
+    template = _twofactor_template()
+    url = f'{_twofactor_base_url()}/SMS/{phone_2f}/{otp}/{template}'
+    try:
+        with httpx.Client(timeout=20) as client:
+            response = client.get(url)
+    except httpx.HTTPError as exc:
+        raise SMSError(f'2Factor connection failed: {exc}') from exc
+
+    data = _parse_2factor_json(response)
+    session_id = (data.get('Details') or data.get('details') or '').strip()
+    if not session_id:
+        raise SMSError('2Factor did not return a session id.')
+    logger.info('2Factor manual OTP sent to +%s session=%s…', phone_2f, session_id[:8])
+    return session_id
+
+
+def check_otp_2factor(session_id: str, otp: str) -> bool:
+    session_id = (session_id or '').strip()
+    otp = re.sub(r'\D', '', otp or '')
+    if not session_id or len(otp) != 6:
+        return False
+
+    url = f'{_twofactor_base_url()}/SMS/VERIFY/{session_id}/{otp}'
+    try:
+        with httpx.Client(timeout=20) as client:
+            response = client.get(url)
+    except httpx.HTTPError as exc:
+        raise SMSError(f'2Factor verify connection failed: {exc}') from exc
+
+    try:
+        data = response.json()
+    except json.JSONDecodeError as exc:
+        raise SMSError(f'2Factor verify returned invalid JSON: {response.text[:200]}') from exc
+
+    status = (data.get('Status') or data.get('status') or '').strip().lower()
+    details = (data.get('Details') or data.get('details') or '').strip().lower()
+    if status == 'success' and ('matched' in details or details == 'otp matched'):
+        return True
+    if status == 'success' and not details:
+        return True
+    return False
 
 
 def _normalize_phone_e164(phone: str) -> str:
@@ -265,7 +445,12 @@ def send_notification_sms(phone: str, message: str) -> None:
 
 def send_otp_sms(phone: str, otp: str) -> None:
     provider = resolve_sms_provider()
-    if provider == 'infobip':
+    if provider == '2factor':
+        if uses_2factor_manual():
+            send_2factor_manual_otp(phone, otp)
+        else:
+            send_2factor_autogen_otp(phone)
+    elif provider == 'infobip':
         _send_infobip(phone, otp)
     elif provider == 'msg91':
         _send_msg91(phone, otp)

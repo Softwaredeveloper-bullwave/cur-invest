@@ -18,14 +18,20 @@ from core.integrations.cashfree_service import CashfreeError, is_configured as c
 from core.integrations.cashfree_bypass import verify_bank_with_bypass, verify_pan_with_bypass
 from core.integrations.sms_service import (
     SMSError,
+    check_otp_2factor,
     check_otp_twilio_verify,
+    friendly_2factor_error,
     friendly_infobip_error,
     friendly_twilio_error,
     is_live_sms,
     resolve_sms_provider,
+    send_2factor_autogen_otp,
+    send_2factor_manual_otp,
     send_otp_sms,
     twilio_verify_delivery_blocked,
     twilio_message_ready,
+    uses_2factor_autogen,
+    uses_2factor_manual,
     uses_twilio_verify,
 )
 from kyc.service import get_or_create_profile
@@ -93,12 +99,38 @@ def _ensure_user_bootstrap(user, *, created=False):
 class SendOTPView(APIView):
     permission_classes = [AllowAny]
 
-    def _issue_local_otp(self, phone: str) -> str:
+    def _issue_local_otp(self, phone: str, *, session_id: str = '') -> str:
         otp = f'{random.randint(100000, 999999):06d}'
         expires_at = timezone.now() + timedelta(minutes=settings.OTP_EXPIRY_MINUTES)
         OTPVerification.objects.filter(phone=phone, is_used=False).update(is_used=True)
-        OTPVerification.objects.create(phone=phone, otp_code=otp, expires_at=expires_at)
+        OTPVerification.objects.create(
+            phone=phone,
+            otp_code=otp,
+            session_id=session_id or '',
+            expires_at=expires_at,
+        )
         return otp
+
+    def _issue_2factor_session(self, phone: str, session_id: str) -> None:
+        expires_at = timezone.now() + timedelta(minutes=settings.OTP_EXPIRY_MINUTES)
+        OTPVerification.objects.filter(phone=phone, is_used=False).update(is_used=True)
+        OTPVerification.objects.create(
+            phone=phone,
+            otp_code='000000',
+            session_id=session_id,
+            expires_at=expires_at,
+        )
+
+    @staticmethod
+    def _attach_session_to_latest_otp(phone: str, session_id: str) -> None:
+        latest = (
+            OTPVerification.objects.filter(phone=phone, is_used=False)
+            .order_by('-created_at')
+            .first()
+        )
+        if latest and session_id:
+            latest.session_id = session_id
+            latest.save(update_fields=['session_id'])
 
     @staticmethod
     def _registration_hint(phone: str) -> dict:
@@ -127,6 +159,22 @@ class SendOTPView(APIView):
                 )
 
             live = is_live_sms()
+
+            if settings.SMS_OTP_ENABLED and uses_2factor_autogen():
+                try:
+                    session_id = send_2factor_autogen_otp(phone)
+                    self._issue_2factor_session(phone, session_id)
+                except SMSError as exc:
+                    logger.error('2Factor AUTOGEN failed for %s: %s', phone, exc)
+                    return Response({'detail': friendly_2factor_error(exc)}, status=503)
+                return Response(
+                    {
+                        'success': True,
+                        'message': 'OTP sent successfully.',
+                        'otpMode': 'sms',
+                        **registration_hint,
+                    }
+                )
 
             if settings.SMS_OTP_ENABLED and uses_twilio_verify():
                 try:
@@ -168,11 +216,17 @@ class SendOTPView(APIView):
             otp = self._issue_local_otp(phone)
 
             try:
-                send_otp_sms(phone, otp)
+                if settings.SMS_OTP_ENABLED and uses_2factor_manual():
+                    session_id = send_2factor_manual_otp(phone, otp)
+                    self._attach_session_to_latest_otp(phone, session_id)
+                else:
+                    send_otp_sms(phone, otp)
             except SMSError as exc:
                 logger.error('SMS OTP failed for %s: %s', phone, exc)
                 provider = resolve_sms_provider()
-                if provider == 'infobip':
+                if provider == '2factor':
+                    detail = friendly_2factor_error(exc)
+                elif provider == 'infobip':
                     detail = friendly_infobip_error(exc)
                 elif provider == 'twilio':
                     detail = friendly_twilio_error(exc)
@@ -199,6 +253,31 @@ class VerifyOTPView(APIView):
     permission_classes = [AllowAny]
 
     @staticmethod
+    def _verify_2factor_otp(phone: str, otp: str) -> bool:
+        now = timezone.now()
+        latest = (
+            OTPVerification.objects.filter(
+                phone=phone,
+                is_used=False,
+                expires_at__gte=now,
+            )
+            .exclude(session_id='')
+            .order_by('-created_at')
+            .first()
+        )
+        if not latest:
+            return False
+        try:
+            verified = check_otp_2factor(latest.session_id, otp)
+        except SMSError as exc:
+            logger.warning('2Factor verify API failed for %s: %s', phone, exc)
+            return False
+        if verified:
+            latest.is_used = True
+            latest.save(update_fields=['is_used'])
+        return verified
+
+    @staticmethod
     def _verify_db_otp(phone: str, otp: str) -> bool:
         now = timezone.now()
         latest = (
@@ -223,7 +302,13 @@ class VerifyOTPView(APIView):
 
         try:
             verified = False
-            if settings.SMS_OTP_ENABLED and uses_twilio_verify():
+            if settings.SMS_OTP_ENABLED and uses_2factor_autogen():
+                verified = self._verify_2factor_otp(phone, otp)
+            elif settings.SMS_OTP_ENABLED and uses_2factor_manual():
+                verified = self._verify_2factor_otp(phone, otp)
+                if not verified:
+                    verified = self._verify_db_otp(phone, otp)
+            elif settings.SMS_OTP_ENABLED and uses_twilio_verify():
                 try:
                     verified = check_otp_twilio_verify(phone, otp)
                 except SMSError as exc:

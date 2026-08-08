@@ -91,6 +91,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 class OTPVerification(models.Model):
     phone = models.CharField(max_length=15, db_index=True)
     otp_code = models.CharField(max_length=6)
+    session_id = models.CharField(max_length=64, blank=True, default='')
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField()
     is_used = models.BooleanField(default=False)
