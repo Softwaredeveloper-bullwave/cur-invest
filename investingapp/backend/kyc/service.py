@@ -13,6 +13,7 @@ import uuid
 from datetime import date, datetime
 from difflib import SequenceMatcher
 from typing import Optional
+from urllib.parse import urlparse
 
 from django.conf import settings
 from django.utils import timezone
@@ -450,6 +451,25 @@ def _is_marketing_redirect_url(url: str) -> bool:
     return normalized in blocked
 
 
+def _is_localhost_public_url(url: str) -> bool:
+    """True when BACKEND_PUBLIC_URL points at this machine (http or https)."""
+    if not url:
+        return False
+    host = (urlparse(url).hostname or '').lower()
+    return host in {'127.0.0.1', 'localhost', '0.0.0.0', '::1'}
+
+
+def _digilocker_callback_base(public_url: str, tunnel_url: str) -> str:
+    """Pick HTTPS base for DigiLocker callback — production API beats local tunnel."""
+    if public_url.startswith('https://') and not _is_localhost_public_url(public_url):
+        return public_url
+    if tunnel_url.startswith('https://'):
+        return tunnel_url
+    if public_url.startswith('https://'):
+        return public_url
+    return ''
+
+
 def _digilocker_redirect_url() -> tuple[str, str]:
     """Return (redirect_url, state_token) for Eko DigiLocker consent."""
     public_url = (getattr(settings, 'BACKEND_PUBLIC_URL', '') or '').rstrip('/')
@@ -460,9 +480,9 @@ def _digilocker_redirect_url() -> tuple[str, str]:
 
     state = secrets.token_urlsafe(32)
 
-    for candidate in (public_url, tunnel_url):
-        if candidate.startswith('https://'):
-            return f'{candidate}/api/v1/digilocker/callback/{state}/', state
+    callback_base = _digilocker_callback_base(public_url, tunnel_url)
+    if callback_base:
+        return f'{callback_base}/api/v1/digilocker/callback/{state}/', state
 
     if configured and not _is_marketing_redirect_url(configured):
         if '{state}' in configured:

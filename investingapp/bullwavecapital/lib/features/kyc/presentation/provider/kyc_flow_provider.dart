@@ -119,7 +119,8 @@ class KycFlowProvider extends ChangeNotifier {
     }
     if (e.code == 'public_redirect_required') {
       return 'DigiLocker needs HTTPS. In backend/.env set LOCAL_DEV_TUNNEL_URL to your '
-          'localtunnel URL (run: npx localtunnel --port 8000), then restart Django.';
+          'localtunnel URL (run: npx localtunnel --port 8000), restart Django, then '
+          'on a physical device also run: flutter run --dart-define=API_BASE_URL=https://YOUR-ID.loca.lt/api/v1';
     }
     return e.message;
   }

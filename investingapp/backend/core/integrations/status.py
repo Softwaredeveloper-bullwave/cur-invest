@@ -5,10 +5,13 @@ from django.conf import settings
 from services.providers.cashfree_config import cashfree_settings
 from services.providers.cashfree_payments import is_configured as cashfree_payments_configured
 from services.providers.cashfree_secure_id import is_configured as cashfree_secure_id_configured
+from services.providers.eko_config import eko_settings
 from services.providers.eko_kyc import is_configured as eko_kyc_configured
 
 from .razorpay_service import is_configured as razorpay_configured
-from .sms_service import resolve_sms_provider, sms_config_status, uses_2factor, uses_2factor_live, uses_twilio_verify
+from .sms_service import resolve_sms_provider, sms_config_status, uses_2factor_live, uses_twilio_verify
+
+from kyc.notifications import email_config_status
 
 
 def _kyc_provider_name() -> str:
@@ -113,6 +116,9 @@ def integration_status() -> dict:
     )
 
     cf = cashfree_settings()
+    eko = eko_settings()
+    email_status = email_config_status()
+    sms_status = sms_config_status()
 
     return {
         'market_data': {
@@ -135,6 +141,7 @@ def integration_status() -> dict:
             'configured': _kyc_verification_configured(),
             'cashfree': cashfree_secure_id_configured(),
             'eko': eko_kyc_configured(),
+            'eko_keys_present': eko.is_configured,
             'cashfreeSecureId': _cashfree_secure_id_probe(),
         },
         'payouts': {
@@ -148,9 +155,16 @@ def integration_status() -> dict:
                 else ('twilio_verify' if uses_twilio_verify() else resolve_sms_provider())
             ),
             'configured': uses_2factor_live() or resolve_sms_provider() != 'console',
-            'explicit': (getattr(settings, 'SMS_PROVIDER', 'console') or 'console').lower(),
+            'explicit': sms_status.get('explicit_provider'),
             'twilio_verify': uses_twilio_verify(),
             'twofactor': uses_2factor_live(),
+        },
+        'email_otp': {
+            'configured': email_status.get('ready', False),
+            'delivery_chain': email_status.get('delivery_chain', []),
+            'smtp': email_status.get('smtp', False),
+            'brevo': email_status.get('brevo', False),
+            'backend_public_url': email_status.get('backend_public_url', ''),
         },
         'bank_validation': {
             'provider': _kyc_provider_name() if _kyc_verification_configured() else 'razorpay_ifsc',
