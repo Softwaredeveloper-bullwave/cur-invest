@@ -91,7 +91,18 @@ def send_email_otp(*, user: User, email: str) -> dict:
             )
         except EmailDeliveryError as exc:
             logger.error('Email OTP delivery failed for user=%s: %s', user.pk, exc)
-            raise EmailOtpError(str(exc), 'email_delivery_failed') from exc
+            detail = str(exc)
+            if '535' in detail or 'BadCredentials' in detail or 'Username and Password not accepted' in detail:
+                detail = (
+                    'Gmail SMTP login failed. Set EMAIL_HOST_PASSWORD to a Gmail App Password '
+                    '(Google Account → Security → App passwords), not a Brevo API key. Then restart Django.'
+                )
+            elif 'No email provider' in detail or 'not configured' in detail.lower():
+                detail = (
+                    'Gmail SMTP is not configured. Add EMAIL_HOST_USER and EMAIL_HOST_PASSWORD '
+                    '(Gmail App Password) in investingapp/backend/.env and restart Django.'
+                )
+            raise EmailOtpError(detail, 'email_delivery_failed') from exc
 
     logger.info('Email OTP issued for user=%s mode=%s', user.pk, mode)
     payload = {

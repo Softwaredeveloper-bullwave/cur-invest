@@ -150,6 +150,10 @@ class ImagePickHelper {
   /// Desktop gallery uses [file_selector] — no photos permission needed.
   static bool get _galleryUsesFileSelector => isDesktop;
 
+  /// Android gallery uses the system photo picker — no READ_MEDIA_* permission.
+  static bool get _androidGalleryUsesSystemPicker =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+
   static Future<bool> ensurePermission(ImageSource source) async {
     if (kIsWeb) return true;
 
@@ -159,14 +163,9 @@ class ImagePickHelper {
       return status.isGranted || status.isLimited;
     }
 
-    if (_galleryUsesFileSelector) return true;
+    if (_galleryUsesFileSelector || _androidGalleryUsesSystemPicker) return true;
 
     switch (defaultTargetPlatform) {
-      case TargetPlatform.android:
-        final photos = await Permission.photos.request();
-        if (photos.isGranted || photos.isLimited) return true;
-        final storage = await Permission.storage.request();
-        return storage.isGranted;
       case TargetPlatform.iOS:
         final photos = await Permission.photos.request();
         return photos.isGranted || photos.isLimited;
@@ -231,18 +230,26 @@ class ImagePickHelper {
   }
 
   static String permissionDeniedMessage(ImageSource source) {
-    return source == ImageSource.camera
-        ? 'Camera permission is required. Enable it in Settings and try again.'
-        : 'Photo library access is required. Enable it in Settings and try again.';
+    if (source == ImageSource.camera) {
+      return 'Camera permission is required. Enable it in Settings and try again.';
+    }
+    if (_androidGalleryUsesSystemPicker) {
+      return 'Could not open the photo picker. Try again.';
+    }
+    return 'Photo library access is required. Enable it in Settings and try again.';
   }
 
   static String pickFailedMessage(ImageSource source) {
     if (source == ImageSource.camera && isDesktop) {
       return 'Could not open the camera. Check System Settings → Privacy → Camera for BullWave.';
     }
-    return source == ImageSource.camera
-        ? 'Could not open the camera. Check permission and try again.'
-        : 'Could not open the gallery. Check permission and try again.';
+    if (source == ImageSource.camera) {
+      return 'Could not open the camera. Check permission and try again.';
+    }
+    if (_androidGalleryUsesSystemPicker) {
+      return 'Could not open the photo picker. Try again.';
+    }
+    return 'Could not open the gallery. Check permission and try again.';
   }
 }
 

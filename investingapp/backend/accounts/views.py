@@ -42,6 +42,14 @@ from kyc.rate_limit import RateLimitExceeded, check_rate_limit
 
 from core.serializers import CamelCaseSerializer
 from .email_otp_service import EmailOtpError, normalize_email, send_email_otp, verify_email_otp
+from .web_email_auth import (
+    apply_verified_email_to_user,
+    find_returning_web_user,
+    resolve_email_proof_token,
+    send_web_email_otp,
+    verify_web_email_otp,
+)
+from .google_auth import GoogleAuthError, authenticate_with_google
 from kyc.service import user_dob_verified_from_kyc
 from .models import BankAccount, EmailOTPVerification, KycDocument, OTPVerification, User
 from .otp_utils import normalize_otp, normalize_phone
@@ -340,6 +348,21 @@ class VerifyOTPView(APIView):
 
             user, created = User.objects.get_or_create(phone=phone)
             _ensure_user_bootstrap(user, created=created)
+
+            # Website email-first signup: attach pre-verified email after phone OTP.
+            email_proof = (
+                request.data.get('emailProofToken')
+                or request.data.get('email_proof_token')
+                or ''
+            ).strip()
+            if email_proof:
+                try:
+                    verified_email = resolve_email_proof_token(email_proof)
+                    apply_verified_email_to_user(user, verified_email)
+                    user.refresh_from_db()
+                except EmailOtpError as exc:
+                    return Response({'detail': str(exc), 'code': exc.code}, status=400)
+
             return _issue_auth_tokens(user, request, created=created)
         except DatabaseError:
             logger.exception('Database error during verify-otp for %s', phone)
@@ -474,6 +497,125 @@ class VerifyEmailOTPView(APIView):
                 'user': UserSerializer(user, context={'request': request}).data,
             }
         )
+
+
+class WebSendEmailOTPView(APIView):
+    """Website signup step 1 — email OTP before phone (no JWT yet)."""
+
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        email = normalize_email(request.data.get('email', ''))
+        if not email:
+            return Response({'detail': 'Enter a valid email address.'}, status=400)
+        try:
+            check_rate_limit(f'auth:web-email-otp:{email}', limit=5, window_seconds=300)
+        except RateLimitExceeded as exc:
+            return Response({'detail': str(exc)}, status=429)
+        try:
+            payload = send_web_email_otp(email)
+        except EmailOtpError as exc:
+            status_code = 503 if exc.code in ('email_not_configured', 'email_delivery_failed') else 400
+            return Response({'detail': str(exc), 'code': exc.code}, status=status_code)
+        return Response(payload)
+
+
+class WebVerifyEmailOTPView(APIView):
+    """Website signup step 1b — returning users get JWT; new users get emailProofToken."""
+
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        email = normalize_email(request.data.get('email', ''))
+        otp = normalize_otp(request.data.get('otp', ''))
+        if not email:
+            return Response({'detail': 'Enter a valid email address.'}, status=400)
+        if len(otp) != 6:
+            return Response({'detail': 'Enter the 6-digit verification code.'}, status=400)
+        try:
+            check_rate_limit(f'auth:web-verify-email:{email}', limit=10, window_seconds=300)
+        except RateLimitExceeded as exc:
+            return Response({'detail': str(exc)}, status=429)
+        try:
+            payload = verify_web_email_otp(email, otp)
+        except EmailOtpError as exc:
+            return Response({'detail': str(exc), 'code': exc.code}, status=400)
+
+        if payload.get('nextStep') in ('app', 'onboarding'):
+            user = find_returning_web_user(email)
+            if not user:
+                return Response({'detail': 'Account not found. Continue with phone verification.'}, status=400)
+            response = _issue_auth_tokens(user, request, created=False)
+            data = dict(response.data)
+            data.update({
+                'success': True,
+                'email': email,
+                'nextStep': payload['nextStep'],
+                'isReturningUser': True,
+                'message': payload.get('message') or 'Welcome back.',
+            })
+            return Response(data)
+
+        return Response(payload)
+
+
+class GoogleAuthView(APIView):
+    """Website — Continue with Google. Returning users get JWT; new users go to phone."""
+
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        id_token = (
+            request.data.get('idToken')
+            or request.data.get('id_token')
+            or request.data.get('credential')
+            or ''
+        )
+        if not str(id_token).strip():
+            return Response({'detail': 'Missing Google credential.'}, status=400)
+        try:
+            check_rate_limit(
+                f'auth:google:{request.META.get("REMOTE_ADDR", "unknown")}',
+                limit=20,
+                window_seconds=300,
+            )
+        except RateLimitExceeded as exc:
+            return Response({'detail': str(exc)}, status=429)
+        try:
+            payload = authenticate_with_google(str(id_token))
+        except GoogleAuthError as exc:
+            status_code = 503 if exc.code == 'not_configured' else 400
+            return Response({'detail': str(exc), 'code': exc.code}, status=status_code)
+
+        if payload.get('nextStep') in ('app', 'onboarding'):
+            user = find_returning_web_user(payload['email'])
+            if not user:
+                return Response({'detail': 'Account not found. Continue with phone verification.'}, status=400)
+            response = _issue_auth_tokens(user, request, created=False)
+            data = dict(response.data)
+            data.update({
+                'success': True,
+                'provider': 'google',
+                'email': payload['email'],
+                'name': payload.get('name') or user.name,
+                'picture': payload.get('picture') or '',
+                'nextStep': payload['nextStep'],
+                'isReturningUser': True,
+                'message': payload.get('message') or 'Welcome back.',
+            })
+            return Response(data)
+
+        return Response(payload)
+
+
+class GoogleAuthConfigView(APIView):
+    """Public config so the website can show Continue with Google."""
+
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        client_id = (getattr(settings, 'GOOGLE_OAUTH_CLIENT_ID', '') or '').strip()
+        return Response({'enabled': bool(client_id), 'clientId': client_id})
 
 
 class ProfileAvatarView(APIView):

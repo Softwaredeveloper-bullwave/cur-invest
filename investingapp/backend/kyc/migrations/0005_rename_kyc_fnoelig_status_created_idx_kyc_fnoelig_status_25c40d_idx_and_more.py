@@ -4,23 +4,27 @@ from django.db import migrations
 
 
 def _index_exists(cursor, index_name: str) -> bool:
-    cursor.execute(
-        "SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = %s",
-        [index_name],
-    )
-    return cursor.fetchone() is not None
+    vendor = cursor.db.vendor if hasattr(cursor, 'db') else ''
+    # schema_editor path passes connection via RunPython — use connection vendor below
+    raise NotImplementedError
 
 
 def _safe_rename_indexes(apps, schema_editor):
     """Rename indexes only when the old name exists (idempotent for mixed DB states)."""
     connection = schema_editor.connection
+    if connection.vendor != 'postgresql':
+        return
     renames = [
         ('kyc_fnoelig_status_created_idx', 'kyc_fnoelig_status_25c40d_idx'),
         ('kyc_kycrequ_status_created_idx', 'kyc_kycrequ_status_0d6aed_idx'),
     ]
     with connection.cursor() as cursor:
         for old_name, new_name in renames:
-            if _index_exists(cursor, old_name):
+            cursor.execute(
+                "SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = %s",
+                [old_name],
+            )
+            if cursor.fetchone():
                 cursor.execute(f'ALTER INDEX "{old_name}" RENAME TO "{new_name}"')
 
 

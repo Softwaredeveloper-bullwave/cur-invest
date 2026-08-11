@@ -14,6 +14,8 @@ from .views import (
     BankVerifyView,
     CompleteProfileView,
     DevLoginView,
+    GoogleAuthConfigView,
+    GoogleAuthView,
     KycDocumentListView,
     KycStatusView,
     ProfileAvatarView,
@@ -22,6 +24,8 @@ from .views import (
     SendOTPView,
     VerifyEmailOTPView,
     VerifyOTPView,
+    WebSendEmailOTPView,
+    WebVerifyEmailOTPView,
 )
 
 urlpatterns = [
@@ -29,6 +33,10 @@ urlpatterns = [
     path('auth/verify-otp/', VerifyOTPView.as_view(), name='verify-otp'),
     path('auth/send-email-otp/', SendEmailOTPView.as_view(), name='send-email-otp'),
     path('auth/verify-email-otp/', VerifyEmailOTPView.as_view(), name='verify-email-otp'),
+    path('auth/web/send-email-otp/', WebSendEmailOTPView.as_view(), name='web-send-email-otp'),
+    path('auth/web/verify-email-otp/', WebVerifyEmailOTPView.as_view(), name='web-verify-email-otp'),
+    path('auth/google/', GoogleAuthView.as_view(), name='auth-google'),
+    path('auth/google/config/', GoogleAuthConfigView.as_view(), name='auth-google-config'),
     path('auth/token/refresh/', TokenRefreshView.as_view(), name='token-refresh'),
     path('users/me/', ProfileView.as_view(), name='profile'),
     path('users/me/complete-profile/', CompleteProfileView.as_view(), name='complete-profile'),

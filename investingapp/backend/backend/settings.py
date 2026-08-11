@@ -163,17 +163,27 @@ if _db_ssl_mode:
 if _db_ssl_root_cert:
     _db_options['sslrootcert'] = _db_ssl_root_cert
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': config('DB_NAME', default='bullwave_db'),
-        'USER': config('DB_USER', default='postgres'),
-        'PASSWORD': config('DB_PASSWORD', default='postgres'),
-        'HOST': config('DB_HOST', default='localhost'),
-        'PORT': config('DB_PORT', default='5432'),
-        **({'OPTIONS': _db_options} if _db_options else {}),
+# Local web/dev without Postgres: set USE_SQLITE=True in .env
+USE_SQLITE = config('USE_SQLITE', default=False, cast=bool)
+if USE_SQLITE:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': config('DB_NAME', default='bullwave_db'),
+            'USER': config('DB_USER', default='postgres'),
+            'PASSWORD': config('DB_PASSWORD', default='postgres'),
+            'HOST': config('DB_HOST', default='localhost'),
+            'PORT': config('DB_PORT', default='5432'),
+            **({'OPTIONS': _db_options} if _db_options else {}),
+        }
+    }
 
 AUTH_USER_MODEL = 'accounts.User'
 
@@ -461,6 +471,9 @@ BREVO_FROM_EMAIL = _clean_env(config('BREVO_FROM_EMAIL', default=''))
 BREVO_FROM_NAME = _clean_env(config('BREVO_FROM_NAME', default='BullWave Capital')) or 'BullWave Capital'
 SENDGRID_API_KEY = _ascii_env(config('SENDGRID_API_KEY', default=''))
 SENDGRID_FROM_EMAIL = _clean_env(config('SENDGRID_FROM_EMAIL', default=''))
+
+# Google Sign-In (website) — Web client ID from Google Cloud Console
+GOOGLE_OAUTH_CLIENT_ID = _ascii_env(config('GOOGLE_OAUTH_CLIENT_ID', default=''))
 
 FNO_MIN_PORTFOLIO_VALUE = config('FNO_MIN_PORTFOLIO_VALUE', default=50000, cast=int)
 KITE_API_KEY = config('KITE_API_KEY', default='')

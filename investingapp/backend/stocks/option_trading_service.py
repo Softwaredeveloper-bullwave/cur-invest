@@ -21,7 +21,13 @@ LOT_SIZES = {
     'NIFTY': 25,
     'BANKNIFTY': 15,
     'FINNIFTY': 25,
+    'SENSEX': 10,
+    'MIDCPNIFTY': 50,
+    'BANKEX': 15,
 }
+
+# Index futures paper margin (~SPAN-style) so 1L practice wallet can trade.
+FUTURES_MARGIN_PCT = Decimal('0.12')
 
 
 class OptionTradingError(Exception):
@@ -42,14 +48,26 @@ def _inr_from_usd(usd_amount: Decimal, rate: Decimal) -> Decimal:
     return (usd_amount * rate).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
 
-def _order_amount_inr(*, premium: Decimal, quantity: int, lot_size: int, asset_class: str, rate: Decimal) -> Decimal:
+def _order_amount_inr(
+    *,
+    premium: Decimal,
+    quantity: int,
+    lot_size: int,
+    asset_class: str,
+    rate: Decimal,
+    option_type: str = 'CE',
+) -> Decimal:
     total = premium * quantity * lot_size
+    if option_type.upper() == 'FU':
+        total = total * FUTURES_MARGIN_PCT
     if asset_class == OptionHolding.AssetClass.COMMODITY:
         return _inr_from_usd(total, rate)
     return total.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
 
 def _contract_label(underlying: str, strike, option_type: str, expiry: date) -> str:
+    if option_type.upper() == 'FU':
+        return f'{underlying.upper()} FUT {expiry.isoformat()}'
     return f'{underlying.upper()} {float(strike):g} {option_type} {expiry.isoformat()}'
 
 
@@ -154,14 +172,16 @@ def place_option_order(
 
     if side not in ('BUY', 'SELL'):
         raise OptionTradingError('Invalid order side.')
-    if option_type not in ('CE', 'PE'):
-        raise OptionTradingError('Invalid option type.')
+    if option_type not in ('CE', 'PE', 'FU'):
+        raise OptionTradingError('Invalid option type. Use CE, PE, or FU (index futures).')
     if quantity < 1:
         raise OptionTradingError('Quantity must be at least 1 lot.')
 
     if asset_class == OptionHolding.AssetClass.COMMODITY:
         if underlying not in COMMODITY_CATALOG:
             raise OptionTradingError('Commodity not found.')
+        if option_type == 'FU':
+            raise OptionTradingError('Index futures are only available for equity F&O.')
     elif asset_class != OptionHolding.AssetClass.EQUITY_FNO:
         raise OptionTradingError('Invalid asset class.')
 
@@ -170,9 +190,12 @@ def place_option_order(
 
     premium = Decimal(str(premium))
     if premium <= 0:
-        raise OptionTradingError('Invalid option premium.')
+        raise OptionTradingError('Invalid price.')
 
     strike = Decimal(str(strike))
+    if option_type == 'FU':
+        # One futures book per underlying+expiry (spot stored as avg_premium).
+        strike = Decimal('0')
     lot_size = _lot_size(underlying, asset_class)
     rate = get_usd_inr_rate() if asset_class == OptionHolding.AssetClass.COMMODITY else Decimal('1')
     order_inr = _order_amount_inr(
@@ -181,6 +204,7 @@ def place_option_order(
         lot_size=lot_size,
         asset_class=asset_class,
         rate=rate,
+        option_type=option_type,
     )
 
     holding = _holding_key(
@@ -196,14 +220,32 @@ def place_option_order(
             available = holding.quantity if holding else 0
             raise OptionTradingError(f'Insufficient lots. You hold {available}.')
         avg_cost = holding.avg_premium
-        buy_inr = _order_amount_inr(
-            premium=avg_cost,
-            quantity=quantity,
-            lot_size=lot_size,
-            asset_class=asset_class,
-            rate=rate,
-        )
-        realized_pnl_inr = order_inr - buy_inr
+        if option_type == 'FU':
+            # Return locked margin + full mark-to-market PnL.
+            locked_margin = _order_amount_inr(
+                premium=avg_cost,
+                quantity=quantity,
+                lot_size=lot_size,
+                asset_class=asset_class,
+                rate=rate,
+                option_type=option_type,
+            )
+            realized_pnl_inr = ((premium - avg_cost) * quantity * lot_size).quantize(
+                Decimal('0.01'), rounding=ROUND_HALF_UP
+            )
+            credit_inr = locked_margin + realized_pnl_inr
+            order_inr = credit_inr
+        else:
+            buy_inr = _order_amount_inr(
+                premium=avg_cost,
+                quantity=quantity,
+                lot_size=lot_size,
+                asset_class=asset_class,
+                rate=rate,
+                option_type=option_type,
+            )
+            realized_pnl_inr = order_inr - buy_inr
+            credit_inr = order_inr
         trade = OptionTrade.objects.create(
             user=user,
             underlying=underlying,
@@ -227,9 +269,13 @@ def place_option_order(
             holding.save(update_fields=['quantity'])
         practice_wallet = credit_practice_wallet(
             user,
-            order_inr,
+            credit_inr,
             reference=f'OPT-{trade.id}',
-            description=f'Paper option sell {underlying} {option_type} × {quantity}',
+            description=(
+                f'Paper futures sell {underlying} × {quantity}'
+                if option_type == 'FU'
+                else f'Paper option sell {underlying} {option_type} × {quantity}'
+            ),
         )
     else:
         trade = OptionTrade.objects.create(
@@ -267,7 +313,11 @@ def place_option_order(
                 user,
                 order_inr,
                 reference=f'OPT-{trade.id}',
-                description=f'Paper option buy {underlying} {option_type} × {quantity}',
+                description=(
+                    f'Paper futures buy {underlying} × {quantity}'
+                    if option_type == 'FU'
+                    else f'Paper option buy {underlying} {option_type} × {quantity}'
+                ),
             )
         except PracticeWalletError as exc:
             raise OptionTradingError(str(exc)) from exc

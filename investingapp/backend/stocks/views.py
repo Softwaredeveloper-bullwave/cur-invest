@@ -35,7 +35,14 @@ from .models import (
     TraderNote,
     WatchlistItem,
 )
-from kyc.permissions import IsFnoVerified, IsKycVerified, MARKET_BROWSE_PERMISSIONS, MARKET_TRADE_PERMISSIONS
+from kyc.permissions import (
+    IsFnoVerified,
+    IsKycVerified,
+    MARKET_BROWSE_PERMISSIONS,
+    MARKET_TRADE_PERMISSIONS,
+    PAPER_TRADE_PERMISSIONS,
+    trade_permissions_for_request,
+)
 
 from .commodity_trading_service import (
     CommodityTradingError,
@@ -242,7 +249,8 @@ class WatchlistView(APIView):
 
 
 class WatchlistSymbolView(APIView):
-    permission_classes = MARKET_TRADE_PERMISSIONS
+    def get_permissions(self):
+        return trade_permissions_for_request(self.request)
 
     def post(self, request, symbol):
         stock = _stock_or_fallback(symbol)
@@ -536,7 +544,7 @@ class OptionChainView(APIView):
 
 
 class PaperTradingOrdersView(APIView):
-    permission_classes = MARKET_TRADE_PERMISSIONS
+    permission_classes = PAPER_TRADE_PERMISSIONS
 
     def get(self, request):
         return Response(list_recent_trades(request.user, limit=50))
@@ -732,7 +740,8 @@ class OptionOrdersView(APIView):
     def get_permissions(self):
         if self.request.method == 'GET':
             return [IsAuthenticated()]
-        return [p() for p in MARKET_TRADE_PERMISSIONS]
+        # Web paper trading: email + onboarding; mobile: full KYC.
+        return trade_permissions_for_request(self.request)
 
     def get(self, request):
         return Response(camelize({'trades': list_recent_option_trades(request.user)}))

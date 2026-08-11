@@ -1,0 +1,91 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-brand-lime: #c6ff00;
+  --color-brand-ink: #0a0a0a;
+  --color-brand-gold: #ffb830;
+  --color-brand-magenta: #a855f7;
+  --color-midnight: #060a14;
+  --color-surface: #0f1628;
+  --color-surface-2: #151d32;
+  --color-muted: #94a3b8;
+  --color-success: #22c55e;
+  --color-danger: #ef4444;
+  --font-sans: 'Inter', system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background: var(--color-midnight);
+  color: #f5f5f5;
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--color-brand-lime) 35%, transparent);
+}
+
+.gradient-hero {
+  background:
+    radial-gradient(ellipse 80% 60% at 50% -10%, rgba(198, 255, 0, 0.12), transparent),
+    radial-gradient(ellipse 50% 40% at 90% 20%, rgba(168, 85, 247, 0.08), transparent),
+    var(--color-midnight);
+}
+
+.glass {
+  background: color-mix(in srgb, var(--color-surface) 85%, transparent);
+  border: 1px solid color-mix(in srgb, #fff 8%, transparent);
+  backdrop-filter: blur(12px);
+}
+
+.card-hover {
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--color-brand-lime) 35%, transparent);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.6s ease forwards;
+}
+
+@keyframes pulse-lime {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(198, 255, 0, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(198, 255, 0, 0);
+  }
+}
+
+.pulse-cta {
+  animation: pulse-lime 2.5s ease infinite;
+}

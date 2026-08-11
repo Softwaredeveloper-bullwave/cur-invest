@@ -112,6 +112,20 @@ class EmailOTPVerification(models.Model):
         ordering = ['-created_at']
 
 
+class PendingEmailOTP(models.Model):
+    """Web signup email OTP before phone auth (no user yet)."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    email = models.EmailField(max_length=254, db_index=True)
+    otp_code = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    is_used = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['-created_at']
+
+
 class BankAccount(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='bank_account')
     account_holder_name = models.CharField(max_length=120)

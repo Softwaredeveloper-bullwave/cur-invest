@@ -118,9 +118,14 @@ class KycFlowProvider extends ChangeNotifier {
       return 'DigiLocker session expired. Tap “Start a new verification” and complete consent again.';
     }
     if (e.code == 'public_redirect_required') {
-      return 'DigiLocker needs HTTPS. In backend/.env set LOCAL_DEV_TUNNEL_URL to your '
-          'localtunnel URL (run: npx localtunnel --port 8000), restart Django, then '
-          'on a physical device also run: flutter run --dart-define=API_BASE_URL=https://YOUR-ID.loca.lt/api/v1';
+      return 'DigiLocker needs an HTTPS callback URL.\n\n'
+          'Production (recommended): on AWS run '
+          'bash deploy/fix_digilocker_production.sh and set '
+          'BACKEND_PUBLIC_URL=https://api.capitalbullwave.com — then use the app '
+          'with the default API (no local tunnel).\n\n'
+          'Local dev: run backend/scripts/run_dev_with_digilocker.sh, then restart '
+          'Flutter with --dart-define=API_BASE_URL=https://YOUR-TUNNEL.loca.lt/api/v1 '
+          'on a physical device.';
     }
     return e.message;
   }
