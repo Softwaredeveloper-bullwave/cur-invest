@@ -17,6 +17,11 @@ echo "==> Create gunicorn worker temp dir"
 mkdir -p "$TMP_DIR"
 chmod 700 "$TMP_DIR"
 
+echo "==> Create writable media directory (profile photos / KYC uploads)"
+MEDIA_DIR="$BACKEND_DIR/media"
+mkdir -p "$MEDIA_DIR/avatars"
+chmod -R u+rwX "$MEDIA_DIR"
+
 echo "==> Disk space"
 df -h / /tmp "$BACKEND_DIR" 2>/dev/null || df -h
 

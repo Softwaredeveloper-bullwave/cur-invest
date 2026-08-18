@@ -8,6 +8,7 @@ from django.conf import settings
 from django.db import DatabaseError
 from django.utils import timezone
 from rest_framework import status
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -41,7 +42,8 @@ from kyc.service import get_or_create_profile
 from kyc.rate_limit import RateLimitExceeded, check_rate_limit
 
 from core.serializers import CamelCaseSerializer
-from .email_otp_service import EmailOtpError, normalize_email, send_email_otp, verify_email_otp
+from .email_otp_service import EmailOtpError, _EMAIL_REGEX, normalize_email, send_email_otp, verify_email_otp
+from .avatar_storage import ensure_media_dirs, normalize_avatar_upload
 from .web_email_auth import (
     apply_verified_email_to_user,
     find_returning_web_user,
@@ -398,17 +400,26 @@ class ProfileView(APIView):
         serializer = ProfileUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = request.user
-        for field, value in serializer.validated_data.items():
-            if field == 'email':
-                new_email = normalize_email(value)
-                if new_email != normalize_email(user.email):
-                    user.email_verified = False
-                user.email = new_email
-                continue
-            if field == 'date_of_birth' and user_dob_verified_from_kyc(user):
-                continue
-            setattr(user, field, value)
-        user.save()
+        try:
+            for field, value in serializer.validated_data.items():
+                if field == 'email':
+                    new_email = normalize_email(value)
+                    if new_email and not _EMAIL_REGEX.match(new_email):
+                        return Response({'detail': 'Enter a valid email address.'}, status=400)
+                    if new_email != normalize_email(user.email):
+                        user.email_verified = False
+                    user.email = new_email
+                    continue
+                if field == 'date_of_birth' and user_dob_verified_from_kyc(user):
+                    continue
+                setattr(user, field, value)
+            user.save()
+        except (DatabaseError, OSError) as exc:
+            logger.exception('Profile update failed for user %s', user.id)
+            return Response(
+                {'detail': 'Could not save profile. Please try again in a moment.'},
+                status=503,
+            )
         return Response(UserSerializer(user, context={'request': request}).data)
 
 
@@ -620,6 +631,7 @@ class GoogleAuthConfigView(APIView):
 
 class ProfileAvatarView(APIView):
     permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
 
     _ALLOWED_TYPES = frozenset({'image/jpeg', 'image/png', 'image/webp', 'image/jpg'})
 
@@ -658,18 +670,35 @@ class ProfileAvatarView(APIView):
         if not avatar:
             return Response({'detail': 'No image file provided.'}, status=400)
 
-        if not self._detect_image_type(avatar):
-            return Response({'detail': 'Use JPEG, PNG, or WebP image.'}, status=400)
-
         if avatar.size > 5 * 1024 * 1024:
             return Response({'detail': 'Image must be under 5 MB.'}, status=400)
 
         user = request.user
-        if user.avatar:
-            user.avatar.delete(save=False)
-        user.avatar = avatar
-        user.avatar_url = ''
-        user.save()
+        try:
+            ensure_media_dirs()
+            normalized = normalize_avatar_upload(avatar)
+        except ValueError as exc:
+            return Response({'detail': str(exc)}, status=400)
+        except OSError:
+            logger.exception('Avatar storage unavailable for user %s', user.id)
+            return Response(
+                {'detail': 'Could not save photo. Server storage may be full — contact support.'},
+                status=503,
+            )
+
+        try:
+            if user.avatar:
+                user.avatar.delete(save=False)
+            user.avatar = normalized
+            user.avatar_url = ''
+            user.save(update_fields=['avatar', 'avatar_url'])
+        except (DatabaseError, OSError) as exc:
+            logger.exception('Avatar save failed for user %s', user.id)
+            return Response(
+                {'detail': 'Could not save photo. Please try again.'},
+                status=503,
+            )
+
         return Response(UserSerializer(user, context={'request': request}).data)
 
     def delete(self, request):

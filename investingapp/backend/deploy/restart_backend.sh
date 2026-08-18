@@ -20,6 +20,10 @@ echo "==> Ensure gunicorn temp directory exists"
 mkdir -p "$BACKEND_DIR/run/tmp"
 chmod 700 "$BACKEND_DIR/run/tmp"
 
+echo "==> Ensure media directory exists (avatars / uploads)"
+mkdir -p "$BACKEND_DIR/media/avatars"
+chmod -R u+rwX "$BACKEND_DIR/media"
+
 echo "==> Disk space"
 df -h / /tmp "$BACKEND_DIR" 2>/dev/null || df -h
 

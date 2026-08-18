@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
+
+import '../../../../core/constants/brand.dart';
 import '../../../../core/constants/dimensions.dart';
 import '../../../../core/constants/legal_config.dart';
 import '../../../../core/constants/routes.dart';
@@ -18,85 +21,98 @@ class SettingsScreen extends StatelessWidget {
       appBar: const CustomAppBar(title: 'Settings'),
       body: Consumer<AppProvider>(
         builder: (context, provider, _) {
-          return ListView(
-            padding: const EdgeInsets.all(AppDimensions.paddingMd),
-            children: [
-              Card(
-                child: SwitchListTile(
-                  title: const Text('Dark Mode'),
-                  subtitle: const Text('Toggle dark theme'),
-                  value: provider.isDarkMode,
-                  onChanged: provider.toggleDarkMode,
-                  secondary: const Icon(Icons.dark_mode_outlined),
-                ),
-              ),
-              Card(
-                child: ListTile(
-                  leading: const Icon(Icons.language),
-                  title: const Text('Language'),
-                  subtitle: Text(provider.language),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => _showLanguageDialog(context, provider),
-                ),
-              ),
-              Card(
-                child: Column(
-                  children: [
-                    ListTile(
-                      leading: const Icon(Icons.description_outlined),
-                      title: const Text('Terms & Conditions'),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () => context.push(AppRoutes.terms),
+          return FutureBuilder<PackageInfo>(
+            future: PackageInfo.fromPlatform(),
+            builder: (context, snapshot) {
+              final info = snapshot.data;
+              final versionLabel = info == null
+                  ? AppBrand.name
+                  : '${AppBrand.name} v${info.version}';
+              final buildLabel = info == null
+                  ? 'Loading version…'
+                  : '${info.version} (Build ${info.buildNumber})';
+
+              return ListView(
+                padding: const EdgeInsets.all(AppDimensions.paddingMd),
+                children: [
+                  Card(
+                    child: SwitchListTile(
+                      title: const Text('Dark Mode'),
+                      subtitle: const Text('Toggle dark theme'),
+                      value: provider.isDarkMode,
+                      onChanged: provider.toggleDarkMode,
+                      secondary: const Icon(Icons.dark_mode_outlined),
                     ),
-                    const Divider(height: 1),
-                    ListTile(
-                      leading: const Icon(Icons.privacy_tip_outlined),
-                      title: const Text('Privacy Policy'),
+                  ),
+                  Card(
+                    child: ListTile(
+                      leading: const Icon(Icons.language),
+                      title: const Text('Language'),
+                      subtitle: Text(provider.language),
                       trailing: const Icon(Icons.chevron_right),
-                      onTap: () => context.push(AppRoutes.privacy),
+                      onTap: () => _showLanguageDialog(context, provider),
                     ),
-                  ],
-                ),
-              ),
-              Card(
-                child: ListTile(
-                  leading: const Icon(Icons.info_outline),
-                  title: const Text('About'),
-                  subtitle: const Text('BullWave Invest v1.0.0'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => _showAboutDialog(context),
-                ),
-              ),
-              Card(
-                child: ListTile(
-                  leading: const Icon(Icons.info_outline, color: AppColors.textSecondary),
-                  title: const Text('App Version'),
-                  subtitle: const Text('1.0.0 (Build 1)'),
-                ),
-              ),
-              const SizedBox(height: AppDimensions.paddingLg),
-              OutlinedButton(
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.error,
-                  side: const BorderSide(color: AppColors.error),
-                ),
-                onPressed: () async {
-                  final confirm = await CustomDialog.showConfirm(
-                    context,
-                    title: 'Delete Account',
-                    message:
-                        'This action is permanent. All your data will be deleted. '
-                        'You may also request deletion at ${LegalConfig.accountDeletionUrl}. '
-                        'Are you sure?',
-                    confirmLabel: 'Delete',
-                  );
-                  if (confirm == true && context.mounted) {
-                    AppSnackbar.error(context, 'Account deletion request submitted');
-                  }
-                },
-                child: const Text('Delete Account'),
-              ),
-            ],
+                  ),
+                  Card(
+                    child: Column(
+                      children: [
+                        ListTile(
+                          leading: const Icon(Icons.description_outlined),
+                          title: const Text('Terms & Conditions'),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () => context.push(AppRoutes.terms),
+                        ),
+                        const Divider(height: 1),
+                        ListTile(
+                          leading: const Icon(Icons.privacy_tip_outlined),
+                          title: const Text('Privacy Policy'),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () => context.push(AppRoutes.privacy),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Card(
+                    child: ListTile(
+                      leading: const Icon(Icons.info_outline),
+                      title: const Text('About'),
+                      subtitle: Text(versionLabel),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => _showAboutDialog(context),
+                    ),
+                  ),
+                  Card(
+                    child: ListTile(
+                      leading: const Icon(Icons.info_outline, color: AppColors.textSecondary),
+                      title: const Text('App Version'),
+                      subtitle: Text(buildLabel),
+                    ),
+                  ),
+                  const SizedBox(height: AppDimensions.paddingLg),
+                  OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.error,
+                      side: const BorderSide(color: AppColors.error),
+                    ),
+                    onPressed: () async {
+                      final confirm = await CustomDialog.showConfirm(
+                        context,
+                        title: 'Delete Account',
+                        message:
+                            'This action is permanent. All your data will be deleted. '
+                            'You may also request deletion at ${LegalConfig.accountDeletionUrl}. '
+                            'Are you sure?',
+                        confirmLabel: 'Delete',
+                      );
+                      if (confirm == true && context.mounted) {
+                        AppSnackbar.error(context, 'Account deletion request submitted');
+                      }
+                    },
+                    child: const Text('Delete Account'),
+                  ),
+                ],
+              );
+            },
           );
         },
       ),
@@ -133,10 +149,8 @@ class SettingsScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('About BullWave Invest'),
-        content: const Text(
-          'BullWave Invest is a premium Indian investment platform helping you grow your wealth with secure, high-yield investment plans.',
-        ),
+        title: Text('About ${AppBrand.name}'),
+        content: Text(AppBrand.aboutDescription),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),

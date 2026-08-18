@@ -174,6 +174,56 @@ class ImagePickHelper {
     }
   }
 
+  static Future<Uint8List> _readImageBytes(XFile file) async {
+    try {
+      return await file.readAsBytes();
+    } catch (_) {
+      final path = file.path;
+      if (!kIsWeb && path.isNotEmpty) {
+        return File(path).readAsBytes();
+      }
+      rethrow;
+    }
+  }
+
+  /// Profile avatar — pick, compress, and return JPEG bytes for upload.
+  static Future<({Uint8List bytes, String filename})?> pickProfileAvatar({
+    required BuildContext context,
+    required ImageSource source,
+  }) async {
+    if (source == ImageSource.camera) {
+      final allowed = await ensurePermission(ImageSource.camera);
+      if (!allowed) return null;
+    }
+
+    final file = await pickImage(
+      source: source,
+      maxWidth: 1024,
+      maxHeight: 1024,
+      imageQuality: 85,
+      requestPermission: false,
+      context: context,
+    );
+    if (file == null) return null;
+
+    final raw = await _readImageBytes(file);
+    if (raw.isEmpty) {
+      throw const FormatException('Photo file is empty.');
+    }
+    final decoded = img.decodeImage(raw);
+    if (decoded == null) {
+      throw const FormatException('Could not process photo. Try another JPEG or PNG image.');
+    }
+    final resized = decoded.width > 1024
+        ? img.copyResize(decoded, width: 1024)
+        : decoded;
+    final bytes = Uint8List.fromList(img.encodeJpg(resized, quality: 85));
+    if (bytes.isEmpty) {
+      throw const FormatException('Could not prepare photo for upload.');
+    }
+    return (bytes: bytes, filename: 'avatar.jpg');
+  }
+
   static Future<XFile?> pickImage({
     required ImageSource source,
     double maxWidth = 1024,

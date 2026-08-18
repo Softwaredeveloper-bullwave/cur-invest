@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../../core/constants/brand.dart';
 import '../../../../core/constants/dimensions.dart';
 import '../../../../core/theme/app_theme_extension.dart';
 import '../../../../core/theme/colors.dart';
@@ -43,7 +44,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
     await SharePlus.instance.share(
       ShareParams(
         text: referral.shareMessage,
-        subject: 'Join BullWave Invest',
+        subject: 'Join ${AppBrand.name}',
       ),
     );
   }

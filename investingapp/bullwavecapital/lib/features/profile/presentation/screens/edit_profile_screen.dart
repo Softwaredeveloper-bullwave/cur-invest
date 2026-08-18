@@ -57,23 +57,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   Future<void> _pickImage(ImageSource source) async {
     try {
-      final allowed = await ImagePickHelper.ensurePermission(source);
-      if (!allowed) {
+      final picked = await ImagePickHelper.pickProfileAvatar(context: context, source: source);
+      if (picked == null) {
         if (!mounted) return;
-        AppSnackbar.error(context, ImagePickHelper.permissionDeniedMessage(source));
+        if (source == ImageSource.camera) {
+          AppSnackbar.error(context, ImagePickHelper.permissionDeniedMessage(source));
+        }
         return;
       }
-      final file = await ImagePickHelper.pickImage(
-        source: source,
-        requestPermission: false,
-        context: context,
-      );
-      if (file == null) return;
-      final bytes = await file.readAsBytes();
       if (!mounted) return;
       setState(() {
-        _pickedImageBytes = bytes;
-        _pickedImageName = file.name.isNotEmpty ? file.name : 'avatar.jpg';
+        _pickedImageBytes = picked.bytes;
+        _pickedImageName = picked.filename;
         _removeAvatar = false;
       });
     } catch (_) {

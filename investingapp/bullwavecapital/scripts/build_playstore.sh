@@ -6,11 +6,11 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
 # ── Required: production API URL (HTTPS) ──
-API_BASE_URL="${API_BASE_URL:-https://api.bullwave.in/api/v1}"
+API_BASE_URL="${API_BASE_URL:-https://api.capitalbullwave.com/api/v1}"
 
 if [[ ! "$API_BASE_URL" == https://* ]]; then
   echo "ERROR: API_BASE_URL must use HTTPS for Play Store builds."
-  echo "Example: API_BASE_URL=https://api.bullwave.in/api/v1 $0"
+  echo "Example: API_BASE_URL=https://api.capitalbullwave.com/api/v1 $0"
   exit 1
 fi
 

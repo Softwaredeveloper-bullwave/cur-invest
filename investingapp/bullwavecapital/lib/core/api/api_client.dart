@@ -54,7 +54,13 @@ class ApiClient {
     );
   }
 
-  String _friendlyServerError(int statusCode) {
+  String _friendlyServerError(int statusCode, [dynamic body]) {
+    if (body is Map) {
+      final detail = body['detail'];
+      if (detail is String && detail.isNotEmpty) {
+        return detail;
+      }
+    }
     if (statusCode >= 500) {
       return 'Server error at ${ApiConfig.baseUrl}. The API responded but failed — '
           'check GET /health/ and backend logs on the server.';
@@ -70,7 +76,7 @@ class ApiClient {
       } catch (_) {
         final error = ApiException(
           response.statusCode,
-          _friendlyServerError(response.statusCode),
+          _friendlyServerError(response.statusCode, body),
         );
         if (response.statusCode >= 500) {
           _report(error, StackTrace.current, path, statusCode: response.statusCode);
@@ -88,7 +94,7 @@ class ApiClient {
           message = detail.first.toString();
         }
       } else if (response.statusCode >= 500) {
-        message = _friendlyServerError(response.statusCode);
+        message = _friendlyServerError(response.statusCode, body);
       }
       final error = ApiException(response.statusCode, message);
       if (response.statusCode >= 500) {

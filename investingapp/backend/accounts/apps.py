@@ -75,3 +75,10 @@ class AccountsConfig(AppConfig):
                     lan,
                     lan,
                 )
+
+        try:
+            from .avatar_storage import ensure_media_dirs
+
+            ensure_media_dirs()
+        except OSError as exc:
+            logger.warning('Media directory could not be created: %s', exc)

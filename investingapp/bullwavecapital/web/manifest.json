@@ -1,11 +1,11 @@
 {
-    "name": "bullwave_invest",
-    "short_name": "bullwave_invest",
+    "name": "Capital BullWave",
+    "short_name": "Capital BullWave",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#FFFFFF",
+    "theme_color": "#0A0A0A",
+    "description": "Capital BullWave - Indian investment platform for paper trading, goals, and research.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

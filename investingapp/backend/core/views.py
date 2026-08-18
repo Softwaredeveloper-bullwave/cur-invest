@@ -20,7 +20,7 @@ class HealthView(APIView):
         return Response(
             {
                 'status': 'ok' if all_critical else 'degraded',
-                'service': 'BullWave Capital API',
+                'service': 'Capital BullWave API',
                 'version': 'v1',
                 'integrations': integrations,
             }
