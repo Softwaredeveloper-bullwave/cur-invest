@@ -6,7 +6,7 @@ import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 import '../theme/colors.dart';
 
-/// Figma-style floating bottom nav — concave notch, centered lime bubble.
+/// Figma-style floating bottom nav — concave notch, centered blue bubble.
 class AppBottomNavigation extends StatefulWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
@@ -197,10 +197,10 @@ class _AppBottomNavigationState extends State<AppBottomNavigation>
                         child: DecoratedBox(
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: AppColors.brandPrimary,
+                            gradient: AppColors.navHomeGradient,
                             boxShadow: [
                               BoxShadow(
-                                color: AppColors.brandPrimary.withValues(alpha: 0.4),
+                                color: AppColors.brandPrimary.withValues(alpha: 0.45),
                                 blurRadius: 14,
                                 offset: const Offset(0, 3),
                               ),
@@ -210,7 +210,7 @@ class _AppBottomNavigationState extends State<AppBottomNavigation>
                             child: Icon(
                               _items[widget.currentIndex],
                               size: 24,
-                              color: AppColors.brandPrimaryDark,
+                              color: AppColors.onBrandPrimary,
                             ),
                           ),
                         ),

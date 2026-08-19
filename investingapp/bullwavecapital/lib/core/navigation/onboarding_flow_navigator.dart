@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../constants/routes.dart';
+import '../config/paper_only_mode.dart';
 import '../../features/authentication/presentation/provider/auth_provider.dart';
 import '../../features/kyc/domain/kyc_models.dart';
 import '../../features/kyc/presentation/provider/kyc_flow_provider.dart';
@@ -80,8 +81,11 @@ class OnboardingFlowNavigator {
     return AppRoutes.verifyEmail;
   }
 
-  /// Registered returning user — home first; KYC is optional until they trade.
+  /// Registered returning user — home when Phase 1 identity is done (paper mode).
   static String routeForReturningUser(KycFlowProvider kyc) {
+    if (PaperOnlyMode.enabled && !kyc.hasPhase1Identity) {
+      return nextIncompleteKycStep(kyc) ?? AppRoutes.panVerification;
+    }
     return AppRoutes.home;
   }
 
@@ -116,6 +120,9 @@ class OnboardingFlowNavigator {
         status.bankReviewPending ||
         status.bankDraftReady;
     if (!bankDone) return AppRoutes.bankVerificationKyc;
+
+    // Phase 1 — identity verified through bank; skip UPI/selfie/final approval.
+    if (PaperOnlyMode.enabled) return null;
 
     if (!_identityStepComplete(status, kyc.upiRequired)) {
       return AppRoutes.identityVerification;

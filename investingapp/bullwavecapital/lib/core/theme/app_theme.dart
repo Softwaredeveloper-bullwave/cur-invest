@@ -88,8 +88,22 @@ class AppTheme {
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: isDark ? colors.primary : Colors.black,
-          foregroundColor: isDark ? colors.onPrimary : Colors.white,
+          backgroundColor: colors.primary,
+          foregroundColor: colors.onPrimary,
+          minimumSize: const Size(0, AppDimensions.buttonHeight),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(999),
+          ),
+          elevation: 0,
+          textStyle: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700),
+        ),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: colors.primary,
+          foregroundColor: colors.onPrimary,
+          disabledBackgroundColor: colors.primary.withValues(alpha: 0.45),
+          disabledForegroundColor: colors.onPrimary.withValues(alpha: 0.7),
           minimumSize: const Size(0, AppDimensions.buttonHeight),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(999),

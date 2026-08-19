@@ -8,6 +8,7 @@ import '../../../../core/theme/colors.dart';
 import '../../../../core/theme/theme_a.dart';
 import '../../../../core/widgets/icon_badge.dart';
 import '../../../../core/widgets/page_hero_background.dart';
+import '../../../../core/config/paper_only_mode.dart';
 import '../../../home/presentation/widgets/home_pending_actions.dart';
 import '../../../../core/widgets/premium_ui_kit.dart';
 import '../../../fno/fno_navigation.dart';
@@ -199,7 +200,7 @@ class _StockMarketsScreenState extends State<StockMarketsScreen> {
                           ),
                         ],
                         const SizedBox(height: 12),
-                        const HomePendingActionsSection(),
+                        if (!PaperOnlyMode.enabled) const HomePendingActionsSection(),
                         if (!searching) ...[
                           const SizedBox(height: 14),
                           MarketsPremiumOverview(

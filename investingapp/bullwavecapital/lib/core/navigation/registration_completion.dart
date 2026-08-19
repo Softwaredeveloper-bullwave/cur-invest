@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../api/token_storage.dart';
 import '../constants/routes.dart';
+import '../config/paper_only_mode.dart';
 import '../../features/authentication/presentation/provider/auth_provider.dart';
 import '../../features/kyc/presentation/provider/kyc_flow_provider.dart';
 
@@ -11,7 +12,10 @@ import '../../features/kyc/presentation/provider/kyc_flow_provider.dart';
 class RegistrationCompletion {
   RegistrationCompletion._();
 
-  static bool isRegistrationComplete(KycFlowProvider kyc) => kyc.isFullyVerified;
+  static bool isRegistrationComplete(KycFlowProvider kyc) {
+    if (PaperOnlyMode.enabled) return kyc.hasPhase1Identity;
+    return kyc.isFullyVerified;
+  }
 
   /// New user finished all KYC steps — enter the app.
   static Future<void> finishAndGoHome(BuildContext context) async {

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../../../core/constants/routes.dart';
 import '../../../../core/theme/app_decorations.dart';
+import '../../../../core/config/paper_only_mode.dart';
 import '../../../../core/theme/app_theme_extension.dart';
 import '../../../../core/theme/colors.dart';
 import '../provider/stock_market_provider.dart';
@@ -597,7 +598,10 @@ class _TradeBar extends StatelessWidget {
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 ),
-                child: const Text('Buy', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+                child: Text(
+                  PaperOnlyMode.enabled ? 'Paper Buy' : 'Buy',
+                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                ),
               ),
             ),
           ),
@@ -616,7 +620,7 @@ class _TradeBar extends StatelessWidget {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 ),
                 child: Text(
-                  holdingQty > 0 ? 'Sell' : 'Sell',
+                  PaperOnlyMode.enabled ? 'Paper Sell' : 'Sell',
                   style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
                 ),
               ),

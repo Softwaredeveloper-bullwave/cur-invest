@@ -315,7 +315,7 @@ class _SetupSectionHeader extends StatelessWidget {
               style: GoogleFonts.inter(
                 fontSize: 10,
                 fontWeight: FontWeight.w900,
-                color: HomeThemeA.primaryDark,
+                color: HomeThemeA.onPrimary,
                 letterSpacing: 0.6,
               ),
             ),
@@ -604,7 +604,7 @@ class _StatusPill extends StatelessWidget {
         style: GoogleFonts.inter(
           fontSize: 9,
           fontWeight: FontWeight.w900,
-          color: isRejected ? Colors.white : HomeThemeA.primaryDark,
+          color: isRejected ? Colors.white : HomeThemeA.onPrimary,
           letterSpacing: 0.5,
         ),
       ),
@@ -659,7 +659,7 @@ class _ActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fg = isRejected ? Colors.white : HomeThemeA.primaryDark;
+    final fg = isRejected ? Colors.white : HomeThemeA.onPrimary;
     final bg = isRejected ? AppColors.red : HomeThemeA.primary;
 
     return Container(

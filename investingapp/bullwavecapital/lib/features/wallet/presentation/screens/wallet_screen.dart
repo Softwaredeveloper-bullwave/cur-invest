@@ -2,15 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:provider/provider.dart';
+import '../../../../core/config/paper_only_mode.dart';
 import '../../../../core/constants/dimensions.dart';
 import '../../../../core/constants/routes.dart';
 import '../../../../core/constants/shell_layout.dart';
 import '../../../../core/theme/colors.dart';
 import '../../../../core/theme/theme_a.dart';
+import '../../../../core/navigation/shell_navigation.dart';
 import '../../../../core/utils/bank_verification_guard.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/widgets/loading_card.dart';
 import '../../../../core/widgets/page_hero_background.dart';
+import '../../../../core/widgets/paper_trading_disclaimer.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../../../core/widgets/robinhood_card.dart';
 import '../../../../core/widgets/icon_badge.dart';
@@ -36,6 +39,95 @@ class WalletScreen extends StatelessWidget {
 
         final wallet = provider.wallet;
         final p = context.palette;
+
+        if (PaperOnlyMode.enabled) {
+          return RefreshIndicator(
+            onRefresh: () => provider.loadData(),
+            child: SafeArea(
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    PageHeroBackground(
+                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const ShellPageHeader(
+                            title: 'Practice Wallet',
+                            subtitle: 'Virtual funds for paper trading',
+                          ),
+                          const SizedBox(height: 14),
+                          const PaperTradingDisclaimer(),
+                          const SizedBox(height: 16),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
+                            decoration: p.heroCardDecoration(),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Container(
+                                      width: 40,
+                                      height: 40,
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withValues(alpha: 0.12),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Icon(
+                                        PhosphorIcons.flask,
+                                        size: 20,
+                                        color: p.heroCardFg,
+                                      ),
+                                    ),
+                                    const Spacer(),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: p.primary.withValues(alpha: 0.2),
+                                        borderRadius: BorderRadius.circular(999),
+                                      ),
+                                      child: Text(
+                                        'VIRTUAL',
+                                        style: ThemeAType.label(size: 10, color: p.primary)
+                                            .copyWith(fontWeight: FontWeight.w800),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Practice Balance',
+                                  style: ThemeAType.secondary(size: 13, color: p.heroCardMuted),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  CurrencyFormatter.format(provider.practiceBalance),
+                                  style: ThemeAType.price(size: 34, color: p.heroCardFg),
+                                ),
+                                const SizedBox(height: 18),
+                                PrimaryButton(
+                                  label: 'Open Paper Trading',
+                                  icon: Icons.show_chart_rounded,
+                                  compact: true,
+                                  onPressed: () => pushOverShell(context, AppRoutes.paperTrading),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: ShellLayout.contentBottomInset),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }
 
         return RefreshIndicator(
           onRefresh: () => provider.loadData(),

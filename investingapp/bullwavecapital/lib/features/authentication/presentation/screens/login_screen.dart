@@ -279,7 +279,9 @@ class _SignInView extends StatelessWidget {
                 onPressed: auth.isLoading ? null : onSignIn,
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColors.brandPrimary,
+                  foregroundColor: AppColors.onBrandPrimary,
                   disabledBackgroundColor: AppColors.brandPrimary.withValues(alpha: 0.45),
+                  disabledForegroundColor: AppColors.onBrandPrimary.withValues(alpha: 0.7),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 ),
                 child: auth.isLoading

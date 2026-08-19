@@ -384,7 +384,10 @@ class _CreateNewsAlertCard extends StatelessWidget {
                   ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                   : const Icon(Icons.newspaper_rounded),
               label: const Text('Create News Alert', style: TextStyle(fontWeight: FontWeight.w800)),
-              style: FilledButton.styleFrom(backgroundColor: AppColors.brandPrimary),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.brandPrimary,
+                foregroundColor: AppColors.onBrandPrimary,
+              ),
             ),
           ),
         ],

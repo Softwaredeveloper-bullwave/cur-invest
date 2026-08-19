@@ -13,6 +13,7 @@ class HomeThemeA {
   static const bg = ThemeA.bg;
   static const primary = ThemeA.primary;
   static const primaryDark = ThemeA.primaryDark;
+  static const onPrimary = ThemeA.onPrimary;
   static const walletAccent = ThemeA.walletAccent;
   static const primaryLight = ThemeA.primaryLight;
   static const iconBg = ThemeA.iconBg;

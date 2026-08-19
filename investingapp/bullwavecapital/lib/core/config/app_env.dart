@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 
+import 'paper_only_mode.dart';
+
 /// Build-time and runtime environment helpers for dev vs Play Store release.
 class AppEnv {
   AppEnv._();
@@ -18,4 +20,7 @@ class AppEnv {
 
   /// Block login when backend returns console OTP mode (SMS not configured).
   static bool get blockConsoleOtpInRelease => kReleaseMode;
+
+  /// Phase 1 Play Store — paper simulator only (`--dart-define=PAPER_ONLY=true`).
+  static bool get paperOnly => PaperOnlyMode.enabled;
 }

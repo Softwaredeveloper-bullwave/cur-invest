@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../../core/config/dev_config.dart';
+import '../../../../core/config/paper_only_mode.dart';
 import '../../../../core/api/api_exception.dart';
 import '../../../../core/constants/routes.dart';
 
@@ -62,6 +63,20 @@ class KycFlowProvider extends ChangeNotifier {
   bool get isFullyVerified =>
       DevConfig.enabled ||
       (usesAutomatedKyc ? status.isFullyVerified : isManualKycVerified);
+
+  /// Phase 1 Play Store — PAN, Aadhaar, and bank (incl. pending review).
+  bool get hasPhase1Identity {
+    final s = status;
+    final bankDone =
+        s.bankVerified || s.bankReviewPending || s.bankDraftReady;
+    return s.panVerified && s.aadhaarVerified && bankDone;
+  }
+
+  bool get canAccessMainApp {
+    if (DevConfig.enabled) return true;
+    if (PaperOnlyMode.enabled) return hasPhase1Identity;
+    return true;
+  }
 
   void reset() {
     status = KycStatusModel.empty;

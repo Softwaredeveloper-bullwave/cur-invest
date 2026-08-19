@@ -20,10 +20,18 @@ if [[ ! -f "$KEY_PROPS" ]]; then
   echo "Copy android/key.properties.example → android/key.properties and create a keystore."
 fi
 
-echo "Building App Bundle with API_BASE_URL=$API_BASE_URL"
+# ── Phase 1 Play Store: paper trading only ──
+PAPER_ONLY="${PAPER_ONLY:-true}"
+
+echo "Building App Bundle (Play Store upload)"
+echo "  version: $(grep '^version:' pubspec.yaml | awk '{print $2}')"
+echo "  API_BASE_URL=$API_BASE_URL"
+echo "  PAPER_ONLY=$PAPER_ONLY"
+echo ""
 flutter pub get
 flutter build appbundle --release \
-  --dart-define=API_BASE_URL="$API_BASE_URL"
+  --dart-define=API_BASE_URL="$API_BASE_URL" \
+  --dart-define=PAPER_ONLY="$PAPER_ONLY"
 
 echo ""
 echo "Upload this file to Google Play Console:"

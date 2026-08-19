@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:provider/provider.dart';
+import '../../../../core/config/paper_only_mode.dart';
 import '../../../../core/constants/dimensions.dart';
 import '../../../../core/constants/routes.dart';
 import '../../../../core/constants/shell_layout.dart';
@@ -18,6 +19,7 @@ import '../../../../core/widgets/shell_highlight_actions.dart';
 import '../../../../models/transaction_model.dart';
 import '../../../home/presentation/widgets/home_pending_actions.dart';
 import '../../../transactions/presentation/provider/transaction_provider.dart';
+import '../../../../core/widgets/paper_trading_disclaimer.dart';
 import '../../../stocks/presentation/provider/stock_portfolio_provider.dart';
 import '../../../stocks/presentation/utils/stock_trading_flow.dart';
 import '../provider/portfolio_provider.dart';
@@ -83,10 +85,12 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         ShellPageHeader(
-                          title: 'Portfolio',
-                          subtitle: stockPortfolio.holdingsCount > 0
-                              ? '${stockPortfolio.holdingsCount} active holdings'
-                              : 'Track stocks & goal plans',
+                          title: PaperOnlyMode.enabled ? 'Paper Portfolio' : 'Portfolio',
+                          subtitle: PaperOnlyMode.enabled
+                              ? 'Simulated holdings · virtual funds'
+                              : stockPortfolio.holdingsCount > 0
+                                  ? '${stockPortfolio.holdingsCount} active holdings'
+                                  : 'Track stocks & goal plans',
                           trailing: stockPortfolio.holdingsCount > 0
                               ? Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
@@ -109,7 +113,12 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                               : null,
                         ),
                         const SizedBox(height: 14),
-                        const HomePendingActionsSection(),
+                        if (PaperOnlyMode.enabled) ...[
+                          const PaperTradingDisclaimer(compact: true),
+                          const SizedBox(height: 12),
+                        ],
+                        if (!PaperOnlyMode.enabled) const HomePendingActionsSection(),
+                        if (!PaperOnlyMode.enabled) const SizedBox(height: 14),
                         if (stockPortfolio.error != null) ...[
                           const SizedBox(height: 12),
                           PremiumAlertBanner(
@@ -312,7 +321,7 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                       ),
                     ),
                   ],
-                  if (hasPlans) ...[
+                  if (!PaperOnlyMode.enabled && hasPlans) ...[
                     const SizedBox(height: AppDimensions.paddingLg),
                     const AppSectionHeader(title: 'Investment Plans'),
                     const SizedBox(height: AppDimensions.paddingSm),

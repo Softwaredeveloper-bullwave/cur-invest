@@ -42,19 +42,19 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     ),
     _OnboardingPageData(
       pill: 'Growth',
-      headline: 'PLANS THAT\nCOMPOUND',
+      headline: 'LEARN AS\nYOU TRADE',
       quote:
-          'From curated premium tiers to goal-based SIPs — your portfolio deserves more than average. Up to 4% monthly returns await.',
-      glow: Color(0xFF9333EA),
-      glowSecondary: Color(0xFFEC4899),
+          'Build discipline with virtual portfolios, SIP calculators, and investment education — zero real-money risk.',
+      glow: Color(0xFF5B9CFB),
+      glowSecondary: Color(0xFF2E5FB7),
     ),
     _OnboardingPageData(
       pill: 'Today',
-      headline: 'YOUR WEALTH\nAWAITS',
+      headline: 'START PAPER\nTRADING',
       quote:
-          'Secure KYC, encrypted payouts, and AI-powered insights. The market is open — strong investors create strong futures.',
-      glow: Color(0xFF818CF8),
-      glowSecondary: Color(0xFF34D399),
+          'Live NSE & BSE data, charts, and paper orders after a quick phone login. Simulated only — not a SEBI-registered broker.',
+      glow: Color(0xFF4A90E2),
+      glowSecondary: Color(0xFF2E5FB7),
     ),
   ];
 

@@ -7,6 +7,7 @@ import '../../../../models/investment_model.dart';
 import '../../../../models/market_index_model.dart';
 import '../../../../models/portfolio_model.dart';
 import '../../../../models/transaction_model.dart';
+import '../../../../core/config/paper_only_mode.dart';
 import '../../../investment/data/featured_plans_catalog.dart';
 
 class HomeProvider extends ChangeNotifier {
@@ -92,8 +93,14 @@ class HomeProvider extends ChangeNotifier {
     try {
       final home = await _api.getHome();
       _portfolio = parsePortfolio(home['portfolio'] as Map<String, dynamic>? ?? {});
-      _featuredPlans = parseList(home['featuredPlans'], parseInvestmentPlan);
-      _goalPlans = parseList(home['goalPlans'], parseUserGoalPlan);
+      if (PaperOnlyMode.enabled) {
+        _featuredPlans = [];
+        _goalPlans = [];
+        _recentTransactions = [];
+      } else {
+        _featuredPlans = parseList(home['featuredPlans'], parseInvestmentPlan);
+        _goalPlans = parseList(home['goalPlans'], parseUserGoalPlan);
+      }
       _marketIndices = parseList(home['marketIndices'], parseMarketIndex);
       _marketNews = (home['marketNews'] as List<dynamic>? ?? [])
           .map((e) {
@@ -112,13 +119,15 @@ class HomeProvider extends ChangeNotifier {
           .toList();
 
       final activity = home['recentActivity'];
-      if (activity is List && activity.isNotEmpty) {
-        _recentTransactions = parseList(activity, parseTransaction);
-      } else {
-        try {
-          final txns = await _api.getTransactions();
-          _recentTransactions = txns.take(5).toList();
-        } catch (_) {}
+      if (!PaperOnlyMode.enabled) {
+        if (activity is List && activity.isNotEmpty) {
+          _recentTransactions = parseList(activity, parseTransaction);
+        } else {
+          try {
+            final txns = await _api.getTransactions();
+            _recentTransactions = txns.take(5).toList();
+          } catch (_) {}
+        }
       }
     } catch (_) {
       _error = 'Could not load home data. Pull to refresh.';
@@ -128,15 +137,17 @@ class HomeProvider extends ChangeNotifier {
       _monthlyEarnings = await _api.getEarnings();
     } catch (_) {}
 
-    if (_featuredPlans.isEmpty) {
-      try {
-        final plans = await _api.getInvestmentPlans();
-        _featuredPlans = plans.where((p) => p.isFeatured).toList();
-      } catch (_) {}
-    }
+    if (!PaperOnlyMode.enabled) {
+      if (_featuredPlans.isEmpty) {
+        try {
+          final plans = await _api.getInvestmentPlans();
+          _featuredPlans = plans.where((p) => p.isFeatured).toList();
+        } catch (_) {}
+      }
 
-    if (_featuredPlans.isEmpty) {
-      _featuredPlans = List.from(FeaturedPlansCatalog.plans);
+      if (_featuredPlans.isEmpty) {
+        _featuredPlans = List.from(FeaturedPlansCatalog.plans);
+      }
     }
 
     _isLoading = false;

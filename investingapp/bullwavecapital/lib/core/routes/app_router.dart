@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../config/dev_config.dart';
+import '../config/paper_only_mode.dart';
 import '../navigation/app_access_policy.dart';
 
 import '../navigation/onboarding_flow_navigator.dart';
@@ -130,6 +131,7 @@ import '../../features/profile/presentation/screens/privacy_screen.dart';
 import '../../features/profile/presentation/screens/terms_screen.dart';
 
 import '../widgets/main_shell.dart';
+import '../widgets/paper_only_gate.dart';
 
 import '../constants/routes.dart';
 
@@ -209,11 +211,25 @@ class AppRouter {
 
       final path = state.matchedLocation;
 
+      // Phase 1 — block real-money / KYC routes (code stays for Phase 2).
+      final paperRedirect = PaperOnlyMode.redirectFor(path);
+      if (paperRedirect != null) return paperRedirect;
+
       // Splash handles its own routing animation.
       if (path == AppRoutes.splash) return null;
 
+      // Phase 1 — block Home/Markets until PAN + Aadhaar + bank are done.
+      if (PaperOnlyMode.enabled &&
+          auth.isAuthenticated &&
+          !kyc.hasPhase1Identity &&
+          OnboardingFlowNavigator.shouldBlockShellUntilKycComplete(path)) {
+        return OnboardingFlowNavigator.nextIncompleteKycStep(kyc) ??
+            AppRoutes.panVerification;
+      }
+
       // New users must finish KYC before Home; returning users may browse.
-      if (auth.isAuthenticated &&
+      if (!PaperOnlyMode.enabled &&
+          auth.isAuthenticated &&
           auth.isRegistrationFlow &&
           auth.hasCompletedRegistration &&
           !kyc.isFullyVerified &&
@@ -231,9 +247,13 @@ class AppRouter {
         return AppRoutes.login;
       }
 
-      // Registration intro slides — only while registering, not on every launch.
-      if (!app.hasCompletedOnboarding && auth.isRegistrationFlow) {
-        if (path == AppRoutes.onboarding || path == AppRoutes.login) return null;
+      // First launch intro slides — before login/sign-up.
+      if (!app.hasCompletedOnboarding && !auth.isAuthenticated) {
+        if (path == AppRoutes.onboarding ||
+            path == AppRoutes.terms ||
+            path == AppRoutes.privacy) {
+          return null;
+        }
         return AppRoutes.onboarding;
       }
 
@@ -242,8 +262,7 @@ class AppRouter {
         if (path == AppRoutes.login ||
             path == AppRoutes.otp ||
             path == AppRoutes.terms ||
-            path == AppRoutes.privacy ||
-            (path == AppRoutes.onboarding && auth.isRegistrationFlow)) {
+            path == AppRoutes.privacy) {
           return null;
         }
         return AppRoutes.login;
@@ -279,6 +298,10 @@ class AppRouter {
         return null;
       }
 
+      if (kyc.hasPhase1Identity && PaperOnlyMode.enabled && _isManualKycRoute(path)) {
+        return AppRoutes.home;
+      }
+
       if (kyc.isFullyVerified && _isManualKycRoute(path)) {
         return AppRoutes.home;
       }
@@ -295,7 +318,14 @@ class AppRouter {
             AppRoutes.kycStatus;
       }
 
-      if (!kyc.isFullyVerified && _requiresKyc(path)) {
+      if (PaperOnlyMode.enabled &&
+          !kyc.hasPhase1Identity &&
+          _requiresKyc(path)) {
+        return OnboardingFlowNavigator.nextIncompleteKycStep(kyc) ??
+            AppRoutes.panVerification;
+      }
+
+      if (!PaperOnlyMode.enabled && !kyc.isFullyVerified && _requiresKyc(path)) {
         return _manualKycRoute(kyc);
       }
 
@@ -397,7 +427,7 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.transactions,
 
-        builder: (context, state) => const TransactionsScreen(),
+        builder: (context, state) => const PaperOnlyGate(child: TransactionsScreen()),
       ),
 
       GoRoute(
@@ -510,54 +540,59 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.withdraw,
 
-        builder: (context, state) => const WithdrawScreen(),
+        builder: (context, state) => const PaperOnlyGate(child: WithdrawScreen()),
       ),
 
       GoRoute(
         path: AppRoutes.deposit,
 
-        builder: (context, state) => const DepositScreen(),
+        builder: (context, state) => const PaperOnlyGate(child: DepositScreen()),
       ),
 
       GoRoute(
         path: AppRoutes.depositSuccess,
 
-        builder: (context, state) => const DepositSuccessScreen(),
+        builder: (context, state) => const PaperOnlyGate(child: DepositSuccessScreen()),
       ),
 
       GoRoute(
         path: AppRoutes.investmentDetails,
 
-        builder: (context, state) => const InvestmentDetailsScreen(),
+        builder: (context, state) => const PaperOnlyGate(child: InvestmentDetailsScreen()),
       ),
 
       GoRoute(
         path: AppRoutes.featuredPlansList,
-        builder: (context, state) => const FeaturedPlansListScreen(),
+        builder: (context, state) => const PaperOnlyGate(child: FeaturedPlansListScreen()),
       ),
       GoRoute(
         path: AppRoutes.goalPlans,
-        builder: (context, state) => const GoalPlansScreen(),
+        builder: (context, state) => const PaperOnlyGate(child: GoalPlansScreen()),
       ),
       GoRoute(
         path: AppRoutes.createGoal,
-        builder: (context, state) => CreateGoalScreen(
-          category: state.uri.queryParameters['category'] ?? 'house',
+        builder: (context, state) => PaperOnlyGate(
+          child: CreateGoalScreen(
+            category: state.uri.queryParameters['category'] ?? 'house',
+          ),
         ),
       ),
       GoRoute(
         path: AppRoutes.goalDetail,
-        builder: (context, state) =>
-            GoalDetailScreen(goalId: state.uri.queryParameters['id'] ?? ''),
+        builder: (context, state) => PaperOnlyGate(
+          child: GoalDetailScreen(goalId: state.uri.queryParameters['id'] ?? ''),
+        ),
       ),
       GoRoute(
         path: '${AppRoutes.featuredPlan}/:planId',
 
-        builder: (context, state) => FeaturedPlanScreen(
-          planId: state.pathParameters['planId'] ?? 'PLAN001',
-          initialPlan: state.extra is InvestmentPlanModel
-              ? state.extra as InvestmentPlanModel
-              : null,
+        builder: (context, state) => PaperOnlyGate(
+          child: FeaturedPlanScreen(
+            planId: state.pathParameters['planId'] ?? 'PLAN001',
+            initialPlan: state.extra is InvestmentPlanModel
+                ? state.extra as InvestmentPlanModel
+                : null,
+          ),
         ),
       ),
 
@@ -698,7 +733,7 @@ class AppRouter {
 
         parentNavigatorKey: _rootNavigatorKey,
 
-        builder: (context, state) => const CopyTradingScreen(),
+        builder: (context, state) => const PaperOnlyGate(child: CopyTradingScreen()),
       ),
 
       GoRoute(

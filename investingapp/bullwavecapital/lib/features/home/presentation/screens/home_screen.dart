@@ -5,11 +5,13 @@ import 'package:go_router/go_router.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../core/config/paper_only_mode.dart';
 import '../../../../core/constants/dimensions.dart';
 import '../../../../core/constants/fno_index_catalog.dart';
 import '../../../../core/constants/routes.dart';
 import '../../../../core/constants/shell_layout.dart';
 import '../../../../core/navigation/registration_completion.dart';
+import '../../../../core/navigation/shell_navigation.dart';
 import '../../../../core/theme/colors.dart';
 import '../../../../core/widgets/loading_card.dart';
 import '../../../../core/widgets/premium_ui_kit.dart';
@@ -22,6 +24,8 @@ import '../../../fno/presentation/provider/fno_flow_provider.dart';
 import '../../../kyc/presentation/provider/kyc_flow_provider.dart';
 import '../../../authentication/presentation/provider/auth_provider.dart';
 import '../../../notifications/presentation/provider/notification_provider.dart';
+import '../../../../core/widgets/paper_trading_disclaimer.dart';
+import '../../../wallet/presentation/provider/wallet_provider.dart';
 import '../../../stocks/presentation/provider/stock_features_provider.dart';
 import '../../../stocks/presentation/provider/stock_market_provider.dart';
 import '../provider/home_provider.dart';
@@ -66,13 +70,13 @@ class _HomeScreenState extends State<HomeScreen> {
       features.prefetchHomeIndexExpiries(),
       context.read<StockMarketProvider>().ensureLoaded(),
       context.read<KycFlowProvider>().loadStatus(),
-      context.read<FnoFlowProvider>().ensureLoaded(),
+      if (!PaperOnlyMode.enabled) context.read<FnoFlowProvider>().ensureLoaded(),
       context.read<AuthProvider>().refreshProfile(),
     ]);
   }
 
   Future<void> _checkGoalReminders() async {
-    if (_dueDialogShown || !mounted) return;
+    if (PaperOnlyMode.enabled || _dueDialogShown || !mounted) return;
     final goals = context.read<GoalPlanProvider>();
     await goals.refreshReminders();
     if (!mounted || goals.dueGoals.isEmpty) return;
@@ -126,14 +130,15 @@ class _HomeScreenState extends State<HomeScreen> {
                   context.push(AppRoutes.support);
                 },
               ),
-              _MenuTile(
-                icon: Icons.receipt_long_outlined,
-                label: 'Transactions',
-                onTap: () {
-                  Navigator.pop(ctx);
-                  context.push(AppRoutes.transactions);
-                },
-              ),
+              if (!PaperOnlyMode.enabled)
+                _MenuTile(
+                  icon: Icons.receipt_long_outlined,
+                  label: 'Transactions',
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    context.push(AppRoutes.transactions);
+                  },
+                ),
             ],
           ),
         ),
@@ -160,8 +165,9 @@ class _HomeScreenState extends State<HomeScreen> {
         final portfolio = provider.portfolio;
         final notificationCount = context.watch<NotificationProvider>().unreadCount;
         final userName = context.watch<AuthProvider>().user?.displayName;
-        final plans = _featuredPlansForHome(provider);
+        final plans = PaperOnlyMode.enabled ? <InvestmentPlanModel>[] : _featuredPlansForHome(provider);
         final allQuickActions = _homeQuickActions(context);
+        final practiceBalance = context.watch<WalletProvider>().practiceBalance;
         return SafeArea(
           child: RefreshIndicator(
             color: AppColors.brandCyan,
@@ -187,11 +193,18 @@ class _HomeScreenState extends State<HomeScreen> {
                             onNotificationTap: () => context.push(AppRoutes.notifications),
                           ),
                           const SizedBox(height: 18),
-                          const HomePendingActionsSection(),
-                          const SizedBox(height: 20),
+                          if (PaperOnlyMode.enabled) ...[
+                            const PaperTradingDisclaimer(),
+                            const SizedBox(height: 14),
+                          ],
+                          if (!PaperOnlyMode.enabled) const HomePendingActionsSection(),
+                          if (!PaperOnlyMode.enabled) const SizedBox(height: 20),
+                          if (PaperOnlyMode.enabled) const SizedBox(height: 4),
                           HomeBalanceCards(
                             portfolioValue: portfolio.currentValue,
-                            walletBalance: portfolio.walletBalance,
+                            walletBalance: PaperOnlyMode.enabled
+                                ? practiceBalance
+                                : portfolio.walletBalance,
                             dayPnl: portfolio.dayPnl,
                             onPortfolioTap: () => context.go(AppRoutes.portfolio),
                             onWalletTap: () => context.go(AppRoutes.wallet),
@@ -259,40 +272,46 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        HomeSectionHeader(
-                          title: 'Featured Plans',
-                          actionLabel: 'See All',
-                          onAction: () => context.push(AppRoutes.featuredPlansList),
-                          reserveFabSpace: true,
-                        ),
-                        const SizedBox(height: 12),
-                        SizedBox(
-                          height: 148,
-                          child: ListView.separated(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: plans.length,
-                            separatorBuilder: (_, _) => const SizedBox(width: 12),
-                            itemBuilder: (context, index) {
-                              final plan = plans[index];
-                              return _FeaturedPlanChip(
-                                plan: plan,
-                                risk: _riskFor(plan.id),
-                                onTap: () => _openFeaturedPlan(context, plan),
-                              );
-                            },
+                        if (!PaperOnlyMode.enabled && plans.isNotEmpty) ...[
+                          HomeSectionHeader(
+                            title: 'Featured Plans',
+                            actionLabel: 'See All',
+                            onAction: () => context.push(AppRoutes.featuredPlansList),
+                            reserveFabSpace: true,
                           ),
-                        ),
-                        const SizedBox(height: 24),
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            height: 148,
+                            child: ListView.separated(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: plans.length,
+                              separatorBuilder: (_, _) => const SizedBox(width: 12),
+                              itemBuilder: (context, index) {
+                                final plan = plans[index];
+                                return _FeaturedPlanChip(
+                                  plan: plan,
+                                  risk: _riskFor(plan.id),
+                                  onTap: () => _openFeaturedPlan(context, plan),
+                                );
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                        ],
                         const HomeIpoSection(),
-                        const SizedBox(height: 24),
-                        provider.goalPlans.isNotEmpty
-                            ? HomeGoalsSection(
-                                goals: provider.goalPlans,
-                                onViewAll: () => context.push(AppRoutes.goalPlans),
-                              )
-                            : _GoalPlansPromo(onTap: () => context.push(AppRoutes.goalPlans)),
-                        const SizedBox(height: 24),
-                        HomeRecentActivity(transactions: provider.recentTransactions),
+                        if (!PaperOnlyMode.enabled) ...[
+                          const SizedBox(height: 24),
+                          provider.goalPlans.isNotEmpty
+                              ? HomeGoalsSection(
+                                  goals: provider.goalPlans,
+                                  onViewAll: () => context.push(AppRoutes.goalPlans),
+                                )
+                              : _GoalPlansPromo(onTap: () => context.push(AppRoutes.goalPlans)),
+                        ],
+                        if (!PaperOnlyMode.enabled) ...[
+                          const SizedBox(height: 24),
+                          HomeRecentActivity(transactions: provider.recentTransactions),
+                        ],
                         const SizedBox(height: 12),
                         SizedBox(height: ShellLayout.contentBottomInset),
                       ],
@@ -330,31 +349,41 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   List<HomeQuickAction> _homeQuickActions(BuildContext context) {
-    return [
+    final actions = <HomeQuickAction>[
       HomeQuickAction(
         icon: PhosphorIcons.chartLineUp,
         label: 'Markets',
         color: HomeThemeA.primary,
         onTap: () => context.go(AppRoutes.invest),
       ),
-      HomeQuickAction(
-        icon: PhosphorIcons.wallet,
-        label: 'Wallet',
-        color: AppColors.brandCyan,
-        onTap: () => context.go(AppRoutes.wallet),
-      ),
-      HomeQuickAction(
-        icon: PhosphorIcons.flag,
-        label: 'Goals',
-        color: AppColors.brandPink,
-        onTap: () => context.push(AppRoutes.goalPlans),
-      ),
-      HomeQuickAction(
-        icon: PhosphorIcons.piggyBank,
-        label: 'Plans',
-        color: AppColors.brandOrange,
-        onTap: () => context.push(AppRoutes.featuredPlansList),
-      ),
+      if (!PaperOnlyMode.enabled)
+        HomeQuickAction(
+          icon: PhosphorIcons.wallet,
+          label: 'Wallet',
+          color: AppColors.brandCyan,
+          onTap: () => context.go(AppRoutes.wallet),
+        )
+      else
+        HomeQuickAction(
+          icon: PhosphorIcons.wallet,
+          label: 'Practice',
+          color: AppColors.brandCyan,
+          onTap: () => context.go(AppRoutes.wallet),
+        ),
+      if (!PaperOnlyMode.enabled) ...[
+        HomeQuickAction(
+          icon: PhosphorIcons.flag,
+          label: 'Goals',
+          color: AppColors.brandPink,
+          onTap: () => context.push(AppRoutes.goalPlans),
+        ),
+        HomeQuickAction(
+          icon: PhosphorIcons.piggyBank,
+          label: 'Plans',
+          color: AppColors.brandOrange,
+          onTap: () => context.push(AppRoutes.featuredPlansList),
+        ),
+      ],
       HomeQuickAction(
         icon: PhosphorIcons.bookmarkSimple,
         label: 'Watchlist',
@@ -371,7 +400,7 @@ class _HomeScreenState extends State<HomeScreen> {
         icon: PhosphorIcons.flask,
         label: 'Paper',
         color: AppColors.brandOrange,
-        onTap: () => context.push(AppRoutes.paperTrading),
+        onTap: () => pushOverShell(context, AppRoutes.paperTrading),
       ),
       HomeQuickAction(
         icon: PhosphorIcons.bell,
@@ -379,12 +408,13 @@ class _HomeScreenState extends State<HomeScreen> {
         color: AppColors.brandPink,
         onTap: () => context.push(AppRoutes.priceAlerts),
       ),
-      HomeQuickAction(
-        icon: PhosphorIcons.repeat,
-        label: 'SIP',
-        color: HomeThemeA.primary,
-        onTap: () => context.push(AppRoutes.sipTracker),
-      ),
+      if (!PaperOnlyMode.enabled)
+        HomeQuickAction(
+          icon: PhosphorIcons.repeat,
+          label: 'SIP',
+          color: HomeThemeA.primary,
+          onTap: () => context.push(AppRoutes.sipTracker),
+        ),
       HomeQuickAction(
         icon: PhosphorIcons.newspaper,
         label: 'News',
@@ -392,6 +422,7 @@ class _HomeScreenState extends State<HomeScreen> {
         onTap: () => context.push(AppRoutes.stockNews),
       ),
     ];
+    return actions;
   }
 }
 

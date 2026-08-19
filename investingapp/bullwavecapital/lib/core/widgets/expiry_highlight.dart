@@ -5,7 +5,7 @@ import '../theme/colors.dart';
 import '../utils/formatters.dart';
 
 enum ExpiryHighlightStyle {
-  /// Solid lime pill — home cards, tight spaces.
+  /// Solid blue pill — home cards, tight spaces.
   compact,
 
   /// Bordered chip — summary rows.
@@ -76,7 +76,7 @@ class ExpiryHighlight extends StatelessWidget {
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: const TextStyle(
-          color: AppColors.brandPrimaryDark,
+          color: AppColors.onBrandPrimary,
           fontSize: 9,
           fontWeight: FontWeight.w800,
           letterSpacing: 0.2,
@@ -89,7 +89,7 @@ class ExpiryHighlight extends StatelessWidget {
     final bg = filled
         ? AppColors.brandPrimary
         : AppColors.brandPrimary.withValues(alpha: 0.16);
-    final fg = AppColors.brandPrimaryDark;
+    final fg = filled ? AppColors.onBrandPrimary : AppColors.brandPrimaryDark;
     final border = filled
         ? AppColors.brandPrimary
         : AppColors.brandPrimary.withValues(alpha: 0.55);

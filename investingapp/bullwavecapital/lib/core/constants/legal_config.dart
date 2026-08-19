@@ -21,5 +21,5 @@ class LegalConfig {
   static const String grievanceContact = 'Grievance Officer, Capital BullWave';
   static const String governingCity = 'Delhi, India';
 
-  static const String appVersionLabel = '1.0.0';
+  static const String appVersionLabel = '1.2.0';
 }

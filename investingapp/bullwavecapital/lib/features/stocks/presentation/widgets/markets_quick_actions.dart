@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/config/paper_only_mode.dart';
+import '../../../../core/navigation/shell_navigation.dart';
 import '../../../../core/constants/assets.dart';
 import '../../../../core/constants/routes.dart';
 import '../../../../core/theme/theme_a.dart';
@@ -35,18 +37,19 @@ class MarketsQuickActions extends StatelessWidget {
         gradient: const [Color(0xFF3B82F6), Color(0xFF22D3EE)],
         onTap: () => context.push(AppRoutes.stockScreener),
       ),
-      _QuickAction(
-        label: 'Copy Trade',
-        icon: Icons.people_alt_rounded,
-        gradient: const [Color(0xFF059669), Color(0xFF34D399)],
-        onTap: () => context.push(AppRoutes.copyTrading),
-      ),
+      if (!PaperOnlyMode.enabled)
+        _QuickAction(
+          label: 'Copy Trade',
+          icon: Icons.people_alt_rounded,
+          gradient: const [Color(0xFF059669), Color(0xFF34D399)],
+          onTap: () => context.push(AppRoutes.copyTrading),
+        ),
       _QuickAction(
         label: 'Paper Trading',
         iconAsset: AppAssets.featPaperTrade,
         icon: Icons.show_chart_rounded,
         gradient: const [Color(0xFF0EA5E9), Color(0xFF38BDF8)],
-        onTap: () => context.push(AppRoutes.paperTrading),
+        onTap: () => pushOverShell(context, AppRoutes.paperTrading),
       ),
       _QuickAction(
         label: 'More',
@@ -188,12 +191,13 @@ List<ExploreFeatureItem> marketsOverflowShortcuts({
   required VoidCallback calculator,
 }) {
   return [
-    ExploreFeatureItem(
-      icon: Icons.people_alt_rounded,
-      label: 'Copy Trade',
-      gradient: const [Color(0xFF10B981), Color(0xFF34D399)],
-      onTap: copyTrading,
-    ),
+    if (!PaperOnlyMode.enabled)
+      ExploreFeatureItem(
+        icon: Icons.people_alt_rounded,
+        label: 'Copy Trade',
+        gradient: const [Color(0xFF10B981), Color(0xFF34D399)],
+        onTap: copyTrading,
+      ),
     ExploreFeatureItem(
       icon: Icons.grid_view_rounded,
       label: 'Heat Map',

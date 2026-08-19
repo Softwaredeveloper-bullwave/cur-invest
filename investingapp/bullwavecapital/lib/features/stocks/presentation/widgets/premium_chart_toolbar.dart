@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/charts/lightweight_chart.dart';
+import '../../../../core/theme/colors.dart';
 
 class PremiumChartToolbar extends StatelessWidget {
   final MarketChartType chartType;
@@ -127,12 +128,12 @@ class _ToggleButton extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
           decoration: BoxDecoration(
             color: selected
-                ? const Color(0xFFC6FF00).withValues(alpha: 0.14)
+                ? AppColors.brandPrimary.withValues(alpha: 0.14)
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(7),
             border: Border.all(
               color: selected
-                  ? const Color(0xFFC6FF00).withValues(alpha: 0.45)
+                  ? AppColors.brandPrimary.withValues(alpha: 0.45)
                   : Colors.transparent,
             ),
           ),
@@ -140,8 +141,8 @@ class _ToggleButton extends StatelessWidget {
             label,
             style: TextStyle(
               color: selected
-                  ? const Color(0xFFC6FF00)
-                  : Theme.of(context).colorScheme.onSurfaceVariant,
+                ? AppColors.brandPrimaryDark
+                : Theme.of(context).colorScheme.onSurfaceVariant,
               fontSize: 11,
               fontWeight: FontWeight.w700,
             ),

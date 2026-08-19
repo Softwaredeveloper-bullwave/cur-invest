@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../config/paper_only_mode.dart';
 import '../constants/routes.dart';
 import '../api/refresh_providers.dart';
 import '../../features/authentication/presentation/provider/auth_provider.dart';
@@ -33,7 +34,10 @@ class AuthFlowNavigation {
     await kyc.loadStatus();
     if (!context.mounted) return;
 
-    if (auth.isRegistrationFlow && !kyc.isFullyVerified) {
+    final kycComplete = PaperOnlyMode.enabled
+        ? kyc.hasPhase1Identity
+        : kyc.isFullyVerified;
+    if (auth.isRegistrationFlow && !kycComplete) {
       router.go(
         OnboardingFlowNavigator.nextIncompleteKycStep(kyc) ??
             AppRoutes.panVerification,

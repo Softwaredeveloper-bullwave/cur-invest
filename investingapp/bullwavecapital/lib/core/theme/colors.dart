@@ -4,14 +4,14 @@ import 'package:flutter/material.dart';
 class AppColors {
   AppColors._();
 
-  // ── Brand (Neobank lime) ──
-  static const Color brandPrimary = Color(0xFFC6FF00);
-  static const Color brandPrimaryDark = Color(0xFF0A0A0A);
-  /// Ink text/icons on lime brand surfaces — never use white here.
-  static const Color onBrandPrimary = brandPrimaryDark;
-  static const Color onBrandPrimaryMuted = Color(0xB30A0A0A);
-  static const Color brandPrimaryLight = Color(0xFFF0FFD6);
-  static const Color brandPrimaryDeep = Color(0xFF9ECC00);
+  // ── Brand (Capital BullWave blue — matches reference banking header) ──
+  static const Color brandPrimary = Color(0xFF4A90E2);
+  static const Color brandPrimaryDark = Color(0xFF2E5FB7);
+  /// White text/icons on blue brand surfaces.
+  static const Color onBrandPrimary = Color(0xFFFFFFFF);
+  static const Color onBrandPrimaryMuted = Color(0xE6FFFFFF);
+  static const Color brandPrimaryLight = Color(0xFF5B9CFB);
+  static const Color brandPrimaryDeep = Color(0xFF2E5FB7);
   static const Color brandPink = Color(0xFFFF6B9D);
   static const Color brandPinkLight = Color(0xFFFF8FB3);
   static const Color brandMagenta = Color(0xFFA855F7);
@@ -94,9 +94,9 @@ class AppColors {
   );
 
   static const LinearGradient accentGradient = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [brandPrimary, Color(0xFF627DFF)],
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [brandPrimaryLight, brandPrimaryDeep],
   );
 
   static const LinearGradient primaryGradient = accentGradient;
@@ -197,7 +197,9 @@ class AppColors {
 
   // Per-tab nav accent gradients
   static const LinearGradient navHomeGradient = LinearGradient(
-    colors: [Color(0xFF00D4AA), Color(0xFF00E8FF)],
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [Color(0xFF5B9CFB), Color(0xFF2E5FB7)],
   );
   static const LinearGradient navMarketsGradient = LinearGradient(
     colors: [Color(0xFF627DFF), Color(0xFFA855F7)],
@@ -214,7 +216,7 @@ class AppColors {
 
   // Light mode explore card tokens
   static const Color exploreCardBackground = Color(0xFFFFFFFF);
-  static const Color exploreCardTint = Color(0xFFF0FFD6);
+  static const Color exploreCardTint = Color(0xFFE8F2FD);
   static const Color exploreLabelMuted = Color(0xFF737373);
   static const Color exploreLabelPrimary = Color(0xFF000000);
 }

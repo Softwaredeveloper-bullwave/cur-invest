@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
+import '../../../../core/config/paper_only_mode.dart';
 import '../../../../core/theme/theme_a.dart';
 import '../../../../core/utils/formatters.dart';
 
@@ -27,6 +28,8 @@ class HomeBalanceCards extends StatelessWidget {
     final p = context.palette;
     final pnlPositive = dayPnl >= 0;
 
+    final paperOnly = PaperOnlyMode.enabled;
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -35,10 +38,12 @@ class HomeBalanceCards extends StatelessWidget {
             style: _BalanceCardStyle.hero,
             icon: PhosphorIcons.chartPie,
             amount: portfolioValue,
-            label: 'Portfolio',
+            label: paperOnly ? 'Paper Portfolio' : 'Portfolio',
             sublabel: dayPnl != 0
                 ? '${pnlPositive ? '+' : ''}${CurrencyFormatter.formatCompact(dayPnl)} today'
-                : 'Total holdings value',
+                : paperOnly
+                    ? 'Virtual holdings value'
+                    : 'Total holdings value',
             pnlBadge: dayPnl != 0
                 ? _PnlBadge(value: dayPnl, positive: pnlPositive)
                 : null,
@@ -51,9 +56,13 @@ class HomeBalanceCards extends StatelessWidget {
             style: _BalanceCardStyle.accent,
             icon: PhosphorIcons.wallet,
             amount: walletBalance,
-            label: 'Wallet',
-            sublabel: walletBalance > 0 ? 'Ready to invest' : 'Tap to add funds',
-            trailing: walletBalance <= 0
+            label: paperOnly ? 'Practice Funds' : 'Wallet',
+            sublabel: paperOnly
+                ? 'Virtual money for paper trades'
+                : walletBalance > 0
+                    ? 'Ready to invest'
+                    : 'Tap to add funds',
+            trailing: !paperOnly && walletBalance <= 0
                 ? Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(

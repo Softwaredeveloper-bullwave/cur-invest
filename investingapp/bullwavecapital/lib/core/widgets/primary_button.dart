@@ -23,9 +23,7 @@ class PrimaryButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = isDark ? p.primary : Colors.black;
-    final fg = isDark ? p.onPrimary : Colors.white;
+    final fg = p.onPrimary;
     final fontSize = compact ? 14.0 : 16.0;
     final iconSize = compact ? 18.0 : 20.0;
     final hPad = compact ? 10.0 : 16.0;
@@ -38,7 +36,11 @@ class PrimaryButton extends StatelessWidget {
         child: DecoratedBox(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(999),
-            color: bg,
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [p.accentSurface, p.accentSurfaceEnd],
+            ),
             boxShadow: [
               BoxShadow(
                 color: p.primary.withValues(alpha: 0.2),

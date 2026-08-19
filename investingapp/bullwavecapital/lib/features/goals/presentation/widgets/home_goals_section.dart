@@ -125,7 +125,10 @@ void showGoalDueDialog(BuildContext context, UserGoalPlanModel goal) {
       actions: [
         TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Later')),
         FilledButton(
-          style: FilledButton.styleFrom(backgroundColor: HomeThemeA.primary),
+          style: FilledButton.styleFrom(
+            backgroundColor: HomeThemeA.primary,
+            foregroundColor: HomeThemeA.onPrimary,
+          ),
           onPressed: () {
             Navigator.pop(ctx);
             context.push('${AppRoutes.goalDetail}?id=${goal.id}');

@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../constants/shell_layout.dart';
 
-/// BullWave Pro — ink + electric lime + warm stone surfaces.
+/// BullWave Pro — ink + Capital BullWave blue + warm stone surfaces.
 @immutable
 class ThemePalette {
   final Color bg;
@@ -62,17 +62,17 @@ class ThemePalette {
     required this.accentSurfaceFg,
   });
 
-  /// Light — warm stone canvas, ink hero, electric lime accent.
+  /// Light — warm stone canvas, ink hero, Capital BullWave blue accent.
   static const light = ThemePalette(
     bg: Color(0xFFF4F4F0),
     surface: Color(0xFFFAFAF8),
-    primary: Color(0xFFC6FF00),
-    primaryDark: Color(0xFF0A0A0A),
-    primarySoft: Color(0xFFF0FFD6),
-    primaryBorder: Color(0xFFD4F5A0),
-    walletAccent: Color(0xFFC6FF00),
-    iconBg: Color(0xFFF0FFD6),
-    iconBorder: Color(0xFFDCF5A0),
+    primary: Color(0xFF4A90E2),
+    primaryDark: Color(0xFF2E5FB7),
+    primarySoft: Color(0xFFE8F2FD),
+    primaryBorder: Color(0xFFB8D4F5),
+    walletAccent: Color(0xFF4A90E2),
+    iconBg: Color(0xFFE8F2FD),
+    iconBorder: Color(0xFFB8D4F5),
     textDark: Color(0xFF0A0A0A),
     textGrey: Color(0xFF4A4A46),
     textMuted: Color(0xFF6E6E69),
@@ -81,27 +81,27 @@ class ThemePalette {
     positive: Color(0xFF15803D),
     negative: Color(0xFFDC2626),
     accentOrange: Color(0xFFEA580C),
-    onPrimary: Color(0xFF0A0A0A),
+    onPrimary: Color(0xFFFFFFFF),
     heroCard: Color(0xFF0A0A0A),
     heroCardEnd: Color(0xFF1C1C1A),
     heroCardFg: Color(0xFFFFFFFF),
     heroCardMuted: Color(0xCCFFFFFF),
-    accentSurface: Color(0xFFC6FF00),
-    accentSurfaceEnd: Color(0xFFA8E600),
-    accentSurfaceFg: Color(0xFF0A0A0A),
+    accentSurface: Color(0xFF5B9CFB),
+    accentSurfaceEnd: Color(0xFF2E5FB7),
+    accentSurfaceFg: Color(0xFFFFFFFF),
   );
 
-  /// Dark — ink canvas, elevated graphite cards, lime glow.
+  /// Dark — ink canvas, elevated graphite cards, blue glow.
   static const dark = ThemePalette(
     bg: Color(0xFF0C0C0C),
     surface: Color(0xFF161616),
-    primary: Color(0xFFC6FF00),
-    primaryDark: Color(0xFFC6FF00),
-    primarySoft: Color(0xFF1A2208),
-    primaryBorder: Color(0xFF3D4F0A),
-    walletAccent: Color(0xFFC6FF00),
-    iconBg: Color(0xFF1A2208),
-    iconBorder: Color(0xFF3D4F0A),
+    primary: Color(0xFF4A90E2),
+    primaryDark: Color(0xFF5B9CFB),
+    primarySoft: Color(0xFF152238),
+    primaryBorder: Color(0xFF2E5FB7),
+    walletAccent: Color(0xFF4A90E2),
+    iconBg: Color(0xFF152238),
+    iconBorder: Color(0xFF2E5FB7),
     textDark: Color(0xFFF5F5F0),
     textGrey: Color(0xFFDCE3EA),
     textMuted: Color(0xFFADB9C7),
@@ -110,14 +110,14 @@ class ThemePalette {
     positive: Color(0xFF4ADE80),
     negative: Color(0xFFFF6B6B),
     accentOrange: Color(0xFFFBBF24),
-    onPrimary: Color(0xFF0A0A0A),
+    onPrimary: Color(0xFFFFFFFF),
     heroCard: Color(0xFF0A0A0A),
     heroCardEnd: Color(0xFF141414),
     heroCardFg: Color(0xFFFFFFFF),
     heroCardMuted: Color(0xCCFFFFFF),
-    accentSurface: Color(0xFFC6FF00),
-    accentSurfaceEnd: Color(0xFF9ECC00),
-    accentSurfaceFg: Color(0xFF0A0A0A),
+    accentSurface: Color(0xFF5B9CFB),
+    accentSurfaceEnd: Color(0xFF2E5FB7),
+    accentSurfaceFg: Color(0xFFFFFFFF),
   );
 
   bool get isDark => identical(this, dark);
@@ -184,8 +184,8 @@ class ThemePalette {
     return BoxDecoration(
       borderRadius: BorderRadius.circular(radius ?? cardRadius),
       gradient: LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
         colors: [accentSurface, accentSurfaceEnd],
       ),
       border: Border.all(color: accentSurfaceFg.withValues(alpha: 0.08)),
@@ -235,13 +235,13 @@ class ThemeA {
   static ThemePalette of(BuildContext context) => context.palette;
 
   static const bg = Color(0xFFF4F4F0);
-  static const primary = Color(0xFFC6FF00);
-  static const primaryDark = Color(0xFF0A0A0A);
-  static const primarySoft = Color(0xFFF0FFD6);
-  static const primaryLight = Color(0xFFF0FFD6);
-  static const walletAccent = Color(0xFFC6FF00);
-  static const iconBg = Color(0xFFF0FFD6);
-  static const iconBorder = Color(0xFFDCF5A0);
+  static const primary = Color(0xFF4A90E2);
+  static const primaryDark = Color(0xFF2E5FB7);
+  static const primarySoft = Color(0xFFE8F2FD);
+  static const primaryLight = Color(0xFFE8F2FD);
+  static const walletAccent = Color(0xFF4A90E2);
+  static const iconBg = Color(0xFFE8F2FD);
+  static const iconBorder = Color(0xFFB8D4F5);
   static const textDark = Color(0xFF0A0A0A);
   static const textGrey = Color(0xFF5C5C58);
   static const textMuted = Color(0xFF8A8A85);
@@ -251,7 +251,7 @@ class ThemeA {
   static const negative = Color(0xFFDC2626);
   static const accentOrange = Color(0xFFEA580C);
   static const cardRadius = 28.0;
-  static const onPrimary = Color(0xFF0A0A0A);
+  static const onPrimary = Color(0xFFFFFFFF);
 
   static BoxDecoration cardDecoration({Color? shadowTint, double radius = cardRadius}) =>
       ThemePalette.light.cardDecoration(shadowTint: shadowTint, radius: radius);
