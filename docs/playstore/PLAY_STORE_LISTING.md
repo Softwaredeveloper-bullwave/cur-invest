@@ -78,7 +78,9 @@ Do NOT mention:
 
 ---
 
-## Release notes — v1.2.0
+## Release notes — v1.2.1
+
+**Package:** `com.bullwave.bullwave_learn`
 
 ```
 Initial public release — Market Learning & Paper Trading Simulator

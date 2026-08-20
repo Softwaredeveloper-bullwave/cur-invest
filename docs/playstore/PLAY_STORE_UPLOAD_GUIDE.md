@@ -1,8 +1,11 @@
 # Capital BullWave — Play Store Upload Guide (Phase 1)
 
-**Version:** 1.2.0+7  
+**Version:** 1.2.1+8  
+**Package name (Android):** `com.bullwave.bullwave_learn`  
 **Mode:** Market Learning + Paper Trading Simulator (no license required)  
 **Production API:** https://api.capitalbullwave.com/api/v1  
+
+> **Note:** This is a **new Play Store app** — different from `com.bullwave.bullwave_invest`. Create a **new app** in Play Console with this package name.
 
 ---
 
@@ -80,11 +83,9 @@ Ye file Play Console pe upload karni hai.
    - One-time developer fee: ~$25 USD  
    - Company ya individual account banao
 
-2. **Create app**
-   - App name: `Capital BullWave — Market Learning`
-   - Default language: English (India)
-   - App / Game: **App**
-   - Free or paid: **Free**
+2. **Create app** (new listing — do not reuse old `com.bullwave.bullwave_invest` app)
+   - App name: `Capital BullWave Learn`
+   - Package will be read from AAB: **`com.bullwave.bullwave_learn`**
 
 3. **Store listing** — copy text from `docs/playstore/PLAY_STORE_LISTING.md`
 
@@ -125,7 +126,7 @@ Production
 3. Release notes likho (example below)
 4. Review → Start rollout
 
-**Release notes (v1.2.0):**
+**Release notes (v1.2.1):**
 ```
 • Market learning & paper trading simulator
 • Live NSE/BSE charts and watchlists
