@@ -6,7 +6,7 @@ import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 import '../theme/colors.dart';
 
-/// Figma-style floating bottom nav — concave notch, centered blue bubble.
+/// Floating pill bottom nav — active tab highlighted inside the bar (no notch).
 class AppBottomNavigation extends StatefulWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
@@ -17,31 +17,32 @@ class AppBottomNavigation extends StatefulWidget {
     required this.onTap,
   });
 
-  static const bubbleRadius = 28.0;
-  static const barHeight = 62.0;
-  static const cornerRadius = 31.0;
-  static const horizontalInset = 18.0;
+  static const barHeight = 64.0;
+  static const cornerRadius = 32.0;
+  static const horizontalInset = 20.0;
+  static const activeCapsuleHeight = 44.0;
+  static const activeCapsuleWidth = 52.0;
 
-  /// Protrusion above bar top (half bubble + small gap).
-  static const topProtrusion = bubbleRadius + 4.0;
-
-  static double get totalHeight => barHeight + topProtrusion;
-
-  /// Bubble center sits in the middle of the notch valley (between lip & dip).
-  static double bubbleCenterFromBarBottom(double R) => barHeight - R * 0.5;
+  static double get totalHeight => barHeight;
 
   @override
   State<AppBottomNavigation> createState() => _AppBottomNavigationState();
 }
 
+class _NavItem {
+  const _NavItem(this.icon, this.label);
+  final IconData icon;
+  final String label;
+}
+
 class _AppBottomNavigationState extends State<AppBottomNavigation>
     with SingleTickerProviderStateMixin {
   static const _items = [
-    PhosphorIcons.house,
-    PhosphorIcons.chartLineUp,
-    PhosphorIcons.chartPie,
-    PhosphorIcons.wallet,
-    PhosphorIcons.user,
+    _NavItem(PhosphorIcons.house, 'Home'),
+    _NavItem(PhosphorIcons.chartLineUp, 'Markets'),
+    _NavItem(PhosphorIcons.chartPie, 'Portfolio'),
+    _NavItem(PhosphorIcons.wallet, 'Wallet'),
+    _NavItem(PhosphorIcons.user, 'Profile'),
   ];
 
   late AnimationController _controller;
@@ -55,7 +56,7 @@ class _AppBottomNavigationState extends State<AppBottomNavigation>
     _toIndex = widget.currentIndex.toDouble();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 360),
+      duration: const Duration(milliseconds: 320),
     )..value = 1;
   }
 
@@ -88,7 +89,6 @@ class _AppBottomNavigationState extends State<AppBottomNavigation>
 
   @override
   Widget build(BuildContext context) {
-    const R = AppBottomNavigation.bubbleRadius;
     final bottomPad = MediaQuery.paddingOf(context).bottom;
 
     return Padding(
@@ -96,32 +96,25 @@ class _AppBottomNavigationState extends State<AppBottomNavigation>
         AppBottomNavigation.horizontalInset,
         0,
         AppBottomNavigation.horizontalInset,
-        bottomPad + 6,
+        bottomPad + 8,
       ),
       child: AnimatedBuilder(
         animation: _controller,
         builder: (context, _) {
           return SizedBox(
-            height: AppBottomNavigation.totalHeight,
+            height: AppBottomNavigation.barHeight,
             child: LayoutBuilder(
               builder: (context, constraints) {
                 final width = constraints.maxWidth;
                 final slot = width / _items.length;
                 final cx = slot * _animatedIndex + slot / 2;
-                final bubbleCenterY =
-                    AppBottomNavigation.bubbleCenterFromBarBottom(R);
-                final bubbleBottom = bubbleCenterY - R;
 
                 return Stack(
                   clipBehavior: Clip.none,
-                  alignment: Alignment.bottomCenter,
+                  alignment: Alignment.center,
                   children: [
-                    // Shadow only under the pill (not full-width band)
-                    Positioned(
-                      left: 2,
-                      right: 2,
-                      bottom: 0,
-                      height: AppBottomNavigation.barHeight,
+                    // Soft shadow under floating pill
+                    Positioned.fill(
                       child: DecoratedBox(
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(
@@ -129,94 +122,112 @@ class _AppBottomNavigationState extends State<AppBottomNavigation>
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.4),
-                              blurRadius: 20,
-                              offset: const Offset(0, 6),
+                              color: Colors.black.withValues(alpha: 0.35),
+                              blurRadius: 24,
+                              offset: const Offset(0, 8),
+                            ),
+                            BoxShadow(
+                              color: AppColors.brandPrimary.withValues(
+                                alpha: 0.08,
+                              ),
+                              blurRadius: 12,
+                              offset: const Offset(0, 2),
                             ),
                           ],
                         ),
                       ),
                     ),
 
-                    // Pill bar + notch
-                    Positioned(
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      height: AppBottomNavigation.barHeight,
-                      child: CustomPaint(
-                        painter: _FigmaBarPainter(
-                          centerX: cx,
-                          bubbleRadius: R,
-                          cornerRadius: AppBottomNavigation.cornerRadius,
-                          barColor: AppColors.surfaceSecondary,
+                    // Pill background
+                    Positioned.fill(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceSecondary,
+                          borderRadius: BorderRadius.circular(
+                            AppBottomNavigation.cornerRadius,
+                          ),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.06),
+                          ),
                         ),
                       ),
                     ),
 
-                    // Inactive icons
+                    // Sliding active capsule (Pinterest-style)
                     Positioned(
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      height: AppBottomNavigation.barHeight,
-                      child: Row(
-                        children: List.generate(_items.length, (i) {
-                          if (i == widget.currentIndex) {
-                            return const Expanded(child: SizedBox());
-                          }
-                          return Expanded(
-                            child: Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                onTap: () => _onTap(i),
-                                customBorder: const CircleBorder(),
-                                child: Center(
-                                  child: Icon(
-                                    _items[i],
-                                    size: 23,
-                                    color: Colors.white.withValues(alpha: 0.7),
-                                  ),
-                                ),
+                      left: cx - AppBottomNavigation.activeCapsuleWidth / 2,
+                      top: (AppBottomNavigation.barHeight -
+                              AppBottomNavigation.activeCapsuleHeight) /
+                          2,
+                      width: AppBottomNavigation.activeCapsuleWidth,
+                      height: AppBottomNavigation.activeCapsuleHeight,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: AppColors.navHomeGradient,
+                          borderRadius: BorderRadius.circular(22),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.brandPrimary.withValues(
+                                alpha: 0.35,
                               ),
+                              blurRadius: 10,
+                              offset: const Offset(0, 2),
                             ),
-                          );
-                        }),
+                          ],
+                        ),
                       ),
                     ),
 
-                    // Bubble centered in notch
-                    Positioned(
-                      left: cx - R,
-                      bottom: bubbleBottom,
-                      width: R * 2,
-                      height: R * 2,
-                      child: GestureDetector(
-                        onTap: () => _onTap(widget.currentIndex),
-                        behavior: HitTestBehavior.opaque,
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: AppColors.navHomeGradient,
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.brandPrimary.withValues(
-                                  alpha: 0.45,
+                    // Nav items
+                    Row(
+                      children: List.generate(_items.length, (i) {
+                        final active = i == widget.currentIndex;
+                        final item = _items[i];
+                        return Expanded(
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () => _onTap(i),
+                              borderRadius: BorderRadius.circular(22),
+                              child: SizedBox(
+                                height: AppBottomNavigation.barHeight,
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      item.icon,
+                                      size: active ? 22 : 21,
+                                      color: active
+                                          ? AppColors.onBrandPrimary
+                                          : Colors.white.withValues(
+                                              alpha: 0.55,
+                                            ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      item.label,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: 9.5,
+                                        fontWeight: active
+                                            ? FontWeight.w700
+                                            : FontWeight.w500,
+                                        color: active
+                                            ? AppColors.onBrandPrimary
+                                            : Colors.white.withValues(
+                                                alpha: 0.5,
+                                              ),
+                                        height: 1,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                blurRadius: 14,
-                                offset: const Offset(0, 3),
                               ),
-                            ],
-                          ),
-                          child: Center(
-                            child: Icon(
-                              _items[widget.currentIndex],
-                              size: 24,
-                              color: AppColors.onBrandPrimary,
                             ),
                           ),
-                        ),
-                      ),
+                        );
+                      }),
                     ),
                   ],
                 );
@@ -226,50 +237,5 @@ class _AppBottomNavigationState extends State<AppBottomNavigation>
         },
       ),
     );
-  }
-}
-
-class _FigmaBarPainter extends CustomPainter {
-  _FigmaBarPainter({
-    required this.centerX,
-    required this.bubbleRadius,
-    required this.cornerRadius,
-    required this.barColor,
-  });
-
-  final double centerX;
-  final double bubbleRadius;
-  final double cornerRadius;
-  final Color barColor;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final w = size.width;
-    final h = size.height;
-    final r = cornerRadius;
-    final R = bubbleRadius;
-    final cx = centerX.clamp(r + R + 2, w - r - R - 2);
-
-    final path = Path()
-      ..moveTo(0, h)
-      ..lineTo(0, r)
-      ..quadraticBezierTo(0, 0, r, 0)
-      ..lineTo(cx - R, 0)
-      ..arcToPoint(
-        Offset(cx + R, 0),
-        radius: Radius.circular(R),
-        clockwise: false,
-      )
-      ..lineTo(w - r, 0)
-      ..quadraticBezierTo(w, 0, w, r)
-      ..lineTo(w, h)
-      ..close();
-
-    canvas.drawPath(path, Paint()..color = barColor);
-  }
-
-  @override
-  bool shouldRepaint(covariant _FigmaBarPainter oldDelegate) {
-    return oldDelegate.centerX != centerX;
   }
 }
