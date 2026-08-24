@@ -35,7 +35,10 @@ class HomeGoalsSection extends StatelessWidget {
             separatorBuilder: (_, _) => const SizedBox(width: 12),
             itemBuilder: (context, i) {
               final g = goals[i];
-              return _GoalChip(goal: g, onTap: () => context.push('${AppRoutes.goalDetail}?id=${g.id}'));
+              return _GoalChip(
+                goal: g,
+                onTap: () => context.push('${AppRoutes.goalDetail}?id=${g.id}'),
+              );
             },
           ),
         ),
@@ -60,7 +63,10 @@ class _GoalChip extends StatelessWidget {
         child: Ink(
           width: 210,
           padding: const EdgeInsets.all(16),
-          decoration: HomeThemeA.cardDecoration(context, shadowTint: goal.color),
+          decoration: HomeThemeA.cardDecoration(
+            context,
+            shadowTint: goal.color,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -123,7 +129,10 @@ void showGoalDueDialog(BuildContext context, UserGoalPlanModel goal) {
         'Pay now to keep your goal on track.',
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Later')),
+        TextButton(
+          onPressed: () => Navigator.pop(ctx),
+          child: const Text('Later'),
+        ),
         FilledButton(
           style: FilledButton.styleFrom(
             backgroundColor: HomeThemeA.primary,

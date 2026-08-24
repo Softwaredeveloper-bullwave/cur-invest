@@ -129,10 +129,13 @@ class _AadhaarVerificationScreenState extends State<AadhaarVerificationScreen>
     if (mounted && opened) setState(() => _browserOpened = true);
   }
 
-  Future<void> _checkStatus({bool silent = false, String? verificationId}) async {
-    final verified = await context.read<KycFlowProvider>().checkAadhaarDigiLocker(
-          verificationId: verificationId,
-        );
+  Future<void> _checkStatus({
+    bool silent = false,
+    String? verificationId,
+  }) async {
+    final verified = await context
+        .read<KycFlowProvider>()
+        .checkAadhaarDigiLocker(verificationId: verificationId);
     if (!mounted) return;
     if (verified) {
       setState(() => _step = _DigiLockerStep.verified);
@@ -188,8 +191,8 @@ class _AadhaarVerificationScreenState extends State<AadhaarVerificationScreen>
                 _step == _DigiLockerStep.waiting
                     ? 'Complete Aadhaar document consent in DigiLocker, then return here to check the result.'
                     : _step == _DigiLockerStep.verified
-                        ? 'Your identity was securely verified using the Aadhaar document shared through DigiLocker.'
-                        : 'DigiLocker will ask you to sign in and consent to sharing your Aadhaar for KYC.',
+                    ? 'Your identity was securely verified using the Aadhaar document shared through DigiLocker.'
+                    : 'DigiLocker will ask you to sign in and consent to sharing your Aadhaar for KYC.',
                 textAlign: TextAlign.center,
                 style: TextStyle(color: Colors.grey.shade600),
               ),
@@ -222,7 +225,7 @@ class _AadhaarVerificationScreenState extends State<AadhaarVerificationScreen>
                   onChanged: kyc.isLoading
                       ? null
                       : (value) =>
-                          setState(() => _consentGiven = value ?? false),
+                            setState(() => _consentGiven = value ?? false),
                   title: const Text(
                     'I consent to verify my identity by sharing my Aadhaar through DigiLocker.',
                     style: TextStyle(fontSize: 13),
@@ -246,8 +249,9 @@ class _AadhaarVerificationScreenState extends State<AadhaarVerificationScreen>
                   label: kyc.isLoading
                       ? 'Checking verification…'
                       : 'Check verification status',
-                  onPressed:
-                      kyc.isLoading ? null : () => _checkStatus(silent: false),
+                  onPressed: kyc.isLoading
+                      ? null
+                      : () => _checkStatus(silent: false),
                 ),
                 const SizedBox(height: 8),
                 TextButton(
@@ -270,9 +274,9 @@ class _AadhaarVerificationScreenState extends State<AadhaarVerificationScreen>
                   onPressed: kyc.isLoading
                       ? null
                       : () => setState(() {
-                            _consentGiven = false;
-                            _step = _DigiLockerStep.ready;
-                          }),
+                          _consentGiven = false;
+                          _step = _DigiLockerStep.ready;
+                        }),
                   child: const Text('Start a new verification'),
                 ),
               ] else ...[

@@ -50,15 +50,18 @@ class BeginnerNoteTemplates {
   static const templates = [
     (
       title: 'My first investment plan',
-      body: 'Goal:\nHorizon (years):\nMonthly amount:\nRisk level (low/medium/high):\nStocks/funds shortlisted:\nWhy I chose them:\n',
+      body:
+          'Goal:\nHorizon (years):\nMonthly amount:\nRisk level (low/medium/high):\nStocks/funds shortlisted:\nWhy I chose them:\n',
     ),
     (
       title: 'Stock research — SYMBOL',
-      body: 'Company business:\nRevenue trend:\nKey risks:\nPE vs sector:\nMy entry price:\nTarget:\nStop / exit if wrong:\n',
+      body:
+          'Company business:\nRevenue trend:\nKey risks:\nPE vs sector:\nMy entry price:\nTarget:\nStop / exit if wrong:\n',
     ),
     (
       title: 'Weekly market journal',
-      body: 'Week of:\nNIFTY bias:\nWhat I learned:\nMistakes to avoid:\nPlan for next week:\n',
+      body:
+          'Week of:\nNIFTY bias:\nWhat I learned:\nMistakes to avoid:\nPlan for next week:\n',
     ),
   ];
 }

@@ -70,9 +70,15 @@ class PaperRiskMeterCard extends StatelessWidget {
                 Icon(Icons.speed_rounded, color: color, size: 20),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(title, style: ThemeAType.cardTitle(color: p.textDark, size: 16)),
+                  child: Text(
+                    title,
+                    style: ThemeAType.cardTitle(color: p.textDark, size: 16),
+                  ),
                 ),
-                Text('${m.score}', style: ThemeAType.sectionTitle(color: color, size: 22)),
+                Text(
+                  '${m.score}',
+                  style: ThemeAType.sectionTitle(color: color, size: 22),
+                ),
               ],
             ),
             const SizedBox(height: 6),
@@ -83,14 +89,35 @@ class PaperRiskMeterCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Low', style: ThemeAType.label(size: 10, color: p.positive)),
-                Text('Medium', style: ThemeAType.label(size: 10, color: const Color(0xFFF59E0B))),
-                Text('High', style: ThemeAType.label(size: 10, color: const Color(0xFFF97316))),
-                Text('Extreme', style: ThemeAType.label(size: 10, color: p.negative)),
+                Text(
+                  'Low',
+                  style: ThemeAType.label(size: 10, color: p.positive),
+                ),
+                Text(
+                  'Medium',
+                  style: ThemeAType.label(
+                    size: 10,
+                    color: const Color(0xFFF59E0B),
+                  ),
+                ),
+                Text(
+                  'High',
+                  style: ThemeAType.label(
+                    size: 10,
+                    color: const Color(0xFFF97316),
+                  ),
+                ),
+                Text(
+                  'Extreme',
+                  style: ThemeAType.label(size: 10, color: p.negative),
+                ),
               ],
             ),
             const SizedBox(height: 10),
-            Text(m.summary, style: ThemeAType.body(color: p.textGrey, size: 12)),
+            Text(
+              m.summary,
+              style: ThemeAType.body(color: p.textGrey, size: 12),
+            ),
             if (m.factors.isNotEmpty) ...[
               const SizedBox(height: 12),
               ...m.factors.take(3).map((f) {
@@ -101,7 +128,9 @@ class PaperRiskMeterCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Icon(
-                        f.isPositive ? Icons.check_circle_outline : Icons.warning_amber_rounded,
+                        f.isPositive
+                            ? Icons.check_circle_outline
+                            : Icons.warning_amber_rounded,
                         size: 14,
                         color: fc,
                       ),
@@ -265,8 +294,10 @@ class PaperCompetitionCard extends StatelessWidget {
                         Expanded(
                           child: Text(
                             top.name,
-                            style: ThemeAType.label(size: 13, color: p.textDark)
-                                .copyWith(fontWeight: FontWeight.w700),
+                            style: ThemeAType.label(
+                              size: 13,
+                              color: p.textDark,
+                            ).copyWith(fontWeight: FontWeight.w700),
                           ),
                         ),
                         Text(
@@ -291,12 +322,23 @@ class PaperCompetitionCard extends StatelessWidget {
                             children: [
                               SizedBox(
                                 width: 22,
-                                child: Text('#${s.rank}', style: ThemeAType.label(size: 11, color: p.textMuted)),
+                                child: Text(
+                                  '#${s.rank}',
+                                  style: ThemeAType.label(
+                                    size: 11,
+                                    color: p.textMuted,
+                                  ),
+                                ),
                               ),
                               Expanded(
                                 child: Text(
-                                  s.isYou ? '${s.displayName} (you)' : s.displayName,
-                                  style: ThemeAType.body(color: p.textDark, size: 12),
+                                  s.isYou
+                                      ? '${s.displayName} (you)'
+                                      : s.displayName,
+                                  style: ThemeAType.body(
+                                    color: p.textDark,
+                                    size: 12,
+                                  ),
                                 ),
                               ),
                               Text(
@@ -336,7 +378,9 @@ Future<void> showCreateCompetitionSheet(BuildContext context) async {
       return StatefulBuilder(
         builder: (ctx, setModal) {
           return Padding(
-            padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(ctx).bottom),
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.viewInsetsOf(ctx).bottom,
+            ),
             child: Container(
               margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
@@ -349,14 +393,19 @@ Future<void> showCreateCompetitionSheet(BuildContext context) async {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Create competition', style: ThemeAType.sectionTitle(color: p.textDark)),
+                  Text(
+                    'Create competition',
+                    style: ThemeAType.sectionTitle(color: p.textDark),
+                  ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: nameController,
                     decoration: InputDecoration(
                       labelText: 'Arena name',
                       hintText: 'Weekend Warriors',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -366,11 +415,16 @@ Future<void> showCreateCompetitionSheet(BuildContext context) async {
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     decoration: InputDecoration(
                       labelText: 'Starting capital (₹)',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 10),
-                  Text('Duration', style: ThemeAType.label(size: 12, color: p.textMuted)),
+                  Text(
+                    'Duration',
+                    style: ThemeAType.label(size: 12, color: p.textMuted),
+                  ),
                   const SizedBox(height: 6),
                   Wrap(
                     spacing: 8,
@@ -448,7 +502,10 @@ Future<void> showJoinCompetitionSheet(BuildContext context) async {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Join with invite code', style: ThemeAType.sectionTitle(color: p.textDark)),
+              Text(
+                'Join with invite code',
+                style: ThemeAType.sectionTitle(color: p.textDark),
+              ),
               const SizedBox(height: 12),
               TextField(
                 controller: codeController,
@@ -456,7 +513,9 @@ Future<void> showJoinCompetitionSheet(BuildContext context) async {
                 decoration: InputDecoration(
                   labelText: 'Invite code',
                   hintText: 'ABC123',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
               const SizedBox(height: 14),
@@ -476,12 +535,12 @@ Future<void> showJoinCompetitionSheet(BuildContext context) async {
 
   if (ok != true || !context.mounted) return;
   final err = await context.read<PaperCompetitionProvider>().joinCompetition(
-        codeController.text.trim(),
-      );
-  if (!context.mounted) return;
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text(err ?? 'Joined competition')),
+    codeController.text.trim(),
   );
+  if (!context.mounted) return;
+  ScaffoldMessenger.of(
+    context,
+  ).showSnackBar(SnackBar(content: Text(err ?? 'Joined competition')));
 }
 
 Future<void> showCompetitionDetailSheet(
@@ -489,7 +548,9 @@ Future<void> showCompetitionDetailSheet(
   PaperCompetitionModel competition,
 ) async {
   final p = context.palette;
-  await context.read<PaperCompetitionProvider>().loadCompetition(competition.id);
+  await context.read<PaperCompetitionProvider>().loadCompetition(
+    competition.id,
+  );
   if (!context.mounted) return;
   final live = context.read<PaperCompetitionProvider>().selected ?? competition;
 
@@ -501,7 +562,9 @@ Future<void> showCompetitionDetailSheet(
       return Container(
         margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-        constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(ctx).height * 0.75),
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.sizeOf(ctx).height * 0.75,
+        ),
         decoration: BoxDecoration(
           color: p.card,
           borderRadius: BorderRadius.circular(24),
@@ -521,7 +584,9 @@ Future<void> showCompetitionDetailSheet(
               children: [
                 OutlinedButton.icon(
                   onPressed: () async {
-                    await Clipboard.setData(ClipboardData(text: live.inviteCode));
+                    await Clipboard.setData(
+                      ClipboardData(text: live.inviteCode),
+                    );
                     if (ctx.mounted) {
                       ScaffoldMessenger.of(ctx).showSnackBar(
                         SnackBar(content: Text('Copied ${live.inviteCode}')),
@@ -533,14 +598,19 @@ Future<void> showCompetitionDetailSheet(
                 ),
                 const SizedBox(width: 8),
                 OutlinedButton.icon(
-                  onPressed: () => SharePlus.instance.share(ShareParams(text: live.shareMessage)),
+                  onPressed: () => SharePlus.instance.share(
+                    ShareParams(text: live.shareMessage),
+                  ),
                   icon: const Icon(Icons.ios_share_rounded, size: 16),
                   label: const Text('Share'),
                 ),
               ],
             ),
             const SizedBox(height: 14),
-            Text('Leaderboard', style: ThemeAType.cardTitle(color: p.textDark, size: 15)),
+            Text(
+              'Leaderboard',
+              style: ThemeAType.cardTitle(color: p.textDark, size: 15),
+            ),
             const SizedBox(height: 8),
             Expanded(
               child: ListView.separated(
@@ -556,7 +626,9 @@ Future<void> showCompetitionDetailSheet(
                           : p.surface.withValues(alpha: 0.5),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: s.isYou ? p.primary.withValues(alpha: 0.35) : p.borderLight,
+                        color: s.isYou
+                            ? p.primary.withValues(alpha: 0.35)
+                            : p.borderLight,
                       ),
                     ),
                     child: Row(
@@ -575,13 +647,20 @@ Future<void> showCompetitionDetailSheet(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                s.isYou ? '${s.displayName} (you)' : s.displayName,
-                                style: ThemeAType.body(color: p.textDark, size: 13)
-                                    .copyWith(fontWeight: FontWeight.w600),
+                                s.isYou
+                                    ? '${s.displayName} (you)'
+                                    : s.displayName,
+                                style: ThemeAType.body(
+                                  color: p.textDark,
+                                  size: 13,
+                                ).copyWith(fontWeight: FontWeight.w600),
                               ),
                               Text(
                                 '${s.tradesCount} trades · ${CurrencyFormatter.format(s.equity)}',
-                                style: ThemeAType.label(size: 11, color: p.textMuted),
+                                style: ThemeAType.label(
+                                  size: 11,
+                                  color: p.textMuted,
+                                ),
                               ),
                             ],
                           ),

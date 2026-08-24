@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/api/auth_session_guard.dart';
 import '../../../../core/api/bullwave_api.dart';
 import '../../../../models/portfolio_model.dart';
 
@@ -22,11 +23,14 @@ class PortfolioProvider extends ChangeNotifier {
   List<AllocationItem> get allocations => _allocations;
   List<MonthlyEarning> get monthlyEarnings => _monthlyEarnings;
 
-  PortfolioProvider() {
-    loadData();
-  }
+  PortfolioProvider();
 
   Future<void> loadData() async {
+    if (!await hasStoredAccessToken()) {
+      _isLoading = false;
+      notifyListeners();
+      return;
+    }
     _isLoading = true;
     notifyListeners();
     try {

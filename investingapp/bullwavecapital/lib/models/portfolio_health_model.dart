@@ -61,11 +61,11 @@ class HealthFactor {
   bool get isPositive => impact == 'positive';
 
   factory HealthFactor.fromJson(Map<String, dynamic> json) => HealthFactor(
-        key: json['key'] as String? ?? '',
-        label: json['label'] as String? ?? '',
-        impact: json['impact'] as String? ?? '',
-        detail: json['detail'] as String? ?? '',
-      );
+    key: json['key'] as String? ?? '',
+    label: json['label'] as String? ?? '',
+    impact: json['impact'] as String? ?? '',
+    detail: json['detail'] as String? ?? '',
+  );
 }
 
 class NewsAlertModel {
@@ -84,14 +84,14 @@ class NewsAlertModel {
   });
 
   factory NewsAlertModel.fromJson(Map<String, dynamic> json) => NewsAlertModel(
-        id: json['id']?.toString() ?? '',
-        keyword: json['keyword'] as String? ?? '',
-        isActive: json['isActive'] as bool? ?? true,
-        lastMatchedAt: json['lastMatchedAt'] != null
-            ? DateTime.tryParse(json['lastMatchedAt'].toString())
-            : null,
-        lastMatchedTitle: json['lastMatchedTitle'] as String? ?? '',
-      );
+    id: json['id']?.toString() ?? '',
+    keyword: json['keyword'] as String? ?? '',
+    isActive: json['isActive'] as bool? ?? true,
+    lastMatchedAt: json['lastMatchedAt'] != null
+        ? DateTime.tryParse(json['lastMatchedAt'].toString())
+        : null,
+    lastMatchedTitle: json['lastMatchedTitle'] as String? ?? '',
+  );
 }
 
 int _int(dynamic v) {

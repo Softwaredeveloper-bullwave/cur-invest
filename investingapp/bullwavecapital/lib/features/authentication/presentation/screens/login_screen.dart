@@ -43,8 +43,9 @@ class _LoginScreenState extends State<LoginScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final auth = context.read<AuthProvider>();
-      final registered =
-          GoRouterState.of(context).uri.queryParameters['registered'];
+      final registered = GoRouterState.of(
+        context,
+      ).uri.queryParameters['registered'];
       auth.beginSignIn();
       if (registered == '1') {
         auth.setLoginSuccessMessage(
@@ -92,7 +93,9 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
       auth.setLoginSuccessMessage(null);
-      if (AppEnv.showDevOtpHints && auth.otpIsConsoleMode && auth.devOtp != null) {
+      if (AppEnv.showDevOtpHints &&
+          auth.otpIsConsoleMode &&
+          auth.devOtp != null) {
         messenger.showSnackBar(
           SnackBar(
             content: Text('Dev OTP: ${auth.devOtp}'),
@@ -170,7 +173,9 @@ class _SignInView extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: AppColors.green.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: AppColors.green.withValues(alpha: 0.35)),
+                  border: Border.all(
+                    color: AppColors.green.withValues(alpha: 0.35),
+                  ),
                 ),
                 child: Text(
                   auth.loginSuccessMessage!,
@@ -191,7 +196,9 @@ class _SignInView extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: AppColors.red.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: AppColors.red.withValues(alpha: 0.35)),
+                  border: Border.all(
+                    color: AppColors.red.withValues(alpha: 0.35),
+                  ),
                 ),
                 child: Text(
                   auth.error!,
@@ -245,7 +252,10 @@ class _SignInView extends StatelessWidget {
                     fontSize: 18,
                   ),
                   border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 18,
+                  ),
                   prefixIcon: Padding(
                     padding: const EdgeInsets.only(left: 12, right: 8),
                     child: Text(
@@ -257,7 +267,10 @@ class _SignInView extends StatelessWidget {
                       ),
                     ),
                   ),
-                  prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
+                  prefixIconConstraints: const BoxConstraints(
+                    minWidth: 0,
+                    minHeight: 0,
+                  ),
                 ),
               ),
             ),
@@ -280,19 +293,31 @@ class _SignInView extends StatelessWidget {
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColors.brandPrimary,
                   foregroundColor: AppColors.onBrandPrimary,
-                  disabledBackgroundColor: AppColors.brandPrimary.withValues(alpha: 0.45),
-                  disabledForegroundColor: AppColors.onBrandPrimary.withValues(alpha: 0.7),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  disabledBackgroundColor: AppColors.brandPrimary.withValues(
+                    alpha: 0.45,
+                  ),
+                  disabledForegroundColor: AppColors.onBrandPrimary.withValues(
+                    alpha: 0.7,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                 ),
                 child: auth.isLoading
                     ? const SizedBox(
                         width: 22,
                         height: 22,
-                        child: CircularProgressIndicator(strokeWidth: 2.2, color: Colors.white),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.2,
+                          color: Colors.white,
+                        ),
                       )
                     : Text(
                         'Continue with OTP',
-                        style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 16),
+                        style: GoogleFonts.inter(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 16,
+                        ),
                       ),
               ),
             ),
@@ -328,8 +353,9 @@ class _RegistrationPhoneStep extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
-    final canGoBackToOnboarding =
-        !context.watch<AppProvider>().hasCompletedOnboarding;
+    final canGoBackToOnboarding = !context
+        .watch<AppProvider>()
+        .hasCompletedOnboarding;
 
     return PremiumAuthShell(
       glowPrimary: const Color(0xFF9333EA),
@@ -365,69 +391,76 @@ class _RegistrationPhoneStep extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               PremiumAuthHero(
-              pill: 'Step 1 · Phone',
-              headline: 'CREATE\nACCOUNT',
-              body: 'Enter your mobile number. We\'ll send a secure 6-digit OTP to verify you.',
-              showLogo: true,
-              belowBody: PremiumGlassField(
-                child: TextFormField(
-                  controller: phoneController,
-                  keyboardType: TextInputType.phone,
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.inter(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 2,
-                  ),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.digitsOnly,
-                    LengthLimitingTextInputFormatter(10),
-                  ],
-                  validator: (value) {
-                    if (value == null || value.length != 10) {
-                      return 'Enter a valid 10 digit number';
-                    }
-                    return null;
-                  },
-                  decoration: InputDecoration(
-                    hintText: '9876543210',
-                    hintStyle: GoogleFonts.inter(
-                      color: Colors.white.withValues(alpha: 0.25),
+                pill: 'Step 1 · Phone',
+                headline: 'CREATE\nACCOUNT',
+                body:
+                    'Enter your mobile number. We\'ll send a secure 6-digit OTP to verify you.',
+                showLogo: true,
+                belowBody: PremiumGlassField(
+                  child: TextFormField(
+                    controller: phoneController,
+                    keyboardType: TextInputType.phone,
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.inter(
+                      color: Colors.white,
                       fontSize: 20,
+                      fontWeight: FontWeight.w700,
                       letterSpacing: 2,
                     ),
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-                    prefixIcon: Padding(
-                      padding: const EdgeInsets.only(left: 16, right: 8),
-                      child: Text(
-                        '+91',
-                        style: GoogleFonts.inter(
-                          color: AppColors.brandCyan,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 16,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(10),
+                    ],
+                    validator: (value) {
+                      if (value == null || value.length != 10) {
+                        return 'Enter a valid 10 digit number';
+                      }
+                      return null;
+                    },
+                    decoration: InputDecoration(
+                      hintText: '9876543210',
+                      hintStyle: GoogleFonts.inter(
+                        color: Colors.white.withValues(alpha: 0.25),
+                        fontSize: 20,
+                        letterSpacing: 2,
+                      ),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 18,
+                      ),
+                      prefixIcon: Padding(
+                        padding: const EdgeInsets.only(left: 16, right: 8),
+                        child: Text(
+                          '+91',
+                          style: GoogleFonts.inter(
+                            color: AppColors.brandCyan,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 16,
+                          ),
                         ),
                       ),
+                      prefixIconConstraints: const BoxConstraints(
+                        minWidth: 0,
+                        minHeight: 0,
+                      ),
                     ),
-                    prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
                   ),
                 ),
               ),
-            ),
-            const SizedBox(height: 24),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 28),
-              child: LegalAcceptanceCheckbox(
-                value: auth.termsAccepted,
-                onChanged: auth.setTermsAccepted,
-                onToggle: () => auth.setTermsAccepted(!auth.termsAccepted),
+              const SizedBox(height: 24),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 28),
+                child: LegalAcceptanceCheckbox(
+                  value: auth.termsAccepted,
+                  onChanged: auth.setTermsAccepted,
+                  onToggle: () => auth.setTermsAccepted(!auth.termsAccepted),
+                ),
               ),
-            ),
-            const SizedBox(height: 24),
-          ],
+              const SizedBox(height: 24),
+            ],
+          ),
         ),
-      ),
       ),
     );
   }

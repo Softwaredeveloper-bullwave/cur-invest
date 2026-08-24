@@ -30,7 +30,11 @@ class DhanChartToolbar extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(8, 0, 8, 6),
       child: Row(
         children: [
-          _typeChip('Candles', MarketChartType.candlestick, Icons.candlestick_chart_rounded),
+          _typeChip(
+            'Candles',
+            MarketChartType.candlestick,
+            Icons.candlestick_chart_rounded,
+          ),
           const SizedBox(width: 4),
           _typeChip('Line', MarketChartType.line, Icons.show_chart_rounded),
           const SizedBox(width: 4),
@@ -52,10 +56,14 @@ class DhanChartToolbar extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
         decoration: BoxDecoration(
-          color: selected ? _active.withValues(alpha: 0.12) : Colors.transparent,
+          color: selected
+              ? _active.withValues(alpha: 0.12)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(6),
           border: Border.all(
-            color: selected ? _active.withValues(alpha: 0.45) : const Color(0xFF1E2329),
+            color: selected
+                ? _active.withValues(alpha: 0.45)
+                : const Color(0xFF1E2329),
           ),
         ),
         child: Row(
@@ -87,7 +95,9 @@ class DhanChartToolbar extends StatelessWidget {
           color: on ? _active.withValues(alpha: 0.12) : Colors.transparent,
           borderRadius: BorderRadius.circular(6),
           border: Border.all(
-            color: on ? _active.withValues(alpha: 0.45) : const Color(0xFF1E2329),
+            color: on
+                ? _active.withValues(alpha: 0.45)
+                : const Color(0xFF1E2329),
           ),
         ),
         child: Text(
@@ -131,12 +141,20 @@ class ChartOhlcStrip extends StatelessWidget {
           _cell('O', open),
           _cell('H', high, const Color(0xFF00C853)),
           _cell('L', low, const Color(0xFFEF5350)),
-          _cell('C', close, isBullish ? const Color(0xFF00C853) : const Color(0xFFEF5350)),
+          _cell(
+            'C',
+            close,
+            isBullish ? const Color(0xFF00C853) : const Color(0xFFEF5350),
+          ),
           if (volume != null) ...[
             const Spacer(),
             Text(
               'Vol $volume',
-              style: const TextStyle(color: Color(0xFF8B949E), fontSize: 10, fontWeight: FontWeight.w600),
+              style: const TextStyle(
+                color: Color(0xFF8B949E),
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ],
         ],
@@ -153,7 +171,10 @@ class ChartOhlcStrip extends StatelessWidget {
           children: [
             TextSpan(
               text: '$key ',
-              style: const TextStyle(color: Color(0xFF8B949E), fontWeight: FontWeight.w600),
+              style: const TextStyle(
+                color: Color(0xFF8B949E),
+                fontWeight: FontWeight.w600,
+              ),
             ),
             TextSpan(
               text: value ?? '—',

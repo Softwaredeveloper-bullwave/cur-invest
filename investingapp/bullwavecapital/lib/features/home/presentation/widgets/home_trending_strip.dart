@@ -12,11 +12,7 @@ class HomeTrendingStrip extends StatelessWidget {
   final List<StockModel> stocks;
   final VoidCallback? onSeeAll;
 
-  const HomeTrendingStrip({
-    super.key,
-    required this.stocks,
-    this.onSeeAll,
-  });
+  const HomeTrendingStrip({super.key, required this.stocks, this.onSeeAll});
 
   static const _avatarColors = [
     Color(0xFF047857),
@@ -39,7 +35,9 @@ class HomeTrendingStrip extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: EdgeInsets.only(right: onSeeAll != null ? ShellLayout.fabActionClearance : 0),
+            padding: EdgeInsets.only(
+              right: onSeeAll != null ? ShellLayout.fabActionClearance : 0,
+            ),
             child: Row(
               children: [
                 Expanded(
@@ -77,12 +75,18 @@ class HomeTrendingStrip extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          ...stocks.take(3).toList().asMap().entries.map(
+          ...stocks
+              .take(3)
+              .toList()
+              .asMap()
+              .entries
+              .map(
                 (entry) => Padding(
                   padding: EdgeInsets.only(bottom: entry.key < 2 ? 10 : 0),
                   child: _TrendingStockRow(
                     stock: entry.value,
-                    avatarColor: _avatarColors[entry.key % _avatarColors.length],
+                    avatarColor:
+                        _avatarColors[entry.key % _avatarColors.length],
                   ),
                 ),
               ),
@@ -96,10 +100,7 @@ class _TrendingStockChip extends StatelessWidget {
   final StockModel stock;
   final Color avatarColor;
 
-  const _TrendingStockChip({
-    required this.stock,
-    required this.avatarColor,
-  });
+  const _TrendingStockChip({required this.stock, required this.avatarColor});
 
   @override
   Widget build(BuildContext context) {
@@ -113,9 +114,13 @@ class _TrendingStockChip extends StatelessWidget {
       width: 72,
       height: 96,
       child: ScaleTap(
-        onTap: () => context.push('${AppRoutes.stockDetail}?symbol=${stock.symbol}'),
+        onTap: () =>
+            context.push('${AppRoutes.stockDetail}?symbol=${stock.symbol}'),
         child: Container(
-          decoration: HomeThemeA.cardDecoration(context, shadowTint: avatarColor),
+          decoration: HomeThemeA.cardDecoration(
+            context,
+            shadowTint: avatarColor,
+          ),
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 8),
             child: Column(
@@ -139,7 +144,9 @@ class _TrendingStockChip extends StatelessWidget {
                   ),
                   child: Text(
                     initials,
-                    style: ThemeAType.label(size: 12).copyWith(color: Colors.white),
+                    style: ThemeAType.label(
+                      size: 12,
+                    ).copyWith(color: Colors.white),
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -169,10 +176,7 @@ class _TrendingStockRow extends StatelessWidget {
   final StockModel stock;
   final Color avatarColor;
 
-  const _TrendingStockRow({
-    required this.stock,
-    required this.avatarColor,
-  });
+  const _TrendingStockRow({required this.stock, required this.avatarColor});
 
   @override
   Widget build(BuildContext context) {
@@ -185,11 +189,15 @@ class _TrendingStockRow extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () => context.push('${AppRoutes.stockDetail}?symbol=${stock.symbol}'),
+        onTap: () =>
+            context.push('${AppRoutes.stockDetail}?symbol=${stock.symbol}'),
         borderRadius: BorderRadius.circular(22),
         child: Ink(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          decoration: HomeThemeA.cardDecoration(context, shadowTint: avatarColor),
+          decoration: HomeThemeA.cardDecoration(
+            context,
+            shadowTint: avatarColor,
+          ),
           child: Row(
             children: [
               Container(
@@ -202,7 +210,9 @@ class _TrendingStockRow extends StatelessWidget {
                 ),
                 child: Text(
                   initials,
-                  style: ThemeAType.label(size: 13).copyWith(color: Colors.white),
+                  style: ThemeAType.label(
+                    size: 13,
+                  ).copyWith(color: Colors.white),
                 ),
               ),
               const SizedBox(width: 12),

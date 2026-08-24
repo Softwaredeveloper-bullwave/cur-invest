@@ -59,89 +59,89 @@ class _PaperPortfolioScreenState extends State<PaperPortfolioScreen> {
           : RefreshIndicator(
               color: AppColors.brandOrange,
               onRefresh: _load,
-              child: Consumer3<StockPortfolioProvider, StockFeaturesProvider,
-                  WalletProvider>(
-                builder: (context, portfolio, features, wallet, _) {
-                  final summary = portfolio.summary;
-                  final holdings = portfolio.holdings;
-                  final trades = features.paperTrades;
-                  final cash = wallet.practiceBalance;
-                  final equity = cash + summary.currentValue;
+              child:
+                  Consumer3<
+                    StockPortfolioProvider,
+                    StockFeaturesProvider,
+                    WalletProvider
+                  >(
+                    builder: (context, portfolio, features, wallet, _) {
+                      final summary = portfolio.summary;
+                      final holdings = portfolio.holdings;
+                      final trades = features.paperTrades;
+                      final cash = wallet.practiceBalance;
+                      final equity = cash + summary.currentValue;
 
-                  return ListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                    children: [
-                      _PracticeCashCard(balance: cash, equity: equity),
-                      const SizedBox(height: 14),
-                      PortfolioSummaryCard(
-                        totalInvestment: summary.totalInvested,
-                        currentValue: summary.currentValue,
-                        totalProfit: summary.totalPnl,
-                        todayPnl: summary.dayPnl,
-                        todayPnlPercent: summary.dayPnlPercent,
-                      ),
-                      const SizedBox(height: 20),
-                      Text(
-                        'Holdings',
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w800),
-                      ),
-                      const SizedBox(height: 10),
-                      if (holdings.isEmpty)
-                        _EmptyHoldings(colors: colors)
-                      else
-                        ...holdings.map(
-                          (h) => PortfolioHoldingTile(
-                            holding: h,
-                            onTap: () => context.push(
-                              '${AppRoutes.stockDetail}?symbol=${h.symbol}',
-                            ),
-                            onBuy: () => executeStockTrade(
-                              context,
-                              stock: h.toTradeStock(),
-                              side: 'BUY',
-                            ),
-                            onSell: () => executeStockTrade(
-                              context,
-                              stock: h.toTradeStock(),
-                              side: 'SELL',
-                            ),
+                      return ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                        children: [
+                          _PracticeCashCard(balance: cash, equity: equity),
+                          const SizedBox(height: 14),
+                          PortfolioSummaryCard(
+                            totalInvestment: summary.totalInvested,
+                            currentValue: summary.currentValue,
+                            totalProfit: summary.totalPnl,
+                            todayPnl: summary.dayPnl,
+                            todayPnlPercent: summary.dayPnlPercent,
                           ),
-                        ),
-                      const SizedBox(height: 20),
-                      Text(
-                        'Recent Paper Trades',
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w800),
-                      ),
-                      const SizedBox(height: 10),
-                      if (trades.isEmpty)
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 32,
-                            horizontal: 20,
+                          const SizedBox(height: 20),
+                          Text(
+                            'Holdings',
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w800),
                           ),
-                          decoration: AppDecorations.card(context),
-                          child: Text(
-                            'No paper trades yet. Place an order from Paper Trading.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(color: colors.textMuted),
+                          const SizedBox(height: 10),
+                          if (holdings.isEmpty)
+                            _EmptyHoldings(colors: colors)
+                          else
+                            ...holdings.map(
+                              (h) => PortfolioHoldingTile(
+                                holding: h,
+                                onTap: () => context.push(
+                                  '${AppRoutes.stockDetail}?symbol=${h.symbol}',
+                                ),
+                                onBuy: () => executeStockTrade(
+                                  context,
+                                  stock: h.toTradeStock(),
+                                  side: 'BUY',
+                                ),
+                                onSell: () => executeStockTrade(
+                                  context,
+                                  stock: h.toTradeStock(),
+                                  side: 'SELL',
+                                ),
+                              ),
+                            ),
+                          const SizedBox(height: 20),
+                          Text(
+                            'Recent Paper Trades',
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w800),
                           ),
-                        )
-                      else
-                        ...trades
-                            .take(12)
-                            .map((t) => StockOrderHistoryTile(order: t)),
-                    ],
-                  );
-                },
-              ),
+                          const SizedBox(height: 10),
+                          if (trades.isEmpty)
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 32,
+                                horizontal: 20,
+                              ),
+                              decoration: AppDecorations.card(context),
+                              child: Text(
+                                'No paper trades yet. Place an order from Paper Trading.',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(color: colors.textMuted),
+                              ),
+                            )
+                          else
+                            ...trades
+                                .take(12)
+                                .map((t) => StockOrderHistoryTile(order: t)),
+                        ],
+                      );
+                    },
+                  ),
             ),
     );
   }
@@ -216,7 +216,11 @@ class _EmptyHoldings extends StatelessWidget {
       decoration: AppDecorations.card(context),
       child: Column(
         children: [
-          Icon(Icons.pie_chart_outline_rounded, size: 44, color: colors.textMuted),
+          Icon(
+            Icons.pie_chart_outline_rounded,
+            size: 44,
+            color: colors.textMuted,
+          ),
           const SizedBox(height: 12),
           Text(
             'No paper holdings yet',

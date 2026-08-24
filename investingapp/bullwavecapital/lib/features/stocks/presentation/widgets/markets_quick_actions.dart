@@ -14,10 +14,7 @@ import 'explore_feature_tile.dart';
 class MarketsQuickActions extends StatelessWidget {
   final VoidCallback onMore;
 
-  const MarketsQuickActions({
-    super.key,
-    required this.onMore,
-  });
+  const MarketsQuickActions({super.key, required this.onMore});
 
   @override
   Widget build(BuildContext context) {
@@ -151,7 +148,10 @@ void showMarketsMoreSheet(
                   ),
                 ),
                 const SizedBox(height: 16),
-                Text('More tools', style: ThemeAType.sectionTitle(color: p.textDark)),
+                Text(
+                  'More tools',
+                  style: ThemeAType.sectionTitle(color: p.textDark),
+                ),
                 const SizedBox(height: 16),
                 Wrap(
                   spacing: 12,

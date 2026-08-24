@@ -29,7 +29,9 @@ class MainShell extends StatelessWidget {
       case 1:
         context.go(AppRoutes.invest);
       case 2:
-        context.read<StockPortfolioProvider>().ensureLoaded(refreshQuotes: false);
+        context.read<StockPortfolioProvider>().ensureLoaded(
+          refreshQuotes: false,
+        );
         context.go(AppRoutes.portfolio);
       case 3:
         context.go(AppRoutes.wallet);

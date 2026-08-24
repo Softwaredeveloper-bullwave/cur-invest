@@ -21,7 +21,8 @@ class VerifyEmailOtpScreen extends StatefulWidget {
 }
 
 class _VerifyEmailOtpScreenState extends State<VerifyEmailOtpScreen> {
-  final GlobalKey<ModernOtpInputState> _otpKey = GlobalKey<ModernOtpInputState>();
+  final GlobalKey<ModernOtpInputState> _otpKey =
+      GlobalKey<ModernOtpInputState>();
   int _secondsRemaining = 30;
   Timer? _timer;
   bool _isResending = false;
@@ -100,7 +101,9 @@ class _VerifyEmailOtpScreenState extends State<VerifyEmailOtpScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            AppEnv.showDevOtpHints && auth.emailOtpIsConsoleMode && auth.devOtp != null
+            AppEnv.showDevOtpHints &&
+                    auth.emailOtpIsConsoleMode &&
+                    auth.devOtp != null
                 ? 'Dev mode — new code: ${auth.devOtp}'
                 : 'Verification code sent to ${auth.pendingEmail}',
           ),
@@ -140,62 +143,66 @@ class _VerifyEmailOtpScreenState extends State<VerifyEmailOtpScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             PremiumAuthHero(
-            pill: 'Step 2 · Email',
-            headline: 'ENTER\nCODE',
-            body: email.isEmpty
-                ? 'Enter the 6-digit verification code sent to your email.'
-                : 'Enter the 6-digit code we sent to your inbox.',
-            showLogo: false,
-            belowBody: Column(
-              children: [
-                if (email.isNotEmpty) ...[
-                  PremiumAuthEmailTarget(email: email),
-                  const SizedBox(height: 16),
+              pill: 'Step 2 · Email',
+              headline: 'ENTER\nCODE',
+              body: email.isEmpty
+                  ? 'Enter the 6-digit verification code sent to your email.'
+                  : 'Enter the 6-digit code we sent to your inbox.',
+              showLogo: false,
+              belowBody: Column(
+                children: [
+                  if (email.isNotEmpty) ...[
+                    PremiumAuthEmailTarget(email: email),
+                    const SizedBox(height: 16),
+                  ],
+                  if (AppEnv.showDevOtpHints && auth.emailOtpIsConsoleMode)
+                    PremiumAuthDevBanner(
+                      message:
+                          'SMTP not configured — email OTP is shown below for testing only.',
+                    ),
+                  if (AppEnv.showDevOtpHints && auth.devOtp != null)
+                    PremiumAuthDevOtpBadge(otp: auth.devOtp!),
+                  PremiumGlassField(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 12,
+                      horizontal: 8,
+                    ),
+                    child: ModernOtpInput(
+                      key: _otpKey,
+                      enabled: !isBusy,
+                      onChanged: (value) => setState(() => _otp = value),
+                      onCompleted: (_) {
+                        if (!_isVerifying && !auth.isLoading) _verifyOtp();
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  PremiumAuthResendAction(
+                    canResend: canResend,
+                    isResending: _isResending,
+                    secondsRemaining: _secondsRemaining,
+                    onResend: _resendOtp,
+                  ),
                 ],
-                if (AppEnv.showDevOtpHints && auth.emailOtpIsConsoleMode)
-                  PremiumAuthDevBanner(
-                    message: 'SMTP not configured — email OTP is shown below for testing only.',
-                  ),
-                if (AppEnv.showDevOtpHints && auth.devOtp != null)
-                  PremiumAuthDevOtpBadge(otp: auth.devOtp!),
-                PremiumGlassField(
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-                  child: ModernOtpInput(
-                    key: _otpKey,
-                    enabled: !isBusy,
-                    onChanged: (value) => setState(() => _otp = value),
-                    onCompleted: (_) {
-                      if (!_isVerifying && !auth.isLoading) _verifyOtp();
-                    },
-                  ),
-                ),
-                const SizedBox(height: 20),
-                PremiumAuthResendAction(
-                  canResend: canResend,
-                  isResending: _isResending,
-                  secondsRemaining: _secondsRemaining,
-                  onResend: _resendOtp,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          if (email.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(32, 0, 32, 8),
-              child: Text(
-                'Check spam if you don\'t see the email within a minute.',
-                textAlign: TextAlign.center,
-                style: GoogleFonts.inter(
-                  color: Colors.white.withValues(alpha: 0.42),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  height: 1.5,
-                ),
               ),
             ),
-        ],
-      ),
+            const SizedBox(height: 16),
+            if (email.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(32, 0, 32, 8),
+                child: Text(
+                  'Check spam if you don\'t see the email within a minute.',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.inter(
+                    color: Colors.white.withValues(alpha: 0.42),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    height: 1.5,
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

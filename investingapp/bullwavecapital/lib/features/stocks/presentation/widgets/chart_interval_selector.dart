@@ -36,12 +36,19 @@ class ChartIntervalSelector extends StatelessWidget {
                 onTap: () => onSelected(item.label),
                 borderRadius: BorderRadius.circular(6),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
-                    color: selected ? _dhanSelected.withValues(alpha: 0.14) : Colors.transparent,
+                    color: selected
+                        ? _dhanSelected.withValues(alpha: 0.14)
+                        : Colors.transparent,
                     borderRadius: BorderRadius.circular(6),
                     border: Border.all(
-                      color: selected ? _dhanSelected.withValues(alpha: 0.5) : Colors.transparent,
+                      color: selected
+                          ? _dhanSelected.withValues(alpha: 0.5)
+                          : Colors.transparent,
                     ),
                   ),
                   child: Text(
@@ -68,7 +75,10 @@ class ChartIntervalSelector extends StatelessWidget {
                 onTap: () => onSelected(item.label),
                 borderRadius: BorderRadius.circular(999),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(999),
                     border: Border.all(
@@ -82,7 +92,9 @@ class ChartIntervalSelector extends StatelessWidget {
                     style: TextStyle(
                       fontWeight: FontWeight.w700,
                       fontSize: 13,
-                      color: selected ? AppColors.brandOrange : colors.textSecondary,
+                      color: selected
+                          ? AppColors.brandOrange
+                          : colors.textSecondary,
                     ),
                   ),
                 ),

@@ -49,9 +49,9 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
   Future<void> _loadCandles({bool showChartLoader = false}) async {
     if (showChartLoader && mounted) setState(() => _chartLoading = true);
     await context.read<StockMarketProvider>().loadCandles(
-          widget.symbol,
-          interval: _apiInterval,
-        );
+      widget.symbol,
+      interval: _apiInterval,
+    );
     if (mounted) setState(() => _chartLoading = false);
   }
 
@@ -59,7 +59,9 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
     final market = context.read<StockMarketProvider>();
     await Future.wait([
       market.ensureStock(widget.symbol),
-      context.read<StockPortfolioProvider>().loadPortfolio(refreshQuotes: false),
+      context.read<StockPortfolioProvider>().loadPortfolio(
+        refreshQuotes: false,
+      ),
     ]);
     if (mounted) setState(() => _isLoading = false);
     await _loadCandles();
@@ -105,8 +107,14 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
           );
         }
 
-        final candles = market.getCandles(widget.symbol, interval: _apiInterval);
-        final indicators = market.getIndicators(widget.symbol, interval: _apiInterval);
+        final candles = market.getCandles(
+          widget.symbol,
+          interval: _apiInterval,
+        );
+        final indicators = market.getIndicators(
+          widget.symbol,
+          interval: _apiInterval,
+        );
         final isPositive = stock.isPositive;
         final changeColor = isPositive ? AppColors.green : AppColors.red;
 
@@ -128,7 +136,10 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
                   final err = await market.toggleWatchlist(stock.symbol);
                   if (context.mounted && err != null) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(err), behavior: SnackBarBehavior.floating),
+                      SnackBar(
+                        content: Text(err),
+                        behavior: SnackBarBehavior.floating,
+                      ),
                     );
                   }
                 },
@@ -200,7 +211,8 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
                                   icon: Icons.science_outlined,
                                   label: 'Paper Trade',
                                   color: AppColors.brandPurple,
-                                  onTap: () => context.push(AppRoutes.paperTrading),
+                                  onTap: () =>
+                                      context.push(AppRoutes.paperTrading),
                                 ),
                               ),
                             ],
@@ -214,7 +226,9 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
                         const SizedBox(height: 20),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 20),
-                          child: TechnicalIndicatorsPanel(indicators: indicators),
+                          child: TechnicalIndicatorsPanel(
+                            indicators: indicators,
+                          ),
                         ),
                       ],
                     ),
@@ -256,7 +270,10 @@ class _PriceHero extends StatelessWidget {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: colors.surfaceSecondary,
                   borderRadius: BorderRadius.circular(8),
@@ -286,9 +303,9 @@ class _PriceHero extends StatelessWidget {
           Text(
             stock.name,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: colors.textSecondary,
-                  fontWeight: FontWeight.w500,
-                ),
+              color: colors.textSecondary,
+              fontWeight: FontWeight.w500,
+            ),
           ),
           const SizedBox(height: 12),
           Row(
@@ -314,7 +331,9 @@ class _PriceHero extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  isPositive ? Icons.trending_up_rounded : Icons.trending_down_rounded,
+                  isPositive
+                      ? Icons.trending_up_rounded
+                      : Icons.trending_down_rounded,
                   size: 16,
                   color: changeColor,
                 ),
@@ -350,7 +369,11 @@ class _StatsGrid extends StatelessWidget {
       _StatItem('Prev', IndexFormatter.format(stock.previousClose)),
       _StatItem('Vol', '${(stock.volume / 100000).toStringAsFixed(2)}L'),
       _StatItem('P/E', stock.pe.toStringAsFixed(1)),
-      _StatItem('52H', IndexFormatter.format(stock.week52High), AppColors.green),
+      _StatItem(
+        '52H',
+        IndexFormatter.format(stock.week52High),
+        AppColors.green,
+      ),
       _StatItem('52L', IndexFormatter.format(stock.week52Low), AppColors.red),
     ];
 
@@ -498,16 +521,31 @@ class _PositionCard extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 'Your Position',
-                style: TextStyle(fontWeight: FontWeight.w800, color: colors.textSecondary),
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  color: colors.textSecondary,
+                ),
               ),
             ],
           ),
           const SizedBox(height: 12),
           Row(
             children: [
-              Expanded(child: _PosMetric(label: 'Qty', value: '${holding.quantity}')),
-              Expanded(child: _PosMetric(label: 'Avg', value: CurrencyFormatter.format(holding.avgPrice))),
-              Expanded(child: _PosMetric(label: 'Invested', value: CurrencyFormatter.formatCompact(holding.invested))),
+              Expanded(
+                child: _PosMetric(label: 'Qty', value: '${holding.quantity}'),
+              ),
+              Expanded(
+                child: _PosMetric(
+                  label: 'Avg',
+                  value: CurrencyFormatter.format(holding.avgPrice),
+                ),
+              ),
+              Expanded(
+                child: _PosMetric(
+                  label: 'Invested',
+                  value: CurrencyFormatter.formatCompact(holding.invested),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -517,24 +555,41 @@ class _PositionCard extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Current Value', style: TextStyle(color: colors.textMuted, fontSize: 12)),
+                  Text(
+                    'Current Value',
+                    style: TextStyle(color: colors.textMuted, fontSize: 12),
+                  ),
                   Text(
                     CurrencyFormatter.format(holding.currentValue),
-                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 18,
+                    ),
                   ),
                 ],
               ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text('Total P&L', style: TextStyle(color: colors.textMuted, fontSize: 12)),
+                  Text(
+                    'Total P&L',
+                    style: TextStyle(color: colors.textMuted, fontSize: 12),
+                  ),
                   Text(
                     '${holding.pnl >= 0 ? '+' : ''}${CurrencyFormatter.format(holding.pnl)}',
-                    style: TextStyle(color: pnlColor, fontWeight: FontWeight.w900, fontSize: 18),
+                    style: TextStyle(
+                      color: pnlColor,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 18,
+                    ),
                   ),
                   Text(
                     '${holding.pnlPercent >= 0 ? '+' : ''}${holding.pnlPercent.toStringAsFixed(2)}%',
-                    style: TextStyle(color: pnlColor, fontWeight: FontWeight.w700, fontSize: 12),
+                    style: TextStyle(
+                      color: pnlColor,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 12,
+                    ),
                   ),
                 ],
               ),
@@ -559,7 +614,10 @@ class _PosMetric extends StatelessWidget {
       children: [
         Text(label, style: Theme.of(context).textTheme.labelSmall),
         const SizedBox(height: 2),
-        Text(value, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+        Text(
+          value,
+          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+        ),
       ],
     );
   }
@@ -577,7 +635,9 @@ class _TradeBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
-    final holdingQty = context.watch<StockPortfolioProvider>().holdingQtyFor(stock.symbol);
+    final holdingQty = context.watch<StockPortfolioProvider>().holdingQtyFor(
+      stock.symbol,
+    );
 
     return Container(
       width: double.infinity,
@@ -596,11 +656,16 @@ class _TradeBar extends StatelessWidget {
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColors.green,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                 ),
                 child: Text(
                   PaperOnlyMode.enabled ? 'Paper Buy' : 'Buy',
-                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16,
+                  ),
                 ),
               ),
             ),
@@ -614,14 +679,21 @@ class _TradeBar extends StatelessWidget {
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.red,
                   side: BorderSide(
-                    color: AppColors.red.withValues(alpha: holdingQty > 0 ? 0.7 : 0.4),
+                    color: AppColors.red.withValues(
+                      alpha: holdingQty > 0 ? 0.7 : 0.4,
+                    ),
                     width: 1.5,
                   ),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                 ),
                 child: Text(
                   PaperOnlyMode.enabled ? 'Paper Sell' : 'Sell',
-                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16,
+                  ),
                 ),
               ),
             ),

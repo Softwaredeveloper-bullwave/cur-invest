@@ -41,7 +41,9 @@ class HomePortfolioSection extends StatelessWidget {
                 child: _StatChip(
                   label: 'Invested',
                   value: CurrencyFormatter.formatCompact(
-                    portfolio.totalInvestment > 0 ? portfolio.totalInvestment : 0,
+                    portfolio.totalInvestment > 0
+                        ? portfolio.totalInvestment
+                        : 0,
                   ),
                   colors: colors,
                 ),
@@ -52,14 +54,18 @@ class HomePortfolioSection extends StatelessWidget {
                   label: 'Total P&L',
                   value: CurrencyFormatter.formatCompact(portfolio.totalProfit),
                   colors: colors,
-                  valueColor: portfolio.totalProfit >= 0 ? AppColors.green : AppColors.red,
+                  valueColor: portfolio.totalProfit >= 0
+                      ? AppColors.green
+                      : AppColors.red,
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: _StatChip(
                   label: 'Wallet',
-                  value: CurrencyFormatter.formatCompact(portfolio.walletBalance),
+                  value: CurrencyFormatter.formatCompact(
+                    portfolio.walletBalance,
+                  ),
                   colors: colors,
                   valueColor: AppColors.brandOrange,
                 ),
@@ -74,16 +80,25 @@ class HomePortfolioSection extends StatelessWidget {
               decoration: BoxDecoration(
                 color: AppColors.green.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.green.withValues(alpha: 0.2)),
+                border: Border.all(
+                  color: AppColors.green.withValues(alpha: 0.2),
+                ),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.payments_outlined, color: AppColors.green, size: 18),
+                  const Icon(
+                    Icons.payments_outlined,
+                    color: AppColors.green,
+                    size: 18,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       'Monthly plan returns',
-                      style: TextStyle(color: colors.textSecondary, fontSize: 12),
+                      style: TextStyle(
+                        color: colors.textSecondary,
+                        fontSize: 12,
+                      ),
                     ),
                   ),
                   MoneyText(
@@ -126,7 +141,14 @@ class _StatChip extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: TextStyle(color: colors.textMuted, fontSize: 11, fontWeight: FontWeight.w600)),
+          Text(
+            label,
+            style: TextStyle(
+              color: colors.textMuted,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
           const SizedBox(height: 4),
           Text(
             value,

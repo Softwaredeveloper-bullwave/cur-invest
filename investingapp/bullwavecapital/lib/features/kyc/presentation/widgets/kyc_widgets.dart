@@ -43,7 +43,13 @@ class KycStepTile extends StatelessWidget {
               ),
             ),
             if (!isLast)
-              Container(width: 2, height: 36, color: completed ? AppColors.green.withValues(alpha: 0.4) : colors.border),
+              Container(
+                width: 2,
+                height: 36,
+                color: completed
+                    ? AppColors.green.withValues(alpha: 0.4)
+                    : colors.border,
+              ),
           ],
         ),
         const SizedBox(width: 14),
@@ -53,9 +59,18 @@ class KycStepTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: TextStyle(fontWeight: FontWeight.w800, color: colors.textPrimary)),
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    color: colors.textPrimary,
+                  ),
+                ),
                 const SizedBox(height: 2),
-                Text(subtitle, style: TextStyle(fontSize: 13, color: colors.textSecondary)),
+                Text(
+                  subtitle,
+                  style: TextStyle(fontSize: 13, color: colors.textSecondary),
+                ),
               ],
             ),
           ),
@@ -76,8 +91,8 @@ class KycStatusBadge extends StatelessWidget {
     final color = s == 'verified'
         ? AppColors.green
         : s == 'rejected'
-            ? AppColors.red
-            : AppColors.brandOrange;
+        ? AppColors.red
+        : AppColors.brandOrange;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
@@ -87,7 +102,12 @@ class KycStatusBadge extends StatelessWidget {
       ),
       child: Text(
         status.toUpperCase(),
-        style: TextStyle(color: color, fontWeight: FontWeight.w800, fontSize: 11, letterSpacing: 0.6),
+        style: TextStyle(
+          color: color,
+          fontWeight: FontWeight.w800,
+          fontSize: 11,
+          letterSpacing: 0.6,
+        ),
       ),
     );
   }
@@ -108,7 +128,13 @@ class KycErrorBanner extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.red.withValues(alpha: 0.25)),
       ),
-      child: Text(message, style: const TextStyle(color: AppColors.red, fontWeight: FontWeight.w600)),
+      child: Text(
+        message,
+        style: const TextStyle(
+          color: AppColors.red,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
     );
   }
 }
@@ -167,7 +193,11 @@ class BankVerificationLogsCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               'Last error: $failureReason',
-              style: const TextStyle(color: AppColors.red, fontSize: 13, height: 1.4),
+              style: const TextStyle(
+                color: AppColors.red,
+                fontSize: 13,
+                height: 1.4,
+              ),
             ),
           ],
           if (logs.isNotEmpty) ...[
@@ -186,13 +216,20 @@ class BankVerificationLogsCard extends StatelessWidget {
                   children: [
                     Text(
                       _formatTime(log.time),
-                      style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: AppColors.textMuted,
+                      ),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: RichText(
                         text: TextSpan(
-                          style: const TextStyle(fontSize: 12, color: AppColors.textPrimary, height: 1.35),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textPrimary,
+                            height: 1.35,
+                          ),
                           children: [
                             TextSpan(
                               text: '${label.toUpperCase()} ',

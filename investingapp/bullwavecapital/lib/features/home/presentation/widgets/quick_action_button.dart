@@ -42,10 +42,10 @@ class QuickActionButton extends StatelessWidget {
             Text(
               label,
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: colors.textPrimary,
-                    fontWeight: FontWeight.w500,
-                    fontSize: 11,
-                  ),
+                color: colors.textPrimary,
+                fontWeight: FontWeight.w500,
+                fontSize: 11,
+              ),
               textAlign: TextAlign.center,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,

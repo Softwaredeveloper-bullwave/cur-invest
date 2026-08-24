@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/api/auth_session_guard.dart';
 import '../../../../core/api/bullwave_api.dart';
 import '../../../../core/api/json_parsers.dart';
 import '../../../../models/goal_plan_model.dart';
@@ -34,8 +35,8 @@ class HomeProvider extends ChangeNotifier {
   PortfolioModel get portfolio => _portfolio;
   List<InvestmentPlanModel> get featuredPlans => _featuredPlans;
   List<UserGoalPlanModel> get goalPlans => _goalPlans;
-  List<MarketIndexModel> get marketIndices =>
-      _marketIndices.isNotEmpty ? _marketIndices : _fallbackMarketIndices;
+  List<MarketIndexModel> get marketIndices => _marketIndices;
+  bool get marketIndicesUnavailable => _marketIndices.isEmpty && !_isLoading;
   List<Map<String, String>> get marketNews => _marketNews;
   List<MonthlyEarning> get monthlyEarnings => _monthlyEarnings;
   List<TransactionModel> get recentTransactions => _recentTransactions;
@@ -54,45 +55,23 @@ class HomeProvider extends ChangeNotifier {
     });
   }
 
-  static const _fallbackMarketIndices = [
-    MarketIndexModel(
-      id: 'NIFTY50',
-      name: 'Nifty 50',
-      shortName: 'NIFTY',
-      value: 24832.45,
-      change: 156.30,
-      changePercent: 0.63,
-    ),
-    MarketIndexModel(
-      id: 'SENSEX',
-      name: 'Sensex',
-      shortName: 'SENSEX',
-      value: 81524.78,
-      change: 582.15,
-      changePercent: 0.72,
-    ),
-    MarketIndexModel(
-      id: 'BANKNIFTY',
-      name: 'Bank Nifty',
-      shortName: 'BANK NIFTY',
-      value: 52318.60,
-      change: -124.40,
-      changePercent: -0.24,
-    ),
-  ];
-
-  HomeProvider() {
-    loadData();
-  }
+  HomeProvider();
 
   Future<void> loadData() async {
+    if (!await hasStoredAccessToken()) {
+      _isLoading = false;
+      notifyListeners();
+      return;
+    }
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
       final home = await _api.getHome();
-      _portfolio = parsePortfolio(home['portfolio'] as Map<String, dynamic>? ?? {});
+      _portfolio = parsePortfolio(
+        home['portfolio'] as Map<String, dynamic>? ?? {},
+      );
       if (PaperOnlyMode.enabled) {
         _featuredPlans = [];
         _goalPlans = [];
@@ -109,7 +88,8 @@ class HomeProvider extends ChangeNotifier {
               'title': m['title']?.toString() ?? '',
               'subtitle': m['subtitle']?.toString() ?? '',
               'url': m['url']?.toString() ?? '',
-              'imageUrl': m['imageUrl']?.toString() ?? m['image_url']?.toString() ?? '',
+              'imageUrl':
+                  m['imageUrl']?.toString() ?? m['image_url']?.toString() ?? '',
               'category': m['category']?.toString() ?? 'Markets',
               'time': m['time']?.toString() ?? '',
               'source': m['source']?.toString() ?? '',

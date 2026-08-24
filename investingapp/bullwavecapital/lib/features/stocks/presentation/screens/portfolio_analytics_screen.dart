@@ -18,7 +18,8 @@ class PortfolioAnalyticsScreen extends StatefulWidget {
   const PortfolioAnalyticsScreen({super.key});
 
   @override
-  State<PortfolioAnalyticsScreen> createState() => _PortfolioAnalyticsScreenState();
+  State<PortfolioAnalyticsScreen> createState() =>
+      _PortfolioAnalyticsScreenState();
 }
 
 class _PortfolioAnalyticsScreenState extends State<PortfolioAnalyticsScreen> {
@@ -53,7 +54,9 @@ class _PortfolioAnalyticsScreenState extends State<PortfolioAnalyticsScreen> {
       body: Consumer<StockPortfolioProvider>(
         builder: (context, portfolio, _) {
           if (portfolio.isLoading && portfolio.holdings.isEmpty) {
-            return const Center(child: CircularProgressIndicator(color: AppColors.brandOrange));
+            return const Center(
+              child: CircularProgressIndicator(color: AppColors.brandOrange),
+            );
           }
 
           final summary = portfolio.summary;
@@ -86,21 +89,35 @@ class _PortfolioAnalyticsScreenState extends State<PortfolioAnalyticsScreen> {
                     children: [
                       Text(
                         'Stock Portfolio Summary',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w800),
                       ),
                       const SizedBox(height: 12),
-                      _Row('Invested', CurrencyFormatter.format(summary.totalInvested)),
-                      _Row('Current Value', CurrencyFormatter.format(summary.currentValue)),
+                      _Row(
+                        'Invested',
+                        CurrencyFormatter.format(summary.totalInvested),
+                      ),
+                      _Row(
+                        'Current Value',
+                        CurrencyFormatter.format(summary.currentValue),
+                      ),
                       _Row(
                         'Total P&L',
                         CurrencyFormatter.format(summary.totalPnl),
-                        color: summary.totalPnl >= 0 ? AppColors.green : AppColors.red,
+                        color: summary.totalPnl >= 0
+                            ? AppColors.green
+                            : AppColors.red,
                       ),
-                      _Row('Return', '${summary.totalPnlPercent.toStringAsFixed(2)}%'),
+                      _Row(
+                        'Return',
+                        '${summary.totalPnlPercent.toStringAsFixed(2)}%',
+                      ),
                       _Row(
                         'Today',
                         CurrencyFormatter.format(summary.dayPnl),
-                        color: summary.dayPnl >= 0 ? AppColors.green : AppColors.red,
+                        color: summary.dayPnl >= 0
+                            ? AppColors.green
+                            : AppColors.red,
                       ),
                       _Row('Holdings', '${summary.holdingsCount}'),
                     ],
@@ -109,14 +126,19 @@ class _PortfolioAnalyticsScreenState extends State<PortfolioAnalyticsScreen> {
                 const SizedBox(height: 16),
                 OutlinedButton.icon(
                   onPressed: () => context.push(AppRoutes.priceAlerts),
-                  icon: const Icon(Icons.notifications_active_outlined, size: 18),
+                  icon: const Icon(
+                    Icons.notifications_active_outlined,
+                    size: 18,
+                  ),
                   label: const Text('Price & News Alerts'),
                 ),
                 const SizedBox(height: 16),
                 if (sectors.isNotEmpty) ...[
                   Text(
                     'Sector Allocation',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                   const SizedBox(height: 10),
                   ...sectors.map((item) {
@@ -129,7 +151,12 @@ class _PortfolioAnalyticsScreenState extends State<PortfolioAnalyticsScreen> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(item.label, style: const TextStyle(fontWeight: FontWeight.w700)),
+                                Text(
+                                  item.label,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
                                 Text('${item.percentage.toStringAsFixed(1)}%'),
                               ],
                             ),
@@ -153,7 +180,9 @@ class _PortfolioAnalyticsScreenState extends State<PortfolioAnalyticsScreen> {
                 ],
                 Text(
                   'All Holdings',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
                 const SizedBox(height: 10),
                 if (portfolio.holdings.isEmpty)
@@ -167,7 +196,9 @@ class _PortfolioAnalyticsScreenState extends State<PortfolioAnalyticsScreen> {
                   ...portfolio.holdings.map(
                     (h) => PortfolioHoldingTile(
                       holding: h,
-                      onTap: () => context.push('${AppRoutes.stockDetail}?symbol=${h.symbol}'),
+                      onTap: () => context.push(
+                        '${AppRoutes.stockDetail}?symbol=${h.symbol}',
+                      ),
                     ),
                   ),
               ],
@@ -194,7 +225,10 @@ class _Row extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: Theme.of(context).textTheme.bodySmall),
-          Text(value, style: TextStyle(fontWeight: FontWeight.w800, color: color)),
+          Text(
+            value,
+            style: TextStyle(fontWeight: FontWeight.w800, color: color),
+          ),
         ],
       ),
     );

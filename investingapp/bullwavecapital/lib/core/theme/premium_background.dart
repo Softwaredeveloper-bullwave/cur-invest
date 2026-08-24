@@ -18,10 +18,7 @@ class PremiumAppBackdrop extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ColoredBox(
-      color: context.appColors.background,
-      child: child,
-    );
+    return ColoredBox(color: context.appColors.background, child: child);
   }
 }
 
@@ -49,8 +46,10 @@ class _PremiumMeshBackgroundState extends State<PremiumMeshBackground>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: const Duration(seconds: 8))
-      ..repeat(reverse: true);
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 8),
+    )..repeat(reverse: true);
   }
 
   @override
@@ -103,10 +102,7 @@ class PremiumFilmGrain extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return IgnorePointer(
-      child: CustomPaint(
-        painter: _PremiumNoisePainter(),
-        size: Size.infinite,
-      ),
+      child: CustomPaint(painter: _PremiumNoisePainter(), size: Size.infinite),
     );
   }
 }
@@ -118,7 +114,10 @@ class _PremiumNoisePainter extends CustomPainter {
     final random = math.Random(42);
     for (var i = 0; i < 120; i++) {
       canvas.drawCircle(
-        Offset(random.nextDouble() * size.width, random.nextDouble() * size.height),
+        Offset(
+          random.nextDouble() * size.width,
+          random.nextDouble() * size.height,
+        ),
         0.6,
         paint,
       );

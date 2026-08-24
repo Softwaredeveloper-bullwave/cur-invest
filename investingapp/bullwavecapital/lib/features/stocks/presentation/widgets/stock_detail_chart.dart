@@ -126,10 +126,16 @@ class _StockDetailChartState extends State<StockDetailChart> {
                 onSmaChanged: (v) => setState(() => _showSma = v),
               ),
               ChartOhlcStrip(
-                open: candle != null ? IndexFormatter.format(candle.open) : null,
-                high: candle != null ? IndexFormatter.format(candle.high) : null,
+                open: candle != null
+                    ? IndexFormatter.format(candle.open)
+                    : null,
+                high: candle != null
+                    ? IndexFormatter.format(candle.high)
+                    : null,
                 low: candle != null ? IndexFormatter.format(candle.low) : null,
-                close: candle != null ? IndexFormatter.format(candle.close) : null,
+                close: candle != null
+                    ? IndexFormatter.format(candle.close)
+                    : null,
                 volume: candle != null ? _formatVol(candle.volume) : null,
                 isBullish: candle?.isBullish ?? true,
               ),

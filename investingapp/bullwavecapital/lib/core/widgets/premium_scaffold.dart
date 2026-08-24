@@ -51,9 +51,6 @@ class PremiumScreenShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return PremiumAppBackdrop(
-      glowVariant: glowVariant,
-      child: child,
-    );
+    return PremiumAppBackdrop(glowVariant: glowVariant, child: child);
   }
 }

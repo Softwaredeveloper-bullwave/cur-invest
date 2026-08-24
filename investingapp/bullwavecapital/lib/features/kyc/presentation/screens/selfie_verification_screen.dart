@@ -16,13 +16,22 @@ import '../provider/kyc_flow_provider.dart';
 import '../widgets/kyc_widgets.dart';
 import '../widgets/selfie_manual_review_panel.dart';
 
-enum _SelfiePhase { loading, camera, preview, uploading, pending, verified, rejected }
+enum _SelfiePhase {
+  loading,
+  camera,
+  preview,
+  uploading,
+  pending,
+  verified,
+  rejected,
+}
 
 class SelfieVerificationScreen extends StatefulWidget {
   const SelfieVerificationScreen({super.key});
 
   @override
-  State<SelfieVerificationScreen> createState() => _SelfieVerificationScreenState();
+  State<SelfieVerificationScreen> createState() =>
+      _SelfieVerificationScreenState();
 }
 
 class _SelfieVerificationScreenState extends State<SelfieVerificationScreen>
@@ -62,7 +71,8 @@ class _SelfieVerificationScreenState extends State<SelfieVerificationScreen>
     if (_controller == null || !_controller!.value.isInitialized) return;
     if (state == AppLifecycleState.inactive) {
       _controller?.dispose();
-    } else if (state == AppLifecycleState.resumed && _phase == _SelfiePhase.camera) {
+    } else if (state == AppLifecycleState.resumed &&
+        _phase == _SelfiePhase.camera) {
       _initCamera();
     }
   }
@@ -166,7 +176,9 @@ class _SelfieVerificationScreenState extends State<SelfieVerificationScreen>
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not capture photo. Please try again.')),
+        const SnackBar(
+          content: Text('Could not capture photo. Please try again.'),
+        ),
       );
     }
   }
@@ -230,9 +242,9 @@ class _SelfieVerificationScreenState extends State<SelfieVerificationScreen>
         children: [
           Text(
             'Live selfie capture',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 8),
           Text(
@@ -250,14 +262,17 @@ class _SelfieVerificationScreenState extends State<SelfieVerificationScreen>
             )
           else if (_phase == _SelfiePhase.pending || status.selfieReviewPending)
             SelfieManualReviewPendingPanel(status: status)
-          else if (_phase == _SelfiePhase.verified || status.selfieVerified) ...[
+          else if (_phase == _SelfiePhase.verified ||
+              status.selfieVerified) ...[
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
                 color: AppColors.green.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.green.withValues(alpha: 0.35)),
+                border: Border.all(
+                  color: AppColors.green.withValues(alpha: 0.35),
+                ),
               ),
               child: const Row(
                 children: [
@@ -336,7 +351,9 @@ class _SelfieVerificationScreenState extends State<SelfieVerificationScreen>
             children: [
               Expanded(
                 child: OutlinedButton(
-                  onPressed: context.read<KycFlowProvider>().isLoading ? null : _retake,
+                  onPressed: context.read<KycFlowProvider>().isLoading
+                      ? null
+                      : _retake,
                   child: const Text('Retake'),
                 ),
               ),
@@ -344,7 +361,9 @@ class _SelfieVerificationScreenState extends State<SelfieVerificationScreen>
               Expanded(
                 child: PrimaryButton(
                   label: 'Confirm',
-                  onPressed: context.read<KycFlowProvider>().isLoading ? null : _confirmUpload,
+                  onPressed: context.read<KycFlowProvider>().isLoading
+                      ? null
+                      : _confirmUpload,
                 ),
               ),
             ],
@@ -357,7 +376,9 @@ class _SelfieVerificationScreenState extends State<SelfieVerificationScreen>
     if (controller == null || !controller.value.isInitialized) {
       return const SizedBox(
         height: 420,
-        child: Center(child: CircularProgressIndicator(color: AppColors.brandOrange)),
+        child: Center(
+          child: CircularProgressIndicator(color: AppColors.brandOrange),
+        ),
       );
     }
 
@@ -383,10 +404,7 @@ class _SelfieVerificationScreenState extends State<SelfieVerificationScreen>
           style: TextStyle(color: colors.textSecondary, fontSize: 13),
         ),
         const SizedBox(height: 20),
-        PrimaryButton(
-          label: 'Capture selfie',
-          onPressed: _capture,
-        ),
+        PrimaryButton(label: 'Capture selfie', onPressed: _capture),
       ],
     );
   }

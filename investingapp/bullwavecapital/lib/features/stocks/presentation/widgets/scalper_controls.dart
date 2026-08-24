@@ -97,15 +97,24 @@ class _ScalperControlsState extends State<ScalperControls> {
                   color: AppColors.brandOrange.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.bolt_rounded, color: AppColors.brandOrange),
+                child: const Icon(
+                  Icons.bolt_rounded,
+                  color: AppColors.brandOrange,
+                ),
               ),
               const SizedBox(width: 10),
               const Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Scalper Mode', style: TextStyle(fontWeight: FontWeight.w900)),
-                    Text('Fast entry with automatic risk exits', style: TextStyle(fontSize: 11)),
+                    Text(
+                      'Scalper Mode',
+                      style: TextStyle(fontWeight: FontWeight.w900),
+                    ),
+                    Text(
+                      'Fast entry with automatic risk exits',
+                      style: TextStyle(fontSize: 11),
+                    ),
                   ],
                 ),
               ),

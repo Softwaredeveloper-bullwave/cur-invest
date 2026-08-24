@@ -11,11 +11,7 @@ class MarketOverview extends StatelessWidget {
   final List<MarketIndexModel> indices;
   final String? Function(MarketIndexModel index)? expiryFor;
 
-  const MarketOverview({
-    super.key,
-    required this.indices,
-    this.expiryFor,
-  });
+  const MarketOverview({super.key, required this.indices, this.expiryFor});
 
   @override
   Widget build(BuildContext context) {
@@ -82,10 +78,7 @@ class MarketOverview extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           if (indices.isEmpty)
-            Text(
-              'Market data unavailable',
-              style: context.typeSecondary(13),
-            )
+            Text('Market data unavailable', style: context.typeSecondary(13))
           else
             SizedBox(
               height: 112,
@@ -148,7 +141,9 @@ class _MarketLiveCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: (isPositive ? p.primary : p.negative).withValues(alpha: 0.06),
+            color: (isPositive ? p.primary : p.negative).withValues(
+              alpha: 0.06,
+            ),
             blurRadius: 14,
             offset: const Offset(0, 5),
           ),
@@ -240,10 +235,7 @@ class _MiniSparkline extends StatelessWidget {
   final bool isPositive;
   final Color color;
 
-  const _MiniSparkline({
-    required this.isPositive,
-    required this.color,
-  });
+  const _MiniSparkline({required this.isPositive, required this.color});
 
   @override
   Widget build(BuildContext context) {
@@ -264,10 +256,7 @@ class _SparklinePainter extends CustomPainter {
   final bool isPositive;
   final Color color;
 
-  _SparklinePainter({
-    required this.isPositive,
-    required this.color,
-  });
+  _SparklinePainter({required this.isPositive, required this.color});
 
   @override
   void paint(Canvas canvas, Size size) {

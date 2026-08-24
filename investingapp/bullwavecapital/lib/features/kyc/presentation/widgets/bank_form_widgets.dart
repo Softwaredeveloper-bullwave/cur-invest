@@ -17,9 +17,9 @@ class FormSectionHeader extends StatelessWidget {
         Text(
           title,
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: colors.textPrimary,
-              ),
+            fontWeight: FontWeight.w600,
+            color: colors.textPrimary,
+          ),
         ),
         if (subtitle != null) ...[
           const SizedBox(height: 4),

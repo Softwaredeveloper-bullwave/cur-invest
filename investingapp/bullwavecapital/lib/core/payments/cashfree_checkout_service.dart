@@ -14,7 +14,13 @@ import 'package:flutter_cashfree_pg_sdk/utils/cfexceptions.dart';
 import '../../features/kyc/data/payment_repository.dart';
 import '../../features/kyc/domain/kyc_models.dart';
 
-enum CashfreeCheckoutStatus { success, failed, cancelled, unavailable, redirected }
+enum CashfreeCheckoutStatus {
+  success,
+  failed,
+  cancelled,
+  unavailable,
+  redirected,
+}
 
 class CashfreeCheckoutResult {
   final CashfreeCheckoutStatus status;
@@ -39,9 +45,12 @@ class CashfreeCheckoutService {
   final _gateway = CFPaymentGatewayService();
 
   /// True when Cashfree accepts a redirect return URL (production requires HTTPS).
-  static bool get canUseRedirectReturnUrl => !kIsWeb || Uri.base.scheme == 'https';
+  static bool get canUseRedirectReturnUrl =>
+      !kIsWeb || Uri.base.scheme == 'https';
 
-  Future<CashfreeCheckoutResult> startCheckout(PaymentSessionModel session) async {
+  Future<CashfreeCheckoutResult> startCheckout(
+    PaymentSessionModel session,
+  ) async {
     if (session.devMode && session.success) {
       return CashfreeCheckoutResult(
         status: CashfreeCheckoutStatus.success,
@@ -72,12 +81,16 @@ class CashfreeCheckoutService {
     return _confirmAndCredit(orderId);
   }
 
-  Future<CashfreeCheckoutResult> _startWebRedirectCheckout(PaymentSessionModel session) async {
+  Future<CashfreeCheckoutResult> _startWebRedirectCheckout(
+    PaymentSessionModel session,
+  ) async {
     try {
       _gateway.setCallback((_) {}, (_, __) {});
 
       final cfSession = _buildSession(session);
-      final payment = CFWebCheckoutPaymentBuilder().setSession(cfSession).build();
+      final payment = CFWebCheckoutPaymentBuilder()
+          .setSession(cfSession)
+          .build();
       _gateway.doPayment(payment);
 
       return CashfreeCheckoutResult(
@@ -101,7 +114,9 @@ class CashfreeCheckoutService {
   }
 
   /// In-app modal checkout for local http:// dev (no HTTPS return URL required).
-  Future<CashfreeCheckoutResult> _startWebDropCheckout(PaymentSessionModel session) async {
+  Future<CashfreeCheckoutResult> _startWebDropCheckout(
+    PaymentSessionModel session,
+  ) async {
     try {
       final completer = Completer<CashfreeCheckoutResult>();
       _gateway.setCallback(
@@ -132,14 +147,12 @@ class CashfreeCheckoutService {
       final payment = CFDropCheckoutPaymentBuilder()
           .setSession(cfSession)
           .setPaymentComponent(
-            CFPaymentComponentBuilder()
-                .setComponents([
-                  CFPaymentModes.UPI,
-                  CFPaymentModes.CARD,
-                  CFPaymentModes.NETBANKING,
-                  CFPaymentModes.WALLET,
-                ])
-                .build(),
+            CFPaymentComponentBuilder().setComponents([
+              CFPaymentModes.UPI,
+              CFPaymentModes.CARD,
+              CFPaymentModes.NETBANKING,
+              CFPaymentModes.WALLET,
+            ]).build(),
           )
           .setTheme(
             CFThemeBuilder()
@@ -180,7 +193,9 @@ class CashfreeCheckoutService {
     }
   }
 
-  Future<CashfreeCheckoutResult> _startNativeCheckout(PaymentSessionModel session) async {
+  Future<CashfreeCheckoutResult> _startNativeCheckout(
+    PaymentSessionModel session,
+  ) async {
     try {
       final completer = Completer<CashfreeCheckoutResult>();
       _gateway.setCallback(
@@ -208,7 +223,9 @@ class CashfreeCheckoutService {
       );
 
       final cfSession = _buildSession(session);
-      final payment = CFWebCheckoutPaymentBuilder().setSession(cfSession).build();
+      final payment = CFWebCheckoutPaymentBuilder()
+          .setSession(cfSession)
+          .build();
       _gateway.doPayment(payment);
 
       final sdkResult = await completer.future.timeout(

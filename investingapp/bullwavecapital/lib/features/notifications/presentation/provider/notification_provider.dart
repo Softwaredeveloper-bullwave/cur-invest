@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/api/auth_session_guard.dart';
 import '../../../../core/api/bullwave_api.dart';
 import '../../../../models/notification_model.dart';
 import '../../../../models/portfolio_rebalance_model.dart';
@@ -23,11 +24,14 @@ class NotificationProvider extends ChangeNotifier {
   List<NotificationModel> get rebalanceNotifications =>
       _notifications.where((n) => n.type == 'rebalance').toList();
 
-  NotificationProvider() {
-    loadData();
-  }
+  NotificationProvider();
 
   Future<void> loadData() async {
+    if (!await hasStoredAccessToken()) {
+      _isLoading = false;
+      notifyListeners();
+      return;
+    }
     _isLoading = true;
     notifyListeners();
     try {
@@ -86,7 +90,9 @@ class NotificationProvider extends ChangeNotifier {
     try {
       await _api.markAllNotificationsRead();
     } catch (_) {}
-    _notifications = _notifications.map((n) => n.copyWith(isRead: true)).toList();
+    _notifications = _notifications
+        .map((n) => n.copyWith(isRead: true))
+        .toList();
     notifyListeners();
   }
 }

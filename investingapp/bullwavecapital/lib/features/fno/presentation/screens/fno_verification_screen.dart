@@ -38,9 +38,9 @@ class _FnoVerificationScreenState extends State<FnoVerificationScreen> {
     if (file == null || !mounted) return;
 
     final message = await context.read<FnoFlowProvider>().submitDocument(
-          proofType: proofType,
-          file: file,
-        );
+      proofType: proofType,
+      file: file,
+    );
     if (!mounted) return;
     if (message != null) {
       _showSnack(message);
@@ -63,7 +63,9 @@ class _FnoVerificationScreenState extends State<FnoVerificationScreen> {
   }
 
   void _showSnack(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -78,12 +80,17 @@ class _FnoVerificationScreenState extends State<FnoVerificationScreen> {
           Consumer<FnoFlowProvider>(
             builder: (context, fno, _) => IconButton(
               tooltip: 'Retry',
-              onPressed: fno.isLoading ? null : () => context.read<FnoFlowProvider>().refresh(),
+              onPressed: fno.isLoading
+                  ? null
+                  : () => context.read<FnoFlowProvider>().refresh(),
               icon: fno.isLoading
                   ? SizedBox(
                       width: 20,
                       height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: p.primary),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: p.primary,
+                      ),
                     )
                   : Icon(Icons.refresh_rounded, color: p.textDark),
             ),
@@ -104,8 +111,16 @@ class _FnoVerificationScreenState extends State<FnoVerificationScreen> {
                     label: '6-Month Bank Statement',
                     requiresUpload: true,
                   ),
-                  FnoProofOptionModel(type: 'form16', label: 'FORM 16', requiresUpload: true),
-                  FnoProofOptionModel(type: 'itr', label: 'ITR Form', requiresUpload: true),
+                  FnoProofOptionModel(
+                    type: 'form16',
+                    label: 'FORM 16',
+                    requiresUpload: true,
+                  ),
+                  FnoProofOptionModel(
+                    type: 'itr',
+                    label: 'ITR Form',
+                    requiresUpload: true,
+                  ),
                   FnoProofOptionModel(
                     type: 'portfolio_holding',
                     label: '₹50,000 Portfolio Holding',
@@ -126,13 +141,19 @@ class _FnoVerificationScreenState extends State<FnoVerificationScreen> {
                   children: [
                     Text(
                       'Enable F&O Trading',
-                      style: ThemeAType.sectionTitle(size: 18, color: p.heroCardFg),
+                      style: ThemeAType.sectionTitle(
+                        size: 18,
+                        color: p.heroCardFg,
+                      ),
                     ),
                     const SizedBox(height: 10),
                     Text(
                       'Choose one eligibility proof to access Futures & Options. '
                       'Document proofs are sent to admin for email review.',
-                      style: ThemeAType.secondary(size: 14, color: p.heroCardMuted),
+                      style: ThemeAType.secondary(
+                        size: 14,
+                        color: p.heroCardMuted,
+                      ),
                     ),
                     if (portfolio > 0) ...[
                       const SizedBox(height: 12),
@@ -159,7 +180,8 @@ class _FnoVerificationScreenState extends State<FnoVerificationScreen> {
                 _StatusBanner(
                   color: AppColors.red,
                   title: 'Verification rejected',
-                  message: fno.status.latestRequest?.rejectionReason ??
+                  message:
+                      fno.status.latestRequest?.rejectionReason ??
                       'Please choose another proof option and resubmit.',
                 ),
               ],
@@ -170,14 +192,13 @@ class _FnoVerificationScreenState extends State<FnoVerificationScreen> {
                   title: 'Connection error',
                   message: fno.error!,
                   actionLabel: 'Retry',
-                  onAction: fno.isLoading ? null : () => context.read<FnoFlowProvider>().refresh(),
+                  onAction: fno.isLoading
+                      ? null
+                      : () => context.read<FnoFlowProvider>().refresh(),
                 ),
               ],
               const SizedBox(height: 22),
-              Text(
-                'Select one option',
-                style: context.typeSection(16),
-              ),
+              Text('Select one option', style: context.typeSection(16)),
               const SizedBox(height: 14),
               ...options.map((option) {
                 final icon = _iconFor(option.type);
@@ -214,11 +235,16 @@ class _FnoVerificationScreenState extends State<FnoVerificationScreen> {
                       backgroundColor: p.isDark ? p.primary : p.heroCard,
                       foregroundColor: p.isDark ? p.onPrimary : p.heroCardFg,
                       minimumSize: const Size.fromHeight(50),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(999),
+                      ),
                     ),
                     child: Text(
                       'Open F&O Chain',
-                      style: ThemeAType.label(size: 14, color: p.isDark ? p.onPrimary : p.heroCardFg),
+                      style: ThemeAType.label(
+                        size: 14,
+                        color: p.isDark ? p.onPrimary : p.heroCardFg,
+                      ),
                     ),
                   ),
                 ),
@@ -364,10 +390,7 @@ class _StatusBanner extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: ThemeAType.cardTitle(size: 15, color: color),
-          ),
+          Text(title, style: ThemeAType.cardTitle(size: 15, color: color)),
           const SizedBox(height: 6),
           Text(
             message,

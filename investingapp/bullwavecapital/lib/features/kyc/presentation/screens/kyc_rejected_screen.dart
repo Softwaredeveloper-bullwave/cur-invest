@@ -21,7 +21,9 @@ class KycRejectedScreen extends StatelessWidget {
     final kyc = context.watch<KycFlowProvider>();
     final colors = context.appColors;
     final apiReason = kyc.manualStatus.rejectionReason.trim();
-    final displayReason = apiReason.isNotEmpty ? apiReason : kycWrongInfoMessage;
+    final displayReason = apiReason.isNotEmpty
+        ? apiReason
+        : kycWrongInfoMessage;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -39,13 +41,19 @@ class KycRejectedScreen extends StatelessWidget {
                   color: AppColors.red.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.cancel_outlined, size: 44, color: AppColors.red),
+                child: const Icon(
+                  Icons.cancel_outlined,
+                  size: 44,
+                  color: AppColors.red,
+                ),
               ),
               const SizedBox(height: 24),
               Text(
                 'Verification rejected',
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
               ),
               const SizedBox(height: 12),
               Container(
@@ -59,7 +67,9 @@ class KycRejectedScreen extends StatelessWidget {
                 child: Text(
                   displayReason,
                   textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.5),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(height: 1.5),
                 ),
               ),
               const SizedBox(height: 32),
@@ -68,8 +78,13 @@ class KycRejectedScreen extends StatelessWidget {
                 height: 52,
                 child: FilledButton(
                   onPressed: () => context.go(AppRoutes.kycSubmit),
-                  style: FilledButton.styleFrom(backgroundColor: AppColors.brandOrange),
-                  child: const Text('Resubmit KYC', style: TextStyle(fontWeight: FontWeight.w800)),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.brandOrange,
+                  ),
+                  child: const Text(
+                    'Resubmit KYC',
+                    style: TextStyle(fontWeight: FontWeight.w800),
+                  ),
                 ),
               ),
             ],

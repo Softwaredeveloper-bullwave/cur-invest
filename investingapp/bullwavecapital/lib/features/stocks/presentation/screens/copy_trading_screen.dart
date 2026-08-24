@@ -61,7 +61,10 @@ class _CopyTradingScreenState extends State<CopyTradingScreen>
                     children: [
                       Text(
                         'Copy verified trader methods',
-                        style: ThemeAType.cardTitle(color: p.textDark, size: 16),
+                        style: ThemeAType.cardTitle(
+                          color: p.textDark,
+                          size: 16,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -107,10 +110,7 @@ class _DiscoverTab extends StatelessWidget {
   final CopyTradingProvider provider;
   final TextEditingController searchController;
 
-  const _DiscoverTab({
-    required this.provider,
-    required this.searchController,
-  });
+  const _DiscoverTab({required this.provider, required this.searchController});
 
   @override
   Widget build(BuildContext context) {
@@ -148,7 +148,10 @@ class _DiscoverTab extends StatelessWidget {
                 borderRadius: BorderRadius.circular(14),
                 borderSide: BorderSide(color: p.primary),
               ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 12,
+              ),
             ),
           ),
           const SizedBox(height: 12),
@@ -181,7 +184,10 @@ class _DiscoverTab extends StatelessWidget {
           ),
           if (provider.error != null) ...[
             const SizedBox(height: 12),
-            Text(provider.error!, style: ThemeAType.body(color: p.negative, size: 13)),
+            Text(
+              provider.error!,
+              style: ThemeAType.body(color: p.negative, size: 13),
+            ),
           ],
           const SizedBox(height: 16),
           ...provider.traders.map(
@@ -189,7 +195,8 @@ class _DiscoverTab extends StatelessWidget {
               padding: const EdgeInsets.only(bottom: 12),
               child: _TraderCard(
                 trader: t,
-                onTap: () => context.push('${AppRoutes.copyTraderDetail}?id=${t.id}'),
+                onTap: () =>
+                    context.push('${AppRoutes.copyTraderDetail}?id=${t.id}'),
               ),
             ),
           ),
@@ -256,8 +263,9 @@ class _MyCopiesTab extends StatelessWidget {
           final sub = subs[index];
           return _SubscriptionCard(
             subscription: sub,
-            onOpen: () =>
-                context.push('${AppRoutes.copyTraderDetail}?id=${sub.trader.id}'),
+            onOpen: () => context.push(
+              '${AppRoutes.copyTraderDetail}?id=${sub.trader.id}',
+            ),
             onPause: () => provider.setSubscriptionStatus(
               sub.id,
               sub.isPaused ? 'active' : 'paused',
@@ -291,10 +299,14 @@ class _RiskChip extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           decoration: BoxDecoration(
-            color: selected ? p.primary.withValues(alpha: 0.16) : p.surface.withValues(alpha: 0.5),
+            color: selected
+                ? p.primary.withValues(alpha: 0.16)
+                : p.surface.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: selected ? p.primary.withValues(alpha: 0.5) : p.borderLight,
+              color: selected
+                  ? p.primary.withValues(alpha: 0.5)
+                  : p.borderLight,
             ),
           ),
           child: Text(
@@ -342,8 +354,10 @@ class _TraderCard extends StatelessWidget {
                   backgroundColor: accent.withValues(alpha: 0.2),
                   child: Text(
                     trader.initials,
-                    style: ThemeAType.label(size: 14, color: accent)
-                        .copyWith(fontWeight: FontWeight.w800),
+                    style: ThemeAType.label(
+                      size: 14,
+                      color: accent,
+                    ).copyWith(fontWeight: FontWeight.w800),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -356,13 +370,20 @@ class _TraderCard extends StatelessWidget {
                           Flexible(
                             child: Text(
                               trader.displayName,
-                              style: ThemeAType.cardTitle(color: p.textDark, size: 15),
+                              style: ThemeAType.cardTitle(
+                                color: p.textDark,
+                                size: 15,
+                              ),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
                           if (trader.isVerified) ...[
                             const SizedBox(width: 4),
-                            Icon(Icons.verified_rounded, size: 16, color: p.primary),
+                            Icon(
+                              Icons.verified_rounded,
+                              size: 16,
+                              color: p.primary,
+                            ),
                           ],
                         ],
                       ),
@@ -383,7 +404,10 @@ class _TraderCard extends StatelessWidget {
                         size: 16,
                       ),
                     ),
-                    Text('3M return', style: ThemeAType.label(size: 10, color: p.textMuted)),
+                    Text(
+                      '3M return',
+                      style: ThemeAType.label(size: 10, color: p.textMuted),
+                    ),
                   ],
                 ),
               ],
@@ -391,8 +415,10 @@ class _TraderCard extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
               trader.strategyTitle,
-              style: ThemeAType.body(color: p.textDark, size: 14)
-                  .copyWith(fontWeight: FontWeight.w600),
+              style: ThemeAType.body(
+                color: p.textDark,
+                size: 14,
+              ).copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 4),
             Text(
@@ -408,13 +434,19 @@ class _TraderCard extends StatelessWidget {
               children: trader.methodTags
                   .map(
                     (tag) => Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: p.surface.withValues(alpha: 0.7),
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(color: p.borderLight),
                       ),
-                      child: Text(tag, style: ThemeAType.label(size: 10, color: p.textMuted)),
+                      child: Text(
+                        tag,
+                        style: ThemeAType.label(size: 10, color: p.textMuted),
+                      ),
                     ),
                   )
                   .toList(),
@@ -422,14 +454,23 @@ class _TraderCard extends StatelessWidget {
             const SizedBox(height: 12),
             Row(
               children: [
-                _MiniStat(label: 'Win', value: '${trader.winRate.toStringAsFixed(0)}%'),
+                _MiniStat(
+                  label: 'Win',
+                  value: '${trader.winRate.toStringAsFixed(0)}%',
+                ),
                 const SizedBox(width: 12),
                 _MiniStat(label: 'Copiers', value: '${trader.followersCount}'),
                 const SizedBox(width: 12),
-                _MiniStat(label: 'AUM', value: CurrencyFormatter.formatCompact(trader.aumInr)),
+                _MiniStat(
+                  label: 'AUM',
+                  value: CurrencyFormatter.formatCompact(trader.aumInr),
+                ),
                 const Spacer(),
                 if (trader.isCopying)
-                  Text('Copying', style: ThemeAType.label(size: 12, color: p.primary))
+                  Text(
+                    'Copying',
+                    style: ThemeAType.label(size: 12, color: p.primary),
+                  )
                 else
                   Icon(Icons.chevron_right_rounded, color: p.textMuted),
               ],
@@ -493,7 +534,13 @@ class _SubscriptionCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(t.displayName, style: ThemeAType.cardTitle(color: p.textDark, size: 15)),
+                      Text(
+                        t.displayName,
+                        style: ThemeAType.cardTitle(
+                          color: p.textDark,
+                          size: 15,
+                        ),
+                      ),
                       Text(
                         '${t.strategyTitle} · ${subscription.status.toUpperCase()}',
                         style: ThemeAType.label(size: 11, color: p.textMuted),
@@ -533,7 +580,9 @@ class _SubscriptionCard extends StatelessWidget {
                     final err = await onPause();
                     if (!context.mounted) return;
                     if (err != null) {
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(SnackBar(content: Text(err)));
                     }
                   },
                   child: Text(subscription.isPaused ? 'Resume' : 'Pause'),
@@ -547,7 +596,9 @@ class _SubscriptionCard extends StatelessWidget {
                     if (!context.mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text(err ?? 'Stopped copying ${t.displayName}'),
+                        content: Text(
+                          err ?? 'Stopped copying ${t.displayName}',
+                        ),
                         backgroundColor: err == null ? null : p.negative,
                       ),
                     );
@@ -597,7 +648,9 @@ class _CopyTraderDetailScreenState extends State<CopyTraderDetailScreen> {
         return StatefulBuilder(
           builder: (ctx, setModal) {
             return Padding(
-              padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(ctx).bottom),
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.viewInsetsOf(ctx).bottom,
+              ),
               child: Container(
                 margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
@@ -626,13 +679,18 @@ class _CopyTraderDetailScreenState extends State<CopyTraderDetailScreen> {
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       decoration: InputDecoration(
                         labelText: 'Allocation (₹)',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 8),
                     SwitchListTile(
                       contentPadding: EdgeInsets.zero,
-                      title: Text('Auto-copy new trades', style: ThemeAType.body(color: p.textDark, size: 14)),
+                      title: Text(
+                        'Auto-copy new trades',
+                        style: ThemeAType.body(color: p.textDark, size: 14),
+                      ),
                       value: autoCopy,
                       activeThumbColor: p.primary,
                       onChanged: (v) => setModal(() => autoCopy = v),
@@ -657,10 +715,10 @@ class _CopyTraderDetailScreenState extends State<CopyTraderDetailScreen> {
     if (confirmed != true || !mounted) return;
     final amount = double.tryParse(amountController.text.trim()) ?? 0;
     final err = await context.read<CopyTradingProvider>().startCopy(
-          traderId: trader.id,
-          allocationInr: amount,
-          autoCopy: autoCopy,
-        );
+      traderId: trader.id,
+      allocationInr: amount,
+      autoCopy: autoCopy,
+    );
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -716,8 +774,10 @@ class _CopyTraderDetailScreenState extends State<CopyTraderDetailScreen> {
                                 ).withValues(alpha: 0.22),
                                 child: Text(
                                   trader.initials,
-                                  style: ThemeAType.label(size: 16, color: p.primary)
-                                      .copyWith(fontWeight: FontWeight.w800),
+                                  style: ThemeAType.label(
+                                    size: 16,
+                                    color: p.primary,
+                                  ).copyWith(fontWeight: FontWeight.w800),
                                 ),
                               ),
                               const SizedBox(width: 14),
@@ -730,16 +790,26 @@ class _CopyTraderDetailScreenState extends State<CopyTraderDetailScreen> {
                                         Flexible(
                                           child: Text(
                                             trader.displayName,
-                                            style: ThemeAType.cardTitle(color: p.textDark, size: 18),
+                                            style: ThemeAType.cardTitle(
+                                              color: p.textDark,
+                                              size: 18,
+                                            ),
                                           ),
                                         ),
                                         if (trader.isVerified)
-                                          Icon(Icons.verified_rounded, size: 18, color: p.primary),
+                                          Icon(
+                                            Icons.verified_rounded,
+                                            size: 18,
+                                            color: p.primary,
+                                          ),
                                       ],
                                     ),
                                     Text(
                                       '@${trader.handle} · ${trader.experienceYears} yrs',
-                                      style: ThemeAType.label(size: 12, color: p.textMuted),
+                                      style: ThemeAType.label(
+                                        size: 12,
+                                        color: p.textMuted,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -747,9 +817,18 @@ class _CopyTraderDetailScreenState extends State<CopyTraderDetailScreen> {
                             ],
                           ),
                           const SizedBox(height: 14),
-                          Text(trader.strategyTitle, style: ThemeAType.cardTitle(color: p.textDark, size: 16)),
+                          Text(
+                            trader.strategyTitle,
+                            style: ThemeAType.cardTitle(
+                              color: p.textDark,
+                              size: 16,
+                            ),
+                          ),
                           const SizedBox(height: 6),
-                          Text(trader.strategySummary, style: ThemeAType.body(color: p.textGrey, size: 13)),
+                          Text(
+                            trader.strategySummary,
+                            style: ThemeAType.body(color: p.textGrey, size: 13),
+                          ),
                           const SizedBox(height: 14),
                           Wrap(
                             spacing: 6,
@@ -757,22 +836,40 @@ class _CopyTraderDetailScreenState extends State<CopyTraderDetailScreen> {
                             children: [
                               ...trader.methodTags.map(
                                 (tag) => Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: p.primary.withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
-                                  child: Text(tag, style: ThemeAType.label(size: 11, color: p.primary)),
+                                  child: Text(
+                                    tag,
+                                    style: ThemeAType.label(
+                                      size: 11,
+                                      color: p.primary,
+                                    ),
+                                  ),
                                 ),
                               ),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
                                 decoration: BoxDecoration(
                                   color: p.surface,
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(color: p.borderLight),
                                 ),
-                                child: Text(trader.riskLabel, style: ThemeAType.label(size: 11, color: p.textMuted)),
+                                child: Text(
+                                  trader.riskLabel,
+                                  style: ThemeAType.label(
+                                    size: 11,
+                                    color: p.textMuted,
+                                  ),
+                                ),
                               ),
                             ],
                           ),
@@ -782,11 +879,29 @@ class _CopyTraderDetailScreenState extends State<CopyTraderDetailScreen> {
                     const SizedBox(height: 14),
                     Row(
                       children: [
-                        Expanded(child: _StatTile(label: '1M', value: _pct(trader.return1m), p: p)),
+                        Expanded(
+                          child: _StatTile(
+                            label: '1M',
+                            value: _pct(trader.return1m),
+                            p: p,
+                          ),
+                        ),
                         const SizedBox(width: 8),
-                        Expanded(child: _StatTile(label: '3M', value: _pct(trader.return3m), p: p)),
+                        Expanded(
+                          child: _StatTile(
+                            label: '3M',
+                            value: _pct(trader.return3m),
+                            p: p,
+                          ),
+                        ),
                         const SizedBox(width: 8),
-                        Expanded(child: _StatTile(label: '1Y', value: _pct(trader.return1y), p: p)),
+                        Expanded(
+                          child: _StatTile(
+                            label: '1Y',
+                            value: _pct(trader.return1y),
+                            p: p,
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 8),
@@ -818,9 +933,17 @@ class _CopyTraderDetailScreenState extends State<CopyTraderDetailScreen> {
                       ],
                     ),
                     const SizedBox(height: 20),
-                    Text('Recent method trades', style: ThemeAType.sectionTitle(color: p.textDark, size: 16)),
+                    Text(
+                      'Recent method trades',
+                      style: ThemeAType.sectionTitle(
+                        color: p.textDark,
+                        size: 16,
+                      ),
+                    ),
                     const SizedBox(height: 10),
-                    ...trader.recentTrades.map((trade) => _TradeTile(trade: trade)),
+                    ...trader.recentTrades.map(
+                      (trade) => _TradeTile(trade: trade),
+                    ),
                     if (trader.recentTrades.isEmpty)
                       Text(
                         'No published trades yet.',
@@ -840,10 +963,12 @@ class _CopyTraderDetailScreenState extends State<CopyTraderDetailScreen> {
                       onPressed: provider.isSaving
                           ? null
                           : () => trader.isCopying
-                              ? context.push(AppRoutes.copyTrading)
-                              : _openCopySheet(trader),
+                                ? context.push(AppRoutes.copyTrading)
+                                : _openCopySheet(trader),
                       child: Text(
-                        trader.isCopying ? 'Manage my copy' : 'Copy this method',
+                        trader.isCopying
+                            ? 'Manage my copy'
+                            : 'Copy this method',
                       ),
                     ),
                   ),
@@ -909,7 +1034,10 @@ class _TradeTile extends StatelessWidget {
               ),
               child: Text(
                 trade.side,
-                style: ThemeAType.label(size: 11, color: sideColor).copyWith(fontWeight: FontWeight.w800),
+                style: ThemeAType.label(
+                  size: 11,
+                  color: sideColor,
+                ).copyWith(fontWeight: FontWeight.w800),
               ),
             ),
             const SizedBox(width: 12),
@@ -917,7 +1045,10 @@ class _TradeTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(trade.symbol, style: ThemeAType.cardTitle(color: p.textDark, size: 14)),
+                  Text(
+                    trade.symbol,
+                    style: ThemeAType.cardTitle(color: p.textDark, size: 14),
+                  ),
                   Text(
                     '${trade.quantity} @ ${CurrencyFormatter.formatDecimal(trade.price)}'
                     '${trade.note.isNotEmpty ? ' · ${trade.note}' : ''}',

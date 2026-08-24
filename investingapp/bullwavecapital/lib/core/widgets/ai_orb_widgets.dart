@@ -23,7 +23,8 @@ class AiOrbLogo extends StatefulWidget {
   State<AiOrbLogo> createState() => _AiOrbLogoState();
 }
 
-class _AiOrbLogoState extends State<AiOrbLogo> with SingleTickerProviderStateMixin {
+class _AiOrbLogoState extends State<AiOrbLogo>
+    with SingleTickerProviderStateMixin {
   late AnimationController _pulse;
 
   @override
@@ -101,7 +102,9 @@ class _AiOrbLogoState extends State<AiOrbLogo> with SingleTickerProviderStateMix
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF2563EB).withValues(alpha: 0.35 + t * 0.1),
+                      color: const Color(
+                        0xFF2563EB,
+                      ).withValues(alpha: 0.35 + t * 0.1),
                       blurRadius: 14,
                       offset: const Offset(0, 6),
                     ),
@@ -175,7 +178,11 @@ class _AiBuddyFacePainter extends CustomPainter {
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-        Rect.fromCenter(center: Offset(cx, cy), width: blobW * 1.08, height: blobH * 1.08),
+        Rect.fromCenter(
+          center: Offset(cx, cy),
+          width: blobW * 1.08,
+          height: blobH * 1.08,
+        ),
         Radius.circular(blobH * 0.46),
       ),
       glowPaint,
@@ -195,20 +202,21 @@ class _AiBuddyFacePainter extends CustomPainter {
     canvas.drawRRect(blobRect, blobPaint);
 
     final highlight = Paint()
-      ..shader = RadialGradient(
-        center: Alignment.topCenter,
-        radius: 0.75,
-        colors: [
-          Colors.white.withValues(alpha: 0.55),
-          Colors.white.withValues(alpha: 0.0),
-        ],
-      ).createShader(
-        Rect.fromCenter(
-          center: Offset(cx, cy - blobH * 0.18),
-          width: blobW * 0.7,
-          height: blobH * 0.45,
-        ),
-      );
+      ..shader =
+          RadialGradient(
+            center: Alignment.topCenter,
+            radius: 0.75,
+            colors: [
+              Colors.white.withValues(alpha: 0.55),
+              Colors.white.withValues(alpha: 0.0),
+            ],
+          ).createShader(
+            Rect.fromCenter(
+              center: Offset(cx, cy - blobH * 0.18),
+              width: blobW * 0.7,
+              height: blobH * 0.45,
+            ),
+          );
     canvas.drawRRect(
       RRect.fromRectAndRadius(
         Rect.fromCenter(
@@ -228,11 +236,19 @@ class _AiBuddyFacePainter extends CustomPainter {
     final eyePaint = Paint()..color = Colors.white;
 
     canvas.drawOval(
-      Rect.fromCenter(center: Offset(cx - eyeGap, eyeY), width: eyeW, height: eyeH),
+      Rect.fromCenter(
+        center: Offset(cx - eyeGap, eyeY),
+        width: eyeW,
+        height: eyeH,
+      ),
       eyePaint,
     );
     canvas.drawOval(
-      Rect.fromCenter(center: Offset(cx + eyeGap, eyeY), width: eyeW, height: eyeH),
+      Rect.fromCenter(
+        center: Offset(cx + eyeGap, eyeY),
+        width: eyeW,
+        height: eyeH,
+      ),
       eyePaint,
     );
   }
@@ -247,11 +263,7 @@ class AiListeningOrb extends StatefulWidget {
   final double size;
   final bool active;
 
-  const AiListeningOrb({
-    super.key,
-    this.size = 120,
-    this.active = true,
-  });
+  const AiListeningOrb({super.key, this.size = 120, this.active = true});
 
   @override
   State<AiListeningOrb> createState() => _AiListeningOrbState();
@@ -309,7 +321,9 @@ class _AiListeningOrbState extends State<AiListeningOrb>
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(widget.size * 0.32),
                     border: Border.all(
-                      color: const Color(0xFF38BDF8).withValues(alpha: 0.2 + t * 0.25),
+                      color: const Color(
+                        0xFF38BDF8,
+                      ).withValues(alpha: 0.2 + t * 0.25),
                       width: 1.5,
                     ),
                   ),
@@ -324,13 +338,19 @@ class _AiListeningOrbState extends State<AiListeningOrb>
                     borderRadius: BorderRadius.circular(widget.size * 0.28),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF2563EB).withValues(alpha: 0.35 + t * 0.2),
+                        color: const Color(
+                          0xFF2563EB,
+                        ).withValues(alpha: 0.35 + t * 0.2),
                         blurRadius: 32,
                         spreadRadius: 4,
                       ),
                     ],
                   ),
-                  child: AiOrbLogo(size: widget.size, showArc: false, animate: widget.active),
+                  child: AiOrbLogo(
+                    size: widget.size,
+                    showArc: false,
+                    animate: widget.active,
+                  ),
                 ),
               ),
             ],
@@ -372,7 +392,10 @@ class AiGlassBubble extends StatelessWidget {
                 children: [
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                     decoration: p.cardDecoration(radius: 20),
                     child: DefaultTextStyle(
                       style: ThemeAType.body(size: 14, color: p.textDark),
@@ -393,7 +416,9 @@ class AiGlassBubble extends StatelessWidget {
       child: Align(
         alignment: Alignment.centerRight,
         child: Container(
-          constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * 0.78),
+          constraints: BoxConstraints(
+            maxWidth: MediaQuery.sizeOf(context).width * 0.78,
+          ),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: p.isDark
               ? BoxDecoration(
@@ -404,13 +429,17 @@ class AiGlassBubble extends StatelessWidget {
                     ],
                   ),
                   borderRadius: BorderRadius.circular(22),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.12),
+                  ),
                 )
               : p.heroCardDecoration(radius: 22),
           child: DefaultTextStyle(
             style: ThemeAType.body(
               size: 14,
-              color: p.isDark ? Colors.white.withValues(alpha: 0.95) : p.heroCardFg,
+              color: p.isDark
+                  ? Colors.white.withValues(alpha: 0.95)
+                  : p.heroCardFg,
             ),
             child: child,
           ),
@@ -441,7 +470,9 @@ class AiSuggestionPill extends StatelessWidget {
               ? BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(999),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.12),
+                  ),
                 )
               : p.cardDecoration(radius: 999),
           child: Text(

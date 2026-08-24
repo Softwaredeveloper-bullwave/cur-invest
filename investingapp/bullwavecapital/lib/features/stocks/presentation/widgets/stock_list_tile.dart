@@ -46,7 +46,11 @@ class StockListTile extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: onTap ?? () => context.push('${AppRoutes.stockDetail}?symbol=${stock.symbol}'),
+          onTap:
+              onTap ??
+              () => context.push(
+                '${AppRoutes.stockDetail}?symbol=${stock.symbol}',
+              ),
           borderRadius: BorderRadius.circular(22),
           child: Ink(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -110,7 +114,9 @@ class StockListTile extends StatelessWidget {
                   IconButton(
                     visualDensity: VisualDensity.compact,
                     icon: Icon(
-                      inWatchlist ? Icons.bookmark_rounded : Icons.bookmark_outline_rounded,
+                      inWatchlist
+                          ? Icons.bookmark_rounded
+                          : Icons.bookmark_outline_rounded,
                       color: inWatchlist ? p.primary : p.textGrey,
                       size: 22,
                     ),
@@ -118,7 +124,10 @@ class StockListTile extends StatelessWidget {
                       final err = await market.toggleWatchlist(stock.symbol);
                       if (context.mounted && err != null) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(err), behavior: SnackBarBehavior.floating),
+                          SnackBar(
+                            content: Text(err),
+                            behavior: SnackBarBehavior.floating,
+                          ),
                         );
                       }
                     },
@@ -145,7 +154,9 @@ class LivePriceBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: liveColor.withValues(alpha: p.isDark ? 0.18 : 0.1),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: liveColor.withValues(alpha: p.isDark ? 0.55 : 0.22)),
+        border: Border.all(
+          color: liveColor.withValues(alpha: p.isDark ? 0.55 : 0.22),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -167,10 +178,7 @@ class LivePriceBadge extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 6),
-          Text(
-            'Live',
-            style: ThemeAType.label(size: 11, color: liveColor),
-          ),
+          Text('Live', style: ThemeAType.label(size: 11, color: liveColor)),
         ],
       ),
     );

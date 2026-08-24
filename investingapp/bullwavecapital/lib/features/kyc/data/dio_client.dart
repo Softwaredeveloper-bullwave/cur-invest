@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
+import '../../../core/api/api_client.dart';
 import '../../../core/api/api_config.dart';
 import '../../../core/api/api_exception.dart';
 import '../../../core/api/token_storage.dart';
@@ -14,71 +15,102 @@ class KycDioClient {
 
   static final KycDioClient instance = KycDioClient._();
 
-  late final Dio _dio = Dio(
-    BaseOptions(
-      baseUrl: ApiConfig.baseUrl,
-      connectTimeout: const Duration(seconds: 30),
-      receiveTimeout: const Duration(seconds: 90),
-      headers: {'Accept': 'application/json', 'Content-Type': 'application/json'},
-    ),
-  )..interceptors.add(
-      InterceptorsWrapper(
-        onRequest: (options, handler) async {
-          final token = await TokenStorage.getAccessToken();
-          if (token != null && token.isNotEmpty) {
-            options.headers['Authorization'] = 'Bearer $token';
-          }
-          if (kDebugMode) {
-            final authorization = options.headers['Authorization']?.toString();
-            final hasBearerToken =
-                authorization != null && authorization.startsWith('Bearer ');
-            debugPrint(
-              '[KYC API] ${options.method} ${options.path} '
-              'Authorization: ${hasBearerToken ? 'Bearer present' : 'missing'}',
-            );
-          }
-          handler.next(options);
-        },
-        onError: (error, handler) {
-          final status = error.response?.statusCode ?? 500;
-          final data = error.response?.data;
-          final message = _extractErrorMessage(
-            data,
-            _friendlyDioMessage(error),
-          );
-          final path = error.requestOptions.path;
-          if (status != 401 &&
-              status != 403 &&
-              !path.contains('/client-errors/') &&
-              (status >= 500 || error.response == null)) {
-            unawaited(
-              AppErrorReporter.instance.report(
-                ApiException(status, message, code: _extractErrorCode(data)),
-                error.stackTrace,
-                location: path,
-                statusCode: status,
-                context: {
-                  'transport': 'dio',
-                  'method': error.requestOptions.method,
-                  'errorType': error.type.name,
-                },
-              ),
-            );
-          }
-          handler.reject(
-            DioException(
-              requestOptions: error.requestOptions,
-              response: error.response,
-              error: ApiException(
-                status,
-                message,
-                code: _extractErrorCode(data),
-              ),
-            ),
-          );
-        },
-      ),
-    );
+  late final Dio _dio =
+      Dio(
+          BaseOptions(
+            baseUrl: ApiConfig.baseUrl,
+            connectTimeout: const Duration(seconds: 30),
+            receiveTimeout: const Duration(seconds: 90),
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+            },
+          ),
+        )
+        ..interceptors.add(
+          InterceptorsWrapper(
+            onRequest: (options, handler) async {
+              final token = await TokenStorage.getAccessToken();
+              if (token != null && token.isNotEmpty) {
+                options.headers['Authorization'] = 'Bearer $token';
+              }
+              if (kDebugMode) {
+                final authorization = options.headers['Authorization']
+                    ?.toString();
+                final hasBearerToken =
+                    authorization != null &&
+                    authorization.startsWith('Bearer ');
+                debugPrint(
+                  '[KYC API] ${options.method} ${options.path} '
+                  'Authorization: ${hasBearerToken ? 'Bearer present' : 'missing'}',
+                );
+              }
+              handler.next(options);
+            },
+            onError: (error, handler) async {
+              final status = error.response?.statusCode ?? 500;
+              final path = error.requestOptions.path;
+
+              if (status == 401 &&
+                  error.requestOptions.extra['_authRetried'] != true) {
+                final refreshed = await ApiClient.instance.refreshAccessToken();
+                if (refreshed) {
+                  try {
+                    error.requestOptions.extra['_authRetried'] = true;
+                    final token = await TokenStorage.getAccessToken();
+                    if (token != null && token.isNotEmpty) {
+                      error.requestOptions.headers['Authorization'] =
+                          'Bearer $token';
+                    }
+                    final response = await _dio.fetch(error.requestOptions);
+                    return handler.resolve(response);
+                  } catch (_) {
+                    // Fall through to normal error handling.
+                  }
+                }
+              }
+
+              final data = error.response?.data;
+              final message = _extractErrorMessage(
+                data,
+                _friendlyDioMessage(error),
+              );
+              if (status != 401 &&
+                  status != 403 &&
+                  !path.contains('/client-errors/') &&
+                  (status >= 500 || error.response == null)) {
+                unawaited(
+                  AppErrorReporter.instance.report(
+                    ApiException(
+                      status,
+                      message,
+                      code: _extractErrorCode(data),
+                    ),
+                    error.stackTrace,
+                    location: path,
+                    statusCode: status,
+                    context: {
+                      'transport': 'dio',
+                      'method': error.requestOptions.method,
+                      'errorType': error.type.name,
+                    },
+                  ),
+                );
+              }
+              handler.reject(
+                DioException(
+                  requestOptions: error.requestOptions,
+                  response: error.response,
+                  error: ApiException(
+                    status,
+                    message,
+                    code: _extractErrorCode(data),
+                  ),
+                ),
+              );
+            },
+          ),
+        );
 
   Dio get dio => _dio;
 
@@ -164,7 +196,10 @@ class KycDioClient {
     }
   }
 
-  Future<Map<String, dynamic>> postJson(String path, {Map<String, dynamic>? body}) async {
+  Future<Map<String, dynamic>> postJson(
+    String path, {
+    Map<String, dynamic>? body,
+  }) async {
     try {
       final res = await _dio.post<Map<String, dynamic>>(path, data: body);
       return res.data ?? {};
@@ -173,4 +208,3 @@ class KycDioClient {
     }
   }
 }
-

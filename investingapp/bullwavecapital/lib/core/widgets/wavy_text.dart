@@ -55,10 +55,7 @@ class _WavyUnderlinePainter extends CustomPainter {
   final Color color;
   final double waveHeight;
 
-  _WavyUnderlinePainter({
-    required this.color,
-    required this.waveHeight,
-  });
+  _WavyUnderlinePainter({required this.color, required this.waveHeight});
 
   @override
   void paint(Canvas canvas, Size size) {

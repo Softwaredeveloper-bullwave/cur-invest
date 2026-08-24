@@ -61,7 +61,8 @@ class PaperRiskFactor {
 
   bool get isPositive => impact == 'positive';
 
-  factory PaperRiskFactor.fromJson(Map<String, dynamic> json) => PaperRiskFactor(
+  factory PaperRiskFactor.fromJson(Map<String, dynamic> json) =>
+      PaperRiskFactor(
         key: json['key'] as String? ?? '',
         label: json['label'] as String? ?? '',
         impact: json['impact'] as String? ?? '',
@@ -83,11 +84,11 @@ class PaperRiskZone {
   });
 
   factory PaperRiskZone.fromJson(Map<String, dynamic> json) => PaperRiskZone(
-        key: json['key'] as String? ?? '',
-        from: _int(json['from']),
-        to: _int(json['to']),
-        label: json['label'] as String? ?? '',
-      );
+    key: json['key'] as String? ?? '',
+    from: _int(json['from']),
+    to: _int(json['to']),
+    label: json['label'] as String? ?? '',
+  );
 }
 
 class PaperCompetitionStanding {
@@ -167,8 +168,11 @@ class PaperCompetitionModel {
       startingBalance: _double(json['startingBalance']),
       status: json['status'] as String? ?? 'open',
       durationDays: _int(json['durationDays']),
-      startsAt: DateTime.tryParse(json['startsAt']?.toString() ?? '') ?? DateTime.now(),
-      endsAt: DateTime.tryParse(json['endsAt']?.toString() ?? '') ?? DateTime.now(),
+      startsAt:
+          DateTime.tryParse(json['startsAt']?.toString() ?? '') ??
+          DateTime.now(),
+      endsAt:
+          DateTime.tryParse(json['endsAt']?.toString() ?? '') ?? DateTime.now(),
       membersCount: _int(json['membersCount']),
       isHost: json['isHost'] as bool? ?? false,
       shareMessage: json['shareMessage'] as String? ?? '',
@@ -176,7 +180,9 @@ class PaperCompetitionModel {
           ? PaperCompetitionStanding.fromJson(youRaw)
           : null,
       standings: (json['standings'] as List<dynamic>? ?? [])
-          .map((e) => PaperCompetitionStanding.fromJson(e as Map<String, dynamic>))
+          .map(
+            (e) => PaperCompetitionStanding.fromJson(e as Map<String, dynamic>),
+          )
           .toList(),
     );
   }

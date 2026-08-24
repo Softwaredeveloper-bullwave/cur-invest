@@ -50,7 +50,8 @@ class _SipTrackerScreenState extends State<SipTrackerScreen> {
   Future<void> _createSip() async {
     final symbol = _symbolController.text.trim().toUpperCase();
     final amount = double.tryParse(_amountController.text.trim()) ?? 0;
-    final installments = int.tryParse(_installmentsController.text.trim()) ?? 12;
+    final installments =
+        int.tryParse(_installmentsController.text.trim()) ?? 12;
     if (symbol.isEmpty || amount < 100) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Enter symbol and amount (min ₹100)')),
@@ -60,10 +61,10 @@ class _SipTrackerScreenState extends State<SipTrackerScreen> {
 
     setState(() => _isSaving = true);
     final ok = await context.read<StockFeaturesProvider>().createSip(
-          symbol: symbol,
-          monthlyAmount: amount,
-          totalInstallments: installments,
-        );
+      symbol: symbol,
+      monthlyAmount: amount,
+      totalInstallments: installments,
+    );
     if (!mounted) return;
     setState(() => _isSaving = false);
 
@@ -102,19 +103,25 @@ class _SipTrackerScreenState extends State<SipTrackerScreen> {
                         amountController: _amountController,
                         installmentsController: _installmentsController,
                         isSaving: _isSaving,
-                        suggestions: market.trendingStocks.take(5).map((s) => s.symbol).toList(),
+                        suggestions: market.trendingStocks
+                            .take(5)
+                            .map((s) => s.symbol)
+                            .toList(),
                         onCreate: _createSip,
                       ),
                       const SizedBox(height: 20),
                       Text(
                         'Active SIPs (${plans.length})',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w800),
                       ),
                       const SizedBox(height: 10),
                       if (plans.isEmpty)
                         _EmptySip(colors: colors)
                       else
-                        ...plans.map((sip) => _SipCard(sip: sip, colors: colors)),
+                        ...plans.map(
+                          (sip) => _SipCard(sip: sip, colors: colors),
+                        ),
                     ],
                   );
                 },
@@ -149,14 +156,21 @@ class _CreateSipCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Start SIP', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+          Text(
+            'Start SIP',
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+          ),
           const SizedBox(height: 14),
           TextField(
             controller: symbolController,
             textCapitalization: TextCapitalization.characters,
             decoration: InputDecoration(
               labelText: 'Stock symbol',
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
           ),
           const SizedBox(height: 8),
@@ -179,7 +193,9 @@ class _CreateSipCard extends StatelessWidget {
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
                     labelText: 'Monthly (₹)',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
               ),
@@ -190,7 +206,9 @@ class _CreateSipCard extends StatelessWidget {
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
                     labelText: 'Months',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
               ),
@@ -203,9 +221,19 @@ class _CreateSipCard extends StatelessWidget {
             child: FilledButton.icon(
               onPressed: isSaving ? null : onCreate,
               icon: isSaving
-                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
                   : const Icon(Icons.savings_outlined),
-              label: const Text('Start SIP', style: TextStyle(fontWeight: FontWeight.w800)),
+              label: const Text(
+                'Start SIP',
+                style: TextStyle(fontWeight: FontWeight.w800),
+              ),
               style: FilledButton.styleFrom(backgroundColor: AppColors.green),
             ),
           ),
@@ -244,21 +272,34 @@ class _SipCard extends StatelessWidget {
                   children: [
                     Text(
                       sip.symbol,
-                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 17,
+                      ),
                     ),
-                    Text(sip.name, style: TextStyle(color: colors.textMuted, fontSize: 12)),
+                    Text(
+                      sip.name,
+                      style: TextStyle(color: colors.textMuted, fontSize: 12),
+                    ),
                   ],
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.green.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
                   '${CurrencyFormatter.format(sip.monthlyAmount)}/mo',
-                  style: const TextStyle(color: AppColors.green, fontWeight: FontWeight.w700, fontSize: 12),
+                  style: const TextStyle(
+                    color: AppColors.green,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 12,
+                  ),
                 ),
               ),
             ],
@@ -283,7 +324,11 @@ class _SipCard extends StatelessWidget {
               ),
               Text(
                 'Next: ${DateFormatter.display(sip.nextDate)}',
-                style: TextStyle(color: colors.textSecondary, fontSize: 12, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  color: colors.textSecondary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ],
           ),
@@ -325,7 +370,13 @@ class _EmptySip extends StatelessWidget {
         children: [
           Icon(Icons.savings_outlined, size: 44, color: colors.textMuted),
           const SizedBox(height: 12),
-          Text('No SIPs yet', style: TextStyle(fontWeight: FontWeight.w700, color: colors.textSecondary)),
+          Text(
+            'No SIPs yet',
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+              color: colors.textSecondary,
+            ),
+          ),
           const SizedBox(height: 6),
           Text(
             'Start a monthly SIP above to invest automatically in your favourite stocks.',

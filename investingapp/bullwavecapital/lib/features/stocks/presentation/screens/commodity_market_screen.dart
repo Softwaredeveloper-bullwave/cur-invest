@@ -94,7 +94,9 @@ class _CommodityMarketScreenState extends State<CommodityMarketScreen> {
                             icon: Icons.account_balance_wallet_outlined,
                             label: 'Holdings',
                             color: AppColors.green,
-                            badge: p.holdings.isNotEmpty ? '${p.holdings.length}' : null,
+                            badge: p.holdings.isNotEmpty
+                                ? '${p.holdings.length}'
+                                : null,
                             onTap: () => context.push(
                               '${AppRoutes.commodityDetail}?commodityId=GOLD',
                             ),
@@ -107,9 +109,12 @@ class _CommodityMarketScreenState extends State<CommodityMarketScreen> {
                 Expanded(
                   child: Consumer<CommodityProvider>(
                     builder: (context, commodities, _) {
-                      if (commodities.isLoading && commodities.commodities.isEmpty) {
+                      if (commodities.isLoading &&
+                          commodities.commodities.isEmpty) {
                         return const Center(
-                          child: CircularProgressIndicator(color: AppColors.brandOrange),
+                          child: CircularProgressIndicator(
+                            color: AppColors.brandOrange,
+                          ),
                         );
                       }
 
@@ -124,7 +129,8 @@ class _CommodityMarketScreenState extends State<CommodityMarketScreen> {
                               const SizedBox(height: 120),
                               Center(
                                 child: Text(
-                                  commodities.error ?? 'No commodity data. Pull to refresh.',
+                                  commodities.error ??
+                                      'No commodity data. Pull to refresh.',
                                   textAlign: TextAlign.center,
                                 ),
                               ),
@@ -151,7 +157,9 @@ class _CommodityMarketScreenState extends State<CommodityMarketScreen> {
                             ],
                             const SizedBox(height: 20),
                             ...commodities.categories.map((category) {
-                              final items = commodities.commoditiesByCategory(category);
+                              final items = commodities.commoditiesByCategory(
+                                category,
+                              );
                               final accent = _accentFor(category);
                               return Padding(
                                 padding: const EdgeInsets.only(bottom: 22),
@@ -165,13 +173,18 @@ class _CommodityMarketScreenState extends State<CommodityMarketScreen> {
                                           height: 18,
                                           decoration: BoxDecoration(
                                             color: accent,
-                                            borderRadius: BorderRadius.circular(2),
+                                            borderRadius: BorderRadius.circular(
+                                              2,
+                                            ),
                                           ),
                                         ),
                                         const SizedBox(width: 10),
                                         Text(
                                           category,
-                                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .titleMedium
+                                              ?.copyWith(
                                                 fontWeight: FontWeight.w800,
                                                 letterSpacing: -0.2,
                                               ),
@@ -181,7 +194,9 @@ class _CommodityMarketScreenState extends State<CommodityMarketScreen> {
                                     const SizedBox(height: 12),
                                     ...items.map(
                                       (item) => Padding(
-                                        padding: const EdgeInsets.only(bottom: 10),
+                                        padding: const EdgeInsets.only(
+                                          bottom: 10,
+                                        ),
                                         child: _CommodityCard(
                                           commodity: item,
                                           accent: accent,
@@ -232,7 +247,10 @@ class _HeroBanner extends StatelessWidget {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.green.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(999),
@@ -242,7 +260,14 @@ class _HeroBanner extends StatelessWidget {
                   children: [
                     Icon(Icons.bolt_rounded, size: 14, color: AppColors.green),
                     SizedBox(width: 4),
-                    Text('LIVE', style: TextStyle(color: AppColors.green, fontWeight: FontWeight.w800, fontSize: 11)),
+                    Text(
+                      'LIVE',
+                      style: TextStyle(
+                        color: AppColors.green,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 11,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -250,7 +275,11 @@ class _HeroBanner extends StatelessWidget {
                 const SizedBox(width: 8),
                 Text(
                   provider.toUpperCase(),
-                  style: TextStyle(color: context.appColors.textMuted, fontSize: 11, fontWeight: FontWeight.w700),
+                  style: TextStyle(
+                    color: context.appColors.textMuted,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ],
             ],
@@ -258,12 +287,16 @@ class _HeroBanner extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             'Global Commodity Markets',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 4),
           Text(
             'Trade spot & explore options on gold, silver, oil & more',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: context.appColors.textSecondary),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: context.appColors.textSecondary,
+            ),
           ),
         ],
       ),
@@ -301,16 +334,32 @@ class _QuickLink extends StatelessWidget {
               Icon(icon, color: color, size: 20),
               const SizedBox(width: 8),
               Expanded(
-                child: Text(label, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                child: Text(
+                  label,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                  ),
+                ),
               ),
               if (badge != null)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 7,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: color.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(999),
                   ),
-                  child: Text(badge!, style: TextStyle(color: color, fontWeight: FontWeight.w800, fontSize: 11)),
+                  child: Text(
+                    badge!,
+                    style: TextStyle(
+                      color: color,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 11,
+                    ),
+                  ),
                 ),
             ],
           ),
@@ -352,7 +401,10 @@ class _CommodityCard extends StatelessWidget {
             height: 48,
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [accent.withValues(alpha: 0.25), accent.withValues(alpha: 0.08)],
+                colors: [
+                  accent.withValues(alpha: 0.25),
+                  accent.withValues(alpha: 0.08),
+                ],
               ),
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: accent.withValues(alpha: 0.3)),
@@ -367,11 +419,16 @@ class _CommodityCard extends StatelessWidget {
                 Text(
                   commodity.shortName,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        color: colors.textPrimary,
-                      ),
+                    fontWeight: FontWeight.w800,
+                    color: colors.textPrimary,
+                  ),
                 ),
-                Text(commodity.unit, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colors.textMuted)),
+                Text(
+                  commodity.unit,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: colors.textMuted),
+                ),
               ],
             ),
           ),
@@ -380,18 +437,28 @@ class _CommodityCard extends StatelessWidget {
             children: [
               Text(
                 '\$${IndexFormatter.format(commodity.ltp)}',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
               ),
               Text(
                 IndexFormatter.formatPercent(commodity.changePercent),
-                style: TextStyle(color: changeColor, fontWeight: FontWeight.w700, fontSize: 12),
+                style: TextStyle(
+                  color: changeColor,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 12,
+                ),
               ),
             ],
           ),
           const SizedBox(width: 8),
           IconButton(
             onPressed: onOptions,
-            icon: Icon(Icons.candlestick_chart_rounded, color: AppColors.brandPurple, size: 22),
+            icon: Icon(
+              Icons.candlestick_chart_rounded,
+              color: AppColors.brandPurple,
+              size: 22,
+            ),
             tooltip: 'Option chain',
             style: IconButton.styleFrom(
               backgroundColor: AppColors.brandPurple.withValues(alpha: 0.12),

@@ -130,7 +130,10 @@ class BankVerificationProvider extends ChangeNotifier {
 
   Future<BankVerificationResult> verifyAccount() async {
     if (!isFormValid) {
-      return const BankVerificationResult(success: false, message: 'Complete all fields.');
+      return const BankVerificationResult(
+        success: false,
+        message: 'Complete all fields.',
+      );
     }
     isVerifying = true;
     lastError = null;

@@ -19,7 +19,8 @@ class _MarketsVoiceSearchSheet extends StatefulWidget {
   const _MarketsVoiceSearchSheet();
 
   @override
-  State<_MarketsVoiceSearchSheet> createState() => _MarketsVoiceSearchSheetState();
+  State<_MarketsVoiceSearchSheet> createState() =>
+      _MarketsVoiceSearchSheetState();
 }
 
 class _MarketsVoiceSearchSheetState extends State<_MarketsVoiceSearchSheet>
@@ -89,10 +90,23 @@ class _MarketsVoiceSearchSheetState extends State<_MarketsVoiceSearchSheet>
     if (text.toLowerCase().startsWith('listening')) return '';
     // Prefer the last spoken symbol-like token for stock search.
     final upper = text.toUpperCase().replaceAll(RegExp(r'[^A-Z0-9\s]'), ' ');
-    final parts = upper.split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
+    final parts = upper
+        .split(RegExp(r'\s+'))
+        .where((p) => p.isNotEmpty)
+        .toList();
     if (parts.isEmpty) return text;
     // If user said "search reliance" / "find tcs stock", keep useful words.
-    final stop = {'SEARCH', 'FIND', 'SHOW', 'STOCK', 'SHARE', 'FOR', 'THE', 'OF', 'PLEASE'};
+    final stop = {
+      'SEARCH',
+      'FIND',
+      'SHOW',
+      'STOCK',
+      'SHARE',
+      'FOR',
+      'THE',
+      'OF',
+      'PLEASE',
+    };
     final meaningful = parts.where((p) => !stop.contains(p)).toList();
     if (meaningful.isEmpty) return text;
     return meaningful.join(' ');
@@ -186,7 +200,9 @@ class _MarketsVoiceSearchSheetState extends State<_MarketsVoiceSearchSheet>
                     height: 92,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: (_listening ? p.primary : p.surface).withValues(alpha: 0.95),
+                      color: (_listening ? p.primary : p.surface).withValues(
+                        alpha: 0.95,
+                      ),
                       border: Border.all(
                         color: p.primary.withValues(alpha: 0.5),
                         width: 2,
@@ -202,7 +218,9 @@ class _MarketsVoiceSearchSheetState extends State<_MarketsVoiceSearchSheet>
               ),
               const SizedBox(height: 18),
               Text(
-                _listening ? 'Listening…' : (_ready ? 'Ready' : 'Preparing mic…'),
+                _listening
+                    ? 'Listening…'
+                    : (_ready ? 'Ready' : 'Preparing mic…'),
                 style: ThemeAType.label(
                   size: 13,
                   color: _listening ? p.primary : p.textMuted,
@@ -249,14 +267,21 @@ class _MarketsVoiceSearchSheetState extends State<_MarketsVoiceSearchSheet>
                   const SizedBox(width: 10),
                   Expanded(
                     child: FilledButton(
-                      onPressed: _transcript.trim().isEmpty ? null : _useTranscript,
+                      onPressed: _transcript.trim().isEmpty
+                          ? null
+                          : _useTranscript,
                       child: const Text('Search'),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 8),
-              const AiOrbLogo(size: 36, showArc: false, animate: true, showName: false),
+              const AiOrbLogo(
+                size: 36,
+                showArc: false,
+                animate: true,
+                showName: false,
+              ),
             ],
           ),
         ),

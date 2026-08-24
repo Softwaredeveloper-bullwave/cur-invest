@@ -40,17 +40,17 @@ class ImageSourceBottomSheet {
               Text(
                 'Choose Image Source',
                 style: Theme.of(sheetContext).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: colors.textPrimary,
-                    ),
+                  fontWeight: FontWeight.w700,
+                  color: colors.textPrimary,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 6),
               Text(
                 documentName,
-                style: Theme.of(sheetContext).textTheme.bodyMedium?.copyWith(
-                      color: colors.textSecondary,
-                    ),
+                style: Theme.of(
+                  sheetContext,
+                ).textTheme.bodyMedium?.copyWith(color: colors.textSecondary),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: AppDimensions.paddingLg),
@@ -126,10 +126,7 @@ class ImageSourceBottomSheet {
       ImageSource.camera => 'Camera',
       ImageSource.files => 'Files',
     };
-    AppSnackbar.success(
-      parentContext,
-      '$documentName uploaded from $label',
-    );
+    AppSnackbar.success(parentContext, '$documentName uploaded from $label');
   }
 }
 
@@ -187,7 +184,8 @@ class _SourceTile extends StatelessWidget {
                     children: [
                       Text(
                         title,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(
                               fontWeight: FontWeight.w600,
                               color: colors.textPrimary,
                             ),
@@ -196,16 +194,13 @@ class _SourceTile extends StatelessWidget {
                       Text(
                         subtitle,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: colors.textSecondary,
-                            ),
+                          color: colors.textSecondary,
+                        ),
                       ),
                     ],
                   ),
                 ),
-                Icon(
-                  Icons.chevron_right_rounded,
-                  color: colors.textMuted,
-                ),
+                Icon(Icons.chevron_right_rounded, color: colors.textMuted),
               ],
             ),
           ),

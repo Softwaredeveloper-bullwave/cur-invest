@@ -53,7 +53,10 @@ class _NativeMarketChartState extends State<NativeMarketChart> {
       return SizedBox(
         height: widget.height,
         child: const Center(
-          child: Text('Chart loading…', style: TextStyle(color: _text, fontSize: 13)),
+          child: Text(
+            'Chart loading…',
+            style: TextStyle(color: _text, fontSize: 13),
+          ),
         ),
       );
     }
@@ -83,9 +86,21 @@ class _NativeMarketChartState extends State<NativeMarketChart> {
                     Expanded(
                       child: GestureDetector(
                         behavior: HitTestBehavior.opaque,
-                        onTapDown: (d) => _setIndexFromX(d.localPosition.dx, chartW, candles.length),
-                        onPanStart: (d) => _setIndexFromX(d.localPosition.dx, chartW, candles.length),
-                        onPanUpdate: (d) => _setIndexFromX(d.localPosition.dx, chartW, candles.length),
+                        onTapDown: (d) => _setIndexFromX(
+                          d.localPosition.dx,
+                          chartW,
+                          candles.length,
+                        ),
+                        onPanStart: (d) => _setIndexFromX(
+                          d.localPosition.dx,
+                          chartW,
+                          candles.length,
+                        ),
+                        onPanUpdate: (d) => _setIndexFromX(
+                          d.localPosition.dx,
+                          chartW,
+                          candles.length,
+                        ),
                         onPanEnd: (_) {
                           setState(() => _hoverIndex = null);
                           widget.onCrosshair?.call(null);
@@ -194,7 +209,10 @@ class _MarketChartPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     canvas.clipRect(Offset.zero & size);
-    canvas.drawRect(Offset.zero & size, Paint()..color = _NativeMarketChartState._bg);
+    canvas.drawRect(
+      Offset.zero & size,
+      Paint()..color = _NativeMarketChartState._bg,
+    );
 
     if (candles.isEmpty) return;
 
@@ -241,7 +259,12 @@ class _MarketChartPainter extends CustomPainter {
               ? _NativeMarketChartState._green.withValues(alpha: 0.35)
               : _NativeMarketChartState._red.withValues(alpha: 0.35);
           canvas.drawRect(
-            Rect.fromLTWH(x - bodyW / 2, volTop + volumeHeight - h - 2, bodyW, h),
+            Rect.fromLTWH(
+              x - bodyW / 2,
+              volTop + volumeHeight - h - 2,
+              bodyW,
+              h,
+            ),
             Paint()..color = color,
           );
         }
@@ -283,7 +306,8 @@ class _MarketChartPainter extends CustomPainter {
     drawSma(sma50, _NativeMarketChartState._sma50);
 
     // Main series
-    if (chartType == MarketChartType.line || chartType == MarketChartType.area) {
+    if (chartType == MarketChartType.line ||
+        chartType == MarketChartType.area) {
       final path = Path();
       final areaPath = Path();
       for (var i = 0; i < count; i++) {
@@ -325,7 +349,9 @@ class _MarketChartPainter extends CustomPainter {
       for (var i = 0; i < count; i++) {
         final c = candles[i];
         final x = gap * i + gap / 2;
-        final color = c.isBullish ? _NativeMarketChartState._green : _NativeMarketChartState._red;
+        final color = c.isBullish
+            ? _NativeMarketChartState._green
+            : _NativeMarketChartState._red;
 
         canvas.drawLine(
           Offset(x, yMain(c.high)),
@@ -338,7 +364,12 @@ class _MarketChartPainter extends CustomPainter {
         final top = yMain(math.max(c.open, c.close));
         final bottom = yMain(math.min(c.open, c.close));
         canvas.drawRect(
-          Rect.fromLTRB(x - bodyW / 2, top, x + bodyW / 2, math.max(bottom, top + 2)),
+          Rect.fromLTRB(
+            x - bodyW / 2,
+            top,
+            x + bodyW / 2,
+            math.max(bottom, top + 2),
+          ),
           Paint()..color = color,
         );
       }
@@ -410,18 +441,35 @@ class _PriceAxisPainter extends CustomPainter {
     final yMax = maxHigh + pad;
     range = yMax - yMin;
 
-    const style = TextStyle(color: _NativeMarketChartState._text, fontSize: 9, fontWeight: FontWeight.w600);
+    const style = TextStyle(
+      color: _NativeMarketChartState._text,
+      fontSize: 9,
+      fontWeight: FontWeight.w600,
+    );
     for (var i = 0; i <= 4; i++) {
       final price = yMax - range * i / 4;
       final y = 4 + (mainHeight - 8) * i / 4;
-      _drawText(canvas, price.toStringAsFixed(2), Offset(2, y - 6), style, size.width);
+      _drawText(
+        canvas,
+        price.toStringAsFixed(2),
+        Offset(2, y - 6),
+        style,
+        size.width,
+      );
     }
 
     final lp = lastPrice ?? candles.last.close;
     final lpY = mainHeight - ((lp - yMin) / range) * (mainHeight - 8) - 4;
     final tag = lp.toStringAsFixed(2);
     final tp = TextPainter(
-      text: TextSpan(text: tag, style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w800)),
+      text: TextSpan(
+        text: tag,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 9,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
       textDirection: TextDirection.ltr,
     )..layout();
     final rect = RRect.fromRectAndRadius(
@@ -432,7 +480,13 @@ class _PriceAxisPainter extends CustomPainter {
     tp.paint(canvas, Offset(4, lpY - 7));
   }
 
-  void _drawText(Canvas canvas, String text, Offset offset, TextStyle style, double maxWidth) {
+  void _drawText(
+    Canvas canvas,
+    String text,
+    Offset offset,
+    TextStyle style,
+    double maxWidth,
+  ) {
     final tp = TextPainter(
       text: TextSpan(text: text, style: style),
       textDirection: TextDirection.ltr,
@@ -453,7 +507,11 @@ class _TimeAxisPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     if (candles.isEmpty) return;
-    const style = TextStyle(color: _NativeMarketChartState._text, fontSize: 9, fontWeight: FontWeight.w500);
+    const style = TextStyle(
+      color: _NativeMarketChartState._text,
+      fontSize: 9,
+      fontWeight: FontWeight.w500,
+    );
     final count = candles.length;
     final labels = 4;
     for (var i = 0; i <= labels; i++) {

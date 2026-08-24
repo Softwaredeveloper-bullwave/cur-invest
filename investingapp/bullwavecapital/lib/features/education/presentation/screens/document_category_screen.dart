@@ -35,11 +35,16 @@ class _DocumentCategoryScreenState extends State<DocumentCategoryScreen> {
       _loadError = null;
     });
     final education = context.read<EducationProvider>();
-    final category = await education.fetchCategory(widget.categoryId, force: force);
+    final category = await education.fetchCategory(
+      widget.categoryId,
+      force: force,
+    );
     if (!mounted) return;
     setState(() {
       _category = category;
-      _loadError = category == null ? (education.error ?? 'Category not found') : null;
+      _loadError = category == null
+          ? (education.error ?? 'Category not found')
+          : null;
       _loading = false;
     });
   }
@@ -73,7 +78,10 @@ class _DocumentCategoryScreenState extends State<DocumentCategoryScreen> {
                   style: ThemeAType.body(color: p.textGrey),
                 ),
                 const SizedBox(height: 16),
-                FilledButton(onPressed: () => _load(force: true), child: const Text('Retry')),
+                FilledButton(
+                  onPressed: () => _load(force: true),
+                  child: const Text('Retry'),
+                ),
               ],
             ),
           ),
@@ -82,7 +90,9 @@ class _DocumentCategoryScreenState extends State<DocumentCategoryScreen> {
     }
 
     final isQuizCategory = category.id == 'quizzes';
-    final items = isQuizCategory ? category.quizzes.length : category.articles.length;
+    final items = isQuizCategory
+        ? category.quizzes.length
+        : category.articles.length;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -112,7 +122,9 @@ class _DocumentCategoryScreenState extends State<DocumentCategoryScreen> {
                 child: Column(
                   children: [
                     Icon(
-                      isQuizCategory ? Icons.quiz_outlined : Icons.article_outlined,
+                      isQuizCategory
+                          ? Icons.quiz_outlined
+                          : Icons.article_outlined,
                       size: 40,
                       color: p.textMuted,
                     ),
@@ -230,7 +242,10 @@ class _QuizListTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(quiz.title, style: ThemeAType.cardTitle(color: p.textDark, size: 15)),
+                Text(
+                  quiz.title,
+                  style: ThemeAType.cardTitle(color: p.textDark, size: 15),
+                ),
                 const SizedBox(height: 4),
                 Text(
                   questionCount > 0
@@ -243,7 +258,10 @@ class _QuizListTile extends StatelessWidget {
                 if (attempt != null) ...[
                   const SizedBox(height: 6),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
                       color: (attempt.percent >= 50 ? p.positive : p.negative)
                           .withValues(alpha: 0.12),
@@ -281,7 +299,10 @@ class _LevelChip extends StatelessWidget {
         color: ThemeA.primary.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
       ),
-      child: Text(label, style: ThemeAType.label(size: 10, color: ThemeA.primary)),
+      child: Text(
+        label,
+        style: ThemeAType.label(size: 10, color: ThemeA.primary),
+      ),
     );
   }
 }

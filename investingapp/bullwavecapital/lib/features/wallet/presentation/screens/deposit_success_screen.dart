@@ -37,23 +37,36 @@ class _DepositSuccessScreenState extends State<DepositSuccessScreen> {
     if (orderId.isEmpty) {
       setState(() {
         _verifying = false;
-        _verified = true;
+        _verified = false;
+        _error =
+            'Payment reference missing. Return from Cashfree checkout or check your wallet balance.';
       });
-      await context.read<WalletProvider>().loadData();
       return;
     }
 
     final result = await CashfreeCheckoutService.instance.confirmOrder(orderId);
     if (!mounted) return;
 
-    if (result.status == CashfreeCheckoutStatus.success ||
-        result.status == CashfreeCheckoutStatus.unavailable) {
+    if (result.status == CashfreeCheckoutStatus.success) {
       await context.read<WalletProvider>().loadData();
       await refreshAllProviders(context);
       if (!mounted) return;
       setState(() {
         _verifying = false;
         _verified = true;
+      });
+      return;
+    }
+
+    if (result.status == CashfreeCheckoutStatus.unavailable) {
+      await context.read<WalletProvider>().loadData();
+      if (!mounted) return;
+      setState(() {
+        _verifying = false;
+        _verified = false;
+        _error = result.message.isNotEmpty
+            ? result.message
+            : 'Payment received but not confirmed yet. Pull to refresh your wallet.';
       });
       return;
     }
@@ -135,18 +148,25 @@ class _DepositSuccessScreenState extends State<DepositSuccessScreen> {
                   color: AppColors.success.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.check_circle, color: AppColors.success, size: 72),
+                child: const Icon(
+                  Icons.check_circle,
+                  color: AppColors.success,
+                  size: 72,
+                ),
               ),
               const SizedBox(height: AppDimensions.paddingLg),
-              Text('Deposit Successful!', style: Theme.of(context).textTheme.headlineLarge),
+              Text(
+                'Deposit Successful!',
+                style: Theme.of(context).textTheme.headlineLarge,
+              ),
               const SizedBox(height: 8),
               if (amount > 0) ...[
                 Text(
                   CurrencyFormatter.format(amount),
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        color: AppColors.green,
-                        fontWeight: FontWeight.w700,
-                      ),
+                    color: AppColors.green,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 const SizedBox(height: 8),
               ],

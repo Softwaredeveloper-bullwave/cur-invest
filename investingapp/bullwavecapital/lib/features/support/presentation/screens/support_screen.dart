@@ -25,7 +25,9 @@ class _SupportScreenState extends State<SupportScreen> {
     super.initState();
     final ticketId = widget.initialTicketId;
     if (ticketId != null && ticketId.isNotEmpty) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _openInitialTicket(ticketId));
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _openInitialTicket(ticketId),
+      );
     }
   }
 
@@ -56,9 +58,7 @@ class _SupportScreenState extends State<SupportScreen> {
     if (provider.isLoading) {
       return Scaffold(
         appBar: const CustomAppBar(title: 'Support'),
-        body: Center(
-          child: CircularProgressIndicator(color: colors.primary),
-        ),
+        body: Center(child: CircularProgressIndicator(color: colors.primary)),
       );
     }
 
@@ -108,7 +108,8 @@ class _SupportScreenState extends State<SupportScreen> {
                       children: [
                         Text(
                           'How can we help?',
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(
                                 color: AppColors.onBrandPrimary,
                                 fontWeight: FontWeight.w800,
                               ),
@@ -116,14 +117,16 @@ class _SupportScreenState extends State<SupportScreen> {
                         const SizedBox(height: 6),
                         Text(
                           'Call or SMS ${SupportContact.displayPhone}',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
                                 color: AppColors.onBrandPrimaryMuted,
                                 fontWeight: FontWeight.w600,
                               ),
                         ),
                         Text(
                           SupportContact.email,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
                                 color: AppColors.onBrandPrimaryMuted,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -166,30 +169,33 @@ class _SupportScreenState extends State<SupportScreen> {
             Text(
               'FAQ',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: colors.textPrimary,
-                    fontWeight: FontWeight.w700,
-                  ),
+                color: colors.textPrimary,
+                fontWeight: FontWeight.w700,
+              ),
             ),
             const SizedBox(height: AppDimensions.paddingSm),
             ...provider.faqs.map(
               (faq) => Card(
                 margin: const EdgeInsets.only(bottom: 8),
                 child: ExpansionTile(
-                  tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  tilePadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 4,
+                  ),
                   title: Text(
                     faq.question,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: colors.textPrimary,
-                          fontWeight: FontWeight.w600,
-                        ),
+                      color: colors.textPrimary,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   children: [
                     Text(
                       faq.answer,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: colors.textSecondary,
-                            height: 1.5,
-                          ),
+                        color: colors.textSecondary,
+                        height: 1.5,
+                      ),
                     ),
                   ],
                 ),
@@ -199,9 +205,9 @@ class _SupportScreenState extends State<SupportScreen> {
             Text(
               'Raise a Ticket',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: colors.textPrimary,
-                    fontWeight: FontWeight.w700,
-                  ),
+                color: colors.textPrimary,
+                fontWeight: FontWeight.w700,
+              ),
             ),
             const SizedBox(height: AppDimensions.paddingSm),
             ...provider.tickets.map(
@@ -227,7 +233,9 @@ class _SupportScreenState extends State<SupportScreen> {
             const SizedBox(height: AppDimensions.paddingMd),
             ElevatedButton.icon(
               onPressed: () async {
-                final success = await context.read<SupportProvider>().raiseTicket(
+                final success = await context
+                    .read<SupportProvider>()
+                    .raiseTicket(
                       'General inquiry',
                       message: 'Raised from mobile app',
                     );
@@ -245,7 +253,10 @@ class _SupportScreenState extends State<SupportScreen> {
   }
 }
 
-Future<void> _openTicketThread(BuildContext context, SupportTicketModel ticket) async {
+Future<void> _openTicketThread(
+  BuildContext context,
+  SupportTicketModel ticket,
+) async {
   final provider = context.read<SupportProvider>();
   final detail = await provider.loadTicketDetail(ticket.id) ?? ticket;
   if (!context.mounted) return;
@@ -278,8 +289,8 @@ Future<void> _openTicketThread(BuildContext context, SupportTicketModel ticket) 
                     child: Text(
                       detail.subject,
                       style: Theme.of(ctx).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w800,
-                          ),
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                   ),
                   _TicketStatusBadge(status: detail.status),
@@ -293,11 +304,16 @@ Future<void> _openTicketThread(BuildContext context, SupportTicketModel ticket) 
                   decoration: BoxDecoration(
                     color: AppColors.green.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.green.withValues(alpha: 0.25)),
+                    border: Border.all(
+                      color: AppColors.green.withValues(alpha: 0.25),
+                    ),
                   ),
                   child: Text(
                     detail.resolutionNote,
-                    style: const TextStyle(color: AppColors.greenSoft, height: 1.4),
+                    style: const TextStyle(
+                      color: AppColors.greenSoft,
+                      height: 1.4,
+                    ),
                   ),
                 ),
               ],
@@ -314,7 +330,9 @@ Future<void> _openTicketThread(BuildContext context, SupportTicketModel ticket) 
                       ),
                     ...messages.map(
                       (msg) => _SupportMessageBubble(
-                        author: msg.authorName.isNotEmpty ? msg.authorName : msg.authorRole,
+                        author: msg.authorName.isNotEmpty
+                            ? msg.authorName
+                            : msg.authorRole,
                         body: msg.body,
                         isAdmin: msg.authorRole == 'admin',
                       ),
@@ -371,7 +389,10 @@ class _SupportMessageBubble extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 6),
-          Text(body, style: TextStyle(color: colors.textSecondary, height: 1.45)),
+          Text(
+            body,
+            style: TextStyle(color: colors.textSecondary, height: 1.45),
+          ),
         ],
       ),
     );
@@ -387,7 +408,9 @@ class _TicketStatusBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final isOpen = status == 'Open';
     final fg = isOpen ? AppColors.warning : AppColors.success;
-    final bg = isOpen ? AppColors.warning.withValues(alpha: 0.18) : AppColors.success.withValues(alpha: 0.18);
+    final bg = isOpen
+        ? AppColors.warning.withValues(alpha: 0.18)
+        : AppColors.success.withValues(alpha: 0.18);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -398,11 +421,7 @@ class _TicketStatusBadge extends StatelessWidget {
       ),
       child: Text(
         status,
-        style: TextStyle(
-          color: fg,
-          fontSize: 12,
-          fontWeight: FontWeight.w700,
-        ),
+        style: TextStyle(color: fg, fontSize: 12, fontWeight: FontWeight.w700),
       ),
     );
   }
@@ -438,9 +457,9 @@ class _SupportAction extends StatelessWidget {
               Text(
                 label,
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: colors.textPrimary,
-                      fontWeight: FontWeight.w700,
-                    ),
+                  color: colors.textPrimary,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ],
           ),

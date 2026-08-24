@@ -41,6 +41,7 @@ class SendOtpResult {
   final String? devOtp;
   final String otpMode;
   final UserModel? user;
+
   /// True when this phone already has an account (returning user).
   final bool isRegistered;
 
@@ -51,6 +52,7 @@ class VerifyOtpResult {
   const VerifyOtpResult({required this.user, required this.isNewUser});
 
   final UserModel user;
+
   /// True when the account was created on this OTP verification (first sign-up).
   final bool isNewUser;
 }
@@ -62,6 +64,8 @@ class BullwaveApi {
   final _client = ApiClient.instance;
 
   Future<void> init() => _client.loadToken();
+
+  Future<bool> refreshAccessToken() => _client.refreshAccessToken();
 
   // ── Auth ──
 
@@ -125,12 +129,19 @@ class BullwaveApi {
       throw ApiException(500, 'Invalid server response. Please try again.');
     }
 
-    await TokenStorage.saveTokens(access: access, refresh: refresh);
-    await _client.setAccessToken(access);
-    return VerifyOtpResult(
-      user: parseUser(data['user'] as Map<String, dynamic>),
-      isNewUser: data['isNewUser'] as bool? ?? false,
-    );
+    try {
+      await TokenStorage.saveTokens(access: access, refresh: refresh);
+      await _client.setAccessToken(access);
+      return VerifyOtpResult(
+        user: parseUser(data['user'] as Map<String, dynamic>),
+        isNewUser: data['isNewUser'] as bool? ?? false,
+      );
+    } catch (e) {
+      await TokenStorage.clear();
+      await _client.setAccessToken(null);
+      if (e is ApiException) rethrow;
+      throw ApiException(500, 'Invalid server response. Please try again.');
+    }
   }
 
   Future<SendOtpResult> sendEmailOtp(String email) async {
@@ -594,7 +605,8 @@ class BullwaveApi {
 
   Future<SupportTicketModel> getSupportTicketDetail(String ticketId) async {
     final data =
-        await _client.get('/support/tickets/$ticketId/') as Map<String, dynamic>;
+        await _client.get('/support/tickets/$ticketId/')
+            as Map<String, dynamic>;
     return parseSupportTicket(data);
   }
 
@@ -1307,7 +1319,8 @@ class BullwaveApi {
 
   Future<InvestmentDocCategory> getEducationCategory(String slug) async {
     final data =
-        await _client.get('/education/categories/$slug/') as Map<String, dynamic>;
+        await _client.get('/education/categories/$slug/')
+            as Map<String, dynamic>;
     return parseEducationCategory(data);
   }
 
@@ -1315,9 +1328,11 @@ class BullwaveApi {
     String categorySlug,
     String articleSlug,
   ) async {
-    final data = await _client.get(
-          '/education/categories/$categorySlug/articles/$articleSlug/',
-        ) as Map<String, dynamic>;
+    final data =
+        await _client.get(
+              '/education/categories/$categorySlug/articles/$articleSlug/',
+            )
+            as Map<String, dynamic>;
     return parseEducationArticle(data);
   }
 
@@ -1325,10 +1340,12 @@ class BullwaveApi {
     String quizSlug,
     List<int?> answers,
   ) async {
-    final data = await _client.post(
-          '/education/quizzes/$quizSlug/submit/',
-          body: {'answers': answers},
-        ) as Map<String, dynamic>;
+    final data =
+        await _client.post(
+              '/education/quizzes/$quizSlug/submit/',
+              body: {'answers': answers},
+            )
+            as Map<String, dynamic>;
     return parseQuizAttemptResult(data);
   }
 

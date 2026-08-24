@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/api/auth_session_guard.dart';
 import '../../../../core/api/bullwave_api.dart';
 import '../../../../models/investment_model.dart';
 
@@ -39,6 +40,7 @@ class InvestmentProvider extends ChangeNotifier {
   }
 
   Future<void> _loadInitial() async {
+    if (!await hasStoredAccessToken()) return;
     try {
       _plans = await _api.getInvestmentPlans();
       _plan = _plans.isNotEmpty ? _plans.first : null;
@@ -61,9 +63,7 @@ class InvestmentProvider extends ChangeNotifier {
   }
 
   void toggleFaq(int index) {
-    _faqs[index] = _faqs[index].copyWith(
-      isExpanded: !_faqs[index].isExpanded,
-    );
+    _faqs[index] = _faqs[index].copyWith(isExpanded: !_faqs[index].isExpanded);
     notifyListeners();
   }
 

@@ -43,7 +43,9 @@ class ImagePickHelper {
     if (kIsWeb || !Platform.isIOS) return false;
     if (_cachedIosWithoutCamera != null) return _cachedIosWithoutCamera!;
     try {
-      final cameras = await availableCameras().timeout(const Duration(seconds: 4));
+      final cameras = await availableCameras().timeout(
+        const Duration(seconds: 4),
+      );
       _cachedIosWithoutCamera = cameras.isEmpty;
     } catch (_) {
       _cachedIosWithoutCamera = true;
@@ -55,7 +57,9 @@ class ImagePickHelper {
     if (isDesktop) return true;
     if (Platform.isIOS && await isIosWithoutCamera()) return false;
     try {
-      final cameras = await availableCameras().timeout(const Duration(seconds: 5));
+      final cameras = await availableCameras().timeout(
+        const Duration(seconds: 5),
+      );
       return cameras.isNotEmpty;
     } catch (_) {
       return false;
@@ -77,7 +81,11 @@ class ImagePickHelper {
         requestPermission: false,
       );
       if (file == null) return null;
-      return _compress(await file.readAsBytes(), maxWidth: maxWidth, quality: imageQuality);
+      return _compress(
+        await file.readAsBytes(),
+        maxWidth: maxWidth,
+        quality: imageQuality,
+      );
     }
 
     if (Platform.isIOS && await isIosWithoutCamera()) {
@@ -106,7 +114,11 @@ class ImagePickHelper {
         imageQuality: imageQuality,
       );
       if (file != null) {
-        return _compress(await file.readAsBytes(), maxWidth: maxWidth, quality: imageQuality);
+        return _compress(
+          await file.readAsBytes(),
+          maxWidth: maxWidth,
+          quality: imageQuality,
+        );
       }
     } catch (_) {}
 
@@ -143,9 +155,12 @@ class ImagePickHelper {
       requestPermission: true,
     );
     if (file == null) return null;
-    return _compress(await file.readAsBytes(), maxWidth: maxWidth, quality: imageQuality);
+    return _compress(
+      await file.readAsBytes(),
+      maxWidth: maxWidth,
+      quality: imageQuality,
+    );
   }
-
 
   /// Desktop gallery uses [file_selector] — no photos permission needed.
   static bool get _galleryUsesFileSelector => isDesktop;
@@ -163,7 +178,8 @@ class ImagePickHelper {
       return status.isGranted || status.isLimited;
     }
 
-    if (_galleryUsesFileSelector || _androidGalleryUsesSystemPicker) return true;
+    if (_galleryUsesFileSelector || _androidGalleryUsesSystemPicker)
+      return true;
 
     switch (defaultTargetPlatform) {
       case TargetPlatform.iOS:
@@ -212,7 +228,9 @@ class ImagePickHelper {
     }
     final decoded = img.decodeImage(raw);
     if (decoded == null) {
-      throw const FormatException('Could not process photo. Try another JPEG or PNG image.');
+      throw const FormatException(
+        'Could not process photo. Try another JPEG or PNG image.',
+      );
     }
     final resized = decoded.width > 1024
         ? img.copyResize(decoded, width: 1024)
@@ -239,7 +257,11 @@ class ImagePickHelper {
 
     if (source == ImageSource.camera && isDesktop) {
       if (context == null) return null;
-      return _captureDesktopPhoto(context, maxWidth: maxWidth, imageQuality: imageQuality);
+      return _captureDesktopPhoto(
+        context,
+        maxWidth: maxWidth,
+        imageQuality: imageQuality,
+      );
     }
 
     return _picker.pickImage(
@@ -247,8 +269,9 @@ class ImagePickHelper {
       maxWidth: maxWidth,
       maxHeight: maxHeight,
       imageQuality: imageQuality,
-      preferredCameraDevice:
-          source == ImageSource.camera ? CameraDevice.front : CameraDevice.rear,
+      preferredCameraDevice: source == ImageSource.camera
+          ? CameraDevice.front
+          : CameraDevice.rear,
     );
   }
 
@@ -264,19 +287,32 @@ class ImagePickHelper {
     );
     if (bytes == null || bytes.isEmpty) return null;
 
-    final compressed = _compress(bytes, maxWidth: maxWidth, quality: imageQuality);
+    final compressed = _compress(
+      bytes,
+      maxWidth: maxWidth,
+      quality: imageQuality,
+    );
     final dir = await getTemporaryDirectory();
-    final path = '${dir.path}/capture_${DateTime.now().millisecondsSinceEpoch}.jpg';
+    final path =
+        '${dir.path}/capture_${DateTime.now().millisecondsSinceEpoch}.jpg';
     final file = File(path);
     await file.writeAsBytes(compressed);
     return XFile(path);
   }
 
-  static Uint8List _compress(Uint8List bytes, {required double maxWidth, required int quality}) {
+  static Uint8List _compress(
+    Uint8List bytes, {
+    required double maxWidth,
+    required int quality,
+  }) {
     final decoded = img.decodeImage(bytes);
     if (decoded == null) return bytes;
-    final resized = decoded.width > maxWidth ? img.copyResize(decoded, width: maxWidth.round()) : decoded;
-    return Uint8List.fromList(img.encodeJpg(resized, quality: quality.clamp(1, 100)));
+    final resized = decoded.width > maxWidth
+        ? img.copyResize(decoded, width: maxWidth.round())
+        : decoded;
+    return Uint8List.fromList(
+      img.encodeJpg(resized, quality: quality.clamp(1, 100)),
+    );
   }
 
   static String permissionDeniedMessage(ImageSource source) {
@@ -329,7 +365,9 @@ class _DesktopCameraDialogState extends State<_DesktopCameraDialog> {
 
   Future<void> _openCamera() async {
     try {
-      final cameras = await availableCameras().timeout(const Duration(seconds: 10));
+      final cameras = await availableCameras().timeout(
+        const Duration(seconds: 10),
+      );
       if (cameras.isEmpty) throw StateError('No camera found');
 
       final ordered = <CameraDescription>[
@@ -398,25 +436,28 @@ class _DesktopCameraDialogState extends State<_DesktopCameraDialog> {
               child: _initializing
                   ? const Center(child: CircularProgressIndicator())
                   : _error != null
-                      ? Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Text(
-                              _error!,
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(color: Colors.white70),
-                            ),
-                          ),
-                        )
-                      : _controller != null && _controller!.value.isInitialized
-                          ? CameraPreview(_controller!)
-                          : const SizedBox.shrink(),
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Text(
+                          _error!,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: Colors.white70),
+                        ),
+                      ),
+                    )
+                  : _controller != null && _controller!.value.isInitialized
+                  ? CameraPreview(_controller!)
+                  : const SizedBox.shrink(),
             ),
           ),
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
         if (_controller != null && _error == null)
           FilledButton(onPressed: _capture, child: const Text('Capture')),
       ],

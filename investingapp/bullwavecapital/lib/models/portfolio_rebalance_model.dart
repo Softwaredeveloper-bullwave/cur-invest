@@ -50,7 +50,8 @@ class RebalanceAction {
     required this.detail,
   });
 
-  factory RebalanceAction.fromJson(Map<String, dynamic> json) => RebalanceAction(
+  factory RebalanceAction.fromJson(Map<String, dynamic> json) =>
+      RebalanceAction(
         type: json['type'] as String? ?? '',
         label: json['label'] as String? ?? '',
         detail: json['detail'] as String? ?? '',

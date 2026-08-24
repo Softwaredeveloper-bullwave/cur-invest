@@ -15,6 +15,8 @@ class ApiClient {
   static final ApiClient instance = ApiClient._();
 
   String? _accessToken;
+  bool _isRefreshing = false;
+  Completer<bool>? _refreshCompleter;
 
   Future<void> setAccessToken(String? token) async {
     _accessToken = token;
@@ -24,10 +26,13 @@ class ApiClient {
     _accessToken = await TokenStorage.getAccessToken();
   }
 
-  Map<String, String> _headers({bool auth = true, bool json = true}) {
+  Future<Map<String, String>> _headers({bool auth = true, bool json = true}) async {
+    if (auth && (_accessToken == null || _accessToken!.isEmpty)) {
+      _accessToken = await TokenStorage.getAccessToken();
+    }
     final headers = <String, String>{'Accept': 'application/json'};
     if (json) headers['Content-Type'] = 'application/json';
-    if (auth && _accessToken != null) {
+    if (auth && _accessToken != null && _accessToken!.isNotEmpty) {
       headers['Authorization'] = 'Bearer $_accessToken';
     }
     return headers;
@@ -41,8 +46,67 @@ class ApiClient {
     return Uri.parse('$base$normalized').replace(queryParameters: query);
   }
 
+  Future<bool> refreshAccessToken() async {
+    if (_isRefreshing && _refreshCompleter != null) {
+      return _refreshCompleter!.future;
+    }
+
+    _isRefreshing = true;
+    _refreshCompleter = Completer<bool>();
+    try {
+      final refresh = await TokenStorage.getRefreshToken();
+      if (refresh == null || refresh.isEmpty) {
+        _refreshCompleter!.complete(false);
+        return false;
+      }
+
+      final response = await http
+          .post(
+            _uri('/auth/token/refresh/'),
+            headers: const {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+            },
+            body: jsonEncode({'refresh': refresh}),
+          )
+          .timeout(const Duration(seconds: 15));
+
+      if (response.statusCode != 200) {
+        _refreshCompleter!.complete(false);
+        return false;
+      }
+
+      final body = jsonDecode(response.body);
+      if (body is! Map<String, dynamic>) {
+        _refreshCompleter!.complete(false);
+        return false;
+      }
+
+      final access = body['access'] as String?;
+      if (access == null || access.isEmpty) {
+        _refreshCompleter!.complete(false);
+        return false;
+      }
+
+      final rotatedRefresh = body['refresh'] as String? ?? refresh;
+      await TokenStorage.saveTokens(access: access, refresh: rotatedRefresh);
+      _accessToken = access;
+      _refreshCompleter!.complete(true);
+      return true;
+    } catch (_) {
+      _refreshCompleter!.complete(false);
+      return false;
+    } finally {
+      _isRefreshing = false;
+      _refreshCompleter = null;
+    }
+  }
+
   void _report(Object error, StackTrace stack, String path, {int? statusCode}) {
-    if (statusCode == 401 || statusCode == 403 || path.contains('/client-errors/')) return;
+    if (statusCode == 401 ||
+        statusCode == 403 ||
+        path.contains('/client-errors/'))
+      return;
     unawaited(
       AppErrorReporter.instance.report(
         error,
@@ -79,7 +143,12 @@ class ApiClient {
           _friendlyServerError(response.statusCode, body),
         );
         if (response.statusCode >= 500) {
-          _report(error, StackTrace.current, path, statusCode: response.statusCode);
+          _report(
+            error,
+            StackTrace.current,
+            path,
+            statusCode: response.statusCode,
+          );
         }
         throw error;
       }
@@ -98,11 +167,46 @@ class ApiClient {
       }
       final error = ApiException(response.statusCode, message);
       if (response.statusCode >= 500) {
-        _report(error, StackTrace.current, path, statusCode: response.statusCode);
+        _report(
+          error,
+          StackTrace.current,
+          path,
+          statusCode: response.statusCode,
+        );
       }
       throw error;
     }
     return body;
+  }
+
+  Future<dynamic> _request(
+    Future<http.Response> Function(Map<String, String> headers) send,
+    String path, {
+    bool auth = true,
+    bool json = true,
+    Duration? timeout,
+  }) async {
+    try {
+      var headers = await _headers(auth: auth, json: json);
+      var response = await send(headers).timeout(
+        timeout ?? const Duration(seconds: 20),
+      );
+
+      if (auth && response.statusCode == 401) {
+        final refreshed = await refreshAccessToken();
+        if (refreshed) {
+          headers = await _headers(auth: auth, json: json);
+          response = await send(headers).timeout(
+            timeout ?? const Duration(seconds: 20),
+          );
+        }
+      }
+
+      return _decode(response, path);
+    } catch (error, stack) {
+      if (error is! ApiException) _report(error, stack, path);
+      rethrow;
+    }
   }
 
   Future<dynamic> get(
@@ -111,18 +215,12 @@ class ApiClient {
     bool auth = true,
     Duration? timeout,
   }) async {
-    try {
-      final response = await http
-          .get(
-            _uri(path, query),
-            headers: _headers(auth: auth),
-          )
-          .timeout(timeout ?? const Duration(seconds: 20));
-      return _decode(response, path);
-    } catch (error, stack) {
-      if (error is! ApiException) _report(error, stack, path);
-      rethrow;
-    }
+    return _request(
+      (headers) => http.get(_uri(path, query), headers: headers),
+      path,
+      auth: auth,
+      timeout: timeout,
+    );
   }
 
   Future<dynamic> post(
@@ -135,56 +233,51 @@ class ApiClient {
     if (kDebugMode) {
       debugPrint('[API] POST ${uri.path}');
     }
-    try {
-      final response = await http
-          .post(
-            uri,
-            headers: _headers(auth: auth),
-            body: body == null ? null : jsonEncode(body),
-          )
-          .timeout(timeout ?? const Duration(seconds: 15));
-      if (kDebugMode) {
-        debugPrint('[API] ${response.statusCode} ${uri.path}');
-      }
-      return _decode(response, path);
-    } catch (e, stack) {
-      if (kDebugMode) {
-        debugPrint('[API] ERROR POST $uri -> $e');
-      }
-      if (e is! ApiException) _report(e, stack, path);
-      rethrow;
+    final result = await _request(
+      (headers) => http.post(
+        uri,
+        headers: headers,
+        body: body == null ? null : jsonEncode(body),
+      ),
+      path,
+      auth: auth,
+      timeout: timeout ?? const Duration(seconds: 15),
+    );
+    if (kDebugMode) {
+      debugPrint('[API] OK ${uri.path}');
     }
+    return result;
   }
 
   Future<dynamic> patch(
     String path, {
     Map<String, dynamic>? body,
     bool auth = true,
+    Duration? timeout,
   }) async {
-    try {
-      final response = await http.patch(
+    return _request(
+      (headers) => http.patch(
         _uri(path),
-        headers: _headers(auth: auth),
+        headers: headers,
         body: body == null ? null : jsonEncode(body),
-      );
-      return _decode(response, path);
-    } catch (error, stack) {
-      if (error is! ApiException) _report(error, stack, path);
-      rethrow;
-    }
+      ),
+      path,
+      auth: auth,
+      timeout: timeout ?? const Duration(seconds: 20),
+    );
   }
 
-  Future<dynamic> delete(String path, {bool auth = true}) async {
-    try {
-      final response = await http.delete(
-        _uri(path),
-        headers: _headers(auth: auth),
-      );
-      return _decode(response, path);
-    } catch (error, stack) {
-      if (error is! ApiException) _report(error, stack, path);
-      rethrow;
-    }
+  Future<dynamic> delete(
+    String path, {
+    bool auth = true,
+    Duration? timeout,
+  }) async {
+    return _request(
+      (headers) => http.delete(_uri(path), headers: headers),
+      path,
+      auth: auth,
+      timeout: timeout ?? const Duration(seconds: 20),
+    );
   }
 
   Future<dynamic> multipart(
@@ -195,12 +288,31 @@ class ApiClient {
     Duration? timeout,
   }) async {
     try {
-      final request = http.MultipartRequest('POST', _uri(path));
-      request.headers.addAll(_headers(auth: auth, json: false));
-      request.fields.addAll(fields);
-      request.files.addAll(files);
-      final streamed = await request.send().timeout(timeout ?? const Duration(seconds: 60));
-      final response = await http.Response.fromStream(streamed);
+      Future<http.StreamedResponse> send(Map<String, String> headers) async {
+        final request = http.MultipartRequest('POST', _uri(path));
+        request.headers.addAll(headers);
+        request.fields.addAll(fields);
+        request.files.addAll(files);
+        return request.send();
+      }
+
+      var headers = await _headers(auth: auth, json: false);
+      var streamed = await send(headers).timeout(
+        timeout ?? const Duration(seconds: 60),
+      );
+      var response = await http.Response.fromStream(streamed);
+
+      if (auth && response.statusCode == 401) {
+        final refreshed = await refreshAccessToken();
+        if (refreshed) {
+          headers = await _headers(auth: auth, json: false);
+          streamed = await send(headers).timeout(
+            timeout ?? const Duration(seconds: 60),
+          );
+          response = await http.Response.fromStream(streamed);
+        }
+      }
+
       return _decode(response, path);
     } catch (error, stack) {
       if (error is! ApiException) _report(error, stack, path);
@@ -216,13 +328,26 @@ class ApiClient {
     Duration? timeout,
   }) async {
     try {
-      final response = await http
-          .post(
-            _uri(path),
-            headers: _headers(auth: auth),
-            body: body == null ? null : jsonEncode(body),
-          )
-          .timeout(timeout ?? const Duration(seconds: 60));
+      Future<http.Response> send(Map<String, String> headers) => http.post(
+        _uri(path),
+        headers: headers,
+        body: body == null ? null : jsonEncode(body),
+      );
+
+      var headers = await _headers(auth: auth, json: true);
+      var response = await send(headers).timeout(
+        timeout ?? const Duration(seconds: 60),
+      );
+
+      if (auth && response.statusCode == 401) {
+        final refreshed = await refreshAccessToken();
+        if (refreshed) {
+          headers = await _headers(auth: auth, json: true);
+          response = await send(headers).timeout(
+            timeout ?? const Duration(seconds: 60),
+          );
+        }
+      }
 
       if (response.statusCode >= 400) {
         String message = 'Request failed (${response.statusCode})';
@@ -237,7 +362,12 @@ class ApiClient {
         }
         final error = ApiException(response.statusCode, message);
         if (response.statusCode >= 500) {
-          _report(error, StackTrace.current, path, statusCode: response.statusCode);
+          _report(
+            error,
+            StackTrace.current,
+            path,
+            statusCode: response.statusCode,
+          );
         }
         throw error;
       }

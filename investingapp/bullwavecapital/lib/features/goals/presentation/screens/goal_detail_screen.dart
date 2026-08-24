@@ -44,7 +44,9 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
     if (msg != null) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
     } else if (provider.error != null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(provider.error!)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(provider.error!)));
     }
   }
 
@@ -53,10 +55,18 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Withdraw to wallet?'),
-        content: const Text('Saved amount will move to your BullWave wallet. You can withdraw to bank from Wallet.'),
+        content: const Text(
+          'Saved amount will move to your BullWave wallet. You can withdraw to bank from Wallet.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Withdraw')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Withdraw'),
+          ),
         ],
       ),
     );
@@ -83,9 +93,17 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
           return ListView(
             padding: const EdgeInsets.all(20),
             children: [
-              Text(goal.title, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
+              Text(
+                goal.title,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
               const SizedBox(height: 4),
-              Text('Ref ${goal.referenceId}', style: TextStyle(color: colors.textMuted, fontSize: 12)),
+              Text(
+                'Ref ${goal.referenceId}',
+                style: TextStyle(color: colors.textMuted, fontSize: 12),
+              ),
               const SizedBox(height: 20),
               ClipRRect(
                 borderRadius: BorderRadius.circular(12),
@@ -99,7 +117,10 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
               const SizedBox(height: 12),
               Text(
                 '${CurrencyFormatter.format(goal.accumulatedAmount)} saved of ${CurrencyFormatter.format(goal.targetAmount)}',
-                style: TextStyle(fontWeight: FontWeight.w700, color: colors.textPrimary),
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: colors.textPrimary,
+                ),
               ),
               const SizedBox(height: 8),
               Wrap(
@@ -109,20 +130,29 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                   GoalReturnBadge(annualReturnRate: goal.annualReturnRate),
                   if (goal.returnsEarned > 0)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.green.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
                         '+${CurrencyFormatter.format(goal.returnsEarned)} earned',
-                        style: const TextStyle(color: AppColors.green, fontWeight: FontWeight.w700, fontSize: 11),
+                        style: const TextStyle(
+                          color: AppColors.green,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 11,
+                        ),
                       ),
                     ),
                 ],
               ),
-              Text('${goal.progressPercent.toStringAsFixed(0)}% complete • ${goal.installmentsDone}/${goal.totalInstallments} months',
-                  style: TextStyle(color: colors.textSecondary, fontSize: 13)),
+              Text(
+                '${goal.progressPercent.toStringAsFixed(0)}% complete • ${goal.installmentsDone}/${goal.totalInstallments} months',
+                style: TextStyle(color: colors.textSecondary, fontSize: 13),
+              ),
               const SizedBox(height: 20),
               Container(
                 padding: const EdgeInsets.all(16),
@@ -139,7 +169,10 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Return outlook', style: TextStyle(fontWeight: FontWeight.w800)),
+                    const Text(
+                      'Return outlook',
+                      style: TextStyle(fontWeight: FontWeight.w800),
+                    ),
                     const SizedBox(height: 12),
                     Row(
                       children: [
@@ -156,7 +189,9 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                         Expanded(
                           child: _MetricTile(
                             label: 'Est. returns',
-                            value: CurrencyFormatter.format(goal.projectedReturns),
+                            value: CurrencyFormatter.format(
+                              goal.projectedReturns,
+                            ),
                             highlight: true,
                           ),
                         ),
@@ -166,8 +201,14 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              _InfoRow(label: 'Monthly installment', value: CurrencyFormatter.format(goal.monthlyContribution)),
-              _InfoRow(label: 'Next due', value: goal.nextContributionDate ?? '—'),
+              _InfoRow(
+                label: 'Monthly installment',
+                value: CurrencyFormatter.format(goal.monthlyContribution),
+              ),
+              _InfoRow(
+                label: 'Next due',
+                value: goal.nextContributionDate ?? '—',
+              ),
               _InfoRow(label: 'Target date', value: goal.targetDate ?? '—'),
               _InfoRow(label: 'Status', value: goal.status.toUpperCase()),
               if (goal.isDue) ...[
@@ -180,20 +221,29 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                   ),
                   child: const Text(
                     'This month\'s installment is due. Pay now to stay on track.',
-                    style: TextStyle(color: AppColors.red, fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                      color: AppColors.red,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 12),
                 PrimaryButton(
-                  label: provider.isSubmitting ? 'Paying…' : 'Pay This Month\'s Installment',
+                  label: provider.isSubmitting
+                      ? 'Paying…'
+                      : 'Pay This Month\'s Installment',
                   isLoading: provider.isSubmitting,
-                  onPressed: provider.isSubmitting ? null : () => _payDue(provider),
+                  onPressed: provider.isSubmitting
+                      ? null
+                      : () => _payDue(provider),
                 ),
               ],
               if (goal.canWithdraw) ...[
                 const SizedBox(height: 12),
                 OutlinedButton(
-                  onPressed: provider.isSubmitting ? null : () => _withdraw(provider),
+                  onPressed: provider.isSubmitting
+                      ? null
+                      : () => _withdraw(provider),
                   child: const Text('Withdraw to Wallet'),
                 ),
               ],
@@ -219,7 +269,13 @@ class _InfoRow extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: TextStyle(color: colors.textSecondary)),
-          Text(value, style: TextStyle(fontWeight: FontWeight.w700, color: colors.textPrimary)),
+          Text(
+            value,
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+              color: colors.textPrimary,
+            ),
+          ),
         ],
       ),
     );
@@ -231,14 +287,21 @@ class _MetricTile extends StatelessWidget {
   final String value;
   final bool highlight;
 
-  const _MetricTile({required this.label, required this.value, this.highlight = false});
+  const _MetricTile({
+    required this.label,
+    required this.value,
+    this.highlight = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: TextStyle(fontSize: 11, color: context.appColors.textMuted)),
+        Text(
+          label,
+          style: TextStyle(fontSize: 11, color: context.appColors.textMuted),
+        ),
         const SizedBox(height: 4),
         Text(
           value,

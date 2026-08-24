@@ -212,9 +212,9 @@ class _OptionChainScreenState extends State<OptionChainScreen> {
                               onTap: loading
                                   ? null
                                   : () => features.loadOptionChain(
-                                        sym,
-                                        expiry: expiry,
-                                      ),
+                                      sym,
+                                      expiry: expiry,
+                                    ),
                             );
                           },
                         ),

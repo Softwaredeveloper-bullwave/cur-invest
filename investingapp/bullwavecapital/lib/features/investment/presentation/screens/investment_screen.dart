@@ -43,33 +43,48 @@ class _InvestmentScreenState extends State<InvestmentScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Invest', style: Theme.of(context).textTheme.headlineLarge),
+                Text(
+                  'Invest',
+                  style: Theme.of(context).textTheme.headlineLarge,
+                ),
                 const SizedBox(height: AppDimensions.paddingMd),
                 TextField(
                   controller: _searchController,
-                  decoration: AppDecorations.pillSearch(context, hint: 'Search funds & plans'),
+                  decoration: AppDecorations.pillSearch(
+                    context,
+                    hint: 'Search funds & plans',
+                  ),
                 ),
                 const SizedBox(height: AppDimensions.paddingMd),
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
-                    children: ['All', 'Low Risk', 'Medium Risk', 'High Risk'].map((risk) {
-                      final selected = _selectedRisk == risk;
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: FilterChip(
-                          label: Text(risk),
-                          selected: selected,
-                          onSelected: (_) => setState(() => _selectedRisk = risk),
-                          selectedColor: AppColors.green.withValues(alpha: 0.15),
-                          checkmarkColor: AppColors.green,
-                          labelStyle: TextStyle(
-                            color: selected ? AppColors.green : colors.textSecondary,
-                            fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                          ),
-                        ),
-                      );
-                    }).toList(),
+                    children: ['All', 'Low Risk', 'Medium Risk', 'High Risk']
+                        .map((risk) {
+                          final selected = _selectedRisk == risk;
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: FilterChip(
+                              label: Text(risk),
+                              selected: selected,
+                              onSelected: (_) =>
+                                  setState(() => _selectedRisk = risk),
+                              selectedColor: AppColors.green.withValues(
+                                alpha: 0.15,
+                              ),
+                              checkmarkColor: AppColors.green,
+                              labelStyle: TextStyle(
+                                color: selected
+                                    ? AppColors.green
+                                    : colors.textSecondary,
+                                fontWeight: selected
+                                    ? FontWeight.w600
+                                    : FontWeight.w400,
+                              ),
+                            ),
+                          );
+                        })
+                        .toList(),
                   ),
                 ),
                 const SizedBox(height: AppDimensions.paddingLg),
@@ -77,10 +92,15 @@ class _InvestmentScreenState extends State<InvestmentScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(provider.plan.name, style: Theme.of(context).textTheme.titleMedium),
+                      Text(
+                        provider.plan.name,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
                       const SizedBox(height: 6),
                       MoneyText(
-                        amount: CurrencyFormatter.format(provider.investmentAmount),
+                        amount: CurrencyFormatter.format(
+                          provider.investmentAmount,
+                        ),
                         fontSize: 32,
                       ),
                       Slider(
@@ -97,13 +117,17 @@ class _InvestmentScreenState extends State<InvestmentScreen> {
                           Expanded(
                             child: _CalcItem(
                               label: 'Monthly Return',
-                              value: CurrencyFormatter.format(provider.expectedMonthlyReturn),
+                              value: CurrencyFormatter.format(
+                                provider.expectedMonthlyReturn,
+                              ),
                             ),
                           ),
                           Expanded(
                             child: _CalcItem(
                               label: 'Annual Return',
-                              value: CurrencyFormatter.format(provider.estimatedAnnualReturn),
+                              value: CurrencyFormatter.format(
+                                provider.estimatedAnnualReturn,
+                              ),
                             ),
                           ),
                         ],
@@ -172,7 +196,14 @@ class _CalcItem extends StatelessWidget {
       children: [
         Text(label, style: Theme.of(context).textTheme.bodySmall),
         const SizedBox(height: 4),
-        Text(value, style: const TextStyle(color: AppColors.green, fontWeight: FontWeight.w700, fontSize: 15)),
+        Text(
+          value,
+          style: const TextStyle(
+            color: AppColors.green,
+            fontWeight: FontWeight.w700,
+            fontSize: 15,
+          ),
+        ),
       ],
     );
   }

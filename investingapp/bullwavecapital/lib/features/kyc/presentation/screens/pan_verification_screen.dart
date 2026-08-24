@@ -56,26 +56,24 @@ class _PanVerificationScreenState extends State<PanVerificationScreen> {
     if (!_kycConsent) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
-            'Please authorize KYC verification to continue.',
-          ),
+          content: Text('Please authorize KYC verification to continue.'),
         ),
       );
       return;
     }
     final pan = _panController.text.toUpperCase();
     if (!RegExp(r'^[A-Z]{5}[0-9]{4}[A-Z]$').hasMatch(pan)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter a valid PAN number')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Enter a valid PAN number')));
       return;
     }
     final kyc = context.read<KycFlowProvider>();
     final verified = await kyc.verifyPan(pan, holderName: _nameController.text);
     if (!mounted || !verified) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('PAN verified successfully.')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('PAN verified successfully.')));
     OnboardingFlowNavigator.goToNextKycStep(context, kyc);
   }
 
@@ -93,12 +91,12 @@ class _PanVerificationScreenState extends State<PanVerificationScreen> {
                 'Verify your PAN',
                 style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
               ),
-                const SizedBox(height: 8),
-                Text(
-                  'Your PAN is verified in real time against Income Tax Department records. '
-                  'Use the exact legal name printed on your PAN card.',
-                  style: TextStyle(color: Colors.grey.shade600),
-                ),
+              const SizedBox(height: 8),
+              Text(
+                'Your PAN is verified in real time against Income Tax Department records. '
+                'Use the exact legal name printed on your PAN card.',
+                style: TextStyle(color: Colors.grey.shade600),
+              ),
               const SizedBox(height: 24),
               if (!s.panVerified) ...[
                 KycConsentCard(
@@ -113,11 +111,15 @@ class _PanVerificationScreenState extends State<PanVerificationScreen> {
                   controller: _panController,
                   label: 'PAN Number',
                   hint: 'ABCDE1234F',
-                  inputFormatters: [PanInputFormatter(), LengthLimitingTextInputFormatter(10)],
-                  onChanged: (v) => _panController.value = _panController.value.copyWith(
-                    text: v.toUpperCase(),
-                    selection: TextSelection.collapsed(offset: v.length),
-                  ),
+                  inputFormatters: [
+                    PanInputFormatter(),
+                    LengthLimitingTextInputFormatter(10),
+                  ],
+                  onChanged: (v) =>
+                      _panController.value = _panController.value.copyWith(
+                        text: v.toUpperCase(),
+                        selection: TextSelection.collapsed(offset: v.length),
+                      ),
                 ),
                 const SizedBox(height: 16),
                 AppTextField(
@@ -141,13 +143,25 @@ class _PanVerificationScreenState extends State<PanVerificationScreen> {
                   decoration: BoxDecoration(
                     color: AppColors.green.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.green.withValues(alpha: 0.3)),
+                    border: Border.all(
+                      color: AppColors.green.withValues(alpha: 0.3),
+                    ),
                   ),
                   child: Column(
                     children: [
-                      const Icon(Icons.verified_rounded, color: AppColors.green, size: 48),
+                      const Icon(
+                        Icons.verified_rounded,
+                        color: AppColors.green,
+                        size: 48,
+                      ),
                       const SizedBox(height: 12),
-                      const Text('PAN Verified', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 20)),
+                      const Text(
+                        'PAN Verified',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 20,
+                        ),
+                      ),
                       const SizedBox(height: 16),
                       _InfoRow('Full Name', s.panName),
                       _InfoRow('PAN', s.panNumberMasked),
@@ -158,7 +172,8 @@ class _PanVerificationScreenState extends State<PanVerificationScreen> {
                 const SizedBox(height: 24),
                 PrimaryButton(
                   label: OnboardingFlowNavigator.labelForNextKycStep(kyc),
-                  onPressed: () => OnboardingFlowNavigator.goToNextKycStep(context, kyc),
+                  onPressed: () =>
+                      OnboardingFlowNavigator.goToNextKycStep(context, kyc),
                 ),
               ],
             ],

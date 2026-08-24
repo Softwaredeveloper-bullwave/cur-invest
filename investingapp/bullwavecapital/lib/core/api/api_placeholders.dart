@@ -8,10 +8,13 @@ class ApiPlaceholders {
   static const verifyOtp = 'POST /api/v1/auth/verify-otp';
 
   // ── Stocks & live prices ──
-  static const searchStocks = 'GET /api/v1/stocks/search?q={query}&exchange=NSE';
+  static const searchStocks =
+      'GET /api/v1/stocks/search?q={query}&exchange=NSE';
   static const stockQuote = 'GET /api/v1/stocks/{symbol}/quote';
-  static const stockCandles = 'GET /api/v1/stocks/{symbol}/candles?interval={1d|1h|5m}';
-  static const livePricesWs = 'WS /api/v1/stocks/live'; // WebSocket for LTP stream
+  static const stockCandles =
+      'GET /api/v1/stocks/{symbol}/candles?interval={1d|1h|5m}';
+  static const livePricesWs =
+      'WS /api/v1/stocks/live'; // WebSocket for LTP stream
 
   // ── Watchlist ──
   static const watchlist = 'GET /api/v1/watchlist';

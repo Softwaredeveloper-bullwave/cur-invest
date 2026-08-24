@@ -27,7 +27,10 @@ class _KycPendingScreenState extends State<KycPendingScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _refresh();
-      _pollTimer = Timer.periodic(const Duration(seconds: 8), (_) => _refresh());
+      _pollTimer = Timer.periodic(
+        const Duration(seconds: 8),
+        (_) => _refresh(),
+      );
     });
   }
 
@@ -69,7 +72,10 @@ class _KycPendingScreenState extends State<KycPendingScreen> {
       appBar: CustomAppBar(
         title: 'KYC Verification',
         actions: [
-          IconButton(onPressed: _refresh, icon: const Icon(Icons.refresh_rounded)),
+          IconButton(
+            onPressed: _refresh,
+            icon: const Icon(Icons.refresh_rounded),
+          ),
         ],
       ),
       body: SafeArea(
@@ -96,19 +102,25 @@ class _KycPendingScreenState extends State<KycPendingScreen> {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    awaitingFinal ? 'Final review in progress' : 'Verification under review',
+                    awaitingFinal
+                        ? 'Final review in progress'
+                        : 'Verification under review',
                     textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w900),
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w900,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     awaitingFinal
                         ? 'UPI, selfie, and bank checks are done. An admin will complete your account verification shortly.'
                         : automated
-                            ? 'Your KYC steps are submitted. Our team is completing the final verification.'
-                            : 'We’ve received your PAN details. Our team is reviewing your documents.',
+                        ? 'Your KYC steps are submitted. Our team is completing the final verification.'
+                        : 'We’ve received your PAN details. Our team is reviewing your documents.',
                     textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colors.textSecondary),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: colors.textSecondary,
+                    ),
                   ),
                   const SizedBox(height: 14),
                   Container(
@@ -158,12 +170,17 @@ class _KycPendingScreenState extends State<KycPendingScreen> {
                   children: [
                     Text(
                       'Submitted details',
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                     const SizedBox(height: 10),
                     _InfoRow(label: 'PAN', value: req.panNumber),
                     _InfoRow(label: 'Name', value: req.fullName),
-                    _InfoRow(label: 'Submitted', value: req.createdAt.split('T').first),
+                    _InfoRow(
+                      label: 'Submitted',
+                      value: req.createdAt.split('T').first,
+                    ),
                   ],
                 ),
               ),
@@ -180,18 +197,25 @@ class _KycPendingScreenState extends State<KycPendingScreen> {
                 children: [
                   Text(
                     'What happens next?',
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                   const SizedBox(height: 10),
                   Text(
                     'Approval usually takes a few minutes. This screen checks automatically every few seconds — or tap refresh (top right).',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colors.textSecondary),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: colors.textSecondary,
+                    ),
                   ),
                   if (kyc.error != null) ...[
                     const SizedBox(height: 10),
                     Text(
                       kyc.error!,
-                      style: const TextStyle(color: AppColors.red, fontWeight: FontWeight.w700),
+                      style: const TextStyle(
+                        color: AppColors.red,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ],
                 ],
@@ -199,7 +223,9 @@ class _KycPendingScreenState extends State<KycPendingScreen> {
             ),
             if (kyc.isLoading) ...[
               const SizedBox(height: 18),
-              const Center(child: CircularProgressIndicator(color: AppColors.brandOrange)),
+              const Center(
+                child: CircularProgressIndicator(color: AppColors.brandOrange),
+              ),
             ],
           ],
         ),
@@ -213,12 +239,18 @@ class _StepRow extends StatelessWidget {
   final String subtitle;
   final bool done;
 
-  const _StepRow({required this.title, required this.subtitle, required this.done});
+  const _StepRow({
+    required this.title,
+    required this.subtitle,
+    required this.done,
+  });
 
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
-    final icon = done ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded;
+    final icon = done
+        ? Icons.check_circle_rounded
+        : Icons.radio_button_unchecked_rounded;
     final iconColor = done ? AppColors.green : colors.textMuted;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -230,9 +262,15 @@ class _StepRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
+                Text(
+                  title,
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
                 const SizedBox(height: 2),
-                Text(subtitle, style: TextStyle(color: colors.textSecondary, fontSize: 12)),
+                Text(
+                  subtitle,
+                  style: TextStyle(color: colors.textSecondary, fontSize: 12),
+                ),
               ],
             ),
           ),

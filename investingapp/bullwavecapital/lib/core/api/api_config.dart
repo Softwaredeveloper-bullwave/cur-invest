@@ -16,13 +16,18 @@ class ApiConfig {
 
   /// Default backend when no `--dart-define=API_BASE_URL` is passed.
   /// Use HTTPS — nginx on EC2 redirects HTTP → 301, which breaks Dio POST requests.
-  static const String defaultApiBaseUrl = 'https://api.capitalbullwave.com/api/v1';
+  static const String defaultApiBaseUrl =
+      'https://api.capitalbullwave.com/api/v1';
 
-  static const String _apiBaseFromEnv =
-      String.fromEnvironment('API_BASE_URL', defaultValue: '');
+  static const String _apiBaseFromEnv = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: '',
+  );
 
-  static const String _apiHostFromEnv =
-      String.fromEnvironment('API_HOST', defaultValue: '');
+  static const String _apiHostFromEnv = String.fromEnvironment(
+    'API_HOST',
+    defaultValue: '',
+  );
 
   /// Set to override [defaultApiBaseUrl] without a build flag (host only, port 80).
   static const String? hostOverride = null;

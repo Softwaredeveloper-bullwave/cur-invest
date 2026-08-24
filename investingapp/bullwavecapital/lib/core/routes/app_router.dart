@@ -8,10 +8,14 @@ import '../navigation/app_access_policy.dart';
 
 import '../navigation/onboarding_flow_navigator.dart';
 
+import '../../features/authentication/presentation/screens/app_lock_screen.dart';
+import '../../features/authentication/presentation/screens/setup_mpin_screen.dart';
+import '../../features/authentication/presentation/screens/change_mpin_screen.dart';
 import '../../features/authentication/presentation/provider/auth_provider.dart';
 
 import '../../features/kyc/presentation/provider/kyc_flow_provider.dart';
 import '../../features/profile/presentation/provider/app_provider.dart';
+import '../../core/security/app_lock_provider.dart';
 
 import '../../features/authentication/presentation/screens/splash_screen.dart';
 
@@ -150,7 +154,15 @@ class AppRouter {
       path == AppRoutes.login ||
       path == AppRoutes.otp ||
       path == AppRoutes.verifyEmail ||
-      path == AppRoutes.verifyEmailOtp;
+      path == AppRoutes.verifyEmailOtp ||
+      path == AppRoutes.appLock ||
+      path == AppRoutes.setupMpin ||
+      path == AppRoutes.changeMpin;
+
+  static bool _isAppLockRoute(String path) =>
+      path == AppRoutes.appLock ||
+      path == AppRoutes.setupMpin ||
+      path == AppRoutes.changeMpin;
 
   static bool _isKycOnboardingPath(String path) =>
       path == AppRoutes.kyc ||
@@ -197,6 +209,7 @@ class AppRouter {
     AuthProvider auth,
     KycFlowProvider kyc,
     AppProvider app,
+    AppLockProvider appLock,
   ) => GoRouter(
     navigatorKey: _rootNavigatorKey,
 
@@ -204,7 +217,7 @@ class AppRouter {
         ? DevConfig.debugInitialRoute
         : AppRoutes.splash,
 
-    refreshListenable: Listenable.merge([auth, kyc, app]),
+    refreshListenable: Listenable.merge([auth, kyc, app, appLock]),
 
     redirect: (context, state) {
       if (DevConfig.enabled) return null;
@@ -217,6 +230,15 @@ class AppRouter {
 
       // Splash handles its own routing animation.
       if (path == AppRoutes.splash) return null;
+
+      if (_isAppLockRoute(path)) {
+        if (!auth.isAuthenticated) return AppRoutes.login;
+        return null;
+      }
+
+      if (auth.canAutoEnterApp && appLock.requiresUnlock) {
+        return AppRoutes.appLock;
+      }
 
       // Phase 1 — block Home/Markets until PAN + Aadhaar + bank are done.
       if (PaperOnlyMode.enabled &&
@@ -298,7 +320,9 @@ class AppRouter {
         return null;
       }
 
-      if (kyc.hasPhase1Identity && PaperOnlyMode.enabled && _isManualKycRoute(path)) {
+      if (kyc.hasPhase1Identity &&
+          PaperOnlyMode.enabled &&
+          _isManualKycRoute(path)) {
         return AppRoutes.home;
       }
 
@@ -325,7 +349,9 @@ class AppRouter {
             AppRoutes.panVerification;
       }
 
-      if (!PaperOnlyMode.enabled && !kyc.isFullyVerified && _requiresKyc(path)) {
+      if (!PaperOnlyMode.enabled &&
+          !kyc.isFullyVerified &&
+          _requiresKyc(path)) {
         return _manualKycRoute(kyc);
       }
 
@@ -427,7 +453,8 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.transactions,
 
-        builder: (context, state) => const PaperOnlyGate(child: TransactionsScreen()),
+        builder: (context, state) =>
+            const PaperOnlyGate(child: TransactionsScreen()),
       ),
 
       GoRoute(
@@ -439,9 +466,8 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.support,
 
-        builder: (context, state) => SupportScreen(
-          initialTicketId: state.uri.queryParameters['ticket'],
-        ),
+        builder: (context, state) =>
+            SupportScreen(initialTicketId: state.uri.queryParameters['ticket']),
       ),
 
       GoRoute(
@@ -520,6 +546,30 @@ class AppRouter {
       ),
 
       GoRoute(
+        path: AppRoutes.appLock,
+        builder: (context, state) => const AppLockScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.setupMpin,
+        builder: (context, state) {
+          final optional =
+              state.uri.queryParameters['optional'] == 'true';
+          final returnToSettings =
+              state.uri.queryParameters['return'] == 'settings';
+          return SetupMpinScreen(
+            optional: optional,
+            returnToSettings: returnToSettings,
+          );
+        },
+      ),
+
+      GoRoute(
+        path: AppRoutes.changeMpin,
+        builder: (context, state) => const ChangeMpinScreen(),
+      ),
+
+      GoRoute(
         path: AppRoutes.settings,
 
         builder: (context, state) => const SettingsScreen(),
@@ -540,34 +590,40 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.withdraw,
 
-        builder: (context, state) => const PaperOnlyGate(child: WithdrawScreen()),
+        builder: (context, state) =>
+            const PaperOnlyGate(child: WithdrawScreen()),
       ),
 
       GoRoute(
         path: AppRoutes.deposit,
 
-        builder: (context, state) => const PaperOnlyGate(child: DepositScreen()),
+        builder: (context, state) =>
+            const PaperOnlyGate(child: DepositScreen()),
       ),
 
       GoRoute(
         path: AppRoutes.depositSuccess,
 
-        builder: (context, state) => const PaperOnlyGate(child: DepositSuccessScreen()),
+        builder: (context, state) =>
+            const PaperOnlyGate(child: DepositSuccessScreen()),
       ),
 
       GoRoute(
         path: AppRoutes.investmentDetails,
 
-        builder: (context, state) => const PaperOnlyGate(child: InvestmentDetailsScreen()),
+        builder: (context, state) =>
+            const PaperOnlyGate(child: InvestmentDetailsScreen()),
       ),
 
       GoRoute(
         path: AppRoutes.featuredPlansList,
-        builder: (context, state) => const PaperOnlyGate(child: FeaturedPlansListScreen()),
+        builder: (context, state) =>
+            const PaperOnlyGate(child: FeaturedPlansListScreen()),
       ),
       GoRoute(
         path: AppRoutes.goalPlans,
-        builder: (context, state) => const PaperOnlyGate(child: GoalPlansScreen()),
+        builder: (context, state) =>
+            const PaperOnlyGate(child: GoalPlansScreen()),
       ),
       GoRoute(
         path: AppRoutes.createGoal,
@@ -580,7 +636,9 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.goalDetail,
         builder: (context, state) => PaperOnlyGate(
-          child: GoalDetailScreen(goalId: state.uri.queryParameters['id'] ?? ''),
+          child: GoalDetailScreen(
+            goalId: state.uri.queryParameters['id'] ?? '',
+          ),
         ),
       ),
       GoRoute(
@@ -733,7 +791,8 @@ class AppRouter {
 
         parentNavigatorKey: _rootNavigatorKey,
 
-        builder: (context, state) => const PaperOnlyGate(child: CopyTradingScreen()),
+        builder: (context, state) =>
+            const PaperOnlyGate(child: CopyTradingScreen()),
       ),
 
       GoRoute(

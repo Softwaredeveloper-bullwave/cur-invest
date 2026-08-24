@@ -50,15 +50,21 @@ class StockPortfolioProvider extends ChangeNotifier {
     _error = null;
     notifyListeners();
     try {
-      final data = await _api.getPortfolioOverview(refreshQuotes: refreshQuotes);
+      final data = await _api.getPortfolioOverview(
+        refreshQuotes: refreshQuotes,
+      );
       _applyPortfolioPayload(data);
       unawaited(loadMarketRiskMeter());
     } on ApiException catch (e) {
       await _tryHoldingsFallback(e.message);
     } on TimeoutException {
-      await _tryHoldingsFallback('Portfolio load timed out. Showing saved holdings.');
+      await _tryHoldingsFallback(
+        'Portfolio load timed out. Showing saved holdings.',
+      );
     } on SocketException {
-      await _tryHoldingsFallback('Cannot reach server. Showing saved holdings.');
+      await _tryHoldingsFallback(
+        'Cannot reach server. Showing saved holdings.',
+      );
     } catch (e) {
       await _tryHoldingsFallback('Could not load portfolio ($e).');
     }
@@ -102,7 +108,10 @@ class StockPortfolioProvider extends ChangeNotifier {
     final summaryJson = data['summary'] as Map<String, dynamic>? ?? {};
     _summary = parsePortfolioSummary(summaryJson);
     _holdings = _safeParseList(data['holdings'], parseStockHolding);
-    _sectorAllocation = _safeParseList(data['sectorAllocation'], parseSectorAllocation);
+    _sectorAllocation = _safeParseList(
+      data['sectorAllocation'],
+      parseSectorAllocation,
+    );
     _recentTrades = _safeParseList(data['recentTrades'], parsePaperTrade);
     final updated = data['updatedAt'] as String?;
     _updatedAt = updated != null ? DateTime.tryParse(updated) : DateTime.now();
@@ -165,10 +174,7 @@ class StockPortfolioProvider extends ChangeNotifier {
       }
     }
 
-    _recentTrades = [
-      order,
-      ..._recentTrades.where((t) => t.id != order.id),
-    ];
+    _recentTrades = [order, ..._recentTrades.where((t) => t.id != order.id)];
     _recomputeSummaryFromHoldings();
     _error = null;
     notifyListeners();
@@ -215,22 +221,22 @@ class StockPortfolioProvider extends ChangeNotifier {
 
 extension StockHoldingTradeStock on StockHoldingModel {
   StockModel toTradeStock() => StockModel(
-        symbol: symbol,
-        name: name,
-        exchange: exchange,
-        sector: sector,
-        ltp: ltp,
-        change: change,
-        changePercent: changePercent,
-        open: ltp,
-        high: ltp,
-        low: ltp,
-        previousClose: ltp,
-        volume: 0,
-        marketCapCr: 0,
-        pe: 0,
-        eps: 0,
-        week52High: ltp,
-        week52Low: ltp,
-      );
+    symbol: symbol,
+    name: name,
+    exchange: exchange,
+    sector: sector,
+    ltp: ltp,
+    change: change,
+    changePercent: changePercent,
+    open: ltp,
+    high: ltp,
+    low: ltp,
+    previousClose: ltp,
+    volume: 0,
+    marketCapCr: 0,
+    pe: 0,
+    eps: 0,
+    week52High: ltp,
+    week52Low: ltp,
+  );
 }

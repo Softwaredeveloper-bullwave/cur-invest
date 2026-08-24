@@ -82,7 +82,8 @@ class AiVoiceService {
 
     if (_listening) await stopListening();
 
-    final useWhisper = useOpenAiStt && sttAvailable && !kIsWeb && !preferDeviceStt;
+    final useWhisper =
+        useOpenAiStt && sttAvailable && !kIsWeb && !preferDeviceStt;
     if (useWhisper) {
       return _startOpenAiRecording(onResult);
     }
@@ -109,14 +110,21 @@ class AiVoiceService {
     return _listening;
   }
 
-  Future<bool> _startOpenAiRecording(void Function(String text, bool isFinal) onResult) async {
+  Future<bool> _startOpenAiRecording(
+    void Function(String text, bool isFinal) onResult,
+  ) async {
     if (!await _recorder.hasPermission()) return false;
 
     final dir = await getTemporaryDirectory();
-    _recordPath = '${dir.path}/bullwave_stt_${DateTime.now().millisecondsSinceEpoch}.m4a';
+    _recordPath =
+        '${dir.path}/bullwave_stt_${DateTime.now().millisecondsSinceEpoch}.m4a';
 
     await _recorder.start(
-      const RecordConfig(encoder: AudioEncoder.aacLc, bitRate: 128000, sampleRate: 44100),
+      const RecordConfig(
+        encoder: AudioEncoder.aacLc,
+        bitRate: 128000,
+        sampleRate: 44100,
+      ),
       path: _recordPath!,
     );
     _recording = true;
@@ -125,7 +133,9 @@ class AiVoiceService {
     return true;
   }
 
-  Future<void> stopListening({void Function(String text, bool isFinal)? onResult}) async {
+  Future<void> stopListening({
+    void Function(String text, bool isFinal)? onResult,
+  }) async {
     if (_recording && _recordPath != null) {
       await _recorder.stop();
       _recording = false;
@@ -185,7 +195,9 @@ class AiVoiceService {
         await _player.play(BytesSource(Uint8List.fromList(bytes)));
       } else {
         final dir = await getTemporaryDirectory();
-        final file = File('${dir.path}/bullwave_ai_${DateTime.now().millisecondsSinceEpoch}.mp3');
+        final file = File(
+          '${dir.path}/bullwave_ai_${DateTime.now().millisecondsSinceEpoch}.mp3',
+        );
         await file.writeAsBytes(bytes, flush: true);
         await _player.play(DeviceFileSource(file.path));
       }

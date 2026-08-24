@@ -43,7 +43,8 @@ class GoalReturnTiersCatalog {
   static GoalReturnTierModel tierForMonthly(double amount) {
     GoalReturnTierModel selected = tiers.first;
     for (final tier in tiers) {
-      final inRange = amount >= tier.minMonthly &&
+      final inRange =
+          amount >= tier.minMonthly &&
           (tier.maxMonthly == null || amount <= tier.maxMonthly!);
       if (inRange) selected = tier;
     }
@@ -53,7 +54,8 @@ class GoalReturnTiersCatalog {
   static double annualRateForMonthly(double amount) =>
       tierForMonthly(amount).annualReturnRate;
 
-  static ({double maturity, double invested, double returns}) projectedMaturity({
+  static ({double maturity, double invested, double returns})
+  projectedMaturity({
     required double monthlyContribution,
     required int months,
     required double annualReturnRate,

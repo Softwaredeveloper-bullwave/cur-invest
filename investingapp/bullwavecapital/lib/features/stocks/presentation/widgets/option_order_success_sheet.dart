@@ -23,7 +23,8 @@ class OptionOrderSuccessSheet extends StatelessWidget {
   }) {
     return AppNavigation.showAppBottomSheet<void>(
       context,
-      builder: (_) => OptionOrderSuccessSheet(order: order, currencySymbol: currencySymbol),
+      builder: (_) =>
+          OptionOrderSuccessSheet(order: order, currencySymbol: currencySymbol),
     );
   }
 
@@ -33,7 +34,9 @@ class OptionOrderSuccessSheet extends StatelessWidget {
     final isSell = order.isSell;
     final pnl = order.realizedPnlInr;
     final isProfit = (pnl ?? 0) >= 0;
-    final accent = isSell ? (isProfit ? AppColors.green : AppColors.red) : AppColors.green;
+    final accent = isSell
+        ? (isProfit ? AppColors.green : AppColors.red)
+        : AppColors.green;
 
     return Container(
       margin: const EdgeInsets.fromLTRB(12, 0, 12, 24),
@@ -64,10 +67,16 @@ class OptionOrderSuccessSheet extends StatelessWidget {
               const SizedBox(height: 16),
               Text(
                 isSell ? 'Sell Order Executed' : 'Buy Order Executed',
-                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 22),
+                style: const TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 22,
+                ),
               ),
               const SizedBox(height: 6),
-              Text(order.contractLabel, style: TextStyle(color: colors.textSecondary, fontSize: 14)),
+              Text(
+                order.contractLabel,
+                style: TextStyle(color: colors.textSecondary, fontSize: 14),
+              ),
               const SizedBox(height: 24),
               Container(
                 width: double.infinity,
@@ -83,10 +92,13 @@ class OptionOrderSuccessSheet extends StatelessWidget {
                     _Row(label: 'Lots', value: '${order.quantity}'),
                     _Row(
                       label: 'Premium',
-                      value: '$currencySymbol${order.premium.toStringAsFixed(2)}',
+                      value:
+                          '$currencySymbol${order.premium.toStringAsFixed(2)}',
                     ),
                     _Row(
-                      label: isSell ? 'Credited to wallet' : 'Debited from wallet',
+                      label: isSell
+                          ? 'Credited to wallet'
+                          : 'Debited from wallet',
                       value: CurrencyFormatter.formatDecimal(order.amountInr),
                       bold: true,
                     ),
@@ -106,7 +118,8 @@ class OptionOrderSuccessSheet extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: FilledButton(
-                  onPressed: () => Navigator.of(context, rootNavigator: true).pop(),
+                  onPressed: () =>
+                      Navigator.of(context, rootNavigator: true).pop(),
                   child: const Text('Done'),
                 ),
               ),
@@ -138,7 +151,10 @@ class _Row extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+          Text(
+            label,
+            style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+          ),
           Text(
             value,
             style: TextStyle(

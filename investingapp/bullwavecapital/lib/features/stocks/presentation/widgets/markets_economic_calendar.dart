@@ -57,7 +57,11 @@ class MarketsEconomicCalendarStrip extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.calendar_month_rounded, size: 18, color: p.primary),
+                  Icon(
+                    Icons.calendar_month_rounded,
+                    size: 18,
+                    color: p.primary,
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     'Open full economic calendar',
@@ -103,32 +107,45 @@ class _HorizontalEventCard extends StatelessWidget {
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 7,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
                       color: impact.withValues(alpha: 0.14),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
                       event.countryCode,
-                      style: ThemeAType.label(size: 10, color: impact)
-                          .copyWith(fontWeight: FontWeight.w800),
+                      style: ThemeAType.label(
+                        size: 10,
+                        color: impact,
+                      ).copyWith(fontWeight: FontWeight.w800),
                     ),
                   ),
                   const SizedBox(width: 6),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 7,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
                       color: impact.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
                       event.displayImpactLabel,
-                      style: ThemeAType.label(size: 10, color: impact)
-                          .copyWith(fontWeight: FontWeight.w700),
+                      style: ThemeAType.label(
+                        size: 10,
+                        color: impact,
+                      ).copyWith(fontWeight: FontWeight.w700),
                     ),
                   ),
                   const Spacer(),
-                  Text(event.dateLabel, style: ThemeAType.label(size: 11, color: p.textMuted)),
+                  Text(
+                    event.dateLabel,
+                    style: ThemeAType.label(size: 11, color: p.textMuted),
+                  ),
                 ],
               ),
               const SizedBox(height: 10),
@@ -154,7 +171,10 @@ class _HorizontalEventCard extends StatelessWidget {
                   const SizedBox(width: 6),
                   _MiniStat(label: 'Fcst', value: event.forecast ?? '—', p: p),
                   const Spacer(),
-                  Text(event.category, style: ThemeAType.label(size: 10, color: p.textMuted)),
+                  Text(
+                    event.category,
+                    style: ThemeAType.label(size: 10, color: p.textMuted),
+                  ),
                 ],
               ),
             ],
@@ -273,7 +293,10 @@ class _EconomicCalendarScreenState extends State<EconomicCalendarScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(entry.key, style: ThemeAType.label(size: 13, color: p.primary)),
+                    Text(
+                      entry.key,
+                      style: ThemeAType.label(size: 13, color: p.primary),
+                    ),
                     const SizedBox(height: 10),
                     ...entry.value.map((e) => _FullEventTile(event: e)),
                   ],
@@ -298,7 +321,11 @@ class _LegendDot extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
         const SizedBox(width: 5),
         Text(label, style: ThemeAType.label(size: 11, color: p.textMuted)),
       ],
@@ -341,7 +368,10 @@ class _FullEventTile extends StatelessWidget {
               ),
               child: Text(
                 event.countryCode,
-                style: ThemeAType.label(size: 11, color: impact).copyWith(fontWeight: FontWeight.w800),
+                style: ThemeAType.label(
+                  size: 11,
+                  color: impact,
+                ).copyWith(fontWeight: FontWeight.w800),
               ),
             ),
             const SizedBox(width: 12),
@@ -354,10 +384,16 @@ class _FullEventTile extends StatelessWidget {
                       Expanded(
                         child: Text(
                           event.title,
-                          style: ThemeAType.cardTitle(color: p.textDark, size: 15),
+                          style: ThemeAType.cardTitle(
+                            color: p.textDark,
+                            size: 15,
+                          ),
                         ),
                       ),
-                      Text(event.time, style: ThemeAType.label(size: 11, color: p.textMuted)),
+                      Text(
+                        event.time,
+                        style: ThemeAType.label(size: 11, color: p.textMuted),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 4),
@@ -380,12 +416,21 @@ class _FullEventTile extends StatelessWidget {
                       children: event.relatedSymbols
                           .map(
                             (s) => Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 3,
+                              ),
                               decoration: BoxDecoration(
                                 color: p.primary.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              child: Text(s, style: ThemeAType.label(size: 10, color: p.primary)),
+                              child: Text(
+                                s,
+                                style: ThemeAType.label(
+                                  size: 10,
+                                  color: p.primary,
+                                ),
+                              ),
                             ),
                           )
                           .toList(),
@@ -394,9 +439,17 @@ class _FullEventTile extends StatelessWidget {
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      _FullStat(label: 'Previous', value: event.previous ?? '—', p: p),
+                      _FullStat(
+                        label: 'Previous',
+                        value: event.previous ?? '—',
+                        p: p,
+                      ),
                       const SizedBox(width: 8),
-                      _FullStat(label: 'Forecast', value: event.forecast ?? '—', p: p),
+                      _FullStat(
+                        label: 'Forecast',
+                        value: event.forecast ?? '—',
+                        p: p,
+                      ),
                       const SizedBox(width: 8),
                       _FullStat(
                         label: 'Actual',

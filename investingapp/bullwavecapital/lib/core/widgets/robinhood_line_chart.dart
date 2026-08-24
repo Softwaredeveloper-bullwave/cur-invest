@@ -47,14 +47,18 @@ class _LineChartPainter extends CustomPainter {
 
     for (var i = 0; i < values.length; i++) {
       final x = (i / (values.length - 1)) * size.width;
-      final y = size.height - ((values[i] - min) / range) * (size.height - 8) - 4;
+      final y =
+          size.height - ((values[i] - min) / range) * (size.height - 8) - 4;
       if (i == 0) {
         path.moveTo(x, y);
         fillPath.moveTo(x, size.height);
         fillPath.lineTo(x, y);
       } else {
         final prevX = ((i - 1) / (values.length - 1)) * size.width;
-        final prevY = size.height - ((values[i - 1] - min) / range) * (size.height - 8) - 4;
+        final prevY =
+            size.height -
+            ((values[i - 1] - min) / range) * (size.height - 8) -
+            4;
         final cx = (prevX + x) / 2;
         path.cubicTo(cx, prevY, cx, y, x, y);
         fillPath.cubicTo(cx, prevY, cx, y, x, y);
@@ -68,7 +72,10 @@ class _LineChartPainter extends CustomPainter {
       ..shader = LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: [lineColor.withValues(alpha: 0.25), lineColor.withValues(alpha: 0.0)],
+        colors: [
+          lineColor.withValues(alpha: 0.25),
+          lineColor.withValues(alpha: 0.0),
+        ],
       ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
 
     canvas.drawPath(fillPath, fillPaint);

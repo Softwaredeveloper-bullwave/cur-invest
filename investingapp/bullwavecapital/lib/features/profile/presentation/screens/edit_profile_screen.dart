@@ -57,11 +57,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   Future<void> _pickImage(ImageSource source) async {
     try {
-      final picked = await ImagePickHelper.pickProfileAvatar(context: context, source: source);
+      final picked = await ImagePickHelper.pickProfileAvatar(
+        context: context,
+        source: source,
+      );
       if (picked == null) {
         if (!mounted) return;
         if (source == ImageSource.camera) {
-          AppSnackbar.error(context, ImagePickHelper.permissionDeniedMessage(source));
+          AppSnackbar.error(
+            context,
+            ImagePickHelper.permissionDeniedMessage(source),
+          );
         }
         return;
       }
@@ -77,7 +83,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
-  Future<void> _onPhotoOptionSelected(BuildContext sheetContext, ImageSource source) async {
+  Future<void> _onPhotoOptionSelected(
+    BuildContext sheetContext,
+    ImageSource source,
+  ) async {
     Navigator.pop(sheetContext);
     await Future<void>.delayed(const Duration(milliseconds: 350));
     if (!mounted) return;
@@ -100,7 +109,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final auth = context.read<AuthProvider>();
 
     if (_pickedImageBytes != null) {
-      final uploaded = await auth.uploadAvatar(_pickedImageBytes!, _pickedImageName ?? 'avatar.jpg');
+      final uploaded = await auth.uploadAvatar(
+        _pickedImageBytes!,
+        _pickedImageName ?? 'avatar.jpg',
+      );
       if (!uploaded && mounted) {
         AppSnackbar.error(context, auth.error ?? 'Photo upload failed');
         return;
@@ -155,7 +167,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     backgroundColor: AppColors.green.withValues(alpha: 0.12),
                     backgroundImage: avatarImage,
                     child: avatarImage == null
-                        ? const Icon(Icons.person, size: 48, color: AppColors.green)
+                        ? const Icon(
+                            Icons.person,
+                            size: 48,
+                            color: AppColors.green,
+                          )
                         : null,
                   ),
                   Positioned(
@@ -169,7 +185,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         onTap: () => _showPhotoOptions(),
                         child: const Padding(
                           padding: EdgeInsets.all(8),
-                          child: Icon(Icons.camera_alt, color: Colors.white, size: 20),
+                          child: Icon(
+                            Icons.camera_alt,
+                            color: Colors.white,
+                            size: 20,
+                          ),
                         ),
                       ),
                     ),
@@ -187,7 +207,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 label: 'Full Name',
                 hint: 'Enter your name',
                 textCapitalization: TextCapitalization.words,
-                validator: (v) => v == null || v.trim().length < 2 ? 'Enter your name' : null,
+                validator: (v) =>
+                    v == null || v.trim().length < 2 ? 'Enter your name' : null,
               ),
               const SizedBox(height: AppDimensions.paddingMd),
               AppTextField(
@@ -217,7 +238,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     labelText: 'Date of Birth',
                     border: const OutlineInputBorder(),
                     suffixIcon: auth.user?.dobVerifiedFromKyc == true
-                        ? const Icon(Icons.verified_outlined, color: AppColors.greenSoft)
+                        ? const Icon(
+                            Icons.verified_outlined,
+                            color: AppColors.greenSoft,
+                          )
                         : const Icon(Icons.calendar_month_outlined),
                   ),
                   child: Row(
@@ -287,10 +311,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               title: const Text('Take a photo'),
               onTap: () => _onPhotoOptionSelected(ctx, ImageSource.camera),
             ),
-            if (_pickedImageBytes != null || (context.read<AuthProvider>().user?.avatarUrl.isNotEmpty ?? false))
+            if (_pickedImageBytes != null ||
+                (context.read<AuthProvider>().user?.avatarUrl.isNotEmpty ??
+                    false))
               ListTile(
-                leading: const Icon(Icons.delete_outline, color: AppColors.error),
-                title: const Text('Remove photo', style: TextStyle(color: AppColors.error)),
+                leading: const Icon(
+                  Icons.delete_outline,
+                  color: AppColors.error,
+                ),
+                title: const Text(
+                  'Remove photo',
+                  style: TextStyle(color: AppColors.error),
+                ),
                 onTap: () {
                   Navigator.pop(ctx);
                   setState(() {

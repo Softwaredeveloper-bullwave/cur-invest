@@ -66,7 +66,9 @@ class _SelfieCaptureDialogState extends State<SelfieCaptureDialog> {
     await _disposeController();
 
     try {
-      final cameras = await availableCameras().timeout(const Duration(seconds: 10));
+      final cameras = await availableCameras().timeout(
+        const Duration(seconds: 10),
+      );
       if (cameras.isEmpty) {
         throw StateError('No camera found on this device.');
       }
@@ -80,9 +82,12 @@ class _SelfieCaptureDialogState extends State<SelfieCaptureDialog> {
       for (final camera in ordered) {
         CameraController? trial;
         try {
-          final useJpeg = defaultTargetPlatform == TargetPlatform.android ||
+          final useJpeg =
+              defaultTargetPlatform == TargetPlatform.android ||
               defaultTargetPlatform == TargetPlatform.iOS;
-          final preset = _isDesktop ? ResolutionPreset.medium : ResolutionPreset.high;
+          final preset = _isDesktop
+              ? ResolutionPreset.medium
+              : ResolutionPreset.high;
           trial = useJpeg
               ? CameraController(
                   camera,
@@ -113,13 +118,15 @@ class _SelfieCaptureDialogState extends State<SelfieCaptureDialog> {
     } on TimeoutException {
       if (!mounted) return;
       setState(() {
-        _error = 'Camera took too long to start. Check macOS Settings → Privacy → Camera.';
+        _error =
+            'Camera took too long to start. Check macOS Settings → Privacy → Camera.';
         _initializing = false;
       });
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = 'Could not open camera. Allow camera access in System Settings and retry.';
+        _error =
+            'Could not open camera. Allow camera access in System Settings and retry.';
         _initializing = false;
       });
     }
@@ -128,7 +135,9 @@ class _SelfieCaptureDialogState extends State<SelfieCaptureDialog> {
   Uint8List _compress(Uint8List bytes) {
     final decoded = img.decodeImage(bytes);
     if (decoded == null) return bytes;
-    final resized = decoded.width > 1280 ? img.copyResize(decoded, width: 1280) : decoded;
+    final resized = decoded.width > 1280
+        ? img.copyResize(decoded, width: 1280)
+        : decoded;
     return Uint8List.fromList(img.encodeJpg(resized, quality: 78));
   }
 
@@ -144,7 +153,9 @@ class _SelfieCaptureDialogState extends State<SelfieCaptureDialog> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not capture photo. Please try again.')),
+        const SnackBar(
+          content: Text('Could not capture photo. Please try again.'),
+        ),
       );
     }
   }
@@ -170,35 +181,39 @@ class _SelfieCaptureDialogState extends State<SelfieCaptureDialog> {
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: _initializing
                     ? const Center(
-                        child: CircularProgressIndicator(color: AppColors.brandOrange),
+                        child: CircularProgressIndicator(
+                          color: AppColors.brandOrange,
+                        ),
                       )
                     : _error != null
-                        ? Center(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  _error!,
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(color: Colors.white.withValues(alpha: 0.9)),
-                                ),
-                                const SizedBox(height: 16),
-                                OutlinedButton(
-                                  onPressed: _openCamera,
-                                  child: const Text('Retry'),
-                                ),
-                              ],
+                    ? Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              _error!,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.9),
+                              ),
                             ),
-                          )
-                        : controller != null && controller.value.isInitialized
-                            ? ClipRRect(
-                                borderRadius: BorderRadius.circular(20),
-                                child: AspectRatio(
-                                  aspectRatio: 3 / 4,
-                                  child: CameraPreview(controller),
-                                ),
-                              )
-                            : const SizedBox.shrink(),
+                            const SizedBox(height: 16),
+                            OutlinedButton(
+                              onPressed: _openCamera,
+                              child: const Text('Retry'),
+                            ),
+                          ],
+                        ),
+                      )
+                    : controller != null && controller.value.isInitialized
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: AspectRatio(
+                          aspectRatio: 3 / 4,
+                          child: CameraPreview(controller),
+                        ),
+                      )
+                    : const SizedBox.shrink(),
               ),
             ),
             Padding(

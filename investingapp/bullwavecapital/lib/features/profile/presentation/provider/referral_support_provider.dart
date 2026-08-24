@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/api/auth_session_guard.dart';
 import '../../../../core/api/api_exception.dart';
 import '../../../../core/api/bullwave_api.dart';
 import '../../../../models/referral_model.dart';
@@ -16,11 +17,14 @@ class SupportProvider extends ChangeNotifier {
   List<SupportFaq> get faqs => _faqs;
   List<SupportTicketModel> get tickets => _tickets;
 
-  SupportProvider() {
-    loadData();
-  }
+  SupportProvider();
 
   Future<void> loadData() async {
+    if (!await hasStoredAccessToken()) {
+      _isLoading = false;
+      notifyListeners();
+      return;
+    }
     _isLoading = true;
     notifyListeners();
     try {
@@ -64,6 +68,12 @@ class ReferralProvider extends ChangeNotifier {
   ReferralModel? get referral => _referral;
 
   Future<void> loadData() async {
+    if (!await hasStoredAccessToken()) {
+      _isLoading = false;
+      _error = null;
+      notifyListeners();
+      return;
+    }
     _isLoading = true;
     _error = null;
     notifyListeners();

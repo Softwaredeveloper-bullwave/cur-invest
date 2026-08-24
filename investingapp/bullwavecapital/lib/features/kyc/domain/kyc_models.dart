@@ -215,7 +215,8 @@ class KycStatusModel {
 
   bool get isManualBankReview => bankReviewMode == 'manual';
 
-  bool get bankReviewPending => paymentReviewPending || bankReviewStatus == 'pending';
+  bool get bankReviewPending =>
+      paymentReviewPending || bankReviewStatus == 'pending';
 
   bool get bankReviewRejected => bankReviewStatus == 'rejected';
 
@@ -225,7 +226,9 @@ class KycStatusModel {
       selfieReviewPending || selfieVerified || selfieStatus == 'completed';
 
   bool get canProceedToIdentity =>
-      bankReadyForIdentity || bankVerified || (isManualBankReview && bankDraftReady);
+      bankReadyForIdentity ||
+      bankVerified ||
+      (isManualBankReview && bankDraftReady);
 
   factory KycStatusModel.fromJson(Map<String, dynamic> json) => KycStatusModel(
     provider: json['provider'] as String? ?? 'cashfree',
@@ -233,7 +236,8 @@ class KycStatusModel {
     upiRequired: json['upiRequired'] as bool? ?? true,
     upiManual: json['upiManual'] as bool? ?? false,
     identityReviewPending: json['identityReviewPending'] as bool? ?? false,
-    manualFinalApprovalRequired: json['manualFinalApprovalRequired'] as bool? ?? false,
+    manualFinalApprovalRequired:
+        json['manualFinalApprovalRequired'] as bool? ?? false,
     finalKycApproved: json['finalKycApproved'] as bool? ?? false,
     stepProviders: StepProvidersModel.fromJson(
       json['stepProviders'] as Map<String, dynamic>?,
@@ -250,7 +254,8 @@ class KycStatusModel {
     panVerified: json['panVerified'] as bool? ?? false,
     aadhaarVerified: json['aadhaarVerified'] as bool? ?? false,
     bankVerified: json['bankVerified'] as bool? ?? false,
-    bankReadyForIdentity: json['bankReadyForIdentity'] as bool? ??
+    bankReadyForIdentity:
+        json['bankReadyForIdentity'] as bool? ??
         (json['bankVerified'] as bool? ?? false),
     upiVerified: json['upiVerified'] as bool? ?? false,
     selfieVerified: json['selfieVerified'] as bool? ?? false,

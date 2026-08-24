@@ -22,7 +22,10 @@ class _MarketHeatMapWidgetState extends State<MarketHeatMapWidget>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 700));
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
+    );
     _scale = CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic);
     _controller.forward();
   }
@@ -66,7 +69,8 @@ class _MarketHeatMapWidgetState extends State<MarketHeatMapWidget>
   }
 
   List<_HeatRow> _layoutRows(List<HeatMapStock> stocks) {
-    final sorted = [...stocks]..sort((a, b) => b.marketCapCr.compareTo(a.marketCapCr));
+    final sorted = [...stocks]
+      ..sort((a, b) => b.marketCapCr.compareTo(a.marketCapCr));
     final rows = <_HeatRow>[];
     var buffer = <_HeatTileData>[];
     var weight = 0.0;
@@ -74,10 +78,14 @@ class _MarketHeatMapWidgetState extends State<MarketHeatMapWidget>
     for (final stock in sorted) {
       final flex = (stock.marketCapCr / 200000).round().clamp(1, 4);
       if (weight + flex > 8 && buffer.isNotEmpty) {
-        rows.add(_HeatRow(
-          height: buffer.map((t) => t.flex).reduce((a, b) => a + b) > 6 ? 88.0 : 72.0,
-          tiles: buffer,
-        ));
+        rows.add(
+          _HeatRow(
+            height: buffer.map((t) => t.flex).reduce((a, b) => a + b) > 6
+                ? 88.0
+                : 72.0,
+            tiles: buffer,
+          ),
+        );
         buffer = [];
         weight = 0;
       }
@@ -94,10 +102,7 @@ class _MarketHeatMapWidgetState extends State<MarketHeatMapWidget>
 class MarketsHeatMapSection extends StatelessWidget {
   final VoidCallback? onViewAll;
 
-  const MarketsHeatMapSection({
-    super.key,
-    this.onViewAll,
-  });
+  const MarketsHeatMapSection({super.key, this.onViewAll});
 
   @override
   Widget build(BuildContext context) {
@@ -140,12 +145,15 @@ class _HeatTileWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final shortSymbol = stock.symbol.length > 8 ? stock.symbol.substring(0, 6) : stock.symbol;
+    final shortSymbol = stock.symbol.length > 8
+        ? stock.symbol.substring(0, 6)
+        : stock.symbol;
 
     return Hero(
       tag: 'heatmap-${stock.symbol}',
       child: ScaleTap(
-        onTap: () => context.push('${AppRoutes.stockDetail}?symbol=${stock.symbol}'),
+        onTap: () =>
+            context.push('${AppRoutes.stockDetail}?symbol=${stock.symbol}'),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 220),
           curve: Curves.easeOut,
@@ -168,7 +176,10 @@ class _HeatTileWidget extends StatelessWidget {
             children: [
               Text(
                 shortSymbol,
-                style: ThemeAType.label(size: 11, color: Colors.white).copyWith(fontWeight: FontWeight.w700),
+                style: ThemeAType.label(
+                  size: 11,
+                  color: Colors.white,
+                ).copyWith(fontWeight: FontWeight.w700),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),

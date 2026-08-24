@@ -28,10 +28,18 @@ class MarketsSectionHeader extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: ThemeAType.sectionTitle(color: p.textDark, size: 20), maxLines: 2, overflow: TextOverflow.ellipsis),
+                Text(
+                  title,
+                  style: ThemeAType.sectionTitle(color: p.textDark, size: 20),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
                 if (subtitle != null) ...[
                   const SizedBox(height: 4),
-                  Text(subtitle!, style: ThemeAType.body(color: p.textGrey, size: 13)),
+                  Text(
+                    subtitle!,
+                    style: ThemeAType.body(color: p.textGrey, size: 13),
+                  ),
                 ],
               ],
             ),
@@ -40,7 +48,10 @@ class MarketsSectionHeader extends StatelessWidget {
             GestureDetector(
               onTap: onAction,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: p.primaryPillDecoration(),
                 child: Text(
                   actionLabel!,
@@ -81,8 +92,11 @@ class AnimatedMetricText extends StatelessWidget {
 }
 
 bool isIndianMarketOpen([DateTime? now]) {
-  final ist = (now ?? DateTime.now()).toUtc().add(const Duration(hours: 5, minutes: 30));
-  if (ist.weekday == DateTime.saturday || ist.weekday == DateTime.sunday) return false;
+  final ist = (now ?? DateTime.now()).toUtc().add(
+    const Duration(hours: 5, minutes: 30),
+  );
+  if (ist.weekday == DateTime.saturday || ist.weekday == DateTime.sunday)
+    return false;
   final minutes = ist.hour * 60 + ist.minute;
   return minutes >= 9 * 60 + 15 && minutes <= 15 * 60 + 30;
 }

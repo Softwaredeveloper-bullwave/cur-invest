@@ -25,8 +25,10 @@ class GoalReturnTierModel {
 
   String get rangeLabel {
     if (maxMonthly == null) return '₹1,00,000+ / month';
-    if (minMonthly <= 500 && maxMonthly! <= 9999) return '₹500 – ₹10,000 / month';
-    if (minMonthly >= 10000 && maxMonthly! <= 99999) return '₹10,000 – ₹1,00,000 / month';
+    if (minMonthly <= 500 && maxMonthly! <= 9999)
+      return '₹500 – ₹10,000 / month';
+    if (minMonthly >= 10000 && maxMonthly! <= 99999)
+      return '₹10,000 – ₹1,00,000 / month';
     return '₹${minMonthly.toStringAsFixed(0)} – ₹${maxMonthly!.toStringAsFixed(0)} / month';
   }
 }
@@ -56,8 +58,7 @@ class GoalTemplateModel {
     this.maxDurationMonths = 24,
   });
 
-  IconData get iconData =>
-      GoalTemplateIcons.fromLegacy(icon, category);
+  IconData get iconData => GoalTemplateIcons.fromLegacy(icon, category);
 }
 
 class UserGoalPlanModel {

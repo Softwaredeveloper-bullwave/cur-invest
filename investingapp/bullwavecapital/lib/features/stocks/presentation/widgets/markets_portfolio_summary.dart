@@ -22,7 +22,10 @@ class MarketsPortfolioSummary extends StatelessWidget {
     if (isLoading && portfolio == null) {
       return const Padding(
         padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-        child: SizedBox(height: 160, child: Center(child: CircularProgressIndicator(strokeWidth: 2))),
+        child: SizedBox(
+          height: 160,
+          child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+        ),
       );
     }
 
@@ -44,9 +47,15 @@ class MarketsPortfolioSummary extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Portfolio Summary', style: ThemeAType.sectionTitle(color: p.textDark, size: 18)),
+              Text(
+                'Portfolio Summary',
+                style: ThemeAType.sectionTitle(color: p.textDark, size: 18),
+              ),
               const SizedBox(height: 14),
-              Text('Portfolio Value', style: ThemeAType.label(size: 12, color: p.textMuted)),
+              Text(
+                'Portfolio Value',
+                style: ThemeAType.label(size: 12, color: p.textMuted),
+              ),
               const SizedBox(height: 4),
               AnimatedMetricText(
                 value: pf.currentValue,
@@ -72,9 +81,19 @@ class MarketsPortfolioSummary extends StatelessWidget {
               const SizedBox(height: 18),
               Row(
                 children: [
-                  Expanded(child: _StatBox(label: 'Invested', value: pf.totalInvestment)),
+                  Expanded(
+                    child: _StatBox(
+                      label: 'Invested',
+                      value: pf.totalInvestment,
+                    ),
+                  ),
                   const SizedBox(width: 10),
-                  Expanded(child: _StatBox(label: 'Current Value', value: pf.currentValue)),
+                  Expanded(
+                    child: _StatBox(
+                      label: 'Current Value',
+                      value: pf.currentValue,
+                    ),
+                  ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: _StatBox(
@@ -99,7 +118,11 @@ class _PnlChip extends StatelessWidget {
   final double value;
   final double percent;
 
-  const _PnlChip({required this.label, required this.value, required this.percent});
+  const _PnlChip({
+    required this.label,
+    required this.value,
+    required this.percent,
+  });
 
   @override
   Widget build(BuildContext context) {

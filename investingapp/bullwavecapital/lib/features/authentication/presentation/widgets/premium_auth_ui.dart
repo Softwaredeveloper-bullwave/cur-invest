@@ -322,7 +322,10 @@ class PremiumAuthInputField extends StatelessWidget {
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
               ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 18,
+                vertical: 18,
+              ),
               prefixIcon: prefixIcon != null || prefixLabel != null
                   ? Padding(
                       padding: const EdgeInsets.only(left: 16, right: 8),
@@ -330,7 +333,11 @@ class PremiumAuthInputField extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           if (prefixIcon != null)
-                            Icon(prefixIcon, color: AppColors.brandCyan, size: 20),
+                            Icon(
+                              prefixIcon,
+                              color: AppColors.brandCyan,
+                              size: 20,
+                            ),
                           if (prefixIcon != null && prefixLabel != null)
                             const SizedBox(width: 6),
                           if (prefixLabel != null)
@@ -346,7 +353,10 @@ class PremiumAuthInputField extends StatelessWidget {
                       ),
                     )
                   : null,
-              prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
+              prefixIconConstraints: const BoxConstraints(
+                minWidth: 0,
+                minHeight: 0,
+              ),
             ),
           ),
         ),
@@ -430,7 +440,11 @@ class PremiumAuthStatusChip extends StatelessWidget {
                   ],
                 ),
               ),
-              Icon(Icons.verified_rounded, color: accent.withValues(alpha: 0.85), size: 20),
+              Icon(
+                Icons.verified_rounded,
+                color: accent.withValues(alpha: 0.85),
+                size: 20,
+              ),
             ],
           ),
         ),
@@ -461,7 +475,11 @@ class PremiumAuthEmailTarget extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Icon(Icons.mail_outline_rounded, color: AppColors.brandCyan, size: 22),
+              Icon(
+                Icons.mail_outline_rounded,
+                color: AppColors.brandCyan,
+                size: 22,
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(

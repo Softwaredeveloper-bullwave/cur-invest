@@ -41,24 +41,21 @@ class PremiumExploreCard extends StatelessWidget {
       radius: 28,
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
       child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: quickAccess
-                  .map(
-                    (item) => Expanded(
-                      child: PremiumServiceTile(
-                        item: item,
-                        iconSize: 58,
-                      ),
-                    ),
-                  )
-                  .toList(),
-            ),
-            const SizedBox(height: 16),
-            _ServicesGrid(items: services),
-          ],
-        ),
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: quickAccess
+                .map(
+                  (item) => Expanded(
+                    child: PremiumServiceTile(item: item, iconSize: 58),
+                  ),
+                )
+                .toList(),
+          ),
+          const SizedBox(height: 16),
+          _ServicesGrid(items: services),
+        ],
+      ),
     );
   }
 }
@@ -74,9 +71,8 @@ class _ServicesGrid extends StatelessWidget {
       return Row(
         children: items
             .map(
-              (item) => Expanded(
-                child: PremiumServiceTile(item: item, iconSize: 52),
-              ),
+              (item) =>
+                  Expanded(child: PremiumServiceTile(item: item, iconSize: 52)),
             )
             .toList(),
       );
@@ -118,11 +114,7 @@ class PremiumServiceTile extends StatelessWidget {
   final ExploreFeatureItem item;
   final double iconSize;
 
-  const PremiumServiceTile({
-    super.key,
-    required this.item,
-    this.iconSize = 52,
-  });
+  const PremiumServiceTile({super.key, required this.item, this.iconSize = 52});
 
   @override
   Widget build(BuildContext context) {
@@ -148,7 +140,10 @@ class PremiumServiceTile extends StatelessWidget {
                   Positioned(
                     top: -4,
                     right: 0,
-                    child: _FeatureBadge(label: item.badge!, accent: item.gradient.first),
+                    child: _FeatureBadge(
+                      label: item.badge!,
+                      accent: item.gradient.first,
+                    ),
                   ),
               ],
             ),
@@ -193,7 +188,10 @@ class _FeatureBadge extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: ThemeAType.label(size: 9, color: Colors.white).copyWith(letterSpacing: 0.2, height: 1),
+        style: ThemeAType.label(
+          size: 9,
+          color: Colors.white,
+        ).copyWith(letterSpacing: 0.2, height: 1),
       ),
     );
   }
@@ -218,7 +216,9 @@ class ExploreFeatureGrid extends StatelessWidget {
 class MarketsExploreShortcuts {
   MarketsExploreShortcuts._();
 
-  static List<ExploreFeatureItem> quickAccessFrom(List<ExploreFeatureItem> all) {
+  static List<ExploreFeatureItem> quickAccessFrom(
+    List<ExploreFeatureItem> all,
+  ) {
     const quickLabels = {'Watchlist', 'Screener', 'News', 'Alerts'};
     return all.where((item) => quickLabels.contains(item.label)).toList();
   }

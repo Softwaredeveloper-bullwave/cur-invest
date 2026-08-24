@@ -9,7 +9,8 @@ class LegalConfig {
   static const String website = 'https://capitalbullwave.com';
   static const String termsUrl = 'https://capitalbullwave.com/terms';
   static const String privacyPolicyUrl = 'https://capitalbullwave.com/privacy';
-  static const String accountDeletionUrl = 'https://capitalbullwave.com/account-deletion';
+  static const String accountDeletionUrl =
+      'https://capitalbullwave.com/account-deletion';
 
   static const String legalCompanyName = 'Capital BullWave';
   static const String supportEmail = 'admin@capitalbullwave.com';

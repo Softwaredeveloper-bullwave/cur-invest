@@ -37,7 +37,8 @@ class BankVerificationResultCard extends StatelessWidget {
   Color get _statusColor {
     if (status.bankVerified) return AppColors.green;
     if (status.bankReviewPending) return AppColors.brandOrange;
-    if (status.bankStatus.toLowerCase() == 'failed' || status.bankReviewRejected) {
+    if (status.bankStatus.toLowerCase() == 'failed' ||
+        status.bankReviewRejected) {
       return AppColors.red;
     }
     return Colors.orange;

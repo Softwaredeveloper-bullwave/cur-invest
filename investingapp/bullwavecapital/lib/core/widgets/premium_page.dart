@@ -78,7 +78,9 @@ class PremiumSectionTitle extends StatelessWidget {
                     subtitle!.toUpperCase(),
                     style: theme.textTheme.labelSmall?.copyWith(
                       letterSpacing: 1.2,
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
+                      color: theme.colorScheme.onSurface.withValues(
+                        alpha: 0.45,
+                      ),
                     ),
                   ),
                 Text(

@@ -73,6 +73,8 @@
 		<key>NSAllowsArbitraryLoads</key>
 		<true/>
 	</dict>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Capital BullWave uses Face ID to unlock the app quickly and securely.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>BullWave needs photo access to set your profile picture.</string>
 	<key>NSCameraUsageDescription</key>

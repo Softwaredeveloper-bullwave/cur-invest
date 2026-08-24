@@ -55,7 +55,10 @@ class _BlockDealTrackerScreenState extends State<BlockDealTrackerScreen> {
                     children: [
                       Text(
                         'NSE / BSE block & bulk deals',
-                        style: ThemeAType.cardTitle(color: p.textDark, size: 16),
+                        style: ThemeAType.cardTitle(
+                          color: p.textDark,
+                          size: 16,
+                        ),
                       ),
                       const SizedBox(height: 6),
                       Text(
@@ -85,7 +88,9 @@ class _BlockDealTrackerScreenState extends State<BlockDealTrackerScreen> {
                             child: _SummaryPill(
                               label: 'Net ₹ Cr',
                               value: summary.netValueCr.toStringAsFixed(1),
-                              color: summary.netValueCr >= 0 ? p.positive : p.negative,
+                              color: summary.netValueCr >= 0
+                                  ? p.positive
+                                  : p.negative,
                             ),
                           ),
                         ],
@@ -100,8 +105,11 @@ class _BlockDealTrackerScreenState extends State<BlockDealTrackerScreen> {
                     children: [
                       _FilterChip(
                         label: 'All',
-                        selected: provider.dealTypeFilter.isEmpty && provider.sideFilter.isEmpty,
-                        onTap: () => provider.loadBlockDeals(dealType: '', side: ''),
+                        selected:
+                            provider.dealTypeFilter.isEmpty &&
+                            provider.sideFilter.isEmpty,
+                        onTap: () =>
+                            provider.loadBlockDeals(dealType: '', side: ''),
                       ),
                       _FilterChip(
                         label: 'Block',
@@ -128,7 +136,10 @@ class _BlockDealTrackerScreenState extends State<BlockDealTrackerScreen> {
                 ),
                 if (provider.blockError != null) ...[
                   const SizedBox(height: 12),
-                  Text(provider.blockError!, style: ThemeAType.body(color: p.negative, size: 13)),
+                  Text(
+                    provider.blockError!,
+                    style: ThemeAType.body(color: p.negative, size: 13),
+                  ),
                 ],
                 const SizedBox(height: 14),
                 ...provider.blockDeals.map((d) => _BlockDealTile(deal: d)),
@@ -136,7 +147,10 @@ class _BlockDealTrackerScreenState extends State<BlockDealTrackerScreen> {
                   Padding(
                     padding: const EdgeInsets.only(top: 40),
                     child: Center(
-                      child: Text('No block deals found.', style: ThemeAType.body(color: p.textMuted)),
+                      child: Text(
+                        'No block deals found.',
+                        style: ThemeAType.body(color: p.textMuted),
+                      ),
                     ),
                   ),
               ],
@@ -192,7 +206,10 @@ class _DarkPoolTrackerScreenState extends State<DarkPoolTrackerScreen> {
                     children: [
                       Text(
                         'Off-exchange institutional prints',
-                        style: ThemeAType.cardTitle(color: p.textDark, size: 16),
+                        style: ThemeAType.cardTitle(
+                          color: p.textDark,
+                          size: 16,
+                        ),
                       ),
                       const SizedBox(height: 6),
                       Text(
@@ -221,8 +238,11 @@ class _DarkPoolTrackerScreenState extends State<DarkPoolTrackerScreen> {
                           Expanded(
                             child: _SummaryPill(
                               label: 'vs VWAP',
-                              value: '${summary.avgVsVwap >= 0 ? '+' : ''}${summary.avgVsVwap.toStringAsFixed(2)}%',
-                              color: summary.avgVsVwap >= 0 ? p.positive : p.negative,
+                              value:
+                                  '${summary.avgVsVwap >= 0 ? '+' : ''}${summary.avgVsVwap.toStringAsFixed(2)}%',
+                              color: summary.avgVsVwap >= 0
+                                  ? p.positive
+                                  : p.negative,
                             ),
                           ),
                         ],
@@ -260,15 +280,23 @@ class _DarkPoolTrackerScreenState extends State<DarkPoolTrackerScreen> {
                 ),
                 if (provider.darkError != null) ...[
                   const SizedBox(height: 12),
-                  Text(provider.darkError!, style: ThemeAType.body(color: p.negative, size: 13)),
+                  Text(
+                    provider.darkError!,
+                    style: ThemeAType.body(color: p.negative, size: 13),
+                  ),
                 ],
                 const SizedBox(height: 14),
-                ...provider.darkPrints.map((print_) => _DarkPoolTile(print_: print_)),
+                ...provider.darkPrints.map(
+                  (print_) => _DarkPoolTile(print_: print_),
+                ),
                 if (!provider.darkLoading && provider.darkPrints.isEmpty)
                   Padding(
                     padding: const EdgeInsets.only(top: 40),
                     child: Center(
-                      child: Text('No dark pool prints found.', style: ThemeAType.body(color: p.textMuted)),
+                      child: Text(
+                        'No dark pool prints found.',
+                        style: ThemeAType.body(color: p.textMuted),
+                      ),
                     ),
                   ),
               ],
@@ -285,7 +313,11 @@ class _SummaryPill extends StatelessWidget {
   final String value;
   final Color color;
 
-  const _SummaryPill({required this.label, required this.value, required this.color});
+  const _SummaryPill({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -302,7 +334,13 @@ class _SummaryPill extends StatelessWidget {
         children: [
           Text(label, style: ThemeAType.label(size: 10, color: p.textMuted)),
           const SizedBox(height: 2),
-          Text(value, style: ThemeAType.label(size: 13, color: color).copyWith(fontWeight: FontWeight.w700)),
+          Text(
+            value,
+            style: ThemeAType.label(
+              size: 13,
+              color: color,
+            ).copyWith(fontWeight: FontWeight.w700),
+          ),
         ],
       ),
     );
@@ -314,7 +352,11 @@ class _FilterChip extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
 
-  const _FilterChip({required this.label, required this.selected, required this.onTap});
+  const _FilterChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -326,13 +368,22 @@ class _FilterChip extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
-            color: selected ? p.primary.withValues(alpha: 0.16) : p.surface.withValues(alpha: 0.5),
+            color: selected
+                ? p.primary.withValues(alpha: 0.16)
+                : p.surface.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: selected ? p.primary.withValues(alpha: 0.45) : p.borderLight),
+            border: Border.all(
+              color: selected
+                  ? p.primary.withValues(alpha: 0.45)
+                  : p.borderLight,
+            ),
           ),
           child: Text(
             label,
-            style: ThemeAType.label(size: 12, color: selected ? p.primary : p.textMuted),
+            style: ThemeAType.label(
+              size: 12,
+              color: selected ? p.primary : p.textMuted,
+            ),
           ),
         ),
       ),
@@ -353,7 +404,8 @@ class _BlockDealTile extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: ScaleTap(
-        onTap: () => context.push('${AppRoutes.stockDetail}?symbol=${deal.symbol}'),
+        onTap: () =>
+            context.push('${AppRoutes.stockDetail}?symbol=${deal.symbol}'),
         child: GlassCard(
           radius: 16,
           padding: const EdgeInsets.all(14),
@@ -363,19 +415,28 @@ class _BlockDealTile extends StatelessWidget {
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: sideColor.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
                       deal.side,
-                      style: ThemeAType.label(size: 11, color: sideColor).copyWith(fontWeight: FontWeight.w800),
+                      style: ThemeAType.label(
+                        size: 11,
+                        color: sideColor,
+                      ).copyWith(fontWeight: FontWeight.w800),
                     ),
                   ),
                   const SizedBox(width: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: p.surface,
                       borderRadius: BorderRadius.circular(8),
@@ -387,21 +448,37 @@ class _BlockDealTile extends StatelessWidget {
                     ),
                   ),
                   const Spacer(),
-                  Text(deal.exchange, style: ThemeAType.label(size: 11, color: p.textMuted)),
+                  Text(
+                    deal.exchange,
+                    style: ThemeAType.label(size: 11, color: p.textMuted),
+                  ),
                 ],
               ),
               const SizedBox(height: 10),
-              Text(deal.symbol, style: ThemeAType.cardTitle(color: p.textDark, size: 16)),
-              Text(deal.companyName, style: ThemeAType.body(color: p.textGrey, size: 12)),
+              Text(
+                deal.symbol,
+                style: ThemeAType.cardTitle(color: p.textDark, size: 16),
+              ),
+              Text(
+                deal.companyName,
+                style: ThemeAType.body(color: p.textGrey, size: 12),
+              ),
               const SizedBox(height: 10),
               Row(
                 children: [
-                  _Stat(label: 'Price', value: CurrencyFormatter.formatDecimal(deal.price)),
+                  _Stat(
+                    label: 'Price',
+                    value: CurrencyFormatter.formatDecimal(deal.price),
+                  ),
                   _Stat(label: 'Qty', value: _compactQty(deal.quantity)),
-                  _Stat(label: 'Value', value: '₹${deal.valueCr.toStringAsFixed(1)} Cr'),
+                  _Stat(
+                    label: 'Value',
+                    value: '₹${deal.valueCr.toStringAsFixed(1)} Cr',
+                  ),
                   _Stat(
                     label: 'vs LTP',
-                    value: '${deal.premiumPercent >= 0 ? '+' : ''}${deal.premiumPercent.toStringAsFixed(2)}%',
+                    value:
+                        '${deal.premiumPercent >= 0 ? '+' : ''}${deal.premiumPercent.toStringAsFixed(2)}%',
                     color: deal.premiumPercent >= 0 ? p.positive : p.negative,
                   ),
                 ],
@@ -454,7 +531,8 @@ class _DarkPoolTile extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: ScaleTap(
-        onTap: () => context.push('${AppRoutes.stockDetail}?symbol=${print_.symbol}'),
+        onTap: () =>
+            context.push('${AppRoutes.stockDetail}?symbol=${print_.symbol}'),
         child: GlassCard(
           radius: 16,
           padding: const EdgeInsets.all(14),
@@ -464,14 +542,20 @@ class _DarkPoolTile extends StatelessWidget {
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: biasColor.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
                       print_.bias.toUpperCase(),
-                      style: ThemeAType.label(size: 10, color: biasColor).copyWith(fontWeight: FontWeight.w800),
+                      style: ThemeAType.label(
+                        size: 10,
+                        color: biasColor,
+                      ).copyWith(fontWeight: FontWeight.w800),
                     ),
                   ),
                   const Spacer(),
@@ -485,21 +569,37 @@ class _DarkPoolTile extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 10),
-              Text(print_.symbol, style: ThemeAType.cardTitle(color: p.textDark, size: 16)),
-              Text(print_.companyName, style: ThemeAType.body(color: p.textGrey, size: 12)),
+              Text(
+                print_.symbol,
+                style: ThemeAType.cardTitle(color: p.textDark, size: 16),
+              ),
+              Text(
+                print_.companyName,
+                style: ThemeAType.body(color: p.textGrey, size: 12),
+              ),
               if (print_.note.isNotEmpty) ...[
                 const SizedBox(height: 6),
-                Text(print_.note, style: ThemeAType.body(color: p.textDark, size: 12)),
+                Text(
+                  print_.note,
+                  style: ThemeAType.body(color: p.textDark, size: 12),
+                ),
               ],
               const SizedBox(height: 10),
               Row(
                 children: [
-                  _Stat(label: 'Price', value: CurrencyFormatter.formatDecimal(print_.price)),
+                  _Stat(
+                    label: 'Price',
+                    value: CurrencyFormatter.formatDecimal(print_.price),
+                  ),
                   _Stat(label: 'Qty', value: _compactQty(print_.quantity)),
-                  _Stat(label: 'Value', value: '₹${print_.valueCr.toStringAsFixed(1)} Cr'),
+                  _Stat(
+                    label: 'Value',
+                    value: '₹${print_.valueCr.toStringAsFixed(1)} Cr',
+                  ),
                   _Stat(
                     label: 'vs VWAP',
-                    value: '${print_.vsVwapPercent >= 0 ? '+' : ''}${print_.vsVwapPercent.toStringAsFixed(2)}%',
+                    value:
+                        '${print_.vsVwapPercent >= 0 ? '+' : ''}${print_.vsVwapPercent.toStringAsFixed(2)}%',
                     color: print_.vsVwapPercent >= 0 ? p.positive : p.negative,
                   ),
                 ],

@@ -79,11 +79,18 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                 padding: const EdgeInsets.all(20),
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 48,
+                      horizontal: 24,
+                    ),
                     decoration: AppDecorations.card(context),
                     child: Column(
                       children: [
-                        Icon(Icons.bookmarks_rounded, size: 56, color: AppColors.brandPrimary.withValues(alpha: 0.7)),
+                        Icon(
+                          Icons.bookmarks_rounded,
+                          size: 56,
+                          color: AppColors.brandPrimary.withValues(alpha: 0.7),
+                        ),
                         const SizedBox(height: 16),
                         Text(
                           'Your watchlist is empty',
@@ -98,14 +105,20 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                           market.watchlistError ??
                               'Bookmark stocks from Markets or stock detail to track them here.',
                           textAlign: TextAlign.center,
-                          style: TextStyle(color: colors.textMuted, fontSize: 13),
+                          style: TextStyle(
+                            color: colors.textMuted,
+                            fontSize: 13,
+                          ),
                         ),
                         const SizedBox(height: 20),
                         FilledButton(
                           onPressed: () => context.pop(),
                           style: FilledButton.styleFrom(
                             backgroundColor: AppColors.brandOrange,
-                            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 28,
+                              vertical: 12,
+                            ),
                           ),
                           child: const Text('Browse Markets'),
                         ),
@@ -146,13 +159,19 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
                     alignment: Alignment.centerRight,
                     padding: const EdgeInsets.only(right: 24),
                     color: AppColors.red.withValues(alpha: 0.12),
-                    child: const Icon(Icons.bookmark_remove_rounded, color: AppColors.red),
+                    child: const Icon(
+                      Icons.bookmark_remove_rounded,
+                      color: AppColors.red,
+                    ),
                   ),
                   onDismissed: (_) async {
                     final err = await market.toggleWatchlist(stock.symbol);
                     if (context.mounted && err != null) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(err), behavior: SnackBarBehavior.floating),
+                        SnackBar(
+                          content: Text(err),
+                          behavior: SnackBarBehavior.floating,
+                        ),
                       );
                       await market.refreshWatchlist();
                     }

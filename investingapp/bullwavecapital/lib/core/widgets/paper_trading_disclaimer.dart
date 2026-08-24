@@ -8,11 +8,7 @@ class PaperTradingDisclaimer extends StatelessWidget {
   final EdgeInsetsGeometry? margin;
   final bool compact;
 
-  const PaperTradingDisclaimer({
-    super.key,
-    this.margin,
-    this.compact = false,
-  });
+  const PaperTradingDisclaimer({super.key, this.margin, this.compact = false});
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +30,11 @@ class PaperTradingDisclaimer extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.info_outline_rounded, size: compact ? 16 : 18, color: p.primaryDark),
+          Icon(
+            Icons.info_outline_rounded,
+            size: compact ? 16 : 18,
+            color: p.primaryDark,
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(

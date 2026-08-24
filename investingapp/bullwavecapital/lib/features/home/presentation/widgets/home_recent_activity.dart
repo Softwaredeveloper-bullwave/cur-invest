@@ -21,7 +21,9 @@ class HomeRecentActivity extends StatelessWidget {
         HomeSectionHeader(
           title: 'Recent Activity',
           actionLabel: transactions.isNotEmpty ? 'View All' : null,
-          onAction: transactions.isNotEmpty ? () => context.push(AppRoutes.transactions) : null,
+          onAction: transactions.isNotEmpty
+              ? () => context.push(AppRoutes.transactions)
+              : null,
           reserveFabSpace: true,
         ),
         const SizedBox(height: 12),
@@ -44,10 +46,7 @@ class HomeRecentActivity extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
-                Text(
-                  'No Activity Yet',
-                  style: context.typeSection(16),
-                ),
+                Text('No Activity Yet', style: context.typeSection(16)),
                 const SizedBox(height: 8),
                 Text(
                   'Invest in a featured plan or trade stocks to see transactions here.',
@@ -61,7 +60,10 @@ class HomeRecentActivity extends StatelessWidget {
                     onTap: () => context.push(AppRoutes.featuredPlansList),
                     borderRadius: BorderRadius.circular(999),
                     child: Ink(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 12,
+                      ),
                       decoration: BoxDecoration(
                         color: p.heroCard,
                         borderRadius: BorderRadius.circular(999),
@@ -81,7 +83,10 @@ class HomeRecentActivity extends StatelessWidget {
                         children: [
                           Text(
                             'Explore Featured Plans',
-                            style: ThemeAType.label(size: 13, color: p.heroCardFg),
+                            style: ThemeAType.label(
+                              size: 13,
+                              color: p.heroCardFg,
+                            ),
                           ),
                           const SizedBox(width: 6),
                           Icon(
@@ -122,8 +127,8 @@ class _ActivityTile extends StatelessWidget {
     final accent = isProfit
         ? HomeThemeA.positive
         : isInvestment
-            ? HomeThemeA.primary
-            : HomeThemeA.textGrey;
+        ? HomeThemeA.primary
+        : HomeThemeA.textGrey;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -143,9 +148,11 @@ class _ActivityTile extends StatelessWidget {
               isProfit
                   ? PhosphorIcons.trendUp
                   : isInvestment
-                      ? PhosphorIcons.piggyBank
-                      : PhosphorIcons.arrowsLeftRight,
-              color: isProfit || isInvestment ? HomeThemeA.primaryDark : HomeThemeA.textGrey,
+                  ? PhosphorIcons.piggyBank
+                  : PhosphorIcons.arrowsLeftRight,
+              color: isProfit || isInvestment
+                  ? HomeThemeA.primaryDark
+                  : HomeThemeA.textGrey,
               size: 20,
             ),
           ),
@@ -155,7 +162,9 @@ class _ActivityTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  txn.description.isNotEmpty ? txn.description : _labelFor(txn.type),
+                  txn.description.isNotEmpty
+                      ? txn.description
+                      : _labelFor(txn.type),
                   style: ThemeAType.cardTitle(size: 14),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -180,7 +189,9 @@ class _ActivityTile extends StatelessWidget {
                     '${isProfit ? '+' : ''}${CurrencyFormatter.format(txn.amount)}',
                     style: ThemeAType.price(
                       size: 15,
-                      color: isProfit ? HomeThemeA.positive : HomeThemeA.textDark,
+                      color: isProfit
+                          ? HomeThemeA.positive
+                          : HomeThemeA.textDark,
                     ),
                   ),
                 ),

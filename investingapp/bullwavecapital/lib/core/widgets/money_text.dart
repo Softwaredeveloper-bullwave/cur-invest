@@ -23,7 +23,10 @@ class MoneyText extends StatelessWidget {
     return Text(
       amount,
       textAlign: align,
-      style: AppTypography.balance(colors, color: color).copyWith(fontSize: fontSize),
+      style: AppTypography.balance(
+        colors,
+        color: color,
+      ).copyWith(fontSize: fontSize),
     );
   }
 }
@@ -53,10 +56,7 @@ class ProfitChangeText extends StatelessWidget {
 
   String _formatAmount(double v) {
     if (v >= 100000) return '₹${(v / 100000).toStringAsFixed(2)}L';
-    return '₹${v.toStringAsFixed(0).replaceAllMapped(
-          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-          (m) => '${m[1]},',
-        )}';
+    return '₹${v.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}';
   }
 }
 

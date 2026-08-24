@@ -34,9 +34,7 @@ class HomeIpoSection extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             if (holdings.isNotEmpty) ...[
-              ...holdings.take(2).map(
-                    (h) => _HoldingPreview(holding: h),
-                  ),
+              ...holdings.take(2).map((h) => _HoldingPreview(holding: h)),
               const SizedBox(height: 12),
             ],
             if (ipos.isNotEmpty)
@@ -144,13 +142,13 @@ class _IpoTeaserCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: badgeColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(999),
-                  border: Border.all(
-                    color: badgeColor.withValues(alpha: 0.22),
-                  ),
+                  border: Border.all(color: badgeColor.withValues(alpha: 0.22)),
                 ),
                 child: Text(
                   isOpen ? 'OPEN' : 'UPCOMING',
-                  style: context.typeLabel(11, badgeColor).copyWith(letterSpacing: 0.4),
+                  style: context
+                      .typeLabel(11, badgeColor)
+                      .copyWith(letterSpacing: 0.4),
                 ),
               ),
               const SizedBox(height: 10),
@@ -161,10 +159,7 @@ class _IpoTeaserCard extends StatelessWidget {
                 style: context.typeCardTitle(15),
               ),
               const Spacer(),
-              Text(
-                event.priceBandLabel,
-                style: context.typeSecondary(13),
-              ),
+              Text(event.priceBandLabel, style: context.typeSecondary(13)),
               if (event.gmpPercent != null) ...[
                 const SizedBox(height: 3),
                 Text(

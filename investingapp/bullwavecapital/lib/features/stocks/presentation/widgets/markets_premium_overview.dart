@@ -21,7 +21,8 @@ class MarketOverviewItem {
     required this.isPositive,
   });
 
-  factory MarketOverviewItem.fromIndex(MarketIndexModel index) => MarketOverviewItem(
+  factory MarketOverviewItem.fromIndex(MarketIndexModel index) =>
+      MarketOverviewItem(
         label: index.shortName,
         value: index.value,
         changePercent: index.changePercent,
@@ -68,12 +69,14 @@ class MarketsPremiumOverview extends StatelessWidget {
     }
 
     for (final (label, value, change, positive) in _extras) {
-      items.add(MarketOverviewItem(
-        label: label,
-        value: value,
-        changePercent: change,
-        isPositive: positive,
-      ));
+      items.add(
+        MarketOverviewItem(
+          label: label,
+          value: value,
+          changePercent: change,
+          isPositive: positive,
+        ),
+      );
     }
 
     return items;
@@ -86,7 +89,9 @@ class MarketsPremiumOverview extends StatelessWidget {
     final marketOpen = isIndianMarketOpen();
 
     return Padding(
-      padding: embedded ? EdgeInsets.zero : const EdgeInsets.fromLTRB(20, 8, 20, 0),
+      padding: embedded
+          ? EdgeInsets.zero
+          : const EdgeInsets.fromLTRB(20, 8, 20, 0),
       child: RepaintBoundary(
         child: GlassCard(
           radius: 24,
@@ -99,7 +104,10 @@ class MarketsPremiumOverview extends StatelessWidget {
                   Expanded(
                     child: Text(
                       'Market Overview',
-                      style: ThemeAType.sectionTitle(color: p.textDark, size: embedded ? 16 : 18),
+                      style: ThemeAType.sectionTitle(
+                        color: p.textDark,
+                        size: embedded ? 16 : 18,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -147,7 +155,11 @@ class _MarketStatusBadge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(width: 6, height: 6, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+          Container(
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
           const SizedBox(width: 6),
           Text(
             isOpen ? 'Market Open' : 'Market Closed',
@@ -171,8 +183,8 @@ class _OverviewTile extends StatelessWidget {
     final valueText = item.label == 'USD/INR'
         ? item.value.toStringAsFixed(2)
         : item.value >= 1000
-            ? IndexFormatter.format(item.value)
-            : item.value.toStringAsFixed(2);
+        ? IndexFormatter.format(item.value)
+        : item.value.toStringAsFixed(2);
 
     return Container(
       width: 128,
@@ -185,14 +197,23 @@ class _OverviewTile extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(item.label, style: ThemeAType.label(size: 11, color: p.textGrey), maxLines: 1),
+          Text(
+            item.label,
+            style: ThemeAType.label(size: 11, color: p.textGrey),
+            maxLines: 1,
+          ),
           const Spacer(),
-          Text(valueText, style: ThemeAType.cardTitle(color: p.textDark, size: 15)),
+          Text(
+            valueText,
+            style: ThemeAType.cardTitle(color: p.textDark, size: 15),
+          ),
           const SizedBox(height: 4),
           Row(
             children: [
               Icon(
-                item.isPositive ? Icons.arrow_drop_up_rounded : Icons.arrow_drop_down_rounded,
+                item.isPositive
+                    ? Icons.arrow_drop_up_rounded
+                    : Icons.arrow_drop_down_rounded,
                 size: 18,
                 color: changeColor,
               ),
@@ -227,7 +248,11 @@ class _SparklinePainter extends CustomPainter {
   final Color color;
   final int seed;
 
-  _SparklinePainter({required this.isPositive, required this.color, required this.seed});
+  _SparklinePainter({
+    required this.isPositive,
+    required this.color,
+    required this.seed,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {

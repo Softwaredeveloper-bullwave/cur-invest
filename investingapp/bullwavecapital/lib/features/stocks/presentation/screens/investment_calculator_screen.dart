@@ -12,10 +12,12 @@ class InvestmentCalculatorScreen extends StatefulWidget {
   const InvestmentCalculatorScreen({super.key});
 
   @override
-  State<InvestmentCalculatorScreen> createState() => _InvestmentCalculatorScreenState();
+  State<InvestmentCalculatorScreen> createState() =>
+      _InvestmentCalculatorScreenState();
 }
 
-class _InvestmentCalculatorScreenState extends State<InvestmentCalculatorScreen> {
+class _InvestmentCalculatorScreenState
+    extends State<InvestmentCalculatorScreen> {
   double _monthly = 5000;
   double _rate = 12;
   int _years = 10;
@@ -47,7 +49,10 @@ class _InvestmentCalculatorScreenState extends State<InvestmentCalculatorScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('SIP Calculator', style: ThemeAType.sectionTitle(color: p.textDark, size: 20)),
+                Text(
+                  'SIP Calculator',
+                  style: ThemeAType.sectionTitle(color: p.textDark, size: 20),
+                ),
                 const SizedBox(height: 6),
                 Text(
                   'Estimate wealth from monthly SIP — for planning only.',
@@ -93,11 +98,21 @@ class _InvestmentCalculatorScreenState extends State<InvestmentCalculatorScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Projected outcome', style: ThemeAType.sectionTitle(color: p.textDark, size: 18)),
+                Text(
+                  'Projected outcome',
+                  style: ThemeAType.sectionTitle(color: p.textDark, size: 18),
+                ),
                 const SizedBox(height: 16),
-                _ResultRow(label: 'Total invested', value: CurrencyFormatter.format(_invested)),
+                _ResultRow(
+                  label: 'Total invested',
+                  value: CurrencyFormatter.format(_invested),
+                ),
                 const SizedBox(height: 10),
-                _ResultRow(label: 'Est. returns', value: CurrencyFormatter.format(_gains), highlight: true),
+                _ResultRow(
+                  label: 'Est. returns',
+                  value: CurrencyFormatter.format(_gains),
+                  highlight: true,
+                ),
                 const SizedBox(height: 10),
                 _ResultRow(
                   label: 'Future value',
@@ -144,7 +159,10 @@ class _SliderField extends StatelessWidget {
             children: [
               Text(label, style: ThemeAType.body(color: p.textGrey, size: 14)),
               const Spacer(),
-              Text(display, style: ThemeAType.cardTitle(color: p.primary, size: 15)),
+              Text(
+                display,
+                style: ThemeAType.cardTitle(color: p.primary, size: 15),
+              ),
             ],
           ),
           SliderTheme(
@@ -189,7 +207,12 @@ class _ResultRow extends StatelessWidget {
     final p = context.palette;
     return Row(
       children: [
-        Expanded(child: Text(label, style: ThemeAType.body(color: p.textGrey, size: 14))),
+        Expanded(
+          child: Text(
+            label,
+            style: ThemeAType.body(color: p.textGrey, size: 14),
+          ),
+        ),
         Text(
           value,
           style: isLarge

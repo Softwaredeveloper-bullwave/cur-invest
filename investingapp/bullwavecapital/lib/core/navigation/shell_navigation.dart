@@ -15,7 +15,8 @@ Future<void> pushOverShell(BuildContext context, String location) async {
   if (PaperOnlyMode.enabled && AppAccessPolicy.requiresKyc(path)) {
     final kyc = context.read<KycFlowProvider>();
     if (!kyc.hasPhase1Identity) {
-      final next = OnboardingFlowNavigator.nextIncompleteKycStep(kyc) ??
+      final next =
+          OnboardingFlowNavigator.nextIncompleteKycStep(kyc) ??
           AppRoutes.panVerification;
       if (path != next) {
         ScaffoldMessenger.of(context).showSnackBar(

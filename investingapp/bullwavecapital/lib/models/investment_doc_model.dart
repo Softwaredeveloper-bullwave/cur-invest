@@ -104,7 +104,9 @@ class InvestmentDocQuiz {
       title: json['title'] as String? ?? '',
       description: json['description'] as String? ?? '',
       questions: questionsJson
-          .map((e) => InvestmentQuizQuestion.fromJson(e as Map<String, dynamic>))
+          .map(
+            (e) => InvestmentQuizQuestion.fromJson(e as Map<String, dynamic>),
+          )
           .toList(),
     );
   }
@@ -184,7 +186,10 @@ class EducationCatalogModel {
   final DateTime? updatedAt;
   final List<InvestmentDocCategory> categories;
 
-  const EducationCatalogModel({required this.updatedAt, required this.categories});
+  const EducationCatalogModel({
+    required this.updatedAt,
+    required this.categories,
+  });
 }
 
 class QuizQuestionResult {

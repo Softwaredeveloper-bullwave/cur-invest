@@ -67,8 +67,7 @@ class KycFlowProvider extends ChangeNotifier {
   /// Phase 1 Play Store — PAN, Aadhaar, and bank (incl. pending review).
   bool get hasPhase1Identity {
     final s = status;
-    final bankDone =
-        s.bankVerified || s.bankReviewPending || s.bankDraftReady;
+    final bankDone = s.bankVerified || s.bankReviewPending || s.bankDraftReady;
     return s.panVerified && s.aadhaarVerified && bankDone;
   }
 
@@ -109,7 +108,9 @@ class KycFlowProvider extends ChangeNotifier {
             ? error.message
             : 'Cashfree could not verify this bank account. Check account number and IFSC.';
       }
-      if (error.code == 'upi_service_unavailable' || error.code == 'upi_unavailable' || error.code == 'eko_route_not_found') {
+      if (error.code == 'upi_service_unavailable' ||
+          error.code == 'upi_unavailable' ||
+          error.code == 'eko_route_not_found') {
         return error.message;
       }
       if (error.code == 'upi_invalid') {
@@ -165,10 +166,13 @@ class KycFlowProvider extends ChangeNotifier {
   Future<void> loadKycStatus() async {
     try {
       status = await _kycRepo.fetchStatus();
-
+      error = null;
       notifyListeners();
-    } catch (_) {
-      // Silent — these screens surface errors from their own verify actions.
+    } catch (e) {
+      if (status == KycStatusModel.empty) {
+        error = _messageFromError(e, 'Could not load KYC status.');
+      }
+      notifyListeners();
     }
   }
 

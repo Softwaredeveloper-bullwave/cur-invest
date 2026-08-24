@@ -16,10 +16,7 @@ class AppAnimations {
       tween: Tween(begin: 0, end: 1),
       duration: duration,
       curve: curve,
-      builder: (context, value, child) => Opacity(
-        opacity: value,
-        child: child,
-      ),
+      builder: (context, value, child) => Opacity(opacity: value, child: child),
       child: child,
     );
   }
@@ -35,10 +32,7 @@ class AppAnimations {
       curve: Curves.easeOutCubic,
       builder: (context, value, child) => Transform.translate(
         offset: Offset(0, value),
-        child: Opacity(
-          opacity: 1 - (value / offset).clamp(0, 1),
-          child: child,
-        ),
+        child: Opacity(opacity: 1 - (value / offset).clamp(0, 1), child: child),
       ),
       child: child,
     );

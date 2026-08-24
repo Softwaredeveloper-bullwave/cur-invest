@@ -4,7 +4,10 @@ import 'package:flutter/material.dart';
 class TradingViewChartingLibraryPlaceholder extends StatelessWidget {
   final double height;
 
-  const TradingViewChartingLibraryPlaceholder({super.key, required this.height});
+  const TradingViewChartingLibraryPlaceholder({
+    super.key,
+    required this.height,
+  });
 
   @override
   Widget build(BuildContext context) {

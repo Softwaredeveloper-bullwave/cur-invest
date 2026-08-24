@@ -5,7 +5,11 @@ import 'package:provider/provider.dart';
 import '../../../core/constants/routes.dart';
 import 'presentation/provider/fno_flow_provider.dart';
 
-Future<void> openFnoFeature(BuildContext context, String route, {Map<String, String>? query}) async {
+Future<void> openFnoFeature(
+  BuildContext context,
+  String route, {
+  Map<String, String>? query,
+}) async {
   final fno = context.read<FnoFlowProvider>();
   await fno.ensureLoaded();
   if (!context.mounted) return;

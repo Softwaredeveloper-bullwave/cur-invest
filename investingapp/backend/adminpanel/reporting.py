@@ -5,11 +5,12 @@ from __future__ import annotations
 from datetime import timedelta
 from decimal import Decimal
 
-from django.db.models import Count, Q, Sum
+from django.db.models import Count, F, Q, Sum
 from django.db.models.functions import TruncDate
 from django.utils import timezone
 
 from accounts.models import KycDocument, User
+from education.models import EducationCategory, EducationQuiz, EducationQuizAttempt
 from engagement.models import Notification, SupportTicket
 from finance.models import PaymentOrder, Wallet, WalletTransaction
 from kyc.models import BankVerificationRequest, FnoEligibilityRequest, KYCRequest, KycProfile, VerificationAuditLog
@@ -25,6 +26,7 @@ def user_summary() -> dict:
     pending_kyc = User.objects.filter(
         kyc_status__in=[User.KycStatus.PENDING, User.KycStatus.IN_PROGRESS, User.KycStatus.NOT_SUBMITTED]
     ).count()
+    learn = learn_summary()
     return {
         'total': User.objects.count(),
         'active': User.objects.filter(is_active=True, is_staff=False).count(),
@@ -35,6 +37,52 @@ def user_summary() -> dict:
             kyc_status__in=[User.KycStatus.VERIFIED, User.KycStatus.COMPLETED]
         ).count(),
         'kycRejected': User.objects.filter(kyc_status=User.KycStatus.REJECTED).count(),
+        'learnActive': learn['activeLearners'],
+        'learnQuizAttempts': learn['totalQuizAttempts'],
+    }
+
+
+def learn_summary() -> dict:
+    attempts = EducationQuizAttempt.objects.all()
+    passed = attempts.filter(score=F('total'), total__gt=0)
+    return {
+        'activeLearners': attempts.values('user_id').distinct().count(),
+        'totalQuizAttempts': attempts.count(),
+        'passedAttempts': passed.count(),
+        'quizzesAvailable': EducationQuiz.objects.filter(is_active=True).count(),
+        'categoriesActive': EducationCategory.objects.filter(is_active=True).count(),
+        'onboardingComplete': User.objects.filter(
+            has_completed_onboarding=True, is_staff=False
+        ).count(),
+    }
+
+
+def serialize_quiz_attempt(row: EducationQuizAttempt) -> dict:
+    return {
+        'id': str(row.id),
+        'userId': str(row.user_id),
+        'userPhone': row.user.phone,
+        'userName': row.user.name,
+        'quizSlug': row.quiz.slug,
+        'quizTitle': row.quiz.title,
+        'categoryTitle': row.quiz.category.title,
+        'score': row.score,
+        'total': row.total,
+        'passed': row.score == row.total and row.total > 0,
+        'completedAt': row.completed_at.isoformat(),
+    }
+
+
+def learn_stats_for_user(user: User) -> dict:
+    attempts = EducationQuizAttempt.objects.filter(user=user).select_related('quiz', 'quiz__category')
+    latest = attempts.order_by('-completed_at').first()
+    passed = attempts.filter(score=F('total'), total__gt=0).count()
+    return {
+        'hasCompletedOnboarding': user.has_completed_onboarding,
+        'quizAttemptCount': attempts.count(),
+        'quizzesPassed': passed,
+        'lastActivityAt': latest.completed_at.isoformat() if latest else None,
+        'isLearnActive': attempts.exists(),
     }
 
 

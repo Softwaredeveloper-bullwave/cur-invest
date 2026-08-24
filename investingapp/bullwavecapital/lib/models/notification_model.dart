@@ -18,12 +18,12 @@ class NotificationModel {
   });
 
   NotificationModel copyWith({bool? isRead}) => NotificationModel(
-        id: id,
-        title: title,
-        message: message,
-        date: date,
-        isRead: isRead ?? this.isRead,
-        type: type,
-        referenceId: referenceId,
-      );
+    id: id,
+    title: title,
+    message: message,
+    date: date,
+    isRead: isRead ?? this.isRead,
+    type: type,
+    referenceId: referenceId,
+  );
 }

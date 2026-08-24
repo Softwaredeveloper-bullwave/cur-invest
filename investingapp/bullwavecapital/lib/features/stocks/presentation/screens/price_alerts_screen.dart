@@ -19,7 +19,8 @@ class PriceAlertsScreen extends StatefulWidget {
   State<PriceAlertsScreen> createState() => _PriceAlertsScreenState();
 }
 
-class _PriceAlertsScreenState extends State<PriceAlertsScreen> with SingleTickerProviderStateMixin {
+class _PriceAlertsScreenState extends State<PriceAlertsScreen>
+    with SingleTickerProviderStateMixin {
   late final TabController _tabs;
   final _symbolController = TextEditingController(text: 'RELIANCE');
   final _priceController = TextEditingController(text: '1500');
@@ -62,15 +63,17 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen> with SingleTicker
 
     setState(() => _isSaving = true);
     final ok = await context.read<StockFeaturesProvider>().addAlert(
-          symbol: symbol,
-          targetPrice: price,
-          condition: _condition,
-        );
+      symbol: symbol,
+      targetPrice: price,
+      condition: _condition,
+    );
     if (!mounted) return;
     setState(() => _isSaving = false);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(ok ? 'Price alert created for $symbol' : 'Failed to create alert'),
+        content: Text(
+          ok ? 'Price alert created for $symbol' : 'Failed to create alert',
+        ),
         backgroundColor: ok ? AppColors.green : AppColors.red,
       ),
     );
@@ -80,18 +83,26 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen> with SingleTicker
     final keyword = _keywordController.text.trim();
     if (keyword.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter a symbol or keyword (e.g. RELIANCE, RBI)')),
+        const SnackBar(
+          content: Text('Enter a symbol or keyword (e.g. RELIANCE, RBI)'),
+        ),
       );
       return;
     }
     setState(() => _isSaving = true);
-    final ok = await context.read<StockFeaturesProvider>().addNewsAlert(keyword);
+    final ok = await context.read<StockFeaturesProvider>().addNewsAlert(
+      keyword,
+    );
     if (!mounted) return;
     setState(() => _isSaving = false);
     if (ok) _keywordController.clear();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(ok ? 'News alert created for $keyword' : 'Failed to create news alert'),
+        content: Text(
+          ok
+              ? 'News alert created for $keyword'
+              : 'Failed to create news alert',
+        ),
         backgroundColor: ok ? AppColors.green : AppColors.red,
       ),
     );
@@ -140,14 +151,19 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen> with SingleTicker
                             priceController: _priceController,
                             condition: _condition,
                             isSaving: _isSaving,
-                            suggestions: market.trendingStocks.take(5).map((s) => s.symbol).toList(),
-                            onConditionChanged: (v) => setState(() => _condition = v),
+                            suggestions: market.trendingStocks
+                                .take(5)
+                                .map((s) => s.symbol)
+                                .toList(),
+                            onConditionChanged: (v) =>
+                                setState(() => _condition = v),
                             onCreate: _createPriceAlert,
                           ),
                           const SizedBox(height: 20),
                           Text(
                             'Your Price Alerts (${alerts.length})',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w800),
                           ),
                           const SizedBox(height: 10),
                           if (alerts.isEmpty)
@@ -155,7 +171,8 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen> with SingleTicker
                               colors: colors,
                               icon: Icons.notifications_active_outlined,
                               title: 'No price alerts yet',
-                              subtitle: 'Get notified when a stock hits your target price.',
+                              subtitle:
+                                  'Get notified when a stock hits your target price.',
                             )
                           else
                             ...alerts.map(
@@ -196,7 +213,8 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen> with SingleTicker
                           const SizedBox(height: 20),
                           Text(
                             'Your News Alerts (${alerts.length})',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w800),
                           ),
                           const SizedBox(height: 10),
                           if (alerts.isEmpty)
@@ -204,7 +222,8 @@ class _PriceAlertsScreenState extends State<PriceAlertsScreen> with SingleTicker
                               colors: colors,
                               icon: Icons.newspaper_outlined,
                               title: 'No news alerts yet',
-                              subtitle: 'Watch a symbol or keyword — we notify you when matching headlines appear.',
+                              subtitle:
+                                  'Watch a symbol or keyword — we notify you when matching headlines appear.',
                             )
                           else
                             ...alerts.map(
@@ -255,14 +274,21 @@ class _CreatePriceAlertCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('New Price Alert', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+          Text(
+            'New Price Alert',
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+          ),
           const SizedBox(height: 14),
           TextField(
             controller: symbolController,
             textCapitalization: TextCapitalization.characters,
             decoration: InputDecoration(
               labelText: 'Symbol',
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
           ),
           const SizedBox(height: 8),
@@ -281,7 +307,9 @@ class _CreatePriceAlertCard extends StatelessWidget {
             keyboardType: TextInputType.number,
             decoration: InputDecoration(
               labelText: 'Target price (₹)',
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
           ),
           const SizedBox(height: 12),
@@ -313,10 +341,22 @@ class _CreatePriceAlertCard extends StatelessWidget {
             child: FilledButton.icon(
               onPressed: isSaving ? null : onCreate,
               icon: isSaving
-                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
                   : const Icon(Icons.add_alert_rounded),
-              label: const Text('Create Price Alert', style: TextStyle(fontWeight: FontWeight.w800)),
-              style: FilledButton.styleFrom(backgroundColor: AppColors.brandOrange),
+              label: const Text(
+                'Create Price Alert',
+                style: TextStyle(fontWeight: FontWeight.w800),
+              ),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.brandOrange,
+              ),
             ),
           ),
         ],
@@ -348,7 +388,12 @@ class _CreateNewsAlertCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('New News Alert', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+          Text(
+            'New News Alert',
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+          ),
           const SizedBox(height: 6),
           Text(
             'Get notified when headlines mention your keyword or stock.',
@@ -361,7 +406,9 @@ class _CreateNewsAlertCard extends StatelessWidget {
             decoration: InputDecoration(
               labelText: 'Keyword / Symbol',
               hintText: 'RELIANCE, RBI, IPO…',
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
           ),
           const SizedBox(height: 8),
@@ -381,9 +428,19 @@ class _CreateNewsAlertCard extends StatelessWidget {
             child: FilledButton.icon(
               onPressed: isSaving ? null : onCreate,
               icon: isSaving
-                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
                   : const Icon(Icons.newspaper_rounded),
-              label: const Text('Create News Alert', style: TextStyle(fontWeight: FontWeight.w800)),
+              label: const Text(
+                'Create News Alert',
+                style: TextStyle(fontWeight: FontWeight.w800),
+              ),
               style: FilledButton.styleFrom(
                 backgroundColor: AppColors.brandPrimary,
                 foregroundColor: AppColors.onBrandPrimary,
@@ -401,7 +458,11 @@ class _PriceAlertCard extends StatelessWidget {
   final AppThemeExtension colors;
   final VoidCallback onToggle;
 
-  const _PriceAlertCard({required this.alert, required this.colors, required this.onToggle});
+  const _PriceAlertCard({
+    required this.alert,
+    required this.colors,
+    required this.onToggle,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -424,16 +485,33 @@ class _PriceAlertCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(alert.symbol, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
-                Text(alert.name, style: TextStyle(color: colors.textMuted, fontSize: 12)),
+                Text(
+                  alert.symbol,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16,
+                  ),
+                ),
+                Text(
+                  alert.name,
+                  style: TextStyle(color: colors.textMuted, fontSize: 12),
+                ),
                 Text(
                   '${isAbove ? 'Above' : 'Below'} ${CurrencyFormatter.formatDecimal(alert.targetPrice)}',
-                  style: TextStyle(color: accent, fontWeight: FontWeight.w700, fontSize: 13),
+                  style: TextStyle(
+                    color: accent,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                  ),
                 ),
               ],
             ),
           ),
-          Switch(value: alert.isActive, activeThumbColor: AppColors.green, onChanged: (_) => onToggle()),
+          Switch(
+            value: alert.isActive,
+            activeThumbColor: AppColors.green,
+            onChanged: (_) => onToggle(),
+          ),
         ],
       ),
     );
@@ -464,14 +542,24 @@ class _NewsAlertCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: AppDecorations.iconBadge(AppColors.brandPrimary),
-            child: const Icon(Icons.newspaper_rounded, color: AppColors.brandPrimary, size: 20),
+            child: const Icon(
+              Icons.newspaper_rounded,
+              color: AppColors.brandPrimary,
+              size: 20,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(alert.keyword, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+                Text(
+                  alert.keyword,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16,
+                  ),
+                ),
                 if (alert.lastMatchedTitle.isNotEmpty)
                   Text(
                     'Last: ${alert.lastMatchedTitle}',
@@ -480,11 +568,18 @@ class _NewsAlertCard extends StatelessWidget {
                     style: TextStyle(color: colors.textMuted, fontSize: 12),
                   )
                 else
-                  Text('Watching market headlines…', style: TextStyle(color: colors.textMuted, fontSize: 12)),
+                  Text(
+                    'Watching market headlines…',
+                    style: TextStyle(color: colors.textMuted, fontSize: 12),
+                  ),
               ],
             ),
           ),
-          Switch(value: alert.isActive, activeThumbColor: AppColors.green, onChanged: (_) => onToggle()),
+          Switch(
+            value: alert.isActive,
+            activeThumbColor: AppColors.green,
+            onChanged: (_) => onToggle(),
+          ),
           IconButton(
             onPressed: onDelete,
             icon: Icon(Icons.delete_outline_rounded, color: colors.textMuted),
@@ -518,9 +613,19 @@ class _EmptyState extends StatelessWidget {
         children: [
           Icon(icon, size: 44, color: colors.textMuted),
           const SizedBox(height: 12),
-          Text(title, style: TextStyle(fontWeight: FontWeight.w700, color: colors.textSecondary)),
+          Text(
+            title,
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+              color: colors.textSecondary,
+            ),
+          ),
           const SizedBox(height: 6),
-          Text(subtitle, textAlign: TextAlign.center, style: TextStyle(color: colors.textMuted, fontSize: 13)),
+          Text(
+            subtitle,
+            textAlign: TextAlign.center,
+            style: TextStyle(color: colors.textMuted, fontSize: 13),
+          ),
         ],
       ),
     );

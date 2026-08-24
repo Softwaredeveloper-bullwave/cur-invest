@@ -200,7 +200,9 @@ class _AppBottomNavigationState extends State<AppBottomNavigation>
                             gradient: AppColors.navHomeGradient,
                             boxShadow: [
                               BoxShadow(
-                                color: AppColors.brandPrimary.withValues(alpha: 0.45),
+                                color: AppColors.brandPrimary.withValues(
+                                  alpha: 0.45,
+                                ),
                                 blurRadius: 14,
                                 offset: const Offset(0, 3),
                               ),

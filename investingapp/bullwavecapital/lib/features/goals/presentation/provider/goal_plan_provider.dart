@@ -131,7 +131,8 @@ class GoalPlanProvider extends ChangeNotifier {
       }
 
       if (walletBalance < monthlyContribution) {
-        error = 'Add ₹${shortfall.toStringAsFixed(0)} to wallet for first installment.';
+        error =
+            'Add ₹${shortfall.toStringAsFixed(0)} to wallet for first installment.';
         isSubmitting = false;
         notifyListeners();
         return null;
@@ -158,7 +159,10 @@ class GoalPlanProvider extends ChangeNotifier {
     return null;
   }
 
-  Future<String?> payDueInstallment(String goalId, KycFlowProvider kycFlow) async {
+  Future<String?> payDueInstallment(
+    String goalId,
+    KycFlowProvider kycFlow,
+  ) async {
     final goal = goals.firstWhere((g) => g.id == goalId);
     isSubmitting = true;
     error = null;

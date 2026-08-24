@@ -21,7 +21,8 @@ Future<bool> ensureBankVerified(BuildContext context) async {
       return ensureInvestmentRiskAcknowledged(context);
     }
     if (!context.mounted) return false;
-    final next = OnboardingFlowNavigator.nextIncompleteKycStep(kyc) ??
+    final next =
+        OnboardingFlowNavigator.nextIncompleteKycStep(kyc) ??
         AppRoutes.panVerification;
     await context.push(next);
     await kyc.loadStatus();

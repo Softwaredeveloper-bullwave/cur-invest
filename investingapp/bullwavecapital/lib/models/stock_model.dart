@@ -39,7 +39,11 @@ class StockModel {
 
   bool get isPositive => change >= 0;
 
-  StockModel copyWithLivePrice({required double ltp, required double change, required double changePercent}) {
+  StockModel copyWithLivePrice({
+    required double ltp,
+    required double change,
+    required double changePercent,
+  }) {
     return StockModel(
       symbol: symbol,
       name: name,
@@ -370,7 +374,8 @@ class IpoEventModel {
     this.listingPrice = 0,
   });
 
-  String get priceBandLabel => '₹${priceBandMin.toStringAsFixed(0)} – ₹${priceBandMax.toStringAsFixed(0)}';
+  String get priceBandLabel =>
+      '₹${priceBandMin.toStringAsFixed(0)} – ₹${priceBandMax.toStringAsFixed(0)}';
 
   bool get isOpen => status == 'open';
   bool get isUpcoming => status == 'upcoming';

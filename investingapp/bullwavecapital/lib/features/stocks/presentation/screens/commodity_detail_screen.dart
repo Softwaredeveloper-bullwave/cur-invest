@@ -57,14 +57,20 @@ class _CommodityDetailScreenState extends State<CommodityDetailScreen> {
               builder: (context, provider, _) {
                 final commodity = provider.commodityById(widget.commodityId);
                 if (commodity == null && provider.isLoading) {
-                  return const Center(child: CircularProgressIndicator(color: AppColors.brandOrange));
+                  return const Center(
+                    child: CircularProgressIndicator(
+                      color: AppColors.brandOrange,
+                    ),
+                  );
                 }
                 if (commodity == null) {
                   return const Center(child: Text('Commodity not found'));
                 }
 
                 final holding = provider.holdingFor(commodity.id);
-                final changeColor = commodity.isPositive ? AppColors.green : AppColors.red;
+                final changeColor = commodity.isPositive
+                    ? AppColors.green
+                    : AppColors.red;
 
                 return Column(
                   children: [
@@ -76,7 +82,10 @@ class _CommodityDetailScreenState extends State<CommodityDetailScreen> {
                       child: ListView(
                         padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
                         children: [
-                          _PriceHero(commodity: commodity, changeColor: changeColor),
+                          _PriceHero(
+                            commodity: commodity,
+                            changeColor: changeColor,
+                          ),
                           const SizedBox(height: 14),
                           ClipRRect(
                             borderRadius: BorderRadius.circular(12),
@@ -91,7 +100,8 @@ class _CommodityDetailScreenState extends State<CommodityDetailScreen> {
                           const SizedBox(height: 12),
                           ChartIntervalSelector(
                             selectedLabel: _intervalLabel,
-                            onSelected: (label) => setState(() => _intervalLabel = label),
+                            onSelected: (label) =>
+                                setState(() => _intervalLabel = label),
                           ),
                           const SizedBox(height: 14),
                           Row(
@@ -123,14 +133,16 @@ class _CommodityDetailScreenState extends State<CommodityDetailScreen> {
                               Expanded(
                                 child: _StatCard(
                                   label: 'Day High',
-                                  value: '\$${IndexFormatter.format(commodity.high)}',
+                                  value:
+                                      '\$${IndexFormatter.format(commodity.high)}',
                                 ),
                               ),
                               const SizedBox(width: 10),
                               Expanded(
                                 child: _StatCard(
                                   label: 'Day Low',
-                                  value: '\$${IndexFormatter.format(commodity.low)}',
+                                  value:
+                                      '\$${IndexFormatter.format(commodity.low)}',
                                 ),
                               ),
                             ],
@@ -138,38 +150,52 @@ class _CommodityDetailScreenState extends State<CommodityDetailScreen> {
                           const SizedBox(height: 10),
                           _StatCard(
                             label: 'Previous Close',
-                            value: '\$${IndexFormatter.format(commodity.previousClose)}',
+                            value:
+                                '\$${IndexFormatter.format(commodity.previousClose)}',
                           ),
                           if (holding != null) ...[
                             const SizedBox(height: 22),
                             Text(
                               'Your Position',
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(fontWeight: FontWeight.w800),
                             ),
                             const SizedBox(height: 10),
                             RobinhoodCard(
                               glow: holding.isProfit,
-                              glowColor: holding.isProfit ? AppColors.green : AppColors.red,
+                              glowColor: holding.isProfit
+                                  ? AppColors.green
+                                  : AppColors.red,
                               child: Column(
                                 children: [
-                                  _HoldingRow(label: 'Units held', value: '${holding.quantity}'),
+                                  _HoldingRow(
+                                    label: 'Units held',
+                                    value: '${holding.quantity}',
+                                  ),
                                   _HoldingRow(
                                     label: 'Avg buy price',
-                                    value: '\$${IndexFormatter.format(holding.avgPriceUsd)}',
+                                    value:
+                                        '\$${IndexFormatter.format(holding.avgPriceUsd)}',
                                   ),
                                   _HoldingRow(
                                     label: 'Invested (INR)',
-                                    value: CurrencyFormatter.formatDecimal(holding.investedInr),
+                                    value: CurrencyFormatter.formatDecimal(
+                                      holding.investedInr,
+                                    ),
                                   ),
                                   _HoldingRow(
                                     label: 'Current value',
-                                    value: CurrencyFormatter.formatDecimal(holding.currentValueInr),
+                                    value: CurrencyFormatter.formatDecimal(
+                                      holding.currentValueInr,
+                                    ),
                                   ),
                                   _HoldingRow(
                                     label: 'P&L',
                                     value:
                                         '${holding.pnlInr >= 0 ? '+' : ''}${CurrencyFormatter.formatDecimal(holding.pnlInr)} (${holding.pnlPercent.toStringAsFixed(2)}%)',
-                                    valueColor: holding.isProfit ? AppColors.green : AppColors.red,
+                                    valueColor: holding.isProfit
+                                        ? AppColors.green
+                                        : AppColors.red,
                                   ),
                                 ],
                               ),
@@ -206,27 +232,47 @@ class _PriceHero extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(commodity.name, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+          Text(
+            commodity.name,
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+          ),
           const SizedBox(height: 8),
           Text(
             '\$${IndexFormatter.format(commodity.ltp)}',
-            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 38, letterSpacing: -1),
+            style: const TextStyle(
+              fontWeight: FontWeight.w900,
+              fontSize: 38,
+              letterSpacing: -1,
+            ),
           ),
           const SizedBox(height: 6),
           Row(
             children: [
               Icon(
-                commodity.isPositive ? Icons.trending_up_rounded : Icons.trending_down_rounded,
+                commodity.isPositive
+                    ? Icons.trending_up_rounded
+                    : Icons.trending_down_rounded,
                 size: 18,
                 color: changeColor,
               ),
               const SizedBox(width: 4),
               Text(
                 '${IndexFormatter.formatChange(commodity.change)} (${IndexFormatter.formatPercent(commodity.changePercent)})',
-                style: TextStyle(color: changeColor, fontWeight: FontWeight.w700),
+                style: TextStyle(
+                  color: changeColor,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               const Spacer(),
-              Text(commodity.unit, style: TextStyle(color: context.appColors.textMuted, fontSize: 12)),
+              Text(
+                commodity.unit,
+                style: TextStyle(
+                  color: context.appColors.textMuted,
+                  fontSize: 12,
+                ),
+              ),
             ],
           ),
         ],
@@ -263,7 +309,13 @@ class _ActionChip extends StatelessWidget {
             children: [
               Icon(icon, color: color, size: 20),
               const SizedBox(width: 8),
-              Text(label, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                ),
+              ),
             ],
           ),
         ),
@@ -285,9 +337,15 @@ class _StatCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: TextStyle(color: context.appColors.textMuted, fontSize: 12)),
+          Text(
+            label,
+            style: TextStyle(color: context.appColors.textMuted, fontSize: 12),
+          ),
           const SizedBox(height: 4),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+          Text(
+            value,
+            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+          ),
         ],
       ),
     );
@@ -299,7 +357,11 @@ class _HoldingRow extends StatelessWidget {
   final String value;
   final Color? valueColor;
 
-  const _HoldingRow({required this.label, required this.value, this.valueColor});
+  const _HoldingRow({
+    required this.label,
+    required this.value,
+    this.valueColor,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -309,7 +371,10 @@ class _HoldingRow extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: TextStyle(color: context.appColors.textSecondary)),
-          Text(value, style: TextStyle(fontWeight: FontWeight.w700, color: valueColor)),
+          Text(
+            value,
+            style: TextStyle(fontWeight: FontWeight.w700, color: valueColor),
+          ),
         ],
       ),
     );
@@ -324,7 +389,9 @@ class _TradeBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
-    final holdingQty = context.watch<CommodityProvider>().holdingQtyFor(commodity.id);
+    final holdingQty = context.watch<CommodityProvider>().holdingQtyFor(
+      commodity.id,
+    );
 
     return Container(
       width: double.infinity,
@@ -346,13 +413,22 @@ class _TradeBar extends StatelessWidget {
             child: SizedBox(
               height: 52,
               child: FilledButton(
-                onPressed: () => openCommodityTradingPad(context, commodity: commodity, initialSide: 'BUY'),
+                onPressed: () => openCommodityTradingPad(
+                  context,
+                  commodity: commodity,
+                  initialSide: 'BUY',
+                ),
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColors.green,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                 ),
-                child: const Text('Buy', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+                child: const Text(
+                  'Buy',
+                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                ),
               ),
             ),
           ),
@@ -363,13 +439,22 @@ class _TradeBar extends StatelessWidget {
               child: OutlinedButton(
                 onPressed: holdingQty < 1
                     ? null
-                    : () => openCommodityTradingPad(context, commodity: commodity, initialSide: 'SELL'),
+                    : () => openCommodityTradingPad(
+                        context,
+                        commodity: commodity,
+                        initialSide: 'SELL',
+                      ),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.red,
                   side: const BorderSide(color: AppColors.red),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                 ),
-                child: const Text('Sell', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+                child: const Text(
+                  'Sell',
+                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                ),
               ),
             ),
           ),

@@ -28,7 +28,9 @@ class BankManualReviewPendingPanel extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.brandOrange.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.brandOrange.withValues(alpha: 0.35)),
+        border: Border.all(
+          color: AppColors.brandOrange.withValues(alpha: 0.35),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -78,7 +80,11 @@ class BankManualReviewPendingPanel extends StatelessWidget {
           const SizedBox(height: 8),
           const Text(
             'You will receive a notification when verification is complete. You can close this screen and continue browsing.',
-            style: TextStyle(fontSize: 12, color: AppColors.textMuted, height: 1.4),
+            style: TextStyle(
+              fontSize: 12,
+              color: AppColors.textMuted,
+              height: 1.4,
+            ),
           ),
         ],
       ),

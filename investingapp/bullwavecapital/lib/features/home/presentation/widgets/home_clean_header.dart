@@ -49,16 +49,24 @@ class HomeCleanHeader extends StatelessWidget {
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
                       color: p.primary.withValues(alpha: 0.14),
                       borderRadius: BorderRadius.circular(999),
-                      border: Border.all(color: p.primaryBorder.withValues(alpha: 0.6)),
+                      border: Border.all(
+                        color: p.primaryBorder.withValues(alpha: 0.6),
+                      ),
                     ),
                     child: Text(
                       AppBrand.acronym,
                       style: ThemeAType.label(size: 10, color: p.primaryDark)
-                          .copyWith(letterSpacing: 1.4, fontWeight: FontWeight.w800),
+                          .copyWith(
+                            letterSpacing: 1.4,
+                            fontWeight: FontWeight.w800,
+                          ),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -84,10 +92,7 @@ class HomeCleanHeader extends StatelessWidget {
               badge: notificationCount,
             ),
             const SizedBox(width: 8),
-            _HeaderIconButton(
-              icon: PhosphorIcons.list,
-              onTap: onMenuTap,
-            ),
+            _HeaderIconButton(icon: PhosphorIcons.list, onTap: onMenuTap),
           ],
         ),
       ],
@@ -100,11 +105,7 @@ class _HeaderIconButton extends StatelessWidget {
   final VoidCallback? onTap;
   final int badge;
 
-  const _HeaderIconButton({
-    required this.icon,
-    this.onTap,
-    this.badge = 0,
-  });
+  const _HeaderIconButton({required this.icon, this.onTap, this.badge = 0});
 
   @override
   Widget build(BuildContext context) {
@@ -129,7 +130,9 @@ class _HeaderIconButton extends StatelessWidget {
                 border: Border.all(color: p.borderLight),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: p.isDark ? 0.35 : 0.06),
+                    color: Colors.black.withValues(
+                      alpha: p.isDark ? 0.35 : 0.06,
+                    ),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -154,7 +157,10 @@ class _HeaderIconButton extends StatelessWidget {
               alignment: Alignment.center,
               child: Text(
                 badge > 9 ? '9+' : '$badge',
-                style: ThemeAType.label(size: 9, color: p.onPrimary).copyWith(height: 1),
+                style: ThemeAType.label(
+                  size: 9,
+                  color: p.onPrimary,
+                ).copyWith(height: 1),
               ),
             ),
           ),

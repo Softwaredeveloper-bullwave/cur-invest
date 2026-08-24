@@ -24,7 +24,9 @@ class CommodityOrderSuccessSheet extends StatelessWidget {
     final isSell = order.isSell;
     final pnl = order.realizedPnlInr;
     final isProfit = (pnl ?? 0) >= 0;
-    final accent = isSell ? (isProfit ? AppColors.green : AppColors.red) : AppColors.green;
+    final accent = isSell
+        ? (isProfit ? AppColors.green : AppColors.red)
+        : AppColors.green;
 
     return Container(
       margin: const EdgeInsets.fromLTRB(12, 0, 12, 24),
@@ -55,10 +57,16 @@ class CommodityOrderSuccessSheet extends StatelessWidget {
               const SizedBox(height: 16),
               Text(
                 isSell ? 'Sell Order Executed' : 'Buy Order Executed',
-                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 22),
+                style: const TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 22,
+                ),
               ),
               const SizedBox(height: 6),
-              Text(order.name, style: TextStyle(color: colors.textSecondary, fontSize: 14)),
+              Text(
+                order.name,
+                style: TextStyle(color: colors.textSecondary, fontSize: 14),
+              ),
               const SizedBox(height: 24),
               Container(
                 width: double.infinity,
@@ -73,15 +81,23 @@ class CommodityOrderSuccessSheet extends StatelessWidget {
                     _Row(label: 'Commodity', value: order.shortName),
                     _Row(label: 'Order Type', value: 'MARKET ${order.side}'),
                     _Row(label: 'Quantity', value: '${order.quantity} units'),
-                    _Row(label: 'Price (USD)', value: '\$${IndexFormatter.format(order.priceUsd)}'),
                     _Row(
-                      label: isSell ? 'Credited to wallet' : 'Debited from wallet',
+                      label: 'Price (USD)',
+                      value: '\$${IndexFormatter.format(order.priceUsd)}',
+                    ),
+                    _Row(
+                      label: isSell
+                          ? 'Credited to wallet'
+                          : 'Debited from wallet',
                       value: CurrencyFormatter.formatDecimal(order.amountInr),
                       bold: true,
                     ),
                     if (isSell && pnl != null) ...[
                       const Divider(height: 24),
-                      Text('Realized P&L', style: TextStyle(color: colors.textMuted, fontSize: 12)),
+                      Text(
+                        'Realized P&L',
+                        style: TextStyle(color: colors.textMuted, fontSize: 12),
+                      ),
                       const SizedBox(height: 6),
                       Text(
                         '${pnl >= 0 ? '+' : ''}${CurrencyFormatter.formatDecimal(pnl)}',
@@ -104,12 +120,18 @@ class CommodityOrderSuccessSheet extends StatelessWidget {
                 width: double.infinity,
                 height: 52,
                 child: FilledButton(
-                  onPressed: () => Navigator.of(context, rootNavigator: true).pop(),
+                  onPressed: () =>
+                      Navigator.of(context, rootNavigator: true).pop(),
                   style: FilledButton.styleFrom(
                     backgroundColor: AppColors.green,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                   ),
-                  child: const Text('Done', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+                  child: const Text(
+                    'Done',
+                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                  ),
                 ),
               ),
             ],
@@ -134,10 +156,19 @@ class _Row extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(color: context.appColors.textSecondary, fontSize: 13)),
+          Text(
+            label,
+            style: TextStyle(
+              color: context.appColors.textSecondary,
+              fontSize: 13,
+            ),
+          ),
           Text(
             value,
-            style: TextStyle(fontWeight: bold ? FontWeight.w900 : FontWeight.w700, fontSize: bold ? 16 : 14),
+            style: TextStyle(
+              fontWeight: bold ? FontWeight.w900 : FontWeight.w700,
+              fontSize: bold ? 16 : 14,
+            ),
           ),
         ],
       ),

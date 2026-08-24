@@ -64,11 +64,10 @@ class _SplashAnimationState extends State<SplashAnimation>
         child: AnimatedBuilder(
           animation: _controller,
           builder: (context, _) {
-            final value = widget.progress > 0 ? widget.progress : _controller.value;
-            return PremiumThinProgress(
-              value: value,
-              label: 'Loading markets',
-            );
+            final value = widget.progress > 0
+                ? widget.progress
+                : _controller.value;
+            return PremiumThinProgress(value: value, label: 'Loading markets');
           },
         ),
       ),
@@ -157,11 +156,19 @@ class _LiveStatRow extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          _StatChip(label: 'NIFTY', value: '+1.24%', color: AppColors.greenSoft),
+          _StatChip(
+            label: 'NIFTY',
+            value: '+1.24%',
+            color: AppColors.greenSoft,
+          ),
           const SizedBox(width: 10),
           _StatChip(label: 'GOLD', value: '+1.8%', color: AppColors.brandCyan),
           const SizedBox(width: 10),
-          _StatChip(label: 'SENSEX', value: '+0.9%', color: AppColors.brandPink),
+          _StatChip(
+            label: 'SENSEX',
+            value: '+0.9%',
+            color: AppColors.brandPink,
+          ),
         ],
       ),
     );

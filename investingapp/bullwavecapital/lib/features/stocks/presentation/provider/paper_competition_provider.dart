@@ -61,7 +61,10 @@ class PaperCompetitionProvider extends ChangeNotifier {
         startingBalance: startingBalance,
         durationDays: durationDays,
       );
-      _competitions = [created, ..._competitions.where((c) => c.id != created.id)];
+      _competitions = [
+        created,
+        ..._competitions.where((c) => c.id != created.id),
+      ];
       _selected = created;
       return null;
     } on ApiException catch (e) {
@@ -79,7 +82,10 @@ class PaperCompetitionProvider extends ChangeNotifier {
     notifyListeners();
     try {
       final joined = await _api.joinPaperCompetition(code);
-      _competitions = [joined, ..._competitions.where((c) => c.id != joined.id)];
+      _competitions = [
+        joined,
+        ..._competitions.where((c) => c.id != joined.id),
+      ];
       _selected = joined;
       return null;
     } on ApiException catch (e) {

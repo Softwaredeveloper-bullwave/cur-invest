@@ -47,42 +47,57 @@ class AppTypography {
       headlineMedium: s(size: 20, weight: FontWeight.w700, letterSpacing: -0.2),
       titleLarge: s(size: 18, weight: FontWeight.w600),
       titleMedium: s(size: 16, weight: FontWeight.w600),
-      bodyLarge: s(size: 15, weight: FontWeight.w500, color: colors.textPrimary),
-      bodyMedium: s(size: 14, weight: FontWeight.w500, color: colors.textPrimary),
-      bodySmall: s(size: 14, weight: FontWeight.w500, color: colors.textSecondary),
+      bodyLarge: s(
+        size: 15,
+        weight: FontWeight.w500,
+        color: colors.textPrimary,
+      ),
+      bodyMedium: s(
+        size: 14,
+        weight: FontWeight.w500,
+        color: colors.textPrimary,
+      ),
+      bodySmall: s(
+        size: 14,
+        weight: FontWeight.w500,
+        color: colors.textSecondary,
+      ),
       labelLarge: s(size: 14, weight: FontWeight.w600),
-      labelMedium: s(size: 13, weight: FontWeight.w600, color: colors.textSecondary),
+      labelMedium: s(
+        size: 13,
+        weight: FontWeight.w600,
+        color: colors.textSecondary,
+      ),
       labelSmall: s(size: 12, weight: FontWeight.w500, color: colors.textMuted),
     );
   }
 
-  static TextStyle balance(AppThemeExtension colors, {Color? color}) =>
-      _style(
-        size: 32,
-        weight: FontWeight.w800,
-        color: color ?? colors.textPrimary,
-        letterSpacing: -0.3,
-        height: 1.1,
-      );
+  static TextStyle balance(AppThemeExtension colors, {Color? color}) => _style(
+    size: 32,
+    weight: FontWeight.w800,
+    color: color ?? colors.textPrimary,
+    letterSpacing: -0.3,
+    height: 1.1,
+  );
 
   static TextStyle moneyLabel(AppThemeExtension colors) => _style(
-        size: 13,
-        weight: FontWeight.w600,
-        color: colors.textSecondary,
-        letterSpacing: 0,
-      );
+    size: 13,
+    weight: FontWeight.w600,
+    color: colors.textSecondary,
+    letterSpacing: 0,
+  );
 
   static TextStyle profitChange({required bool isPositive}) => _style(
-        size: 13,
-        weight: FontWeight.w700,
-        color: isPositive ? AppColors.green : AppColors.red,
-        letterSpacing: -0.1,
-      );
+    size: 13,
+    weight: FontWeight.w700,
+    color: isPositive ? AppColors.green : AppColors.red,
+    letterSpacing: -0.1,
+  );
 
   static TextStyle sectionTitle(AppThemeExtension colors) => _style(
-        size: 17,
-        weight: FontWeight.w700,
-        color: colors.textPrimary,
-        letterSpacing: -0.2,
-      );
+    size: 17,
+    weight: FontWeight.w700,
+    color: colors.textPrimary,
+    letterSpacing: -0.2,
+  );
 }

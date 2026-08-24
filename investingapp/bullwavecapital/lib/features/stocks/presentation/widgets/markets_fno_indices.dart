@@ -56,7 +56,11 @@ class MarketsFnoIndicesSection extends StatelessWidget {
           title: 'Index F&O',
           subtitle: 'Charts · Analysis · Option chain',
           actionLabel: 'All chains',
-          onAction: () => openFnoFeature(context, AppRoutes.optionChain, query: {'symbol': 'NIFTY'}),
+          onAction: () => openFnoFeature(
+            context,
+            AppRoutes.optionChain,
+            query: {'symbol': 'NIFTY'},
+          ),
         ),
         SizedBox(
           height: 132,
@@ -85,11 +89,7 @@ class _FnoIndexCard extends StatelessWidget {
   final double? spot;
   final double? changePercent;
 
-  const _FnoIndexCard({
-    required this.meta,
-    this.spot,
-    this.changePercent,
-  });
+  const _FnoIndexCard({required this.meta, this.spot, this.changePercent});
 
   @override
   Widget build(BuildContext context) {
@@ -115,15 +115,25 @@ class _FnoIndexCard extends StatelessWidget {
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: p.primary.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(6),
                     ),
-                    child: Text(meta.exchange, style: ThemeAType.label(size: 9, color: p.primary)),
+                    child: Text(
+                      meta.exchange,
+                      style: ThemeAType.label(size: 9, color: p.primary),
+                    ),
                   ),
                   const Spacer(),
-                  Icon(Icons.candlestick_chart_rounded, size: 16, color: p.textMuted),
+                  Icon(
+                    Icons.candlestick_chart_rounded,
+                    size: 16,
+                    color: p.textMuted,
+                  ),
                 ],
               ),
               const SizedBox(height: 8),
@@ -135,12 +145,20 @@ class _FnoIndexCard extends StatelessWidget {
               ),
               const Spacer(),
               if (spot != null)
-                Text(IndexFormatter.format(spot!), style: ThemeAType.cardTitle(color: p.textDark, size: 15))
+                Text(
+                  IndexFormatter.format(spot!),
+                  style: ThemeAType.cardTitle(color: p.textDark, size: 15),
+                )
               else
-                Text('—', style: ThemeAType.cardTitle(color: p.textMuted, size: 15)),
+                Text(
+                  '—',
+                  style: ThemeAType.cardTitle(color: p.textMuted, size: 15),
+                ),
               const SizedBox(height: 2),
               Text(
-                changePercent != null ? IndexFormatter.formatPercent(change) : 'Tap for chain',
+                changePercent != null
+                    ? IndexFormatter.formatPercent(change)
+                    : 'Tap for chain',
                 style: ThemeAType.label(size: 11, color: changeColor),
               ),
             ],

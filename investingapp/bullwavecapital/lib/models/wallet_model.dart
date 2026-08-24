@@ -12,11 +12,11 @@ class WalletModel {
   });
 
   factory WalletModel.fromJson(Map<String, dynamic> json) => WalletModel(
-        balance: (json['balance'] as num).toDouble(),
-        bankName: json['bankName'] as String,
-        accountNumber: json['accountNumber'] as String,
-        ifsc: json['ifsc'] as String,
-      );
+    balance: (json['balance'] as num).toDouble(),
+    bankName: json['bankName'] as String,
+    accountNumber: json['accountNumber'] as String,
+    ifsc: json['ifsc'] as String,
+  );
 }
 
 class WalletTransaction {

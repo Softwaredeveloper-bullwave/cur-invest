@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../../../core/api/auth_session_guard.dart';
 import '../../../../core/api/api_exception.dart';
 import '../../../../core/api/bullwave_api.dart';
 import '../../../../models/commodity_model.dart';
@@ -58,15 +59,23 @@ class CommodityProvider extends ChangeNotifier {
   List<CommodityHoldingModel> get holdings => List.unmodifiable(_holdings);
   List<CommodityTradeModel> get trades => List.unmodifiable(_trades);
 
-  _CommodityOptionState _chainState(String id) =>
-      _optionChains.putIfAbsent(id.toUpperCase(), () => _CommodityOptionState());
+  _CommodityOptionState _chainState(String id) => _optionChains.putIfAbsent(
+    id.toUpperCase(),
+    () => _CommodityOptionState(),
+  );
 
-  List<OptionContractModel> optionChain(String commodityId) => _chainState(commodityId).contracts;
-  double optionUnderlying(String commodityId) => _chainState(commodityId).underlying;
-  List<String> optionExpiries(String commodityId) => _chainState(commodityId).expiries;
-  String optionSelectedExpiry(String commodityId) => _chainState(commodityId).selectedExpiry;
-  bool isOptionChainLoading(String commodityId) => _chainState(commodityId).loading;
-  String? optionChainError(String commodityId) => _chainState(commodityId).error;
+  List<OptionContractModel> optionChain(String commodityId) =>
+      _chainState(commodityId).contracts;
+  double optionUnderlying(String commodityId) =>
+      _chainState(commodityId).underlying;
+  List<String> optionExpiries(String commodityId) =>
+      _chainState(commodityId).expiries;
+  String optionSelectedExpiry(String commodityId) =>
+      _chainState(commodityId).selectedExpiry;
+  bool isOptionChainLoading(String commodityId) =>
+      _chainState(commodityId).loading;
+  String? optionChainError(String commodityId) =>
+      _chainState(commodityId).error;
 
   Future<void> loadOptionChain(String commodityId, {String? expiry}) async {
     final key = commodityId.toUpperCase();
@@ -77,7 +86,11 @@ class CommodityProvider extends ChangeNotifier {
 
     try {
       try {
-        final fast = await _api.getCommodityOptionChain(key, expiry: expiry, fast: true);
+        final fast = await _api.getCommodityOptionChain(
+          key,
+          expiry: expiry,
+          fast: true,
+        );
         if (fast.contracts.isNotEmpty) {
           _applyChain(state, fast);
           notifyListeners();
@@ -95,7 +108,8 @@ class CommodityProvider extends ChangeNotifier {
       if (state.contracts.isEmpty) state.error = e.message;
     } catch (_) {
       if (state.contracts.isEmpty) {
-        state.error = 'Could not load commodity options. Is the backend running?';
+        state.error =
+            'Could not load commodity options. Is the backend running?';
       }
     }
 
@@ -128,7 +142,8 @@ class CommodityProvider extends ChangeNotifier {
     }
   }
 
-  int holdingQtyFor(String commodityId) => holdingFor(commodityId)?.quantity ?? 0;
+  int holdingQtyFor(String commodityId) =>
+      holdingFor(commodityId)?.quantity ?? 0;
 
   List<CommodityModel> commoditiesByCategory(String category) =>
       _commodities.where((c) => c.category == category).toList();
@@ -198,6 +213,13 @@ class CommodityProvider extends ChangeNotifier {
   }
 
   Future<void> _load({bool silent = false}) async {
+    if (!await hasStoredAccessToken()) {
+      if (!silent) {
+        _isLoading = false;
+        notifyListeners();
+      }
+      return;
+    }
     if (!silent) {
       _isLoading = true;
       _error = null;
@@ -222,7 +244,8 @@ class CommodityProvider extends ChangeNotifier {
       }
     } catch (_) {
       if (_commodities.isEmpty) {
-        _error = 'Unable to load commodity prices. Is Django running on port 8000?';
+        _error =
+            'Unable to load commodity prices. Is Django running on port 8000?';
         _usingDemoData = false;
       }
     } finally {

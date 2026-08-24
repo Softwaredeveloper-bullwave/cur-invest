@@ -74,7 +74,9 @@ class WalletScreen extends StatelessWidget {
                                       width: 40,
                                       height: 40,
                                       decoration: BoxDecoration(
-                                        color: Colors.white.withValues(alpha: 0.12),
+                                        color: Colors.white.withValues(
+                                          alpha: 0.12,
+                                        ),
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       child: Icon(
@@ -85,15 +87,22 @@ class WalletScreen extends StatelessWidget {
                                     ),
                                     const Spacer(),
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 4,
+                                      ),
                                       decoration: BoxDecoration(
                                         color: p.primary.withValues(alpha: 0.2),
-                                        borderRadius: BorderRadius.circular(999),
+                                        borderRadius: BorderRadius.circular(
+                                          999,
+                                        ),
                                       ),
                                       child: Text(
                                         'VIRTUAL',
-                                        style: ThemeAType.label(size: 10, color: p.primary)
-                                            .copyWith(fontWeight: FontWeight.w800),
+                                        style: ThemeAType.label(
+                                          size: 10,
+                                          color: p.primary,
+                                        ).copyWith(fontWeight: FontWeight.w800),
                                       ),
                                     ),
                                   ],
@@ -101,19 +110,30 @@ class WalletScreen extends StatelessWidget {
                                 const SizedBox(height: 16),
                                 Text(
                                   'Practice Balance',
-                                  style: ThemeAType.secondary(size: 13, color: p.heroCardMuted),
+                                  style: ThemeAType.secondary(
+                                    size: 13,
+                                    color: p.heroCardMuted,
+                                  ),
                                 ),
                                 const SizedBox(height: 6),
                                 Text(
-                                  CurrencyFormatter.format(provider.practiceBalance),
-                                  style: ThemeAType.price(size: 34, color: p.heroCardFg),
+                                  CurrencyFormatter.format(
+                                    provider.practiceBalance,
+                                  ),
+                                  style: ThemeAType.price(
+                                    size: 34,
+                                    color: p.heroCardFg,
+                                  ),
                                 ),
                                 const SizedBox(height: 18),
                                 PrimaryButton(
                                   label: 'Open Paper Trading',
                                   icon: Icons.show_chart_rounded,
                                   compact: true,
-                                  onPressed: () => pushOverShell(context, AppRoutes.paperTrading),
+                                  onPressed: () => pushOverShell(
+                                    context,
+                                    AppRoutes.paperTrading,
+                                  ),
                                 ),
                               ],
                             ),
@@ -162,7 +182,9 @@ class WalletScreen extends StatelessWidget {
                                     width: 40,
                                     height: 40,
                                     decoration: BoxDecoration(
-                                      color: Colors.white.withValues(alpha: 0.12),
+                                      color: Colors.white.withValues(
+                                        alpha: 0.12,
+                                      ),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Icon(
@@ -174,15 +196,22 @@ class WalletScreen extends StatelessWidget {
                                   const Spacer(),
                                   if (wallet.balance <= 0)
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 4,
+                                      ),
                                       decoration: BoxDecoration(
                                         color: p.primary.withValues(alpha: 0.2),
-                                        borderRadius: BorderRadius.circular(999),
+                                        borderRadius: BorderRadius.circular(
+                                          999,
+                                        ),
                                       ),
                                       child: Text(
                                         'Add funds to start',
-                                        style: ThemeAType.label(size: 10, color: p.primary)
-                                            .copyWith(fontWeight: FontWeight.w800),
+                                        style: ThemeAType.label(
+                                          size: 10,
+                                          color: p.primary,
+                                        ).copyWith(fontWeight: FontWeight.w800),
                                       ),
                                     ),
                                 ],
@@ -190,12 +219,18 @@ class WalletScreen extends StatelessWidget {
                               const SizedBox(height: 16),
                               Text(
                                 'Available Balance',
-                                style: ThemeAType.secondary(size: 13, color: p.heroCardMuted),
+                                style: ThemeAType.secondary(
+                                  size: 13,
+                                  color: p.heroCardMuted,
+                                ),
                               ),
                               const SizedBox(height: 6),
                               Text(
                                 CurrencyFormatter.format(wallet.balance),
-                                style: ThemeAType.price(size: 34, color: p.heroCardFg),
+                                style: ThemeAType.price(
+                                  size: 34,
+                                  color: p.heroCardFg,
+                                ),
                               ),
                               const SizedBox(height: 18),
                               Row(
@@ -205,7 +240,14 @@ class WalletScreen extends StatelessWidget {
                                       label: 'Add Money',
                                       icon: Icons.add_rounded,
                                       compact: true,
-                                      onPressed: () => context.push(AppRoutes.deposit),
+                                      onPressed: () async {
+                                        if (!await ensureBankVerified(context)) {
+                                          return;
+                                        }
+                                        if (context.mounted) {
+                                          context.push(AppRoutes.deposit);
+                                        }
+                                      },
                                     ),
                                   ),
                                   const SizedBox(width: 10),
@@ -215,8 +257,10 @@ class WalletScreen extends StatelessWidget {
                                       icon: Icons.arrow_upward_rounded,
                                       compact: true,
                                       onPressed: () async {
-                                        if (!await ensureBankVerified(context)) return;
-                                        if (context.mounted) context.push(AppRoutes.withdraw);
+                                        if (!await ensureBankVerified(context))
+                                          return;
+                                        if (context.mounted)
+                                          context.push(AppRoutes.withdraw);
                                       },
                                     ),
                                   ),
@@ -228,8 +272,12 @@ class WalletScreen extends StatelessWidget {
                         const SizedBox(height: 18),
                         Text(
                           'Quick access',
-                          style: context.typeLabel(12, p.textMuted)
-                              .copyWith(fontWeight: FontWeight.w700, letterSpacing: 0.4),
+                          style: context
+                              .typeLabel(12, p.textMuted)
+                              .copyWith(
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.4,
+                              ),
                         ),
                         const SizedBox(height: 10),
                         ShellHighlightActionsRow(
@@ -238,7 +286,12 @@ class WalletScreen extends StatelessWidget {
                               icon: PhosphorIcons.plusCircle,
                               label: 'Deposit',
                               color: AppColors.brandPrimary,
-                              onTap: () => context.push(AppRoutes.deposit),
+                              onTap: () async {
+                                if (!await ensureBankVerified(context)) return;
+                                if (context.mounted) {
+                                  context.push(AppRoutes.deposit);
+                                }
+                              },
                             ),
                             ShellHighlightAction(
                               icon: PhosphorIcons.arrowUp,
@@ -246,7 +299,8 @@ class WalletScreen extends StatelessWidget {
                               color: AppColors.brandOrange,
                               onTap: () async {
                                 if (!await ensureBankVerified(context)) return;
-                                if (context.mounted) context.push(AppRoutes.withdraw);
+                                if (context.mounted)
+                                  context.push(AppRoutes.withdraw);
                               },
                             ),
                             ShellHighlightAction(
@@ -275,31 +329,50 @@ class WalletScreen extends StatelessWidget {
                           const AppSectionHeader(title: 'Bank Account'),
                           const SizedBox(height: AppDimensions.paddingSm),
                           RobinhoodCard(
-                            padding: const EdgeInsets.all(AppDimensions.paddingMd),
+                            padding: const EdgeInsets.all(
+                              AppDimensions.paddingMd,
+                            ),
                             child: Row(
                               children: [
                                 Container(
                                   padding: const EdgeInsets.all(10),
                                   decoration: BoxDecoration(
-                                    color: AppColors.green.withValues(alpha: 0.12),
+                                    color: AppColors.green.withValues(
+                                      alpha: 0.12,
+                                    ),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
-                                  child: const Icon(Icons.account_balance, color: AppColors.green),
+                                  child: const Icon(
+                                    Icons.account_balance,
+                                    color: AppColors.green,
+                                  ),
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
-                                      Text(wallet.bankName, style: Theme.of(context).textTheme.titleMedium),
+                                      Text(
+                                        wallet.bankName,
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.titleMedium,
+                                      ),
                                       Text(
                                         'A/C ${wallet.accountNumber} • ${wallet.ifsc}',
-                                        style: Theme.of(context).textTheme.bodySmall,
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.bodySmall,
                                       ),
                                     ],
                                   ),
                                 ),
-                                const Icon(Icons.verified, color: AppColors.green, size: 20),
+                                const Icon(
+                                  Icons.verified,
+                                  color: AppColors.green,
+                                  size: 20,
+                                ),
                               ],
                             ),
                           ),
@@ -313,7 +386,9 @@ class WalletScreen extends StatelessWidget {
                         const SizedBox(height: AppDimensions.paddingSm),
                         if (provider.transactions.isEmpty)
                           RobinhoodCard(
-                            padding: const EdgeInsets.all(AppDimensions.paddingMd),
+                            padding: const EdgeInsets.all(
+                              AppDimensions.paddingMd,
+                            ),
                             child: Text(
                               wallet.balance <= 0
                                   ? 'No transactions yet. Add money to get started.'
@@ -327,7 +402,10 @@ class WalletScreen extends StatelessWidget {
                             return Padding(
                               padding: const EdgeInsets.only(bottom: 8),
                               child: RobinhoodCard(
-                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 12,
+                                ),
                                 child: Row(
                                   children: [
                                     Flexible(
@@ -336,7 +414,9 @@ class WalletScreen extends StatelessWidget {
                                         style: TextStyle(
                                           fontWeight: FontWeight.w700,
                                           fontSize: 15,
-                                          color: isCredit ? AppColors.green : AppColors.red,
+                                          color: isCredit
+                                              ? AppColors.green
+                                              : AppColors.red,
                                         ),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
@@ -346,17 +426,22 @@ class WalletScreen extends StatelessWidget {
                                     Expanded(
                                       flex: 2,
                                       child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
                                           Text(
                                             txn.type,
-                                            style: Theme.of(context).textTheme.titleMedium,
+                                            style: Theme.of(
+                                              context,
+                                            ).textTheme.titleMedium,
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
                                           ),
                                           Text(
                                             DateFormatter.display(txn.date),
-                                            style: Theme.of(context).textTheme.bodySmall,
+                                            style: Theme.of(
+                                              context,
+                                            ).textTheme.bodySmall,
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
                                           ),

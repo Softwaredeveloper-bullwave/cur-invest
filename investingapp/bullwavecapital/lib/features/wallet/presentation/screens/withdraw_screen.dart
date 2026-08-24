@@ -42,7 +42,9 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
           children: [
             Text(
               'Available Balance: ${CurrencyFormatter.format(wallet.wallet.balance)}',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.accent),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(color: AppColors.accent),
             ),
             const SizedBox(height: AppDimensions.paddingLg),
             AppTextField(
@@ -66,7 +68,10 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
                   color: AppColors.brandOrange.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Text('Status: $_payoutStatus', style: const TextStyle(fontWeight: FontWeight.w700)),
+                child: Text(
+                  'Status: $_payoutStatus',
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
               ),
             ],
             const Spacer(),
@@ -76,7 +81,8 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
                 onPressed: kyc.isLoading
                     ? null
                     : () async {
-                        final amount = double.tryParse(_amountController.text) ?? 0;
+                        final amount =
+                            double.tryParse(_amountController.text) ?? 0;
                         if (amount <= 0) {
                           AppSnackbar.error(context, 'Enter valid amount');
                           return;

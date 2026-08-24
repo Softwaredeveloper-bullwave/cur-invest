@@ -30,10 +30,30 @@ class _GoalPlansScreenState extends State<GoalPlansScreen> {
 
   static const _categories = [
     _CategoryMeta('house', 'Home', Icons.home_rounded, Color(0xFF9333EA)),
-    _CategoryMeta('education', 'Education', Icons.school_rounded, Color(0xFF10B981)),
-    _CategoryMeta('marriage', 'Marriage', Icons.favorite_rounded, Color(0xFFEC4899)),
-    _CategoryMeta('vehicle', 'Vehicle', Icons.directions_car_rounded, Color(0xFFF59E0B)),
-    _CategoryMeta('retirement', 'Retirement', Icons.elderly_rounded, Color(0xFF6366F1)),
+    _CategoryMeta(
+      'education',
+      'Education',
+      Icons.school_rounded,
+      Color(0xFF10B981),
+    ),
+    _CategoryMeta(
+      'marriage',
+      'Marriage',
+      Icons.favorite_rounded,
+      Color(0xFFEC4899),
+    ),
+    _CategoryMeta(
+      'vehicle',
+      'Vehicle',
+      Icons.directions_car_rounded,
+      Color(0xFFF59E0B),
+    ),
+    _CategoryMeta(
+      'retirement',
+      'Retirement',
+      Icons.elderly_rounded,
+      Color(0xFF6366F1),
+    ),
   ];
 
   @override
@@ -52,12 +72,16 @@ class _GoalPlansScreenState extends State<GoalPlansScreen> {
       body: Consumer<GoalPlanProvider>(
         builder: (context, provider, _) {
           if (provider.isLoading && provider.templates.isEmpty) {
-            return const Center(child: CircularProgressIndicator(color: AppColors.brandPink));
+            return const Center(
+              child: CircularProgressIndicator(color: AppColors.brandPink),
+            );
           }
 
           final templates = _selectedCategory == null
               ? provider.templates
-              : provider.templates.where((t) => t.category == _selectedCategory).toList();
+              : provider.templates
+                    .where((t) => t.category == _selectedCategory)
+                    .toList();
 
           return RefreshIndicator(
             color: AppColors.brandPink,
@@ -89,61 +113,75 @@ class _GoalPlansScreenState extends State<GoalPlansScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                const SizedBox(height: 8),
-                _SectionHeader(
-                  title: 'Choose a goal',
-                  subtitle: 'Pick a life milestone and start saving monthly',
-                ),
-                const SizedBox(height: 14),
-                _CategoryChipRow(
-                  categories: _categories,
-                  selected: _selectedCategory,
-                  onSelected: (category) {
-                    setState(() {
-                      _selectedCategory = _selectedCategory == category ? null : category;
-                    });
-                  },
-                ),
-                const SizedBox(height: 18),
-                if (templates.isEmpty)
-                  _EmptyFilterState(
-                    onClear: () => setState(() => _selectedCategory = null),
-                  )
-                else
-                  GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      mainAxisSpacing: 14,
-                      crossAxisSpacing: 14,
-                      childAspectRatio: 0.78,
-                    ),
-                    itemCount: templates.length,
-                    itemBuilder: (context, index) {
-                      final template = templates[index];
-                      return _TemplateCard(
-                        template: template,
-                        onTap: () => context.push('${AppRoutes.createGoal}?category=${template.category}'),
-                      );
-                    },
-                  ),
-                if (provider.goals.isNotEmpty) ...[
-                  const SizedBox(height: 32),
-                  _SectionHeader(
-                    title: 'Your goals',
-                    subtitle: '${provider.goals.length} active plan${provider.goals.length == 1 ? '' : 's'}',
-                    actionLabel: provider.dueGoals.isNotEmpty ? '${provider.dueGoals.length} due' : null,
-                    actionColor: provider.dueGoals.isNotEmpty ? AppColors.red : null,
-                  ),
-                  const SizedBox(height: 14),
-                  ...provider.goals.map(
-                    (goal) => _GoalProgressCard(
-                      goal: goal,
-                      onTap: () => context.push('${AppRoutes.goalDetail}?id=${goal.id}'),
-                    ),
-                  ),
-                ],
+                      const SizedBox(height: 8),
+                      _SectionHeader(
+                        title: 'Choose a goal',
+                        subtitle:
+                            'Pick a life milestone and start saving monthly',
+                      ),
+                      const SizedBox(height: 14),
+                      _CategoryChipRow(
+                        categories: _categories,
+                        selected: _selectedCategory,
+                        onSelected: (category) {
+                          setState(() {
+                            _selectedCategory = _selectedCategory == category
+                                ? null
+                                : category;
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 18),
+                      if (templates.isEmpty)
+                        _EmptyFilterState(
+                          onClear: () =>
+                              setState(() => _selectedCategory = null),
+                        )
+                      else
+                        GridView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                mainAxisSpacing: 14,
+                                crossAxisSpacing: 14,
+                                childAspectRatio: 0.78,
+                              ),
+                          itemCount: templates.length,
+                          itemBuilder: (context, index) {
+                            final template = templates[index];
+                            return _TemplateCard(
+                              template: template,
+                              onTap: () => context.push(
+                                '${AppRoutes.createGoal}?category=${template.category}',
+                              ),
+                            );
+                          },
+                        ),
+                      if (provider.goals.isNotEmpty) ...[
+                        const SizedBox(height: 32),
+                        _SectionHeader(
+                          title: 'Your goals',
+                          subtitle:
+                              '${provider.goals.length} active plan${provider.goals.length == 1 ? '' : 's'}',
+                          actionLabel: provider.dueGoals.isNotEmpty
+                              ? '${provider.dueGoals.length} due'
+                              : null,
+                          actionColor: provider.dueGoals.isNotEmpty
+                              ? AppColors.red
+                              : null,
+                        ),
+                        const SizedBox(height: 14),
+                        ...provider.goals.map(
+                          (goal) => _GoalProgressCard(
+                            goal: goal,
+                            onTap: () => context.push(
+                              '${AppRoutes.goalDetail}?id=${goal.id}',
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -201,7 +239,11 @@ class _SectionHeader extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 subtitle,
-                style: GoogleFonts.inter(fontSize: 12.5, color: colors.textSecondary, height: 1.3),
+                style: GoogleFonts.inter(
+                  fontSize: 12.5,
+                  color: colors.textSecondary,
+                  height: 1.3,
+                ),
               ),
             ],
           ),
@@ -210,9 +252,15 @@ class _SectionHeader extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(
-              color: (actionColor ?? AppColors.brandCyan).withValues(alpha: 0.14),
+              color: (actionColor ?? AppColors.brandCyan).withValues(
+                alpha: 0.14,
+              ),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: (actionColor ?? AppColors.brandCyan).withValues(alpha: 0.3)),
+              border: Border.all(
+                color: (actionColor ?? AppColors.brandCyan).withValues(
+                  alpha: 0.3,
+                ),
+              ),
             ),
             child: Text(
               actionLabel!,
@@ -242,13 +290,11 @@ class _HeroBanner extends StatelessWidget {
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF1A1035),
-            Color(0xFF3B1A8C),
-            Color(0xFF5B25FE),
-          ],
+          colors: [Color(0xFF1A1035), Color(0xFF3B1A8C), Color(0xFF5B25FE)],
         ),
-        border: Border.all(color: AppColors.brandPrimaryLight.withValues(alpha: 0.35)),
+        border: Border.all(
+          color: AppColors.brandPrimaryLight.withValues(alpha: 0.35),
+        ),
         boxShadow: [
           BoxShadow(
             color: AppColors.brandPrimary.withValues(alpha: 0.28),
@@ -263,26 +309,43 @@ class _HeroBanner extends StatelessWidget {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.green.withValues(alpha: 0.18),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.green.withValues(alpha: 0.35)),
+                  border: Border.all(
+                    color: AppColors.green.withValues(alpha: 0.35),
+                  ),
                 ),
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.verified_rounded, color: AppColors.green, size: 14),
+                    Icon(
+                      Icons.verified_rounded,
+                      color: AppColors.green,
+                      size: 14,
+                    ),
                     SizedBox(width: 4),
                     Text(
                       'Up to 16% p.a.',
-                      style: TextStyle(color: AppColors.green, fontWeight: FontWeight.w800, fontSize: 11),
+                      style: TextStyle(
+                        color: AppColors.green,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 11,
+                      ),
                     ),
                   ],
                 ),
               ),
               const Spacer(),
-              Icon(Icons.flag_rounded, color: Colors.white.withValues(alpha: 0.5), size: 20),
+              Icon(
+                Icons.flag_rounded,
+                color: Colors.white.withValues(alpha: 0.5),
+                size: 20,
+              ),
             ],
           ),
           const SizedBox(height: 14),
@@ -355,20 +418,28 @@ class _CategoryChipRow extends StatelessWidget {
                 color: isSelected ? null : colors.surfaceSecondary,
                 borderRadius: BorderRadius.circular(999),
                 border: Border.all(
-                  color: isSelected ? cat.color.withValues(alpha: 0.55) : colors.border.withValues(alpha: 0.7),
+                  color: isSelected
+                      ? cat.color.withValues(alpha: 0.55)
+                      : colors.border.withValues(alpha: 0.7),
                 ),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(cat.icon, size: 15, color: isSelected ? cat.color : colors.textMuted),
+                  Icon(
+                    cat.icon,
+                    size: 15,
+                    color: isSelected ? cat.color : colors.textMuted,
+                  ),
                   const SizedBox(width: 6),
                   Text(
                     cat.label,
                     style: GoogleFonts.inter(
                       fontWeight: FontWeight.w700,
                       fontSize: 12.5,
-                      color: isSelected ? colors.textPrimary : colors.textSecondary,
+                      color: isSelected
+                          ? colors.textPrimary
+                          : colors.textSecondary,
                     ),
                   ),
                 ],
@@ -418,7 +489,9 @@ class _TemplateCard extends StatelessWidget {
                 ),
                 const Spacer(),
                 GoalReturnBadge(
-                  annualReturnRate: GoalReturnTiersCatalog.annualRateForMonthly(template.suggestedMonthly),
+                  annualReturnRate: GoalReturnTiersCatalog.annualRateForMonthly(
+                    template.suggestedMonthly,
+                  ),
                   compact: true,
                 ),
               ],
@@ -470,7 +543,11 @@ class _TemplateCard extends StatelessWidget {
                     color: template.color.withValues(alpha: 0.14),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(Icons.arrow_forward_rounded, size: 14, color: template.color),
+                  child: Icon(
+                    Icons.arrow_forward_rounded,
+                    size: 14,
+                    color: template.color,
+                  ),
                 ),
               ],
             ),
@@ -499,11 +576,18 @@ class _EmptyFilterState extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Icon(Icons.filter_list_off_rounded, color: colors.textMuted, size: 32),
+          Icon(
+            Icons.filter_list_off_rounded,
+            color: colors.textMuted,
+            size: 32,
+          ),
           const SizedBox(height: 10),
           Text(
             'No goals in this category',
-            style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: colors.textPrimary),
+            style: GoogleFonts.inter(
+              fontWeight: FontWeight.w700,
+              color: colors.textPrimary,
+            ),
           ),
           const SizedBox(height: 6),
           TextButton(onPressed: onClear, child: const Text('Show all goals')),
@@ -547,21 +631,34 @@ class _GoalProgressCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       goal.title,
-                      style: GoogleFonts.inter(fontWeight: FontWeight.w800, color: colors.textPrimary),
+                      style: GoogleFonts.inter(
+                        fontWeight: FontWeight.w800,
+                        color: colors.textPrimary,
+                      ),
                     ),
                   ),
-                  GoalReturnBadge(annualReturnRate: goal.annualReturnRate, compact: true),
+                  GoalReturnBadge(
+                    annualReturnRate: goal.annualReturnRate,
+                    compact: true,
+                  ),
                   if (goal.isDue) ...[
                     const SizedBox(width: 6),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.red.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Text(
                         'Due',
-                        style: TextStyle(color: AppColors.red, fontSize: 11, fontWeight: FontWeight.w700),
+                        style: TextStyle(
+                          color: AppColors.red,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                   ],
@@ -583,7 +680,10 @@ class _GoalProgressCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       '${CurrencyFormatter.format(goal.accumulatedAmount)} of ${CurrencyFormatter.format(goal.targetAmount)}',
-                      style: GoogleFonts.inter(color: colors.textSecondary, fontSize: 12),
+                      style: GoogleFonts.inter(
+                        color: colors.textSecondary,
+                        fontSize: 12,
+                      ),
                     ),
                   ),
                   Text(

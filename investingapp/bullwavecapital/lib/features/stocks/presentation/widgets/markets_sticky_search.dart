@@ -20,7 +20,11 @@ class MarketsStickySearchDelegate extends SliverPersistentHeaderDelegate {
   double get maxExtent => 72;
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
     final p = context.palette;
     return Container(
       color: p.bg.withValues(alpha: overlapsContent ? 0.96 : 0.88),

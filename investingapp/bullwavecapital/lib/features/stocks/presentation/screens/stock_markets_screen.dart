@@ -196,11 +196,14 @@ class _StockMarketsScreenState extends State<StockMarketsScreen> {
                             message: market.marketError!,
                             type: PremiumAlertType.warning,
                             actionLabel: stocks.isEmpty ? 'Retry' : null,
-                            onAction: stocks.isEmpty ? () => market.refresh() : null,
+                            onAction: stocks.isEmpty
+                                ? () => market.refresh()
+                                : null,
                           ),
                         ],
                         const SizedBox(height: 12),
-                        if (!PaperOnlyMode.enabled) const HomePendingActionsSection(),
+                        if (!PaperOnlyMode.enabled)
+                          const HomePendingActionsSection(),
                         if (!searching) ...[
                           const SizedBox(height: 14),
                           MarketsPremiumOverview(
@@ -224,7 +227,11 @@ class _StockMarketsScreenState extends State<StockMarketsScreen> {
                   if (market.isLoading && stocks.isEmpty)
                     const SliverFillRemaining(
                       hasScrollBody: false,
-                      child: Center(child: CircularProgressIndicator(color: AppColors.brandCyan)),
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          color: AppColors.brandCyan,
+                        ),
+                      ),
                     )
                   else if (stocks.isEmpty)
                     SliverFillRemaining(
@@ -234,7 +241,9 @@ class _StockMarketsScreenState extends State<StockMarketsScreen> {
                           padding: const EdgeInsets.all(24),
                           child: Text(
                             'No results for "${market.searchQuery}"',
-                            style: ThemeAType.body(color: context.palette.textGrey),
+                            style: ThemeAType.body(
+                              color: context.palette.textGrey,
+                            ),
                             textAlign: TextAlign.center,
                           ),
                         ),
@@ -248,7 +257,11 @@ class _StockMarketsScreenState extends State<StockMarketsScreen> {
                       ),
                     ),
                 ] else ...[
-                  SliverToBoxAdapter(child: MarketsFnoIndicesSection(liveIndices: market.marketIndices)),
+                  SliverToBoxAdapter(
+                    child: MarketsFnoIndicesSection(
+                      liveIndices: market.marketIndices,
+                    ),
+                  ),
                   SliverToBoxAdapter(
                     child: MarketsQuickActions(
                       onMore: () => _showMoreSheet(context),
@@ -280,12 +293,20 @@ class _StockMarketsScreenState extends State<StockMarketsScreen> {
                     ),
                   ),
                   const SliverToBoxAdapter(child: MarketsWatchlistPreview()),
-                  SliverToBoxAdapter(child: MarketsTopMovers(stocks: market.allStocks)),
-                  SliverToBoxAdapter(child: MarketsNewsSection(news: home.marketNews)),
+                  SliverToBoxAdapter(
+                    child: MarketsTopMovers(stocks: market.allStocks),
+                  ),
+                  SliverToBoxAdapter(
+                    child: MarketsNewsSection(news: home.marketNews),
+                  ),
                   const SliverToBoxAdapter(child: MarketsTodayEvents()),
                   const SliverToBoxAdapter(child: MarketsLearningHub()),
                 ],
-                SliverPadding(padding: EdgeInsets.only(bottom: ShellLayout.contentBottomInset)),
+                SliverPadding(
+                  padding: EdgeInsets.only(
+                    bottom: ShellLayout.contentBottomInset,
+                  ),
+                ),
               ],
             ),
           ),

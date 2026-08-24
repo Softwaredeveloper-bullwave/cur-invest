@@ -48,10 +48,7 @@ class HomeQuickActionsCarousel extends StatelessWidget {
         itemCount: actions.length,
         separatorBuilder: (_, _) => const SizedBox(width: 10),
         itemBuilder: (context, index) {
-          return _CarouselActionTile(
-            action: actions[index],
-            compact: compact,
-          );
+          return _CarouselActionTile(action: actions[index], compact: compact);
         },
       ),
     );
@@ -73,10 +70,7 @@ class _CarouselActionTile extends StatelessWidget {
   final HomeQuickAction action;
   final bool compact;
 
-  const _CarouselActionTile({
-    required this.action,
-    required this.compact,
-  });
+  const _CarouselActionTile({required this.action, required this.compact});
 
   @override
   Widget build(BuildContext context) {
@@ -96,9 +90,7 @@ class _CarouselActionTile extends StatelessWidget {
               decoration: BoxDecoration(
                 color: p.card,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: action.color.withValues(alpha: 0.28),
-                ),
+                border: Border.all(color: action.color.withValues(alpha: 0.28)),
                 boxShadow: [
                   BoxShadow(
                     color: action.color.withValues(alpha: 0.1),
@@ -107,7 +99,11 @@ class _CarouselActionTile extends StatelessWidget {
                   ),
                 ],
               ),
-              child: Icon(action.icon, size: compact ? 20 : 22, color: action.color),
+              child: Icon(
+                action.icon,
+                size: compact ? 20 : 22,
+                color: action.color,
+              ),
             ),
             const SizedBox(height: 8),
             Text(

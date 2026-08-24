@@ -16,10 +16,13 @@ class KycRepository {
   }
 
   Future<KycStatusModel> verifyPan(String pan, {String holderName = ''}) async {
-    final data = await _client.postJson('/verify-pan/', body: {
-      'pan_number': pan.toUpperCase(),
-      if (holderName.isNotEmpty) 'holder_name': holderName,
-    });
+    final data = await _client.postJson(
+      '/verify-pan/',
+      body: {
+        'pan_number': pan.toUpperCase(),
+        if (holderName.isNotEmpty) 'holder_name': holderName,
+      },
+    );
     return KycStatusModel.fromJson(data);
   }
 
@@ -28,7 +31,9 @@ class KycRepository {
     return KycStatusModel.fromJson(data);
   }
 
-  Future<KycStatusModel> checkAadhaarDigiLocker({String? verificationId}) async {
+  Future<KycStatusModel> checkAadhaarDigiLocker({
+    String? verificationId,
+  }) async {
     final data = await _client.postJson(
       '/check-aadhaar-digilocker/',
       body: {
@@ -45,13 +50,16 @@ class KycRepository {
     required String ifsc,
     String accountHolderName = '',
   }) async {
-    final data = await _client.postJson('/verify-bank/', body: {
-      if (accountHolderName.trim().isNotEmpty)
-        'account_holder_name': accountHolderName.trim(),
-      'account_number': accountNumber,
-      'confirm_account_number': confirmAccountNumber,
-      'ifsc': ifsc.toUpperCase(),
-    });
+    final data = await _client.postJson(
+      '/verify-bank/',
+      body: {
+        if (accountHolderName.trim().isNotEmpty)
+          'account_holder_name': accountHolderName.trim(),
+        'account_number': accountNumber,
+        'confirm_account_number': confirmAccountNumber,
+        'ifsc': ifsc.toUpperCase(),
+      },
+    );
     return KycStatusModel.fromJson(data);
   }
 
@@ -60,12 +68,15 @@ class KycRepository {
     String recipientMobile = '',
     String latlong = '28.6139,77.2090',
   }) async {
-    final data = await _client.postJson('/verify-upi/', body: {
-      'upi_vpa': upiVpa.trim().toLowerCase(),
-      if (recipientMobile.trim().isNotEmpty)
-        'recipient_mobile': recipientMobile.trim(),
-      if (latlong.isNotEmpty) 'latlong': latlong,
-    });
+    final data = await _client.postJson(
+      '/verify-upi/',
+      body: {
+        'upi_vpa': upiVpa.trim().toLowerCase(),
+        if (recipientMobile.trim().isNotEmpty)
+          'recipient_mobile': recipientMobile.trim(),
+        if (latlong.isNotEmpty) 'latlong': latlong,
+      },
+    );
     return KycStatusModel.fromJson(data);
   }
 

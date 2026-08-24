@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/api/auth_session_guard.dart';
 import '../../../../core/api/bullwave_api.dart';
 import '../../../../models/transaction_model.dart';
 
@@ -17,14 +18,18 @@ class TransactionProvider extends ChangeNotifier {
   String get searchQuery => _searchQuery;
   TransactionType get selectedTab => _selectedTab;
   int get currentPage => _currentPage;
-  int get totalPages => (_filteredTransactions.length / _pageSize).ceil().clamp(1, 999);
+  int get totalPages =>
+      (_filteredTransactions.length / _pageSize).ceil().clamp(1, 999);
   List<TransactionModel> get allTransactions => _transactions;
 
-  TransactionProvider() {
-    loadData();
-  }
+  TransactionProvider();
 
   Future<void> loadData() async {
+    if (!await hasStoredAccessToken()) {
+      _isLoading = false;
+      notifyListeners();
+      return;
+    }
     _isLoading = true;
     notifyListeners();
     try {
@@ -43,9 +48,15 @@ class TransactionProvider extends ChangeNotifier {
     }
     if (_searchQuery.isNotEmpty) {
       list = list
-          .where((t) =>
-              t.referenceId.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-              t.description.toLowerCase().contains(_searchQuery.toLowerCase()))
+          .where(
+            (t) =>
+                t.referenceId.toLowerCase().contains(
+                  _searchQuery.toLowerCase(),
+                ) ||
+                t.description.toLowerCase().contains(
+                  _searchQuery.toLowerCase(),
+                ),
+          )
           .toList();
     }
     return list;

@@ -229,7 +229,9 @@ class _GlassIconBadge extends StatelessWidget {
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
                             colors: [
-                              Colors.white.withValues(alpha: isDark ? 0.18 : 0.55),
+                              Colors.white.withValues(
+                                alpha: isDark ? 0.18 : 0.55,
+                              ),
                               Colors.white.withValues(alpha: 0),
                             ],
                           ),
@@ -248,7 +250,11 @@ class _GlassIconBadge extends StatelessWidget {
                       ).createShader(bounds),
                       blendMode: BlendMode.srcIn,
                       child: asset != null
-                          ? AppSvgIcon(asset: asset!, size: glyphSize, color: Colors.white)
+                          ? AppSvgIcon(
+                              asset: asset!,
+                              size: glyphSize,
+                              color: Colors.white,
+                            )
                           : Icon(icon, color: Colors.white, size: glyphSize),
                     ),
                   ],
@@ -294,7 +300,11 @@ class _PremiumCircleIconBadge extends StatelessWidget {
         ),
         child: Center(
           child: asset != null
-              ? AppSvgIcon(asset: asset!, size: glyphSize, color: ThemeA.primaryDark)
+              ? AppSvgIcon(
+                  asset: asset!,
+                  size: glyphSize,
+                  color: ThemeA.primaryDark,
+                )
               : Icon(icon, color: ThemeA.primaryDark, size: glyphSize),
         ),
       ),
@@ -307,15 +317,13 @@ class ModernStockAvatar extends StatelessWidget {
   final String symbol;
   final double size;
 
-  const ModernStockAvatar({
-    super.key,
-    required this.symbol,
-    this.size = 42,
-  });
+  const ModernStockAvatar({super.key, required this.symbol, this.size = 42});
 
   @override
   Widget build(BuildContext context) {
-    final letter = symbol.isNotEmpty ? symbol.substring(0, 1).toUpperCase() : '?';
+    final letter = symbol.isNotEmpty
+        ? symbol.substring(0, 1).toUpperCase()
+        : '?';
     final hue = symbol.hashCode.abs() % 360;
     final hue2 = (hue + 28) % 360;
 

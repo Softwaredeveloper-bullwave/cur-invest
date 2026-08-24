@@ -14,12 +14,18 @@
 class TradingViewConfig {
   TradingViewConfig._();
 
-  static const String _apiKey =
-      String.fromEnvironment('TRADINGVIEW_API_KEY', defaultValue: '');
-  static const String _chartingLibraryUrl =
-      String.fromEnvironment('TRADINGVIEW_CHARTING_LIBRARY_URL', defaultValue: '');
-  static const String _udfBaseUrl =
-      String.fromEnvironment('TRADINGVIEW_UDF_BASE_URL', defaultValue: '');
+  static const String _apiKey = String.fromEnvironment(
+    'TRADINGVIEW_API_KEY',
+    defaultValue: '',
+  );
+  static const String _chartingLibraryUrl = String.fromEnvironment(
+    'TRADINGVIEW_CHARTING_LIBRARY_URL',
+    defaultValue: '',
+  );
+  static const String _udfBaseUrl = String.fromEnvironment(
+    'TRADINGVIEW_UDF_BASE_URL',
+    defaultValue: '',
+  );
 
   static String? _remoteApiKey;
   static String? _remoteLibraryUrl;
@@ -28,7 +34,8 @@ class TradingViewConfig {
   static bool _loaded = false;
 
   static String get apiKey => (_remoteApiKey ?? _apiKey).trim();
-  static String get chartingLibraryUrl => (_remoteLibraryUrl ?? _chartingLibraryUrl).trim();
+  static String get chartingLibraryUrl =>
+      (_remoteLibraryUrl ?? _chartingLibraryUrl).trim();
   static String get udfBaseUrl => (_remoteUdfBaseUrl ?? _udfBaseUrl).trim();
   static bool get usesChartingLibrary =>
       chartingLibraryUrl.isNotEmpty || _remoteProvider == 'charting_library';

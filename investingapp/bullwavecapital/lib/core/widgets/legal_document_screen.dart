@@ -50,12 +50,28 @@ class LegalDocumentScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
+              Text(
+                title,
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
               const SizedBox(height: 4),
-              Text(subtitle, style: theme.textTheme.titleSmall?.copyWith(color: AppColors.textSecondary)),
+              Text(
+                subtitle,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              ),
               const SizedBox(height: 12),
-              Text('Effective Date: ${LegalConfig.effectiveDate}', style: bodyStyle),
-              Text('Last Updated: ${LegalConfig.lastUpdated}', style: bodyStyle),
+              Text(
+                'Effective Date: ${LegalConfig.effectiveDate}',
+                style: bodyStyle,
+              ),
+              Text(
+                'Last Updated: ${LegalConfig.lastUpdated}',
+                style: bodyStyle,
+              ),
               if (showPrivacyLink || showTermsLink) ...[
                 const SizedBox(height: 16),
                 Wrap(
@@ -82,37 +98,46 @@ class LegalDocumentScreen extends StatelessWidget {
                   child: Text(p, style: bodyStyle),
                 ),
               ),
-              ...sections.expand((section) => [
-                    const SizedBox(height: 20),
-                    Text('${section.number}. ${section.title}', style: headingStyle),
-                    const SizedBox(height: 8),
-                    ...section.blocks.expand((block) => [
-                          ...block.paragraphs.map(
-                            (p) => Padding(
-                              padding: const EdgeInsets.only(bottom: 10),
-                              child: Text(p, style: bodyStyle),
+              ...sections.expand(
+                (section) => [
+                  const SizedBox(height: 20),
+                  Text(
+                    '${section.number}. ${section.title}',
+                    style: headingStyle,
+                  ),
+                  const SizedBox(height: 8),
+                  ...section.blocks.expand(
+                    (block) => [
+                      ...block.paragraphs.map(
+                        (p) => Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: Text(p, style: bodyStyle),
+                        ),
+                      ),
+                      if (block.bullets != null) ...[
+                        ...block.bullets!.map(
+                          (b) => Padding(
+                            padding: const EdgeInsets.only(left: 8, bottom: 6),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('• ', style: bodyStyle),
+                                Expanded(child: Text(b, style: bodyStyle)),
+                              ],
                             ),
                           ),
-                          if (block.bullets != null) ...[
-                            ...block.bullets!.map(
-                              (b) => Padding(
-                                padding: const EdgeInsets.only(left: 8, bottom: 6),
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text('• ', style: bodyStyle),
-                                    Expanded(child: Text(b, style: bodyStyle)),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ]),
-                  ]),
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
+              ),
               const SizedBox(height: 24),
               Text(
                 'Contact',
-                style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               const SizedBox(height: 8),
               Text(LegalConfig.legalCompanyName, style: bodyStyle),
@@ -123,7 +148,10 @@ class LegalDocumentScreen extends StatelessWidget {
               const SizedBox(height: 12),
               Text(
                 'Account deletion: ${LegalConfig.accountDeletionUrl}',
-                style: bodyStyle?.copyWith(color: AppColors.textSecondary, fontSize: 13),
+                style: bodyStyle?.copyWith(
+                  color: AppColors.textSecondary,
+                  fontSize: 13,
+                ),
               ),
             ],
           ),

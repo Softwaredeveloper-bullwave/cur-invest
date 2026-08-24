@@ -30,11 +30,7 @@ class LoadingList extends StatelessWidget {
   final int itemCount;
   final double itemHeight;
 
-  const LoadingList({
-    super.key,
-    this.itemCount = 5,
-    this.itemHeight = 80,
-  });
+  const LoadingList({super.key, this.itemCount = 5, this.itemHeight = 80});
 
   @override
   Widget build(BuildContext context) {

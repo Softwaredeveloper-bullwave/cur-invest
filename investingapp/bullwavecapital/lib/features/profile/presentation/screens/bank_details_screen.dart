@@ -39,7 +39,9 @@ class _BankDetailsScreenState extends State<BankDetailsScreen> {
     return Scaffold(
       appBar: const CustomAppBar(title: 'Bank Details'),
       body: bank.isHydrating
-          ? const Center(child: CircularProgressIndicator(color: AppColors.green))
+          ? const Center(
+              child: CircularProgressIndicator(color: AppColors.green),
+            )
           : ListView(
               padding: const EdgeInsets.all(AppDimensions.paddingMd),
               children: [
@@ -47,7 +49,8 @@ class _BankDetailsScreenState extends State<BankDetailsScreen> {
                   BankManualReviewPendingPanel(status: kycStatus),
                   const SizedBox(height: 20),
                   OutlinedButton(
-                    onPressed: () => context.push(AppRoutes.bankVerificationKyc),
+                    onPressed: () =>
+                        context.push(AppRoutes.bankVerificationKyc),
                     child: const Text('View submission status'),
                   ),
                 ] else if (bank.isVerified) ...[
@@ -56,11 +59,16 @@ class _BankDetailsScreenState extends State<BankDetailsScreen> {
                     decoration: BoxDecoration(
                       color: AppColors.green.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.green.withValues(alpha: 0.2)),
+                      border: Border.all(
+                        color: AppColors.green.withValues(alpha: 0.2),
+                      ),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.verified_outlined, color: AppColors.green),
+                        const Icon(
+                          Icons.verified_outlined,
+                          color: AppColors.green,
+                        ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(
@@ -68,7 +76,8 @@ class _BankDetailsScreenState extends State<BankDetailsScreen> {
                             children: [
                               Text(
                                 'Verified via Cashfree',
-                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                style: Theme.of(context).textTheme.titleMedium
+                                    ?.copyWith(
                                       fontWeight: FontWeight.w600,
                                       color: colors.textPrimary,
                                     ),
@@ -106,27 +115,32 @@ class _BankDetailsScreenState extends State<BankDetailsScreen> {
                     child: const Text('Update Bank Account'),
                   ),
                 ] else ...[
-                  Icon(Icons.account_balance_outlined, size: 56, color: colors.textMuted),
+                  Icon(
+                    Icons.account_balance_outlined,
+                    size: 56,
+                    color: colors.textMuted,
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     'No bank account linked',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
+                      fontWeight: FontWeight.w600,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'Link your bank account. Our team will manually verify your details within 24 hours.',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: colors.textSecondary,
-                        ),
+                      color: colors.textSecondary,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 24),
                   PrimaryButton(
                     label: 'Link Bank Account',
-                    onPressed: () => context.push(AppRoutes.bankVerificationKyc),
+                    onPressed: () =>
+                        context.push(AppRoutes.bankVerificationKyc),
                   ),
                 ],
               ],
@@ -158,14 +172,16 @@ class _InfoCard extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(item.label, style: Theme.of(context).textTheme.bodyMedium),
+                    Text(
+                      item.label,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
                     Flexible(
                       child: Text(
                         item.value,
                         textAlign: TextAlign.end,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w600),
                       ),
                     ),
                   ],

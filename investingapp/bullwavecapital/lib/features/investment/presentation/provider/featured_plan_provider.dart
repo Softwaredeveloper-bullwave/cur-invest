@@ -7,10 +7,8 @@ import '../../../kyc/presentation/provider/kyc_flow_provider.dart';
 import '../../data/featured_plans_catalog.dart';
 
 class FeaturedPlanProvider extends ChangeNotifier {
-  FeaturedPlanProvider({
-    required this.planId,
-    InvestmentPlanModel? initialPlan,
-  }) : plan = initialPlan ?? FeaturedPlansCatalog.findById(planId);
+  FeaturedPlanProvider({required this.planId, InvestmentPlanModel? initialPlan})
+    : plan = initialPlan ?? FeaturedPlansCatalog.findById(planId);
 
   final String planId;
   final _api = BullwaveApi.instance;
@@ -24,12 +22,15 @@ class FeaturedPlanProvider extends ChangeNotifier {
   String paymentMethod = 'UPI';
 
   double get minMonthlyReturn =>
-      investmentAmount * ((plan?.monthlyReturnRate ?? plan?.monthlyReturnMin ?? 0) / 100);
+      investmentAmount *
+      ((plan?.monthlyReturnRate ?? plan?.monthlyReturnMin ?? 0) / 100);
 
   double get maxMonthlyReturn => plan != null && plan!.hasFixedMonthlyReturn
       ? minMonthlyReturn
-      : investmentAmount * ((plan?.monthlyReturnMax ?? plan?.monthlyReturnRate ?? 0) / 100);
-  double get shortfall => (investmentAmount - walletBalance).clamp(0, double.infinity);
+      : investmentAmount *
+            ((plan?.monthlyReturnMax ?? plan?.monthlyReturnRate ?? 0) / 100);
+  double get shortfall =>
+      (investmentAmount - walletBalance).clamp(0, double.infinity);
 
   Future<void> load() async {
     isLoading = true;
@@ -54,7 +55,8 @@ class FeaturedPlanProvider extends ChangeNotifier {
         investmentAmount = plan!.minimumInvestment;
         error = null;
       } else {
-        error = 'Could not load investment plan. Check your connection and try again.';
+        error =
+            'Could not load investment plan. Check your connection and try again.';
       }
     }
 
@@ -82,7 +84,8 @@ class FeaturedPlanProvider extends ChangeNotifier {
   Future<String?> payAndInvest(KycFlowProvider kycFlow) async {
     if (plan == null) return null;
     if (investmentAmount < plan!.minimumInvestment) {
-      error = 'Minimum investment is ${plan!.minimumInvestment.toStringAsFixed(0)}.';
+      error =
+          'Minimum investment is ${plan!.minimumInvestment.toStringAsFixed(0)}.';
       notifyListeners();
       return null;
     }
@@ -117,13 +120,17 @@ class FeaturedPlanProvider extends ChangeNotifier {
       }
 
       if (walletBalance < investmentAmount) {
-        error = 'Insufficient wallet balance. Add ₹${shortfall.toStringAsFixed(0)} to continue.';
+        error =
+            'Insufficient wallet balance. Add ₹${shortfall.toStringAsFixed(0)} to continue.';
         isPaying = false;
         notifyListeners();
         return null;
       }
 
-      await _api.subscribeInvestment(planId: plan!.id, amount: investmentAmount);
+      await _api.subscribeInvestment(
+        planId: plan!.id,
+        amount: investmentAmount,
+      );
       isPaying = false;
       notifyListeners();
       return 'Investment of ₹${investmentAmount.toStringAsFixed(0)} confirmed!';

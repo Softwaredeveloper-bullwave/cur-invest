@@ -104,9 +104,7 @@ class _BankVerificationKycScreenState extends State<BankVerificationKycScreen>
       await context.read<NotificationProvider>().loadData();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Bank account verified! Continuing…'),
-        ),
+        const SnackBar(content: Text('Bank account verified! Continuing…')),
       );
       OnboardingFlowNavigator.goToNextKycStep(context, kyc);
       return;
@@ -163,9 +161,9 @@ class _BankVerificationKycScreenState extends State<BankVerificationKycScreen>
     }
 
     if (kyc.error != null && kyc.error!.isNotEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(kyc.error!)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(kyc.error!)));
     }
   }
 
@@ -181,11 +179,14 @@ class _BankVerificationKycScreenState extends State<BankVerificationKycScreen>
           final manualMode = status.isManualBankReview;
           final bankReviewPending = status.bankReviewPending;
           final bankReviewRejected =
-              status.bankReviewRejected || (manualMode && status.bankStatus == 'failed');
+              status.bankReviewRejected ||
+              (manualMode && status.bankStatus == 'failed');
           final bankDraftSaved = manualMode && status.bankDraftReady;
           final showForm =
-              ((!status.bankVerified && !bankReviewPending && !bankDraftSaved) ||
-                  _isUpdating);
+              ((!status.bankVerified &&
+                  !bankReviewPending &&
+                  !bankDraftSaved) ||
+              _isUpdating);
 
           return Form(
             key: _formKey,
@@ -195,8 +196,8 @@ class _BankVerificationKycScreenState extends State<BankVerificationKycScreen>
                 Text(
                   showForm
                       ? (bankReviewRejected
-                          ? 'Try again with another bank account'
-                          : 'Enter your bank account details')
+                            ? 'Try again with another bank account'
+                            : 'Enter your bank account details')
                       : bankReviewPending
                       ? 'Bank verification under review'
                       : 'Bank account verified',
@@ -209,14 +210,14 @@ class _BankVerificationKycScreenState extends State<BankVerificationKycScreen>
                 Text(
                   showForm
                       ? (manualMode
-                          ? 'Submit your account number and IFSC, then enter your UPI ID on the next screen. Our team will manually verify both within 24 hours.'
-                          : (status.bankVerificationProvider == 'eko'
-                              ? (status.bankSkipIdentityMatch
-                                  ? 'Testing mode: Eko verifies the account exists. PAN name match is disabled.'
-                                  : 'Your bank account is verified live via Eko. The account must be in your name as per your verified PAN.')
-                              : (status.bankSkipIdentityMatch
-                                  ? 'Testing mode: bank account check only. PAN name match is disabled.'
-                                  : 'Account number and IFSC are verified live via Cashfree Secure ID. The account must match your PAN name.')))
+                            ? 'Submit your account number and IFSC, then enter your UPI ID on the next screen. Our team will manually verify both within 24 hours.'
+                            : (status.bankVerificationProvider == 'eko'
+                                  ? (status.bankSkipIdentityMatch
+                                        ? 'Testing mode: Eko verifies the account exists. PAN name match is disabled.'
+                                        : 'Your bank account is verified live via Eko. The account must be in your name as per your verified PAN.')
+                                  : (status.bankSkipIdentityMatch
+                                        ? 'Testing mode: bank account check only. PAN name match is disabled.'
+                                        : 'Account number and IFSC are verified live via Cashfree Secure ID. The account must match your PAN name.')))
                       : bankReviewPending
                       ? 'Final verification is in progress. You will be notified once approved.'
                       : 'Your linked account is verified. You can update it if your bank details change.',
@@ -290,8 +291,8 @@ class _BankVerificationKycScreenState extends State<BankVerificationKycScreen>
                         !status.bankSkipIdentityMatch,
                     validator: (value) =>
                         value == null || value.trim().length < 3
-                            ? 'Enter the name on your bank account'
-                            : null,
+                        ? 'Enter the name on your bank account'
+                        : null,
                   ),
                   if (status.bankSkipIdentityMatch) ...[
                     const SizedBox(height: 8),
@@ -303,7 +304,8 @@ class _BankVerificationKycScreenState extends State<BankVerificationKycScreen>
                         height: 1.4,
                       ),
                     ),
-                  ] else if (status.panVerified && status.panName.isNotEmpty) ...[
+                  ] else if (status.panVerified &&
+                      status.panName.isNotEmpty) ...[
                     const SizedBox(height: 8),
                     Text(
                       'Must match your verified PAN name: ${status.panName}',
@@ -356,11 +358,11 @@ class _BankVerificationKycScreenState extends State<BankVerificationKycScreen>
                         ? 'Submitting…'
                         : manualMode
                         ? (_isUpdating
-                            ? 'Submit updated details'
-                            : 'Continue to UPI verification')
+                              ? 'Submit updated details'
+                              : 'Continue to UPI verification')
                         : (_isUpdating
-                            ? 'Update & Verify Bank'
-                            : 'Verify Bank Account'),
+                              ? 'Update & Verify Bank'
+                              : 'Verify Bank Account'),
                     onPressed: kyc.isLoading ? null : _verify,
                   ),
                   if (_isUpdating) ...[
@@ -378,9 +380,18 @@ class _BankVerificationKycScreenState extends State<BankVerificationKycScreen>
                   if (bankReviewPending) ...[
                     BankManualReviewPendingPanel(status: status),
                     const SizedBox(height: 16),
-                    BankVerificationResultCard(status: status, showMethod: false),
-                  ] else if (manualMode && status.bankDraftReady && kyc.upiRequired && status.canProceedToIdentity) ...[
-                    BankVerificationResultCard(status: status, showMethod: false),
+                    BankVerificationResultCard(
+                      status: status,
+                      showMethod: false,
+                    ),
+                  ] else if (manualMode &&
+                      status.bankDraftReady &&
+                      kyc.upiRequired &&
+                      status.canProceedToIdentity) ...[
+                    BankVerificationResultCard(
+                      status: status,
+                      showMethod: false,
+                    ),
                     const SizedBox(height: 16),
                     PrimaryButton(
                       label: 'Continue',
@@ -399,14 +410,20 @@ class _BankVerificationKycScreenState extends State<BankVerificationKycScreen>
                       PrimaryButton(
                         label: 'Continue to UPI Verification',
                         onPressed: () =>
-                            OnboardingFlowNavigator.goToNextKycStep(context, kyc),
+                            OnboardingFlowNavigator.goToNextKycStep(
+                              context,
+                              kyc,
+                            ),
                       ),
                     ] else if (!status.selfieVerified) ...[
                       const SizedBox(height: 12),
                       PrimaryButton(
                         label: 'Continue to Selfie Verification',
                         onPressed: () =>
-                            OnboardingFlowNavigator.goToNextKycStep(context, kyc),
+                            OnboardingFlowNavigator.goToNextKycStep(
+                              context,
+                              kyc,
+                            ),
                       ),
                     ] else if (!status.nameMatchPassed) ...[
                       const SizedBox(height: 12),
@@ -419,7 +436,10 @@ class _BankVerificationKycScreenState extends State<BankVerificationKycScreen>
                       PrimaryButton(
                         label: 'Continue',
                         onPressed: () =>
-                            OnboardingFlowNavigator.goToNextKycStep(context, kyc),
+                            OnboardingFlowNavigator.goToNextKycStep(
+                              context,
+                              kyc,
+                            ),
                       ),
                     ],
                   ],

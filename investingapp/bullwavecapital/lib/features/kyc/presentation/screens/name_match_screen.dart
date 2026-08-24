@@ -53,7 +53,9 @@ class _NameMatchScreenState extends State<NameMatchScreen> {
     setState(() => _attempted = true);
     if (kyc.status.nameMatchPassed) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Name match passed. Welcome to BullWave!')),
+        const SnackBar(
+          content: Text('Name match passed. Welcome to BullWave!'),
+        ),
       );
       OnboardingFlowNavigator.goToNextKycStep(context, kyc);
     }
@@ -67,7 +69,9 @@ class _NameMatchScreenState extends State<NameMatchScreen> {
       backgroundColor: colors.background,
       appBar: const CustomAppBar(title: 'Name Match'),
       body: _routing
-          ? const Center(child: CircularProgressIndicator(color: AppColors.brandOrange))
+          ? const Center(
+              child: CircularProgressIndicator(color: AppColors.brandOrange),
+            )
           : Consumer<KycFlowProvider>(
               builder: (context, kyc, _) {
                 final s = kyc.status;
@@ -83,14 +87,23 @@ class _NameMatchScreenState extends State<NameMatchScreen> {
                     const SizedBox(height: 8),
                     Text(
                       'We compare your verified PAN name with the name on your bank account.',
-                      style: TextStyle(color: colors.textSecondary, height: 1.45),
+                      style: TextStyle(
+                        color: colors.textSecondary,
+                        height: 1.45,
+                      ),
                     ),
                     const SizedBox(height: 20),
-                    _CompareCard(label: 'PAN Name', value: s.panName, colors: colors),
+                    _CompareCard(
+                      label: 'PAN Name',
+                      value: s.panName,
+                      colors: colors,
+                    ),
                     const SizedBox(height: 12),
                     _CompareCard(
                       label: 'Bank Name',
-                      value: s.nameAtBank.isNotEmpty ? s.nameAtBank : s.accountHolderName,
+                      value: s.nameAtBank.isNotEmpty
+                          ? s.nameAtBank
+                          : s.accountHolderName,
                       colors: colors,
                     ),
                     const SizedBox(height: 24),
@@ -101,17 +114,27 @@ class _NameMatchScreenState extends State<NameMatchScreen> {
                         decoration: BoxDecoration(
                           color: AppColors.green.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppColors.green.withValues(alpha: 0.3)),
+                          border: Border.all(
+                            color: AppColors.green.withValues(alpha: 0.3),
+                          ),
                         ),
                         child: Column(
                           children: [
-                            const Icon(Icons.verified_rounded, color: AppColors.green, size: 40),
+                            const Icon(
+                              Icons.verified_rounded,
+                              color: AppColors.green,
+                              size: 40,
+                            ),
                             const SizedBox(height: 8),
                             Text(
                               'Verified • ${s.nameMatchResult}',
-                              style: const TextStyle(fontWeight: FontWeight.w800),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w800,
+                              ),
                             ),
-                            Text('Match score: ${s.nameMatchScore.toStringAsFixed(0)}%'),
+                            Text(
+                              'Match score: ${s.nameMatchScore.toStringAsFixed(0)}%',
+                            ),
                           ],
                         ),
                       ),
@@ -122,7 +145,8 @@ class _NameMatchScreenState extends State<NameMatchScreen> {
                       ),
                     ] else if (_attempted) ...[
                       KycErrorBanner(
-                        message: kyc.error ??
+                        message:
+                            kyc.error ??
                             'Names do not match. Update bank or PAN details and retry.',
                       ),
                       const SizedBox(height: 16),
@@ -169,7 +193,10 @@ class _CompareCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: TextStyle(color: colors.textSecondary, fontSize: 12)),
+          Text(
+            label,
+            style: TextStyle(color: colors.textSecondary, fontSize: 12),
+          ),
           const SizedBox(height: 4),
           Text(
             value.isEmpty ? '—' : value,

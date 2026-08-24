@@ -90,12 +90,19 @@ class _ReferralScreenState extends State<ReferralScreen> {
     );
   }
 
-  Widget _buildBody(BuildContext context, ReferralProvider provider, dynamic colors) {
+  Widget _buildBody(
+    BuildContext context,
+    ReferralProvider provider,
+    dynamic colors,
+  ) {
     if (provider.isLoading && provider.referral == null) {
       return ListView(
         physics: const AlwaysScrollableScrollPhysics(),
         children: [
-          SizedBox(height: 200, child: Center(child: CircularProgressIndicator())),
+          SizedBox(
+            height: 200,
+            child: Center(child: CircularProgressIndicator()),
+          ),
         ],
       );
     }
@@ -115,10 +122,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
           ),
           const SizedBox(height: 24),
           Center(
-            child: PrimaryButton(
-              label: 'Retry',
-              onPressed: provider.loadData,
-            ),
+            child: PrimaryButton(label: 'Retry', onPressed: provider.loadData),
           ),
         ],
       );
@@ -135,7 +139,10 @@ class _ReferralScreenState extends State<ReferralScreen> {
         const SizedBox(height: AppDimensions.paddingLg),
         _HowItWorks(rewardLabel: rewardLabel),
         const SizedBox(height: AppDimensions.paddingLg),
-        Text('Your Referral Code', style: Theme.of(context).textTheme.titleMedium),
+        Text(
+          'Your Referral Code',
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
         const SizedBox(height: AppDimensions.paddingSm),
         Card(
           child: Padding(
@@ -146,10 +153,10 @@ class _ReferralScreenState extends State<ReferralScreen> {
                   child: Text(
                     referral.code,
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          color: AppColors.primary,
-                          letterSpacing: 2,
-                          fontWeight: FontWeight.w800,
-                        ),
+                      color: AppColors.primary,
+                      letterSpacing: 2,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                 ),
                 IconButton(
@@ -223,11 +230,16 @@ class _ReferralScreenState extends State<ReferralScreen> {
         ),
         if (!referral.hasAppliedReferral) ...[
           const SizedBox(height: AppDimensions.paddingLg),
-          Text('Have a friend\'s code?', style: Theme.of(context).textTheme.titleMedium),
+          Text(
+            'Have a friend\'s code?',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
           const SizedBox(height: 8),
           Text(
             'Enter their code once. Your friend earns $rewardLabel when you complete your profile.',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colors.textSecondary),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: colors.textSecondary),
           ),
           const SizedBox(height: AppDimensions.paddingSm),
           AppTextField(
@@ -249,15 +261,22 @@ class _ReferralScreenState extends State<ReferralScreen> {
             child: ListTile(
               leading: const Icon(Icons.check_circle, color: AppColors.green),
               title: const Text('Referral code applied'),
-              subtitle: Text('You joined with code ${referral.appliedReferralCode}'),
+              subtitle: Text(
+                'You joined with code ${referral.appliedReferralCode}',
+              ),
             ),
           ),
         ],
         if (referral.referredFriends.isNotEmpty) ...[
           const SizedBox(height: AppDimensions.paddingLg),
-          Text('Friends You Invited', style: Theme.of(context).textTheme.titleLarge),
+          Text(
+            'Friends You Invited',
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
           const SizedBox(height: AppDimensions.paddingSm),
-          ...referral.referredFriends.map((friend) => _FriendTile(friend: friend)),
+          ...referral.referredFriends.map(
+            (friend) => _FriendTile(friend: friend),
+          ),
         ],
         const SizedBox(height: AppDimensions.paddingLg),
         Text('Rewards History', style: Theme.of(context).textTheme.titleLarge),
@@ -268,7 +287,11 @@ class _ReferralScreenState extends State<ReferralScreen> {
               padding: const EdgeInsets.all(AppDimensions.paddingLg),
               child: Column(
                 children: [
-                  Icon(Icons.card_giftcard_outlined, size: 40, color: colors.textMuted),
+                  Icon(
+                    Icons.card_giftcard_outlined,
+                    size: 40,
+                    color: colors.textMuted,
+                  ),
                   const SizedBox(height: 12),
                   Text(
                     'No rewards yet',
@@ -278,7 +301,9 @@ class _ReferralScreenState extends State<ReferralScreen> {
                   Text(
                     'Share your code. You earn $rewardLabel when friends complete their profile.',
                     textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colors.textSecondary),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: colors.textSecondary,
+                    ),
                   ),
                 ],
               ),
@@ -340,16 +365,20 @@ class _HeroBanner extends StatelessWidget {
                   color: AppColors.onBrandPrimary.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.card_giftcard_rounded, color: AppColors.onBrandPrimary, size: 28),
+                child: const Icon(
+                  Icons.card_giftcard_rounded,
+                  color: AppColors.onBrandPrimary,
+                  size: 28,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   'Refer & Earn',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: AppColors.onBrandPrimary,
-                        fontWeight: FontWeight.w800,
-                      ),
+                    color: AppColors.onBrandPrimary,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
             ],
@@ -358,10 +387,10 @@ class _HeroBanner extends StatelessWidget {
           Text(
             'Earn $rewardLabel for every friend who joins and completes their profile.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.onBrandPrimaryMuted,
-                  height: 1.4,
-                  fontWeight: FontWeight.w500,
-                ),
+              color: AppColors.onBrandPrimaryMuted,
+              height: 1.4,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ],
       ),
@@ -394,7 +423,8 @@ class _HowItWorks extends StatelessWidget {
         _StepTile(
           step: '3',
           title: 'You get rewarded',
-          subtitle: '$rewardLabel is credited to your wallet when they complete their profile.',
+          subtitle:
+              '$rewardLabel is credited to your wallet when they complete their profile.',
         ),
       ],
     );
@@ -436,12 +466,17 @@ class _StepTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
+                Text(
+                  title,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                ),
                 Text(
                   subtitle,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: context.appColors.textSecondary,
-                      ),
+                    color: context.appColors.textSecondary,
+                  ),
                 ),
               ],
             ),
@@ -472,13 +507,17 @@ class _ReferralStat extends StatelessWidget {
           children: [
             Icon(icon, size: 20, color: AppColors.primary),
             const SizedBox(height: 6),
-            Text(label, style: Theme.of(context).textTheme.bodySmall, textAlign: TextAlign.center),
+            Text(
+              label,
+              style: Theme.of(context).textTheme.bodySmall,
+              textAlign: TextAlign.center,
+            ),
             Text(
               value,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w800,
-                  ),
+                color: AppColors.primary,
+                fontWeight: FontWeight.w800,
+              ),
               textAlign: TextAlign.center,
             ),
           ],
@@ -518,7 +557,11 @@ class _FriendTile extends StatelessWidget {
           ),
           child: Text(
             label,
-            style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600),
+            style: TextStyle(
+              color: color,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
       ),

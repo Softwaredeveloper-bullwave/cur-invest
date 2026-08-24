@@ -28,7 +28,8 @@ class IdentityVerificationScreen extends StatefulWidget {
   const IdentityVerificationScreen({super.key});
 
   @override
-  State<IdentityVerificationScreen> createState() => _IdentityVerificationScreenState();
+  State<IdentityVerificationScreen> createState() =>
+      _IdentityVerificationScreenState();
 }
 
 class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
@@ -87,7 +88,8 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (_capturedBytes != null) return;
-    if (state == AppLifecycleState.inactive || state == AppLifecycleState.paused) {
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused) {
       unawaited(_releaseCamera());
     } else if (state == AppLifecycleState.resumed) {
       _maybeInitCamera();
@@ -127,11 +129,10 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
   }
 
   bool _upiSubmittedForReview(KycStatusModel s) =>
-      s.upiManual &&
-      s.upiStatus == 'pending' &&
-      s.upiVpaMasked.isNotEmpty;
+      s.upiManual && s.upiStatus == 'pending' && s.upiVpaMasked.isNotEmpty;
 
-  bool _stillNeedsUpi(KycStatusModel s) => !s.upiVerified && !_upiSubmittedForReview(s);
+  bool _stillNeedsUpi(KycStatusModel s) =>
+      !s.upiVerified && !_upiSubmittedForReview(s);
 
   bool _stillNeedsSelfie(KycStatusModel s) =>
       !s.selfieVerified && !s.selfieReviewPending;
@@ -162,7 +163,10 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
           return;
         }
         if (!mounted) return;
-        OnboardingFlowNavigator.goToNextKycStep(context, context.read<KycFlowProvider>());
+        OnboardingFlowNavigator.goToNextKycStep(
+          context,
+          context.read<KycFlowProvider>(),
+        );
       }
       setState(() {});
     });
@@ -170,7 +174,9 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
 
   Future<void> _maybeInitCamera({bool force = false}) async {
     final s = context.read<KycFlowProvider>().status;
-    if (!_stillNeedsSelfie(s) || _awaitingAdminReview(s) || _capturedBytes != null) {
+    if (!_stillNeedsSelfie(s) ||
+        _awaitingAdminReview(s) ||
+        _capturedBytes != null) {
       return;
     }
 
@@ -196,7 +202,9 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
     }
 
     try {
-      final cameras = await availableCameras().timeout(const Duration(seconds: 12));
+      final cameras = await availableCameras().timeout(
+        const Duration(seconds: 12),
+      );
       if (cameras.isEmpty) {
         if (!mounted) return;
         setState(() {
@@ -247,9 +255,12 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
 
     CameraController? trial;
     try {
-      final useJpegFormat = defaultTargetPlatform == TargetPlatform.android ||
+      final useJpegFormat =
+          defaultTargetPlatform == TargetPlatform.android ||
           defaultTargetPlatform == TargetPlatform.iOS;
-      final preset = _isDesktop ? ResolutionPreset.medium : ResolutionPreset.high;
+      final preset = _isDesktop
+          ? ResolutionPreset.medium
+          : ResolutionPreset.high;
       trial = useJpegFormat
           ? CameraController(
               camera,
@@ -257,11 +268,7 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
               enableAudio: false,
               imageFormatGroup: ImageFormatGroup.jpeg,
             )
-          : CameraController(
-              camera,
-              preset,
-              enableAudio: false,
-            );
+          : CameraController(camera, preset, enableAudio: false);
       await trial.initialize().timeout(const Duration(seconds: 10));
       if (!mounted) {
         await trial.dispose();
@@ -309,7 +316,9 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
   Uint8List _compressSelfie(Uint8List bytes) {
     final decoded = img.decodeImage(bytes);
     if (decoded == null) return bytes;
-    final resized = decoded.width > 1280 ? img.copyResize(decoded, width: 1280) : decoded;
+    final resized = decoded.width > 1280
+        ? img.copyResize(decoded, width: 1280)
+        : decoded;
     return Uint8List.fromList(img.encodeJpg(resized, quality: 78));
   }
 
@@ -329,7 +338,9 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not capture photo. Please try again.')),
+        const SnackBar(
+          content: Text('Could not capture photo. Please try again.'),
+        ),
       );
     }
   }
@@ -363,7 +374,9 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
     if (needsUpi && !_formKey.currentState!.validate()) return;
     if (needsSelfie && _capturedBytes == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Capture a live selfie before submitting.')),
+        const SnackBar(
+          content: Text('Capture a live selfie before submitting.'),
+        ),
       );
       return;
     }
@@ -373,9 +386,12 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
     var upiSubmitted = !needsUpi;
     if (needsUpi) {
       final vpa = _vpaController.text.trim();
-      if (_needsLinkedMobile(vpa) && _mobileController.text.trim().length != 10) {
+      if (_needsLinkedMobile(vpa) &&
+          _mobileController.text.trim().length != 10) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Enter the 10-digit mobile linked to this UPI ID.')),
+          const SnackBar(
+            content: Text('Enter the 10-digit mobile linked to this UPI ID.'),
+          ),
         );
         setState(() => _submitting = false);
         return;
@@ -416,9 +432,11 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
     final message = upiSubmitted && needsSelfie
         ? 'Submitted for admin verification. Our team will review your UPI and selfie within 24 hours.'
         : needsSelfie
-            ? 'Selfie submitted for admin verification.'
-            : 'UPI submitted for admin verification.';
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+        ? 'Selfie submitted for admin verification.'
+        : 'UPI submitted for admin verification.';
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
     _startPolling();
     setState(() {});
   }
@@ -427,11 +445,17 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
     if (_capturedBytes != null) {
       return ClipRRect(
         borderRadius: BorderRadius.circular(16),
-        child: Image.memory(_capturedBytes!, fit: BoxFit.cover, width: double.infinity),
+        child: Image.memory(
+          _capturedBytes!,
+          fit: BoxFit.cover,
+          width: double.infinity,
+        ),
       );
     }
 
-    if (_cameraReady && _controller != null && _controller!.value.isInitialized) {
+    if (_cameraReady &&
+        _controller != null &&
+        _controller!.value.isInitialized) {
       return ClipRRect(
         borderRadius: BorderRadius.circular(16),
         child: CameraPreview(_controller!),
@@ -453,29 +477,42 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   if (_cameraInitializing)
-                    const CircularProgressIndicator(color: AppColors.brandOrange)
+                    const CircularProgressIndicator(
+                      color: AppColors.brandOrange,
+                    )
                   else
-                    const Icon(Icons.videocam_outlined, color: AppColors.brandOrange, size: 44),
+                    const Icon(
+                      Icons.videocam_outlined,
+                      color: AppColors.brandOrange,
+                      size: 44,
+                    ),
                   const SizedBox(height: 12),
                   Text(
                     _cameraError ??
                         (desktopPrompt
                             ? 'Tap here to open the camera and capture your selfie.'
                             : showTapToStart
-                                ? 'Tap here to turn on your camera.'
-                                : 'Starting front camera…'),
+                            ? 'Tap here to turn on your camera.'
+                            : 'Starting front camera…'),
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.white.withValues(alpha: 0.85), height: 1.4),
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.85),
+                      height: 1.4,
+                    ),
                   ),
                   if (_cameraError != null && !_cameraInitializing) ...[
                     const SizedBox(height: 12),
                     OutlinedButton(
-                      onPressed: _isDesktop ? _openSelfieCapture : _startLiveCamera,
+                      onPressed: _isDesktop
+                          ? _openSelfieCapture
+                          : _startLiveCamera,
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.brandPrimary,
                         side: const BorderSide(color: AppColors.brandPrimary),
                       ),
-                      child: Text(_isDesktop ? 'Open live camera' : 'Turn on camera'),
+                      child: Text(
+                        _isDesktop ? 'Open live camera' : 'Turn on camera',
+                      ),
                     ),
                   ],
                 ],
@@ -494,10 +531,14 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
         final s = kyc.status;
         final needsUpi = _stillNeedsUpi(s);
         final needsSelfie = _stillNeedsSelfie(s);
-        final awaitingReview = _awaitingAdminReview(s) && !needsUpi && !needsSelfie;
+        final awaitingReview =
+            _awaitingAdminReview(s) && !needsUpi && !needsSelfie;
         final showActions = needsUpi || needsSelfie;
-        final bankBlocked = !s.bankReadyForIdentity && (needsUpi || needsSelfie);
-        final bankError = (kyc.error ?? '').toLowerCase().contains('bank verification');
+        final bankBlocked =
+            !s.bankReadyForIdentity && (needsUpi || needsSelfie);
+        final bankError = (kyc.error ?? '').toLowerCase().contains(
+          'bank verification',
+        );
 
         void goBack() {
           OnboardingFlowNavigator.goToPreviousKycStep(
@@ -548,8 +589,10 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
                                   child: Text(
                                     _capturedBytes == null
                                         ? (_isDesktop
-                                            ? 'Open live camera'
-                                            : (_cameraReady ? 'Capture selfie' : 'Turn on camera'))
+                                              ? 'Open live camera'
+                                              : (_cameraReady
+                                                    ? 'Capture selfie'
+                                                    : 'Turn on camera'))
                                         : 'Retake',
                                   ),
                                 ),
@@ -559,8 +602,16 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
                           const SizedBox(height: 10),
                         ],
                         PrimaryButton(
-                          label: _submitting ? 'Submitting…' : 'Submit for verification',
-                          onPressed: (bankBlocked || bankError || _submitting || kyc.isLoading) ? null : _submitAll,
+                          label: _submitting
+                              ? 'Submitting…'
+                              : 'Submit for verification',
+                          onPressed:
+                              (bankBlocked ||
+                                  bankError ||
+                                  _submitting ||
+                                  kyc.isLoading)
+                              ? null
+                              : _submitAll,
                         ),
                       ],
                     ),
@@ -580,7 +631,7 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
                   title: 'Bank verification required',
                   message: bankBlocked
                       ? 'You saved bank details, but live verification (Eko) has not completed yet. '
-                          'Go back to Bank Verification and tap Verify Bank Account before submitting UPI.'
+                            'Go back to Bank Verification and tap Verify Bank Account before submitting UPI.'
                       : 'Complete bank verification before submitting UPI. Return to the bank step and verify your account.',
                 ),
                 const SizedBox(height: 12),
@@ -591,7 +642,8 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
                 const SizedBox(height: 16),
               ],
               if (awaitingReview) ...[
-                if (s.selfieReviewPending) SelfieManualReviewPendingPanel(status: s),
+                if (s.selfieReviewPending)
+                  SelfieManualReviewPendingPanel(status: s),
                 if (_upiSubmittedForReview(s) && !s.selfieReviewPending)
                   const KycInfoCard(
                     tone: KycInfoTone.warning,
@@ -609,13 +661,15 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
                     message: s.bankVerified
                         ? 'UPI and selfie are verified. An admin will complete your account verification shortly.'
                         : 'UPI and selfie are verified. Your bank account still needs admin approval — '
-                            'once verified, an admin will complete your account verification.',
+                              'once verified, an admin will complete your account verification.',
                   ),
               ] else ...[
                 if (needsUpi) ...[
                   Text(
                     'UPI ID',
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Form(
@@ -627,11 +681,14 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
                           label: 'UPI ID (VPA)',
                           hint: 'yourname@upi',
                           keyboardType: TextInputType.emailAddress,
-                          inputFormatters: [FilteringTextInputFormatter.deny(RegExp(r'\s'))],
+                          inputFormatters: [
+                            FilteringTextInputFormatter.deny(RegExp(r'\s')),
+                          ],
                           validator: (v) {
                             final value = (v ?? '').trim();
                             if (value.isEmpty) return 'Enter your UPI ID';
-                            if (!value.contains('@')) return 'Enter a valid UPI ID';
+                            if (!value.contains('@'))
+                              return 'Enter a valid UPI ID';
                             return null;
                           },
                         ),
@@ -642,7 +699,9 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
                             label: 'Linked mobile (optional override)',
                             hint: '10-digit mobile',
                             keyboardType: TextInputType.phone,
-                            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                            ],
                           ),
                         ],
                       ],
@@ -660,11 +719,15 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
                 if (needsSelfie) ...[
                   Text(
                     'Live selfie',
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   ConstrainedBox(
-                    constraints: const BoxConstraints(maxHeight: _selfiePreviewMaxHeight),
+                    constraints: const BoxConstraints(
+                      maxHeight: _selfiePreviewMaxHeight,
+                    ),
                     child: AspectRatio(
                       aspectRatio: 3 / 4,
                       child: _buildSelfiePreview(),
@@ -674,9 +737,11 @@ class _IdentityVerificationScreenState extends State<IdentityVerificationScreen>
                   Text(
                     'Position your face in the frame. Live camera only — gallery uploads are not accepted. Our team manually verifies your selfie.',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.65),
-                          height: 1.4,
-                        ),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.65),
+                      height: 1.4,
+                    ),
                   ),
                 ] else if (s.selfieVerified)
                   const KycInfoCard(

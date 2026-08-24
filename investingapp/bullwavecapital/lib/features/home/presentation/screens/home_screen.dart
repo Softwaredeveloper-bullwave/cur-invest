@@ -70,7 +70,8 @@ class _HomeScreenState extends State<HomeScreen> {
       features.prefetchHomeIndexExpiries(),
       context.read<StockMarketProvider>().ensureLoaded(),
       context.read<KycFlowProvider>().loadStatus(),
-      if (!PaperOnlyMode.enabled) context.read<FnoFlowProvider>().ensureLoaded(),
+      if (!PaperOnlyMode.enabled)
+        context.read<FnoFlowProvider>().ensureLoaded(),
       context.read<AuthProvider>().refreshProfile(),
     ]);
   }
@@ -163,9 +164,13 @@ class _HomeScreenState extends State<HomeScreen> {
         }
 
         final portfolio = provider.portfolio;
-        final notificationCount = context.watch<NotificationProvider>().unreadCount;
+        final notificationCount = context
+            .watch<NotificationProvider>()
+            .unreadCount;
         final userName = context.watch<AuthProvider>().user?.displayName;
-        final plans = PaperOnlyMode.enabled ? <InvestmentPlanModel>[] : _featuredPlansForHome(provider);
+        final plans = PaperOnlyMode.enabled
+            ? <InvestmentPlanModel>[]
+            : _featuredPlansForHome(provider);
         final allQuickActions = _homeQuickActions(context);
         final practiceBalance = context.watch<WalletProvider>().practiceBalance;
         return SafeArea(
@@ -190,15 +195,18 @@ class _HomeScreenState extends State<HomeScreen> {
                             notificationCount: notificationCount,
                             userName: userName,
                             onMenuTap: () => _showQuickMenu(context),
-                            onNotificationTap: () => context.push(AppRoutes.notifications),
+                            onNotificationTap: () =>
+                                context.push(AppRoutes.notifications),
                           ),
                           const SizedBox(height: 18),
                           if (PaperOnlyMode.enabled) ...[
                             const PaperTradingDisclaimer(),
                             const SizedBox(height: 14),
                           ],
-                          if (!PaperOnlyMode.enabled) const HomePendingActionsSection(),
-                          if (!PaperOnlyMode.enabled) const SizedBox(height: 20),
+                          if (!PaperOnlyMode.enabled)
+                            const HomePendingActionsSection(),
+                          if (!PaperOnlyMode.enabled)
+                            const SizedBox(height: 20),
                           if (PaperOnlyMode.enabled) const SizedBox(height: 4),
                           HomeBalanceCards(
                             portfolioValue: portfolio.currentValue,
@@ -206,7 +214,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ? practiceBalance
                                 : portfolio.walletBalance,
                             dayPnl: portfolio.dayPnl,
-                            onPortfolioTap: () => context.go(AppRoutes.portfolio),
+                            onPortfolioTap: () =>
+                                context.go(AppRoutes.portfolio),
                             onWalletTap: () => context.go(AppRoutes.wallet),
                           ),
                           const SizedBox(height: 20),
@@ -216,8 +225,12 @@ class _HomeScreenState extends State<HomeScreen> {
                           const SizedBox(height: 18),
                           Text(
                             'Quick access',
-                            style: context.typeLabel(12, context.palette.textMuted)
-                                .copyWith(fontWeight: FontWeight.w700, letterSpacing: 0.4),
+                            style: context
+                                .typeLabel(12, context.palette.textMuted)
+                                .copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.4,
+                                ),
                           ),
                           const SizedBox(height: 10),
                           HomeQuickActionsCarousel(actions: allQuickActions),
@@ -242,11 +255,23 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   Consumer<StockFeaturesProvider>(
                     builder: (context, features, _) {
+                      if (provider.marketIndicesUnavailable) {
+                        return Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+                          child: PremiumAlertBanner(
+                            message: 'Live market indices are unavailable. Pull to refresh.',
+                            type: PremiumAlertType.warning,
+                            actionLabel: 'Retry',
+                            onAction: () => provider.refresh(),
+                          ),
+                        );
+                      }
                       return MarketOverview(
                         indices: provider.marketIndices,
                         expiryFor: (index) {
-                          final symbol =
-                              FnoIndexCatalog.symbolForMarketIndex(index.shortName);
+                          final symbol = FnoIndexCatalog.symbolForMarketIndex(
+                            index.shortName,
+                          );
                           if (symbol == null) return null;
                           final expiry = features.optionSelectedExpiry(symbol);
                           return expiry.isNotEmpty ? expiry : null;
@@ -276,7 +301,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           HomeSectionHeader(
                             title: 'Featured Plans',
                             actionLabel: 'See All',
-                            onAction: () => context.push(AppRoutes.featuredPlansList),
+                            onAction: () =>
+                                context.push(AppRoutes.featuredPlansList),
                             reserveFabSpace: true,
                           ),
                           const SizedBox(height: 12),
@@ -285,7 +311,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             child: ListView.separated(
                               scrollDirection: Axis.horizontal,
                               itemCount: plans.length,
-                              separatorBuilder: (_, _) => const SizedBox(width: 12),
+                              separatorBuilder: (_, _) =>
+                                  const SizedBox(width: 12),
                               itemBuilder: (context, index) {
                                 final plan = plans[index];
                                 return _FeaturedPlanChip(
@@ -304,13 +331,19 @@ class _HomeScreenState extends State<HomeScreen> {
                           provider.goalPlans.isNotEmpty
                               ? HomeGoalsSection(
                                   goals: provider.goalPlans,
-                                  onViewAll: () => context.push(AppRoutes.goalPlans),
+                                  onViewAll: () =>
+                                      context.push(AppRoutes.goalPlans),
                                 )
-                              : _GoalPlansPromo(onTap: () => context.push(AppRoutes.goalPlans)),
+                              : _GoalPlansPromo(
+                                  onTap: () =>
+                                      context.push(AppRoutes.goalPlans),
+                                ),
                         ],
                         if (!PaperOnlyMode.enabled) ...[
                           const SizedBox(height: 24),
-                          HomeRecentActivity(transactions: provider.recentTransactions),
+                          HomeRecentActivity(
+                            transactions: provider.recentTransactions,
+                          ),
                         ],
                         const SizedBox(height: 12),
                         SizedBox(height: ShellLayout.contentBottomInset),
@@ -467,11 +500,7 @@ class _FeaturedPlanChip extends StatelessWidget {
               height: 38,
               alignment: Alignment.center,
               decoration: p.iconCircleDecoration(),
-              child: Icon(
-                _iconForPlan(),
-                color: p.primaryDark,
-                size: 18,
-              ),
+              child: Icon(_iconForPlan(), color: p.primaryDark, size: 18),
             ),
             const Spacer(),
             Text(
@@ -495,7 +524,9 @@ class _FeaturedPlanChip extends StatelessWidget {
               ),
               child: Text(
                 risk,
-                style: context.typeLabel(11, riskColor).copyWith(letterSpacing: 0.2),
+                style: context
+                    .typeLabel(11, riskColor)
+                    .copyWith(letterSpacing: 0.2),
               ),
             ),
           ],
@@ -580,21 +611,14 @@ class _GoalPlansPromo extends StatelessWidget {
                   backgroundColor: p.primary.withValues(alpha: 0.35),
                   borderColor: p.primaryBorder,
                 ),
-                child: Icon(
-                  PhosphorIcons.flag,
-                  color: p.primaryDark,
-                  size: 22,
-                ),
+                child: Icon(PhosphorIcons.flag, color: p.primaryDark, size: 22),
               ),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Start a Goal Plan',
-                      style: context.typeSection(16),
-                    ),
+                    Text('Start a Goal Plan', style: context.typeSection(16)),
                     const SizedBox(height: 4),
                     Text(
                       'Earn 8%–16% p.a. on your life goals',
@@ -603,10 +627,7 @@ class _GoalPlansPromo extends StatelessWidget {
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        Text(
-                          'Explore Goals',
-                          style: context.typeAction(13),
-                        ),
+                        Text('Explore Goals', style: context.typeAction(13)),
                         const SizedBox(width: 4),
                         Icon(
                           PhosphorIcons.arrowRight,

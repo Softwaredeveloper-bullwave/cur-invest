@@ -156,9 +156,9 @@ class _UpiVerificationScreenState extends State<UpiVerificationScreen>
       return;
     }
     if (kyc.error != null && kyc.error!.isNotEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(kyc.error!)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(kyc.error!)));
     }
   }
 
@@ -187,25 +187,30 @@ class _UpiVerificationScreenState extends State<UpiVerificationScreen>
                 Text(
                   showForm
                       ? (reviewRejected
-                          ? 'Try again with another UPI ID'
-                          : 'Enter your UPI ID')
+                            ? 'Try again with another UPI ID'
+                            : 'Enter your UPI ID')
                       : reviewPending
                       ? 'Bank & UPI under review'
                       : 'UPI ID verified',
-                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 18,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   showForm
                       ? manualMode
-                          ? 'Submit the UPI ID linked to your bank account. Our team will manually verify your bank account and UPI ID within 24 hours.'
-                          : 'We validate your UPI ID and match the payee name against your PAN or bank records.'
+                            ? 'Submit the UPI ID linked to your bank account. Our team will manually verify your bank account and UPI ID within 24 hours.'
+                            : 'We validate your UPI ID and match the payee name against your PAN or bank records.'
                       : reviewPending
                       ? 'Final verification is in progress. You will be notified once approved.'
                       : 'Your UPI ID is linked and verified for payouts.',
                   style: TextStyle(color: colors.textSecondary, height: 1.45),
                 ),
-                if (manualMode && showForm && status.bankAccountMasked.isNotEmpty) ...[
+                if (manualMode &&
+                    showForm &&
+                    status.bankAccountMasked.isNotEmpty) ...[
                   const SizedBox(height: 16),
                   Container(
                     padding: const EdgeInsets.all(14),
@@ -256,12 +261,16 @@ class _UpiVerificationScreenState extends State<UpiVerificationScreen>
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.next,
                     inputFormatters: [
-                      FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9@._-]')),
+                      FilteringTextInputFormatter.allow(
+                        RegExp(r'[a-zA-Z0-9@._-]'),
+                      ),
                     ],
                     validator: (value) {
                       final vpa = (value ?? '').trim().toLowerCase();
                       if (vpa.length < 3) return 'Enter your UPI ID';
-                      if (!vpa.contains('@') || vpa.startsWith('@') || vpa.endsWith('@')) {
+                      if (!vpa.contains('@') ||
+                          vpa.startsWith('@') ||
+                          vpa.endsWith('@')) {
                         return 'Enter a valid UPI ID (e.g. name@upi)';
                       }
                       return null;
@@ -277,7 +286,10 @@ class _UpiVerificationScreenState extends State<UpiVerificationScreen>
                       textInputAction: TextInputAction.done,
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       validator: (value) {
-                        final digits = (value ?? '').replaceAll(RegExp(r'\D'), '');
+                        final digits = (value ?? '').replaceAll(
+                          RegExp(r'\D'),
+                          '',
+                        );
                         if (digits.length != 10) {
                           return 'Enter the mobile number linked to this UPI ID';
                         }
@@ -297,7 +309,10 @@ class _UpiVerificationScreenState extends State<UpiVerificationScreen>
                       textInputAction: TextInputAction.done,
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       validator: (value) {
-                        final digits = (value ?? '').replaceAll(RegExp(r'\D'), '');
+                        final digits = (value ?? '').replaceAll(
+                          RegExp(r'\D'),
+                          '',
+                        );
                         if (digits.isEmpty) return null;
                         if (digits.length != 10) {
                           return 'Enter a valid 10-digit mobile number';
@@ -332,14 +347,19 @@ class _UpiVerificationScreenState extends State<UpiVerificationScreen>
                     decoration: BoxDecoration(
                       color: AppColors.greenSoft.withValues(alpha: 0.35),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.green.withValues(alpha: 0.35)),
+                      border: Border.all(
+                        color: AppColors.green.withValues(alpha: 0.35),
+                      ),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
                           children: [
-                            const Icon(Icons.verified_rounded, color: AppColors.green),
+                            const Icon(
+                              Icons.verified_rounded,
+                              color: AppColors.green,
+                            ),
                             const SizedBox(width: 8),
                             Text(
                               manualMode

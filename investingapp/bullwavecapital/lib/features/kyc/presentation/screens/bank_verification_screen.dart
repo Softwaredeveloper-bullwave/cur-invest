@@ -63,9 +63,11 @@ class _BankVerificationScreenState extends State<BankVerificationScreen> {
             title: provider.isEditMode
                 ? 'Update Bank Account'
                 : provider.step == BankVerificationStep.success
-                    ? 'Verified'
-                    : 'Link Bank Account',
-            showBack: provider.step != BankVerificationStep.success || provider.isEditMode,
+                ? 'Verified'
+                : 'Link Bank Account',
+            showBack:
+                provider.step != BankVerificationStep.success ||
+                provider.isEditMode,
             onBack: () {
               if (provider.isEditMode) {
                 provider.exitEditMode();
@@ -79,32 +81,32 @@ class _BankVerificationScreenState extends State<BankVerificationScreen> {
           ),
           body: switch (provider.step) {
             BankVerificationStep.details => _DetailsStep(
-                formKey: _formKey,
-                holderController: _holderController,
-                bankController: _bankController,
-                accountController: _accountController,
-                ifscController: _ifscController,
-                panController: _panController,
-                provider: provider,
-              ),
+              formKey: _formKey,
+              holderController: _holderController,
+              bankController: _bankController,
+              accountController: _accountController,
+              ifscController: _ifscController,
+              panController: _panController,
+              provider: provider,
+            ),
             BankVerificationStep.verify => _VerifyStep(
-                provider: provider,
-                onVerified: () {},
-              ),
+              provider: provider,
+              onVerified: () {},
+            ),
             BankVerificationStep.pendingReview => _PendingReviewStep(
-                provider: provider,
-                onContinue: () {
-                  provider.exitEditMode();
-                  _finish();
-                },
-              ),
+              provider: provider,
+              onContinue: () {
+                provider.exitEditMode();
+                _finish();
+              },
+            ),
             BankVerificationStep.success => _SuccessStep(
-                onContinue: () {
-                  provider.exitEditMode();
-                  _finish();
-                },
-                onUpdateAgain: provider.enterEditMode,
-              ),
+              onContinue: () {
+                provider.exitEditMode();
+                _finish();
+              },
+              onUpdateAgain: provider.enterEditMode,
+            ),
           },
         );
       },
@@ -147,9 +149,9 @@ class _DetailsStep extends StatelessWidget {
               Text(
                 'Add bank account to invest',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: colors.textPrimary,
-                    ),
+                  fontWeight: FontWeight.w600,
+                  color: colors.textPrimary,
+                ),
               ),
               const SizedBox(height: 4),
               Text(
@@ -206,8 +208,9 @@ class _DetailsStep extends StatelessWidget {
                   keyboardType: TextInputType.number,
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   onChanged: provider.updateAccountNumber,
-                  validator: (v) =>
-                      v == null || v.length < 9 ? 'Enter valid account number' : null,
+                  validator: (v) => v == null || v.length < 9
+                      ? 'Enter valid account number'
+                      : null,
                 ),
                 const SizedBox(height: 16),
                 AppTextField(
@@ -302,7 +305,10 @@ class _VerifyStep extends StatelessWidget {
                         color: AppColors.green.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Icon(Icons.account_balance_outlined, color: AppColors.green),
+                      child: const Icon(
+                        Icons.account_balance_outlined,
+                        color: AppColors.green,
+                      ),
                     ),
                     const SizedBox(width: 14),
                     Expanded(
@@ -311,9 +317,8 @@ class _VerifyStep extends StatelessWidget {
                         children: [
                           Text(
                             provider.bankName,
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                ),
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w600),
                           ),
                           Text(
                             provider.maskedAccountNumber,
@@ -325,7 +330,10 @@ class _VerifyStep extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 16),
-                _SummaryRow(label: 'Account Holder', value: provider.accountHolderName),
+                _SummaryRow(
+                  label: 'Account Holder',
+                  value: provider.accountHolderName,
+                ),
                 _SummaryRow(label: 'IFSC', value: provider.ifscCode),
                 _SummaryRow(label: 'PAN', value: provider.panNumber),
               ],
@@ -334,18 +342,18 @@ class _VerifyStep extends StatelessWidget {
           const SizedBox(height: 24),
           Text(
             'Verify your account',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 8),
           Text(
             'We verify your bank account and PAN in real time — '
             'the same verification stack used by leading fintech apps in India.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: colors.textSecondary,
-                  height: 1.45,
-                ),
+              color: colors.textSecondary,
+              height: 1.45,
+            ),
           ),
           if (provider.lastError != null) ...[
             const SizedBox(height: 16),
@@ -355,27 +363,31 @@ class _VerifyStep extends StatelessWidget {
               decoration: BoxDecoration(
                 color: AppColors.red.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: AppColors.red.withValues(alpha: 0.25)),
+                border: Border.all(
+                  color: AppColors.red.withValues(alpha: 0.25),
+                ),
               ),
               child: Text(
                 provider.lastError!,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.red,
-                      fontWeight: FontWeight.w600,
-                    ),
+                  color: AppColors.red,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ],
           const Spacer(),
           if (provider.isVerifying) ...[
-            const Center(child: CircularProgressIndicator(color: AppColors.green)),
+            const Center(
+              child: CircularProgressIndicator(color: AppColors.green),
+            ),
             const SizedBox(height: 12),
             Center(
               child: Text(
                 'Submitting bank details…',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: colors.textSecondary,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(color: colors.textSecondary),
               ),
             ),
           ] else
@@ -386,13 +398,13 @@ class _VerifyStep extends StatelessWidget {
                 final result = await provider.verifyAccount();
                 if (!context.mounted) return;
                 if (result.success && result.message.isNotEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(result.message)),
-                  );
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text(result.message)));
                 } else if (!result.success && result.message.isNotEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(result.message)),
-                  );
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text(result.message)));
                 }
               },
             ),
@@ -414,10 +426,7 @@ class _PendingReviewStep extends StatelessWidget {
   final BankVerificationProvider provider;
   final VoidCallback onContinue;
 
-  const _PendingReviewStep({
-    required this.provider,
-    required this.onContinue,
-  });
+  const _PendingReviewStep({required this.provider, required this.onContinue});
 
   @override
   Widget build(BuildContext context) {
@@ -435,15 +444,19 @@ class _PendingReviewStep extends StatelessWidget {
               color: AppColors.brandOrange.withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.schedule_rounded, color: AppColors.brandOrange, size: 40),
+            child: const Icon(
+              Icons.schedule_rounded,
+              color: AppColors.brandOrange,
+              size: 40,
+            ),
           ),
           const SizedBox(height: 24),
           Text(
             'Submitted for manual review',
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: colors.textPrimary,
-                ),
+              fontWeight: FontWeight.w700,
+              color: colors.textPrimary,
+            ),
           ),
           const SizedBox(height: 10),
           Text(
@@ -451,9 +464,9 @@ class _PendingReviewStep extends StatelessWidget {
             'You will get a notification when approved.',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: colors.textSecondary,
-                  height: 1.45,
-                ),
+              color: colors.textSecondary,
+              height: 1.45,
+            ),
           ),
           const Spacer(),
           PrimaryButton(label: 'Back to profile', onPressed: onContinue),
@@ -468,10 +481,7 @@ class _SuccessStep extends StatelessWidget {
   final VoidCallback onContinue;
   final VoidCallback onUpdateAgain;
 
-  const _SuccessStep({
-    required this.onContinue,
-    required this.onUpdateAgain,
-  });
+  const _SuccessStep({required this.onContinue, required this.onUpdateAgain});
 
   @override
   Widget build(BuildContext context) {
@@ -489,29 +499,34 @@ class _SuccessStep extends StatelessWidget {
               color: AppColors.green.withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.check_rounded, color: AppColors.green, size: 40),
+            child: const Icon(
+              Icons.check_rounded,
+              color: AppColors.green,
+              size: 40,
+            ),
           ),
           const SizedBox(height: 24),
           Text(
             'Bank account verified',
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: colors.textPrimary,
-                ),
+              fontWeight: FontWeight.w700,
+              color: colors.textPrimary,
+            ),
           ),
           const SizedBox(height: 10),
           Text(
             'Your bank account and PAN are verified. You can invest, trade, and withdraw.',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: colors.textSecondary,
-                  height: 1.45,
-                ),
+              color: colors.textSecondary,
+              height: 1.45,
+            ),
           ),
           const SizedBox(height: 20),
           Consumer<BankVerificationProvider>(
             builder: (context, provider, _) {
-              if (provider.nameAtBank.isEmpty && provider.panRegisteredName.isEmpty) {
+              if (provider.nameAtBank.isEmpty &&
+                  provider.panRegisteredName.isEmpty) {
                 return const SizedBox.shrink();
               }
               return Container(
@@ -526,9 +541,15 @@ class _SuccessStep extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     if (provider.nameAtBank.isNotEmpty)
-                      _SummaryRow(label: 'Name at bank', value: provider.nameAtBank),
+                      _SummaryRow(
+                        label: 'Name at bank',
+                        value: provider.nameAtBank,
+                      ),
                     if (provider.panRegisteredName.isNotEmpty)
-                      _SummaryRow(label: 'PAN name', value: provider.panRegisteredName),
+                      _SummaryRow(
+                        label: 'PAN name',
+                        value: provider.panRegisteredName,
+                      ),
                   ],
                 ),
               );
@@ -566,9 +587,9 @@ class _SummaryRow extends StatelessWidget {
           Text(
             value,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: colors.textPrimary,
-                ),
+              fontWeight: FontWeight.w600,
+              color: colors.textPrimary,
+            ),
           ),
         ],
       ),

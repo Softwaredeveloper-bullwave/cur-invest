@@ -42,10 +42,7 @@ class KycApiService {
       final bytes = await file.readAsBytes();
       final name = file.name.isNotEmpty ? file.name : 'pan_${i + 1}.jpg';
       form.files.add(
-        MapEntry(
-          'pan_image',
-          MultipartFile.fromBytes(bytes, filename: name),
-        ),
+        MapEntry('pan_image', MultipartFile.fromBytes(bytes, filename: name)),
       );
     }
 
@@ -63,10 +60,7 @@ class KycApiService {
       return ManualKycStatusModel.fromJson(data);
     } on DioException catch (e) {
       if (e.error is ApiException) throw e.error!;
-      throw ApiException(
-        e.response?.statusCode ?? 500,
-        _extractMessage(e),
-      );
+      throw ApiException(e.response?.statusCode ?? 500, _extractMessage(e));
     }
   }
 

@@ -161,7 +161,9 @@ class ThemePalette {
         end: Alignment.bottomRight,
         colors: [heroCard, heroCardEnd],
       ),
-      border: Border.all(color: primary.withValues(alpha: isDark ? 0.22 : 0.12)),
+      border: Border.all(
+        color: primary.withValues(alpha: isDark ? 0.22 : 0.12),
+      ),
       boxShadow: isDark
           ? [
               BoxShadow(
@@ -207,7 +209,10 @@ class ThemePalette {
     );
   }
 
-  BoxDecoration iconCircleDecoration({Color? borderColor, Color? backgroundColor}) {
+  BoxDecoration iconCircleDecoration({
+    Color? borderColor,
+    Color? backgroundColor,
+  }) {
     return BoxDecoration(
       color: backgroundColor ?? iconBg,
       shape: BoxShape.circle,
@@ -225,8 +230,9 @@ class ThemePalette {
 }
 
 extension ThemePaletteContext on BuildContext {
-  ThemePalette get palette =>
-      Theme.of(this).brightness == Brightness.dark ? ThemePalette.dark : ThemePalette.light;
+  ThemePalette get palette => Theme.of(this).brightness == Brightness.dark
+      ? ThemePalette.dark
+      : ThemePalette.light;
 }
 
 class ThemeA {
@@ -253,17 +259,26 @@ class ThemeA {
   static const cardRadius = 28.0;
   static const onPrimary = Color(0xFFFFFFFF);
 
-  static BoxDecoration cardDecoration({Color? shadowTint, double radius = cardRadius}) =>
+  static BoxDecoration cardDecoration({
+    Color? shadowTint,
+    double radius = cardRadius,
+  }) =>
       ThemePalette.light.cardDecoration(shadowTint: shadowTint, radius: radius);
 
-  static BoxDecoration iconCircleDecoration({Color? borderColor, Color? backgroundColor}) =>
-      ThemePalette.light.iconCircleDecoration(borderColor: borderColor, backgroundColor: backgroundColor);
+  static BoxDecoration iconCircleDecoration({
+    Color? borderColor,
+    Color? backgroundColor,
+  }) => ThemePalette.light.iconCircleDecoration(
+    borderColor: borderColor,
+    backgroundColor: backgroundColor,
+  );
 }
 
 class ThemeAType {
   ThemeAType._();
 
-  static TextStyle heading({double size = 28, Color? color}) => GoogleFonts.inter(
+  static TextStyle heading({double size = 28, Color? color}) =>
+      GoogleFonts.inter(
         fontSize: size,
         fontWeight: FontWeight.w800,
         color: color ?? ThemeA.textDark,
@@ -271,7 +286,8 @@ class ThemeAType {
         height: 1.1,
       );
 
-  static TextStyle sectionTitle({double size = 18, Color? color}) => GoogleFonts.inter(
+  static TextStyle sectionTitle({double size = 18, Color? color}) =>
+      GoogleFonts.inter(
         fontSize: size,
         fontWeight: FontWeight.w700,
         color: color ?? ThemeA.textDark,
@@ -279,7 +295,8 @@ class ThemeAType {
         height: 1.2,
       );
 
-  static TextStyle cardTitle({double size = 15, Color? color}) => GoogleFonts.inter(
+  static TextStyle cardTitle({double size = 15, Color? color}) =>
+      GoogleFonts.inter(
         fontSize: size,
         fontWeight: FontWeight.w600,
         color: color ?? ThemeA.textDark,
@@ -288,13 +305,14 @@ class ThemeAType {
       );
 
   static TextStyle body({double size = 15, Color? color}) => GoogleFonts.inter(
-        fontSize: size,
-        fontWeight: FontWeight.w500,
-        color: color ?? ThemeA.textDark,
-        height: 1.35,
-      );
+    fontSize: size,
+    fontWeight: FontWeight.w500,
+    color: color ?? ThemeA.textDark,
+    height: 1.35,
+  );
 
-  static TextStyle secondary({double size = 14, Color? color}) => GoogleFonts.inter(
+  static TextStyle secondary({double size = 14, Color? color}) =>
+      GoogleFonts.inter(
         fontSize: size,
         fontWeight: FontWeight.w500,
         color: color ?? ThemeA.textGrey,
@@ -302,29 +320,30 @@ class ThemeAType {
       );
 
   static TextStyle muted({double size = 13, Color? color}) => GoogleFonts.inter(
-        fontSize: size,
-        fontWeight: FontWeight.w400,
-        color: color ?? ThemeA.textMuted,
-        height: 1.35,
-      );
+    fontSize: size,
+    fontWeight: FontWeight.w400,
+    color: color ?? ThemeA.textMuted,
+    height: 1.35,
+  );
 
   static TextStyle price({double size = 16, Color? color}) => GoogleFonts.inter(
-        fontSize: size,
-        fontWeight: FontWeight.w800,
-        color: color ?? ThemeA.textDark,
-        letterSpacing: -0.45,
-        height: 1.05,
-      );
+    fontSize: size,
+    fontWeight: FontWeight.w800,
+    color: color ?? ThemeA.textDark,
+    letterSpacing: -0.45,
+    height: 1.05,
+  );
 
   static TextStyle label({double size = 12, Color? color}) => GoogleFonts.inter(
-        fontSize: size,
-        fontWeight: FontWeight.w600,
-        color: color ?? ThemeA.textDark,
-        letterSpacing: -0.05,
-        height: 1.2,
-      );
+    fontSize: size,
+    fontWeight: FontWeight.w600,
+    color: color ?? ThemeA.textDark,
+    letterSpacing: -0.05,
+    height: 1.2,
+  );
 
-  static TextStyle action({double size = 14, Color? color}) => GoogleFonts.inter(
+  static TextStyle action({double size = 14, Color? color}) =>
+      GoogleFonts.inter(
         fontSize: size,
         fontWeight: FontWeight.w600,
         color: color ?? ThemeA.textDark,
@@ -336,15 +355,22 @@ extension NeoType on BuildContext {
   ThemePalette get p => palette;
 
   TextStyle get typeHeading => ThemeAType.heading(color: p.textDark);
-  TextStyle typeSection([double size = 18]) => ThemeAType.sectionTitle(size: size, color: p.textDark);
-  TextStyle typeCardTitle([double size = 15]) => ThemeAType.cardTitle(size: size, color: p.textDark);
-  TextStyle typeBody([double size = 15]) => ThemeAType.body(size: size, color: p.textDark);
-  TextStyle typeSecondary([double size = 14]) => ThemeAType.secondary(size: size, color: p.textGrey);
-  TextStyle typeMuted([double size = 13]) => ThemeAType.muted(size: size, color: p.textMuted);
-  TextStyle typePrice([double size = 16]) => ThemeAType.price(size: size, color: p.textDark);
+  TextStyle typeSection([double size = 18]) =>
+      ThemeAType.sectionTitle(size: size, color: p.textDark);
+  TextStyle typeCardTitle([double size = 15]) =>
+      ThemeAType.cardTitle(size: size, color: p.textDark);
+  TextStyle typeBody([double size = 15]) =>
+      ThemeAType.body(size: size, color: p.textDark);
+  TextStyle typeSecondary([double size = 14]) =>
+      ThemeAType.secondary(size: size, color: p.textGrey);
+  TextStyle typeMuted([double size = 13]) =>
+      ThemeAType.muted(size: size, color: p.textMuted);
+  TextStyle typePrice([double size = 16]) =>
+      ThemeAType.price(size: size, color: p.textDark);
   TextStyle typeLabel([double size = 13, Color? color]) =>
       ThemeAType.label(size: size, color: color ?? p.textDark);
-  TextStyle typeAction([double size = 14]) => ThemeAType.action(size: size, color: p.primaryDark);
+  TextStyle typeAction([double size = 14]) =>
+      ThemeAType.action(size: size, color: p.primaryDark);
 }
 
 class AppSectionHeader extends StatelessWidget {
@@ -366,7 +392,9 @@ class AppSectionHeader extends StatelessWidget {
     final p = context.palette;
     return Padding(
       padding: EdgeInsets.only(
-        right: reserveFabSpace && actionLabel != null ? ShellLayout.fabActionClearance : 0,
+        right: reserveFabSpace && actionLabel != null
+            ? ShellLayout.fabActionClearance
+            : 0,
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -384,7 +412,10 @@ class AppSectionHeader extends StatelessWidget {
             GestureDetector(
               onTap: onAction,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: p.primaryPillDecoration(),
                 child: Text(
                   actionLabel!,

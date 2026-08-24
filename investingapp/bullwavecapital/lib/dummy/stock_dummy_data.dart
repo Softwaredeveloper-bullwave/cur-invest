@@ -4,7 +4,12 @@ import '../models/stock_model.dart';
 class StockDummyData {
   StockDummyData._();
 
-  static const List<String> defaultWatchlist = ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK'];
+  static const List<String> defaultWatchlist = [
+    'RELIANCE',
+    'TCS',
+    'INFY',
+    'HDFCBANK',
+  ];
 
   static const List<StockModel> nseStocks = [
     StockModel(
@@ -302,14 +307,16 @@ class StockDummyData {
       final low = open - volatility * (0.3 + (i % 4) * 0.1);
       final close = low + (high - low) * (0.35 + (i % 7) * 0.08);
       price = close;
-      candles.add(CandleModel(
-        time: day,
-        open: open,
-        high: high,
-        low: low,
-        close: close,
-        volume: 1000000 + (i * 50000),
-      ));
+      candles.add(
+        CandleModel(
+          time: day,
+          open: open,
+          high: high,
+          low: low,
+          close: close,
+          volume: 1000000 + (i * 50000),
+        ),
+      );
     }
     return candles;
   }
@@ -327,17 +334,42 @@ class StockDummyData {
   }
 
   static const List<StockHoldingModel> holdings = [
-    StockHoldingModel(symbol: 'RELIANCE', name: 'Reliance Industries', quantity: 25, avgPrice: 2650, ltp: 2948.50),
-    StockHoldingModel(symbol: 'TCS', name: 'Tata Consultancy Services', quantity: 15, avgPrice: 3850, ltp: 4125.30),
-    StockHoldingModel(symbol: 'HDFCBANK', name: 'HDFC Bank', quantity: 40, avgPrice: 1580, ltp: 1724.80),
-    StockHoldingModel(symbol: 'INFY', name: 'Infosys Ltd', quantity: 50, avgPrice: 1620, ltp: 1882.15),
+    StockHoldingModel(
+      symbol: 'RELIANCE',
+      name: 'Reliance Industries',
+      quantity: 25,
+      avgPrice: 2650,
+      ltp: 2948.50,
+    ),
+    StockHoldingModel(
+      symbol: 'TCS',
+      name: 'Tata Consultancy Services',
+      quantity: 15,
+      avgPrice: 3850,
+      ltp: 4125.30,
+    ),
+    StockHoldingModel(
+      symbol: 'HDFCBANK',
+      name: 'HDFC Bank',
+      quantity: 40,
+      avgPrice: 1580,
+      ltp: 1724.80,
+    ),
+    StockHoldingModel(
+      symbol: 'INFY',
+      name: 'Infosys Ltd',
+      quantity: 50,
+      avgPrice: 1620,
+      ltp: 1882.15,
+    ),
   ];
 
   static final List<StockNewsModel> news = [
     StockNewsModel(
       id: 'N1',
       title: 'Nifty 50 hits fresh record as banking stocks rally',
-      summary: 'Benchmark indices gained for the third straight session led by HDFC Bank and ICICI Bank.',
+      summary:
+          'Benchmark indices gained for the third straight session led by HDFC Bank and ICICI Bank.',
       source: 'Economic Times',
       publishedAt: DateTime(2025, 6, 27, 9, 30),
       relatedSymbols: ['NIFTY', 'HDFCBANK', 'ICICIBANK'],
@@ -346,7 +378,8 @@ class StockDummyData {
     StockNewsModel(
       id: 'N2',
       title: 'Reliance Jio announces 5G expansion in tier-2 cities',
-      summary: 'Reliance Industries subsidiary plans network rollout across 200 cities by Q3.',
+      summary:
+          'Reliance Industries subsidiary plans network rollout across 200 cities by Q3.',
       source: 'Moneycontrol',
       publishedAt: DateTime(2025, 6, 26, 14, 15),
       relatedSymbols: ['RELIANCE'],
@@ -355,7 +388,8 @@ class StockDummyData {
     StockNewsModel(
       id: 'N3',
       title: 'IT sector outlook remains strong amid AI demand',
-      summary: 'Analysts upgrade TCS and Infosys citing robust deal pipeline and margin stability.',
+      summary:
+          'Analysts upgrade TCS and Infosys citing robust deal pipeline and margin stability.',
       source: 'Bloomberg Quint',
       publishedAt: DateTime(2025, 6, 26, 11, 0),
       relatedSymbols: ['TCS', 'INFY', 'WIPRO'],
@@ -364,7 +398,8 @@ class StockDummyData {
     StockNewsModel(
       id: 'N4',
       title: 'RBI keeps repo rate unchanged at 6.5%',
-      summary: 'Policy stance remains neutral; banking stocks react positively in early trade.',
+      summary:
+          'Policy stance remains neutral; banking stocks react positively in early trade.',
       source: 'Livemint',
       publishedAt: DateTime(2025, 6, 25, 10, 0),
       relatedSymbols: ['SBIN', 'AXISBANK', 'KOTAKBANK'],
@@ -373,7 +408,8 @@ class StockDummyData {
     StockNewsModel(
       id: 'N5',
       title: 'Tata Motors EV sales cross 1 lakh units milestone',
-      summary: 'Strong demand for Nexon EV and Punch EV drives quarterly revenue beat.',
+      summary:
+          'Strong demand for Nexon EV and Punch EV drives quarterly revenue beat.',
       source: 'Business Standard',
       publishedAt: DateTime(2025, 6, 24, 16, 45),
       relatedSymbols: ['TATAMOTORS'],
@@ -382,9 +418,27 @@ class StockDummyData {
   ];
 
   static final List<PriceAlertModel> priceAlerts = [
-    PriceAlertModel(id: 'A1', symbol: 'RELIANCE', name: 'Reliance Industries', targetPrice: 3000, condition: 'Above'),
-    PriceAlertModel(id: 'A2', symbol: 'TCS', name: 'Tata Consultancy Services', targetPrice: 4000, condition: 'Below'),
-    PriceAlertModel(id: 'A3', symbol: 'TATAMOTORS', name: 'Tata Motors', targetPrice: 1000, condition: 'Above'),
+    PriceAlertModel(
+      id: 'A1',
+      symbol: 'RELIANCE',
+      name: 'Reliance Industries',
+      targetPrice: 3000,
+      condition: 'Above',
+    ),
+    PriceAlertModel(
+      id: 'A2',
+      symbol: 'TCS',
+      name: 'Tata Consultancy Services',
+      targetPrice: 4000,
+      condition: 'Below',
+    ),
+    PriceAlertModel(
+      id: 'A3',
+      symbol: 'TATAMOTORS',
+      name: 'Tata Motors',
+      targetPrice: 1000,
+      condition: 'Above',
+    ),
   ];
 
   static final List<SipPlanModel> sipPlans = [

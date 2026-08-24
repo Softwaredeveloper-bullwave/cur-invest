@@ -20,7 +20,8 @@ class OtpScreen extends StatefulWidget {
 }
 
 class _OtpScreenState extends State<OtpScreen> {
-  final GlobalKey<ModernOtpInputState> _otpKey = GlobalKey<ModernOtpInputState>();
+  final GlobalKey<ModernOtpInputState> _otpKey =
+      GlobalKey<ModernOtpInputState>();
   int _secondsRemaining = 30;
   Timer? _timer;
   bool _isResending = false;
@@ -61,7 +62,9 @@ class _OtpScreenState extends State<OtpScreen> {
     if (auth.phoneNumber.length != 10) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Phone number missing. Go back and enter your number again.'),
+          content: Text(
+            'Phone number missing. Go back and enter your number again.',
+          ),
           behavior: SnackBarBehavior.floating,
           backgroundColor: AppColors.red,
         ),
@@ -114,8 +117,8 @@ class _OtpScreenState extends State<OtpScreen> {
           content: Text(
             AppEnv.showDevOtpHints && auth.otpIsConsoleMode
                 ? (auth.devOtp != null
-                    ? 'Dev mode — new OTP: ${auth.devOtp}'
-                    : 'Dev mode — check Django terminal for OTP')
+                      ? 'Dev mode — new OTP: ${auth.devOtp}'
+                      : 'Dev mode — check Django terminal for OTP')
                 : 'OTP sent to +91 ${auth.phoneNumber}',
           ),
           behavior: SnackBarBehavior.floating,
@@ -155,120 +158,131 @@ class _OtpScreenState extends State<OtpScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             PremiumAuthHero(
-                pill: isRegistration
-                    ? 'Step 1 · Phone OTP'
-                    : (isReturningPhone ? 'Welcome back' : 'Sign in'),
-                headline: isRegistration ? 'VERIFY\nPHONE' : 'ENTER\nOTP',
-                body: AppEnv.showDevOtpHints && auth.otpIsConsoleMode
-                    ? 'Dev mode: SMS is not configured. Use the OTP shown below or in the Django terminal.'
-                    : isRegistration
-                        ? 'Enter the 6-digit code sent to +91 ${_maskedPhone(auth.phoneNumber)}. '
-                            'Next you\'ll verify email and complete your profile.'
-                        : 'Enter the 6-digit code sent to +91 ${_maskedPhone(auth.phoneNumber)} to sign in.',
-                showLogo: false,
-                belowBody: Column(
-                  children: [
-                if (AppEnv.showDevOtpHints && auth.otpIsConsoleMode)
-                  Container(
-                    width: double.infinity,
-                    margin: const EdgeInsets.only(bottom: 12),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.brandCyan.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.brandCyan.withValues(alpha: 0.3)),
+              pill: isRegistration
+                  ? 'Step 1 · Phone OTP'
+                  : (isReturningPhone ? 'Welcome back' : 'Sign in'),
+              headline: isRegistration ? 'VERIFY\nPHONE' : 'ENTER\nOTP',
+              body: AppEnv.showDevOtpHints && auth.otpIsConsoleMode
+                  ? 'Dev mode: SMS is not configured. Use the OTP shown below or in the Django terminal.'
+                  : isRegistration
+                  ? 'Enter the 6-digit code sent to +91 ${_maskedPhone(auth.phoneNumber)}. '
+                        'Next you\'ll verify email and complete your profile.'
+                  : 'Enter the 6-digit code sent to +91 ${_maskedPhone(auth.phoneNumber)} to sign in.',
+              showLogo: false,
+              belowBody: Column(
+                children: [
+                  if (AppEnv.showDevOtpHints && auth.otpIsConsoleMode)
+                    Container(
+                      width: double.infinity,
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.brandCyan.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: AppColors.brandCyan.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: Text(
+                        'SMS not configured — OTP is shown here for testing only.',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white.withValues(alpha: 0.75),
+                          height: 1.4,
+                        ),
+                      ),
                     ),
-                    child: Text(
-                      'SMS not configured — OTP is shown here for testing only.',
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white.withValues(alpha: 0.75),
-                        height: 1.4,
+                  if (AppEnv.showDevOtpHints &&
+                      auth.otpIsConsoleMode &&
+                      auth.devOtp == null)
+                    Container(
+                      width: double.infinity,
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.red.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: AppColors.red.withValues(alpha: 0.35),
+                        ),
+                      ),
+                      child: Text(
+                        'OTP not returned by server. On AWS set SMS_EXPOSE_DEV_OTP=True in .env and restart gunicorn.',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white.withValues(alpha: 0.85),
+                          height: 1.4,
+                        ),
+                      ),
+                    ),
+                  if (AppEnv.showDevOtpHints && auth.devOtp != null)
+                    Container(
+                      width: double.infinity,
+                      margin: const EdgeInsets.only(bottom: 16),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.green.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: AppColors.green.withValues(alpha: 0.35),
+                        ),
+                      ),
+                      child: Text(
+                        'Dev OTP: ${auth.devOtp}',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.inter(
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.greenSoft,
+                          letterSpacing: 3,
+                        ),
+                      ),
+                    ),
+                  PremiumGlassField(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 12,
+                        horizontal: 8,
+                      ),
+                      child: ModernOtpInput(
+                        key: _otpKey,
+                        enabled: !isBusy,
+                        onChanged: (value) => setState(() => _otp = value),
+                        onCompleted: (_) {
+                          if (!_isVerifying && !auth.isLoading) _verifyOtp();
+                        },
                       ),
                     ),
                   ),
-                if (AppEnv.showDevOtpHints && auth.otpIsConsoleMode && auth.devOtp == null)
-                  Container(
-                    width: double.infinity,
-                    margin: const EdgeInsets.only(bottom: 12),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.red.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.red.withValues(alpha: 0.35)),
-                    ),
-                    child: Text(
-                      'OTP not returned by server. On AWS set SMS_EXPOSE_DEV_OTP=True in .env and restart gunicorn.',
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white.withValues(alpha: 0.85),
-                        height: 1.4,
-                      ),
-                    ),
-                  ),
-                if (AppEnv.showDevOtpHints && auth.devOtp != null)
-                  Container(
-                    width: double.infinity,
-                    margin: const EdgeInsets.only(bottom: 16),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.green.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.green.withValues(alpha: 0.35)),
-                    ),
-                    child: Text(
-                      'Dev OTP: ${auth.devOtp}',
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.inter(
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.greenSoft,
-                        letterSpacing: 3,
-                      ),
-                    ),
-                  ),
-                PremiumGlassField(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-                    child: ModernOtpInput(
-                      key: _otpKey,
-                      enabled: !isBusy,
-                      onChanged: (value) => setState(() => _otp = value),
-                      onCompleted: (_) {
-                        if (!_isVerifying && !auth.isLoading) _verifyOtp();
-                      },
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                canResend
-                    ? TextButton(
-                        onPressed: _resendOtp,
-                        child: Text(
-                          _isResending ? 'Sending...' : 'Resend OTP',
+                  const SizedBox(height: 20),
+                  canResend
+                      ? TextButton(
+                          onPressed: _resendOtp,
+                          child: Text(
+                            _isResending ? 'Sending...' : 'Resend OTP',
+                            style: GoogleFonts.inter(
+                              color: AppColors.brandCyan,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        )
+                      : Text(
+                          'Resend in 0:${_secondsRemaining.toString().padLeft(2, '0')}',
                           style: GoogleFonts.inter(
-                            color: AppColors.brandCyan,
-                            fontWeight: FontWeight.w700,
+                            color: Colors.white.withValues(alpha: 0.4),
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
                           ),
                         ),
-                      )
-                    : Text(
-                        'Resend in 0:${_secondsRemaining.toString().padLeft(2, '0')}',
-                        style: GoogleFonts.inter(
-                          color: Colors.white.withValues(alpha: 0.4),
-                          fontWeight: FontWeight.w600,
-                          fontSize: 13,
-                        ),
-                      ),
-                  ],
-                ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
+      ),
     );
   }
 }

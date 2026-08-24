@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 
 from django.contrib.auth import authenticate
-from django.db.models import Q, Sum
+from django.db.models import Count, Max, Q, Sum
 from django.utils.dateparse import parse_date, parse_datetime
 from django.utils import timezone
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
@@ -46,6 +46,7 @@ from kyc.selfie_service import (
     reject_selfie,
     serialize_selfie_review,
 )
+from education.models import EducationQuizAttempt
 from payments.models import PayoutRecord
 from stocks.models import CommodityTrade, OptionTrade, PaperTrade
 
@@ -158,6 +159,7 @@ class DashboardView(AdminPanelAPIView):
                 'revenueChart': reporting.revenue_chart(),
                 'recentUsers': reporting.recent_users(),
                 'recentActivity': reporting.recent_activity(),
+                'learn': reporting.learn_summary(),
                 'trading': {
                     'stocks': reporting.trade_summary(
                         PaperTrade.objects.all(),
@@ -180,9 +182,15 @@ class DashboardView(AdminPanelAPIView):
 class UserListView(AdminPanelAPIView):
     def get(self, request):
         search = str(request.query_params.get('search') or '').strip()
-        rows = User.objects.order_by('-date_joined')
+        learn_only = str(request.query_params.get('learn') or '').lower() in ('1', 'true', 'yes')
+        rows = User.objects.annotate(
+            quizAttemptCount=Count('quiz_attempts'),
+            lastQuizAt=Max('quiz_attempts__completed_at'),
+        ).order_by('-date_joined')
         if search:
             rows = rows.filter(Q(phone__icontains=search) | Q(name__icontains=search) | Q(email__icontains=search))
+        if learn_only:
+            rows = rows.filter(quizAttemptCount__gt=0)
         data = [
             {
                 'id': str(row.id),
@@ -194,8 +202,12 @@ class UserListView(AdminPanelAPIView):
                 'fnoStatus': row.fno_status,
                 'isActive': row.is_active,
                 'isStaff': row.is_staff,
+                'hasCompletedOnboarding': row.has_completed_onboarding,
                 'dateJoined': row.date_joined.isoformat(),
                 'walletBalance': _money(getattr(getattr(row, 'wallet', None), 'balance', 0)),
+                'quizAttemptCount': row.quizAttemptCount,
+                'lastLearnActivity': row.lastQuizAt.isoformat() if row.lastQuizAt else None,
+                'isLearnActive': row.quizAttemptCount > 0,
             }
             for row in rows.select_related('wallet', 'kyc_profile')[:200]
         ]
@@ -204,6 +216,13 @@ class UserListView(AdminPanelAPIView):
 
 def _serialize_user_detail(user: User) -> dict:
     profile = getattr(user, 'kyc_profile', None)
+    learn = reporting.learn_stats_for_user(user)
+    attempts = [
+        reporting.serialize_quiz_attempt(row)
+        for row in EducationQuizAttempt.objects.filter(user=user)
+        .select_related('quiz', 'quiz__category', 'user')
+        .order_by('-completed_at')[:20]
+    ]
     return {
         'id': str(user.id),
         'phone': user.phone,
@@ -215,6 +234,7 @@ def _serialize_user_detail(user: User) -> dict:
         'fnoStatus': user.fno_status,
         'isActive': user.is_active,
         'isStaff': user.is_staff,
+        'hasCompletedOnboarding': user.has_completed_onboarding,
         'dateJoined': user.date_joined.isoformat(),
         'city': user.city,
         'dateOfBirth': user.date_of_birth.isoformat() if user.date_of_birth else None,
@@ -225,6 +245,8 @@ def _serialize_user_detail(user: User) -> dict:
         'bankStatus': getattr(profile, 'bank_status', ''),
         'upiStatus': getattr(profile, 'upi_status', ''),
         'upiVpa': getattr(profile, 'upi_vpa', ''),
+        'learn': learn,
+        'quizAttempts': attempts,
     }
 
 
@@ -243,11 +265,15 @@ class UserDetailView(AdminPanelAPIView):
             return Response({'detail': 'User not found.'}, status=404)
         if user.is_superuser and str(request.user.id) != str(user.id):
             return Response({'detail': 'Cannot edit another superuser.'}, status=403)
-        allowed = ('name', 'email', 'city', 'kyc_status', 'pan_status', 'fno_status')
+        allowed = ('name', 'email', 'city', 'kyc_status', 'pan_status', 'fno_status', 'has_completed_onboarding')
         updates = []
         for field in allowed:
             if field in request.data:
-                setattr(user, field, request.data[field])
+                value = request.data[field]
+                if field == 'has_completed_onboarding':
+                    setattr(user, field, bool(value))
+                else:
+                    setattr(user, field, value)
                 updates.append(field)
         if updates:
             user.save(update_fields=updates + ['updated_at'] if hasattr(user, 'updated_at') else updates)
@@ -288,6 +314,30 @@ class UserDeleteView(AdminPanelAPIView):
         user.delete()
         _audit(request, action='user_delete', target_type='User', target_id=user_id, summary=f'Deleted user {phone}')
         return Response({'success': True})
+
+
+class EducationOverviewView(AdminPanelAPIView):
+    """CBW Learn — quiz activity and learner analytics for staff."""
+
+    def get(self, request):
+        search = str(request.query_params.get('search') or '').strip()
+        attempts = EducationQuizAttempt.objects.select_related(
+            'user', 'quiz', 'quiz__category'
+        ).order_by('-completed_at')
+        if search:
+            attempts = attempts.filter(
+                Q(user__phone__icontains=search)
+                | Q(user__name__icontains=search)
+                | Q(quiz__title__icontains=search)
+            )
+        return Response(
+            {
+                'summary': reporting.learn_summary(),
+                'recentAttempts': [
+                    reporting.serialize_quiz_attempt(row) for row in attempts[:100]
+                ],
+            }
+        )
 
 
 def _serialize_kyc_profile_row(row: KycProfile, request=None) -> dict:

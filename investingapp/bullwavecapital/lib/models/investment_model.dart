@@ -30,7 +30,9 @@ class InvestmentPlanModel {
   }
 
   bool get hasFixedMonthlyReturn =>
-      monthlyReturnMin > 0 && (monthlyReturnMax <= monthlyReturnMin || monthlyReturnMax == monthlyReturnRate);
+      monthlyReturnMin > 0 &&
+      (monthlyReturnMax <= monthlyReturnMin ||
+          monthlyReturnMax == monthlyReturnRate);
 }
 
 class InvestmentDetailModel {
@@ -63,8 +65,8 @@ class FaqItem {
   });
 
   FaqItem copyWith({bool? isExpanded}) => FaqItem(
-        question: question,
-        answer: answer,
-        isExpanded: isExpanded ?? this.isExpanded,
-      );
+    question: question,
+    answer: answer,
+    isExpanded: isExpanded ?? this.isExpanded,
+  );
 }

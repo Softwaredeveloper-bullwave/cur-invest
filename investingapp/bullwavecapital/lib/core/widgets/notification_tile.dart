@@ -9,11 +9,7 @@ class NotificationTile extends StatelessWidget {
   final NotificationModel notification;
   final VoidCallback? onTap;
 
-  const NotificationTile({
-    super.key,
-    required this.notification,
-    this.onTap,
-  });
+  const NotificationTile({super.key, required this.notification, this.onTap});
 
   IconData get _icon {
     switch (notification.type) {
@@ -98,8 +94,11 @@ class NotificationTile extends StatelessWidget {
                       Expanded(
                         child: Text(
                           notification.title,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: notification.isRead ? FontWeight.w500 : FontWeight.w700,
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(
+                                fontWeight: notification.isRead
+                                    ? FontWeight.w500
+                                    : FontWeight.w700,
                               ),
                         ),
                       ),

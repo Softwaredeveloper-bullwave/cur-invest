@@ -127,15 +127,23 @@ class CopyTradingProvider extends ChangeNotifier {
     }
   }
 
-  Future<String?> setSubscriptionStatus(String subscriptionId, String status) async {
+  Future<String?> setSubscriptionStatus(
+    String subscriptionId,
+    String status,
+  ) async {
     _isSaving = true;
     notifyListeners();
     try {
       if (status == 'stopped') {
         await _api.stopCopySubscription(subscriptionId);
-        _subscriptions = _subscriptions.where((s) => s.id != subscriptionId).toList();
+        _subscriptions = _subscriptions
+            .where((s) => s.id != subscriptionId)
+            .toList();
       } else {
-        final updated = await _api.updateCopySubscription(subscriptionId, status: status);
+        final updated = await _api.updateCopySubscription(
+          subscriptionId,
+          status: status,
+        );
         _subscriptions = _subscriptions
             .map((s) => s.id == subscriptionId ? updated : s)
             .toList();

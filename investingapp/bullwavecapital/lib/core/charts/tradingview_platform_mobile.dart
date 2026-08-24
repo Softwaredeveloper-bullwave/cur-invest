@@ -20,7 +20,8 @@ class TradingViewPlatformChart extends StatefulWidget {
   });
 
   @override
-  State<TradingViewPlatformChart> createState() => _TradingViewPlatformChartState();
+  State<TradingViewPlatformChart> createState() =>
+      _TradingViewPlatformChartState();
 }
 
 class _TradingViewPlatformChartState extends State<TradingViewPlatformChart> {
@@ -54,7 +55,11 @@ class _TradingViewPlatformChartState extends State<TradingViewPlatformChart> {
 
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setBackgroundColor(widget.theme == 'light' ? const Color(0xFFF4F4F0) : const Color(0xFF050503))
+      ..setBackgroundColor(
+        widget.theme == 'light'
+            ? const Color(0xFFF4F4F0)
+            : const Color(0xFF050503),
+      )
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageFinished: (_) {

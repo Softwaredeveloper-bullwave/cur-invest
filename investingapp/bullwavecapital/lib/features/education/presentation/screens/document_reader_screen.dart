@@ -46,7 +46,9 @@ class _DocumentReaderScreenState extends State<DocumentReaderScreen> {
     if (!mounted) return;
     setState(() {
       _article = article;
-      _loadError = article == null ? (education.error ?? 'Article not found') : null;
+      _loadError = article == null
+          ? (education.error ?? 'Article not found')
+          : null;
       _loading = false;
     });
   }
@@ -72,9 +74,15 @@ class _DocumentReaderScreenState extends State<DocumentReaderScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(_loadError ?? 'Article not found', textAlign: TextAlign.center),
+                Text(
+                  _loadError ?? 'Article not found',
+                  textAlign: TextAlign.center,
+                ),
                 const SizedBox(height: 16),
-                FilledButton(onPressed: () => _load(force: true), child: const Text('Retry')),
+                FilledButton(
+                  onPressed: () => _load(force: true),
+                  child: const Text('Retry'),
+                ),
               ],
             ),
           ),
@@ -94,12 +102,18 @@ class _DocumentReaderScreenState extends State<DocumentReaderScreen> {
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: ThemeA.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Text(article.level, style: ThemeAType.label(size: 11, color: ThemeA.primary)),
+                  child: Text(
+                    article.level,
+                    style: ThemeAType.label(size: 11, color: ThemeA.primary),
+                  ),
                 ),
                 const SizedBox(width: 10),
                 Text(
@@ -114,9 +128,15 @@ class _DocumentReaderScreenState extends State<DocumentReaderScreen> {
               ],
             ),
             const SizedBox(height: 14),
-            Text(article.summary, style: ThemeAType.body(color: p.textGrey, size: 15)),
+            Text(
+              article.summary,
+              style: ThemeAType.body(color: p.textGrey, size: 15),
+            ),
             const SizedBox(height: 20),
-            Text('Notes', style: ThemeAType.sectionTitle(color: p.textDark, size: 16)),
+            Text(
+              'Notes',
+              style: ThemeAType.sectionTitle(color: p.textDark, size: 16),
+            ),
             const SizedBox(height: 12),
             ...article.sections.asMap().entries.map((entry) {
               final index = entry.key;
@@ -138,14 +158,20 @@ class _DocumentReaderScreenState extends State<DocumentReaderScreen> {
                         ),
                         child: Text(
                           '${index + 1}',
-                          style: ThemeAType.label(size: 12, color: ThemeA.primary),
+                          style: ThemeAType.label(
+                            size: 12,
+                            color: ThemeA.primary,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           text,
-                          style: ThemeAType.body(color: p.textDark, size: 15).copyWith(height: 1.55),
+                          style: ThemeAType.body(
+                            color: p.textDark,
+                            size: 15,
+                          ).copyWith(height: 1.55),
                         ),
                       ),
                     ],

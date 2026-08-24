@@ -4,7 +4,8 @@ import '../../models/commodity_model.dart';
 class CommodityDataFallback {
   CommodityDataFallback._();
 
-  static const providerLabel = 'Demo commodities (connect backend for live Yahoo feed)';
+  static const providerLabel =
+      'Demo commodities (connect backend for live Yahoo feed)';
 
   static const commodities = [
     CommodityModel(

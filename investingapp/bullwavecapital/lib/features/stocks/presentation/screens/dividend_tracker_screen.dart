@@ -71,7 +71,9 @@ class _DividendTrackerScreenState extends State<DividendTrackerScreen> {
                       if (dividends.isEmpty)
                         _EmptyState(colors: colors)
                       else
-                        ...dividends.map((d) => _DividendCard(dividend: d, colors: colors)),
+                        ...dividends.map(
+                          (d) => _DividendCard(dividend: d, colors: colors),
+                        ),
                     ],
                   );
                 },
@@ -105,13 +107,20 @@ class _SummaryCard extends StatelessWidget {
         children: [
           Text(
             '$count dividend records',
-            style: TextStyle(color: colors.textSecondary, fontWeight: FontWeight.w600),
+            style: TextStyle(
+              color: colors.textSecondary,
+              fontWeight: FontWeight.w600,
+            ),
           ),
           const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
-                child: _Metric(label: 'Received', value: CurrencyFormatter.format(totalPaid), color: AppColors.green),
+                child: _Metric(
+                  label: 'Received',
+                  value: CurrencyFormatter.format(totalPaid),
+                  color: AppColors.green,
+                ),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -134,7 +143,11 @@ class _Metric extends StatelessWidget {
   final String value;
   final Color color;
 
-  const _Metric({required this.label, required this.value, required this.color});
+  const _Metric({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -148,9 +161,19 @@ class _Metric extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w700)),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              color: color,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
           const SizedBox(height: 4),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+          Text(
+            value,
+            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+          ),
         ],
       ),
     );
@@ -183,21 +206,34 @@ class _DividendCard extends StatelessWidget {
                   children: [
                     Text(
                       dividend.symbol,
-                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 16,
+                      ),
                     ),
-                    Text(dividend.name, style: TextStyle(color: colors.textMuted, fontSize: 12)),
+                    Text(
+                      dividend.name,
+                      style: TextStyle(color: colors.textMuted, fontSize: 12),
+                    ),
                   ],
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: accent.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
                   dividend.status,
-                  style: TextStyle(color: accent, fontWeight: FontWeight.w700, fontSize: 11),
+                  style: TextStyle(
+                    color: accent,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 11,
+                  ),
                 ),
               ),
             ],
@@ -205,7 +241,11 @@ class _DividendCard extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             CurrencyFormatter.formatDecimal(dividend.totalPayout),
-            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 22, color: accent),
+            style: TextStyle(
+              fontWeight: FontWeight.w800,
+              fontSize: 22,
+              color: accent,
+            ),
           ),
           Text(
             '${CurrencyFormatter.formatDecimal(dividend.amountPerShare)}/share × ${dividend.sharesHeld} shares',
@@ -237,7 +277,13 @@ class _EmptyState extends StatelessWidget {
         children: [
           Icon(Icons.payments_outlined, size: 48, color: colors.textMuted),
           const SizedBox(height: 12),
-          Text('No dividends yet', style: TextStyle(fontWeight: FontWeight.w700, color: colors.textSecondary)),
+          Text(
+            'No dividends yet',
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+              color: colors.textSecondary,
+            ),
+          ),
           const SizedBox(height: 6),
           Text(
             'Buy stocks in your portfolio to track dividend payouts here. Pull down to sync.',

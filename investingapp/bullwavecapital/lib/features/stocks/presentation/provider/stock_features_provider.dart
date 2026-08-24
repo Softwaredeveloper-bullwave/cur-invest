@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/api/api_exception.dart';
+import '../../../../core/api/auth_session_guard.dart';
 import '../../../../core/api/bullwave_api.dart';
 import '../../../../core/widgets/wavy_text.dart';
 import '../../../../models/stock_model.dart';
@@ -120,11 +121,14 @@ class StockFeaturesProvider extends ChangeNotifier {
     } catch (_) {}
   }
 
-  StockFeaturesProvider() {
-    loadAll();
-  }
+  StockFeaturesProvider();
 
   Future<void> loadAll() async {
+    if (!await hasStoredAccessToken()) {
+      _isLoading = false;
+      notifyListeners();
+      return;
+    }
     _isLoading = true;
     notifyListeners();
     try {

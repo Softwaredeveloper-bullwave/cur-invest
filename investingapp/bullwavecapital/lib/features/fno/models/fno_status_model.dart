@@ -9,7 +9,8 @@ class FnoProofOptionModel {
     required this.requiresUpload,
   });
 
-  factory FnoProofOptionModel.fromJson(Map<String, dynamic> json) => FnoProofOptionModel(
+  factory FnoProofOptionModel.fromJson(Map<String, dynamic> json) =>
+      FnoProofOptionModel(
         type: json['type'] as String? ?? '',
         label: json['label'] as String? ?? '',
         requiresUpload: json['requiresUpload'] as bool? ?? true,
@@ -82,17 +83,19 @@ class FnoStatusModel {
   );
 
   factory FnoStatusModel.fromJson(Map<String, dynamic> json) => FnoStatusModel(
-        fnoStatus: (json['fnoStatus'] as String? ?? 'not_submitted').toLowerCase(),
-        isVerified: json['isVerified'] as bool? ?? false,
-        portfolioValue: _num(json['portfolioValue']),
-        minPortfolioValue: _num(json['minPortfolioValue'], fallback: 50000),
-        latestRequest: json['latestRequest'] != null
-            ? FnoRequestModel.fromJson(json['latestRequest'] as Map<String, dynamic>)
-            : null,
-        proofOptions: (json['proofOptions'] as List<dynamic>? ?? [])
-            .map((e) => FnoProofOptionModel.fromJson(e as Map<String, dynamic>))
-            .toList(),
-      );
+    fnoStatus: (json['fnoStatus'] as String? ?? 'not_submitted').toLowerCase(),
+    isVerified: json['isVerified'] as bool? ?? false,
+    portfolioValue: _num(json['portfolioValue']),
+    minPortfolioValue: _num(json['minPortfolioValue'], fallback: 50000),
+    latestRequest: json['latestRequest'] != null
+        ? FnoRequestModel.fromJson(
+            json['latestRequest'] as Map<String, dynamic>,
+          )
+        : null,
+    proofOptions: (json['proofOptions'] as List<dynamic>? ?? [])
+        .map((e) => FnoProofOptionModel.fromJson(e as Map<String, dynamic>))
+        .toList(),
+  );
 
   bool get isPending =>
       fnoStatus == 'pending' || (latestRequest?.isPending ?? false);

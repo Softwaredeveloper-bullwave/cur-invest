@@ -15,14 +15,17 @@ class AiAssistantFab extends StatefulWidget {
   State<AiAssistantFab> createState() => _AiAssistantFabState();
 }
 
-class _AiAssistantFabState extends State<AiAssistantFab> with SingleTickerProviderStateMixin {
+class _AiAssistantFabState extends State<AiAssistantFab>
+    with SingleTickerProviderStateMixin {
   late AnimationController _pulse;
 
   @override
   void initState() {
     super.initState();
-    _pulse = AnimationController(vsync: this, duration: const Duration(milliseconds: 2400))
-      ..repeat(reverse: true);
+    _pulse = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2400),
+    )..repeat(reverse: true);
   }
 
   @override
@@ -61,7 +64,9 @@ class _AiAssistantFabState extends State<AiAssistantFab> with SingleTickerProvid
                     borderRadius: BorderRadius.circular(radius * 1.2),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF38BDF8).withValues(alpha: 0.15 + t * 0.12),
+                        color: const Color(
+                          0xFF38BDF8,
+                        ).withValues(alpha: 0.15 + t * 0.12),
                         blurRadius: 20 + t * 8,
                         spreadRadius: 1,
                       ),
@@ -78,7 +83,12 @@ class _AiAssistantFabState extends State<AiAssistantFab> with SingleTickerProvid
           child: InkWell(
             onTap: () => context.push(AppRoutes.aiAssistant),
             borderRadius: BorderRadius.circular(radius),
-            child: const AiOrbLogo(size: fabSize, showArc: false, animate: true, showName: true),
+            child: const AiOrbLogo(
+              size: fabSize,
+              showArc: false,
+              animate: true,
+              showName: true,
+            ),
           ),
         ),
       ),

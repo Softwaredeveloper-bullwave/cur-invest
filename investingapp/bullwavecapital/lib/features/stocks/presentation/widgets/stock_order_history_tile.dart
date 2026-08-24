@@ -61,7 +61,10 @@ class StockOrderHistoryTile extends StatelessWidget {
                           ),
                           const SizedBox(width: 8),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: sideColor.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(4),
@@ -80,7 +83,10 @@ class StockOrderHistoryTile extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         '${order.quantity} @ ${CurrencyFormatter.format(order.price)}',
-                        style: TextStyle(color: colors.textSecondary, fontSize: 12),
+                        style: TextStyle(
+                          color: colors.textSecondary,
+                          fontSize: 12,
+                        ),
                       ),
                       Text(
                         DateFormatter.displayWithTime(order.time),
@@ -122,7 +128,11 @@ class StockOrderHistoryTile extends StatelessWidget {
                     ] else if (isBuy)
                       Text(
                         'Invested',
-                        style: TextStyle(color: colors.textSecondary, fontSize: 11, fontWeight: FontWeight.w600),
+                        style: TextStyle(
+                          color: colors.textSecondary,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                   ],
                 ),

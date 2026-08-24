@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../../../core/api/auth_session_guard.dart';
 import '../../../../core/api/api_exception.dart';
 import '../../../../core/api/bullwave_api.dart';
 import '../../../../models/market_index_model.dart';
@@ -67,8 +68,8 @@ class StockMarketProvider extends ChangeNotifier {
         .toList();
   }
 
-  List<StockModel> get trendingStocks =>
-      List.from(_stocks)..sort((a, b) => b.changePercent.abs().compareTo(a.changePercent.abs()));
+  List<StockModel> get trendingStocks => List.from(_stocks)
+    ..sort((a, b) => b.changePercent.abs().compareTo(a.changePercent.abs()));
 
   List<StockModel> get watchlistStocks => List.unmodifiable(_watchlistStocks);
 
@@ -77,7 +78,9 @@ class StockMarketProvider extends ChangeNotifier {
       return _stocks.firstWhere((s) => s.symbol == symbol.toUpperCase());
     } catch (_) {
       try {
-        return _watchlistStocks.firstWhere((s) => s.symbol == symbol.toUpperCase());
+        return _watchlistStocks.firstWhere(
+          (s) => s.symbol == symbol.toUpperCase(),
+        );
       } catch (_) {
         return null;
       }
@@ -92,7 +95,10 @@ class StockMarketProvider extends ChangeNotifier {
   static String _candleKey(String symbol, String interval) =>
       '${symbol.toUpperCase()}:$interval';
 
-  TechnicalIndicatorsModel getIndicators(String symbol, {String interval = '1d'}) {
+  TechnicalIndicatorsModel getIndicators(
+    String symbol, {
+    String interval = '1d',
+  }) {
     final candles = getCandles(symbol, interval: interval);
     if (candles.isEmpty) {
       return const TechnicalIndicatorsModel(
@@ -140,7 +146,8 @@ class StockMarketProvider extends ChangeNotifier {
     return (100 - (100 / (1 + rs))).clamp(0, 100);
   }
 
-  bool isInWatchlist(String symbol) => _watchlist.contains(symbol.toUpperCase());
+  bool isInWatchlist(String symbol) =>
+      _watchlist.contains(symbol.toUpperCase());
 
   Future<void> ensureLoaded() async {
     if (_initialized && _stocks.isNotEmpty) return;
@@ -148,6 +155,11 @@ class StockMarketProvider extends ChangeNotifier {
   }
 
   Future<void> _loadInitial() async {
+    if (!await hasStoredAccessToken()) {
+      _isLoading = false;
+      notifyListeners();
+      return;
+    }
     _isLoading = true;
     notifyListeners();
 
@@ -236,7 +248,8 @@ class StockMarketProvider extends ChangeNotifier {
       }
     } catch (_) {}
 
-    _marketError ??= 'Live market data unavailable. Check backend is running and pull to refresh.';
+    _marketError ??=
+        'Live market data unavailable. Check backend is running and pull to refresh.';
     _usingDemoData = false;
   }
 
@@ -253,11 +266,14 @@ class StockMarketProvider extends ChangeNotifier {
     notifyListeners();
 
     if (query.length >= 2) {
-      _api.searchStocks(query: query).then((results) {
-        _stocks = results;
-        _marketError = null;
-        notifyListeners();
-      }).catchError((_) {});
+      _api
+          .searchStocks(query: query)
+          .then((results) {
+            _stocks = results;
+            _marketError = null;
+            notifyListeners();
+          })
+          .catchError((_) {});
     } else if (query.isEmpty) {
       _refreshLive(silent: true, fast: true);
     }
@@ -308,7 +324,8 @@ class StockMarketProvider extends ChangeNotifier {
     } on ApiException catch (e) {
       if (wasIn) {
         _watchlist.add(s);
-        if (removedStock != null && !_watchlistStocks.any((st) => st.symbol == s)) {
+        if (removedStock != null &&
+            !_watchlistStocks.any((st) => st.symbol == s)) {
           _watchlistStocks = [..._watchlistStocks, removedStock];
         }
       } else {
@@ -320,7 +337,8 @@ class StockMarketProvider extends ChangeNotifier {
     } catch (_) {
       if (wasIn) {
         _watchlist.add(s);
-        if (removedStock != null && !_watchlistStocks.any((st) => st.symbol == s)) {
+        if (removedStock != null &&
+            !_watchlistStocks.any((st) => st.symbol == s)) {
           _watchlistStocks = [..._watchlistStocks, removedStock];
         }
       } else {
@@ -335,7 +353,11 @@ class StockMarketProvider extends ChangeNotifier {
   Future<void> loadCandles(String symbol, {String interval = '1d'}) async {
     final key = _candleKey(symbol, interval);
     try {
-      final cached = await _api.getCandles(symbol, interval: interval, fast: true);
+      final cached = await _api.getCandles(
+        symbol,
+        interval: interval,
+        fast: true,
+      );
       if (cached.isNotEmpty) {
         _candlesCache[key] = cached;
         notifyListeners();
@@ -367,4 +389,3 @@ class StockMarketProvider extends ChangeNotifier {
     await _loadInitial();
   }
 }
-

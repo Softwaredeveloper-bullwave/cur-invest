@@ -25,7 +25,9 @@ class PortfolioHoldingTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.palette;
     final pnlColor = holding.isPositive ? AppColors.greenSoft : AppColors.red;
-    final dayColor = holding.isDayPositive ? AppColors.greenSoft : AppColors.red;
+    final dayColor = holding.isDayPositive
+        ? AppColors.greenSoft
+        : AppColors.red;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
@@ -51,13 +53,19 @@ class PortfolioHoldingTile extends StatelessWidget {
                         children: [
                           Text(
                             holding.symbol,
-                            style: ThemeAType.cardTitle(size: 16, color: p.textDark),
+                            style: ThemeAType.cardTitle(
+                              size: 16,
+                              color: p.textDark,
+                            ),
                           ),
                           Text(
                             holding.name,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: ThemeAType.secondary(size: 12, color: p.textGrey),
+                            style: ThemeAType.secondary(
+                              size: 12,
+                              color: p.textGrey,
+                            ),
                           ),
                         ],
                       ),
@@ -79,24 +87,36 @@ class PortfolioHoldingTile extends StatelessWidget {
                 ),
                 const SizedBox(height: 14),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
                   decoration: BoxDecoration(
                     color: p.isDark
                         ? p.surface.withValues(alpha: 0.95)
                         : Colors.white.withValues(alpha: 0.04),
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
-                      color: p.isDark ? p.borderLight.withValues(alpha: 0.65) : Colors.transparent,
+                      color: p.isDark
+                          ? p.borderLight.withValues(alpha: 0.65)
+                          : Colors.transparent,
                     ),
                   ),
                   child: Row(
                     children: [
                       _Metric(label: 'Qty', value: '${holding.quantity}'),
-                      _Metric(label: 'Avg', value: CurrencyFormatter.format(holding.avgPrice)),
-                      _Metric(label: 'LTP', value: CurrencyFormatter.format(holding.ltp)),
+                      _Metric(
+                        label: 'Avg',
+                        value: CurrencyFormatter.format(holding.avgPrice),
+                      ),
+                      _Metric(
+                        label: 'LTP',
+                        value: CurrencyFormatter.format(holding.ltp),
+                      ),
                       _Metric(
                         label: 'Today',
-                        value: '${holding.dayPnl >= 0 ? '+' : ''}${CurrencyFormatter.formatCompact(holding.dayPnl)}',
+                        value:
+                            '${holding.dayPnl >= 0 ? '+' : ''}${CurrencyFormatter.formatCompact(holding.dayPnl)}',
                         valueColor: dayColor,
                       ),
                     ],
@@ -121,12 +141,16 @@ class PortfolioHoldingTile extends StatelessWidget {
                               ),
                               child: Text(
                                 'Buy',
-                                style: ThemeAType.label(size: 14, color: Colors.black),
+                                style: ThemeAType.label(
+                                  size: 14,
+                                  color: Colors.black,
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      if (onBuy != null && onSell != null) const SizedBox(width: 10),
+                      if (onBuy != null && onSell != null)
+                        const SizedBox(width: 10),
                       if (onSell != null)
                         Expanded(
                           child: SizedBox(
@@ -145,7 +169,10 @@ class PortfolioHoldingTile extends StatelessWidget {
                               ),
                               child: Text(
                                 'Sell',
-                                style: ThemeAType.label(size: 14, color: AppColors.red),
+                                style: ThemeAType.label(
+                                  size: 14,
+                                  color: AppColors.red,
+                                ),
                               ),
                             ),
                           ),
@@ -167,11 +194,7 @@ class _Metric extends StatelessWidget {
   final String value;
   final Color? valueColor;
 
-  const _Metric({
-    required this.label,
-    required this.value,
-    this.valueColor,
-  });
+  const _Metric({required this.label, required this.value, this.valueColor});
 
   @override
   Widget build(BuildContext context) {
@@ -181,17 +204,11 @@ class _Metric extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: ThemeAType.label(size: 11, color: p.textGrey),
-          ),
+          Text(label, style: ThemeAType.label(size: 11, color: p.textGrey)),
           const SizedBox(height: 2),
           Text(
             value,
-            style: ThemeAType.label(
-              size: 12,
-              color: valueColor ?? p.textDark,
-            ),
+            style: ThemeAType.label(size: 12, color: valueColor ?? p.textDark),
           ),
         ],
       ),

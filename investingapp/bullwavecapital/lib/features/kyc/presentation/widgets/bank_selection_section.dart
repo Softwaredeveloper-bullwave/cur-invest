@@ -41,7 +41,8 @@ class BankSelectionSectionState extends State<BankSelectionSection> {
   String? _lookupError;
   Timer? _lookupTimer;
 
-  String? get selectedBankName => _resolvedIfsc?.bank ?? _branch?.bank ?? _bank?.name;
+  String? get selectedBankName =>
+      _resolvedIfsc?.bank ?? _branch?.bank ?? _bank?.name;
 
   @override
   void dispose() {
@@ -64,7 +65,11 @@ class BankSelectionSectionState extends State<BankSelectionSection> {
     setState(() {});
   }
 
-  void _resetBranchPicker({bool includeBank = false, bool includeState = false, bool includeCity = false}) {
+  void _resetBranchPicker({
+    bool includeBank = false,
+    bool includeState = false,
+    bool includeCity = false,
+  }) {
     if (includeBank) _bank = null;
     if (includeState || includeBank) _state = null;
     if (includeCity || includeState || includeBank) _city = null;
@@ -117,14 +122,18 @@ class BankSelectionSectionState extends State<BankSelectionSection> {
       setState(() {
         _clearResolution();
         _lookupLoading = false;
-        _lookupError = 'Could not find this IFSC. Check the code and try again.';
+        _lookupError =
+            'Could not find this IFSC. Check the code and try again.';
       });
     }
   }
 
   void _scheduleLookup(String value) {
     _lookupTimer?.cancel();
-    _lookupTimer = Timer(const Duration(milliseconds: 450), () => _lookupIfsc(value));
+    _lookupTimer = Timer(
+      const Duration(milliseconds: 450),
+      () => _lookupIfsc(value),
+    );
   }
 
   void _onIfscChanged(String value) {
@@ -146,7 +155,8 @@ class BankSelectionSectionState extends State<BankSelectionSection> {
       children: [
         const FormSectionHeader(
           title: 'Bank & Branch',
-          subtitle: 'Enter IFSC to see branch location, or find your branch below.',
+          subtitle:
+              'Enter IFSC to see branch location, or find your branch below.',
         ),
         const SizedBox(height: 16),
         AppTextField(
@@ -165,22 +175,31 @@ class BankSelectionSectionState extends State<BankSelectionSection> {
                   child: SizedBox(
                     width: 18,
                     height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.green),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.green,
+                    ),
                   ),
                 )
               : (_resolvedIfsc != null
-                  ? const Icon(Icons.check_circle_rounded, color: AppColors.green)
-                  : IconButton(
-                      icon: const Icon(Icons.search_rounded),
-                      tooltip: 'Look up IFSC',
-                      onPressed: widget.enabled &&
-                              RegExp(r'^[A-Z]{4}0[A-Z0-9]{6}$')
-                                  .hasMatch(widget.ifscController.text.trim())
-                          ? () => _lookupIfsc(widget.ifscController.text)
-                          : null,
-                    )),
+                    ? const Icon(
+                        Icons.check_circle_rounded,
+                        color: AppColors.green,
+                      )
+                    : IconButton(
+                        icon: const Icon(Icons.search_rounded),
+                        tooltip: 'Look up IFSC',
+                        onPressed:
+                            widget.enabled &&
+                                RegExp(
+                                  r'^[A-Z]{4}0[A-Z0-9]{6}$',
+                                ).hasMatch(widget.ifscController.text.trim())
+                            ? () => _lookupIfsc(widget.ifscController.text)
+                            : null,
+                      )),
           validator: (value) {
-            if (value == null || !RegExp(r'^[A-Z]{4}0[A-Z0-9]{6}$').hasMatch(value)) {
+            if (value == null ||
+                !RegExp(r'^[A-Z]{4}0[A-Z0-9]{6}$').hasMatch(value)) {
               return 'Enter a valid 11-character IFSC code';
             }
             if (_resolvedIfsc == null && !_lookupLoading) {
@@ -191,7 +210,13 @@ class BankSelectionSectionState extends State<BankSelectionSection> {
         ),
         if (_lookupError != null) ...[
           const SizedBox(height: 10),
-          Text(_lookupError!, style: const TextStyle(color: AppColors.red, fontWeight: FontWeight.w600)),
+          Text(
+            _lookupError!,
+            style: const TextStyle(
+              color: AppColors.red,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ],
         if (_resolvedIfsc != null) ...[
           const SizedBox(height: 16),
@@ -208,16 +233,20 @@ class BankSelectionSectionState extends State<BankSelectionSection> {
             child: Row(
               children: [
                 Icon(
-                  _showBranchPicker ? Icons.expand_less_rounded : Icons.expand_more_rounded,
+                  _showBranchPicker
+                      ? Icons.expand_less_rounded
+                      : Icons.expand_more_rounded,
                   color: AppColors.green,
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  _showBranchPicker ? 'Hide branch finder' : 'Find branch manually instead',
+                  _showBranchPicker
+                      ? 'Hide branch finder'
+                      : 'Find branch manually instead',
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        color: AppColors.green,
-                        fontWeight: FontWeight.w700,
-                      ),
+                    color: AppColors.green,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ],
             ),
@@ -278,7 +307,11 @@ class BankSelectionSectionState extends State<BankSelectionSection> {
             label: 'Branch',
             hint: 'Search branch name',
             valueLabel: _branch?.branch,
-            enabled: widget.enabled && _bank != null && _state != null && _city != null,
+            enabled:
+                widget.enabled &&
+                _bank != null &&
+                _state != null &&
+                _city != null,
             loadItems: (query) => _api.searchBankBranches(
               bankCode: _bank!.code,
               state: _state!,
@@ -302,9 +335,9 @@ class BankSelectionSectionState extends State<BankSelectionSection> {
             'IFSC lookup shows branch location only. '
             'Bank verification uses Eko Penny-less when enabled, otherwise penny-drop.',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: colors.textSecondary,
-                  height: 1.4,
-                ),
+              color: colors.textSecondary,
+              height: 1.4,
+            ),
           ),
         ),
       ],
@@ -332,11 +365,17 @@ class _IfscLocationCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.location_on_outlined, color: AppColors.green, size: 20),
+              const Icon(
+                Icons.location_on_outlined,
+                color: AppColors.green,
+                size: 20,
+              ),
               const SizedBox(width: 8),
               Text(
                 'Branch location for this IFSC',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
               ),
             ],
           ),
@@ -375,15 +414,17 @@ class _InfoRow extends StatelessWidget {
             width: 76,
             child: Text(
               label,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: Colors.grey),
             ),
           ),
           Expanded(
             child: Text(
               value,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: emphasize ? FontWeight.w800 : FontWeight.w600,
-                  ),
+                fontWeight: emphasize ? FontWeight.w800 : FontWeight.w600,
+              ),
             ),
           ),
         ],

@@ -85,7 +85,8 @@ class EconomicCalendarMockData {
       actual: null,
       category: 'Inflation',
       impactLabel: 'High',
-      marketImpact: 'Hot CPI can delay RBI cuts; banks & rate-sensitives react first.',
+      marketImpact:
+          'Hot CPI can delay RBI cuts; banks & rate-sensitives react first.',
     ),
     EconomicCalendarEvent(
       id: '2',
@@ -127,7 +128,8 @@ class EconomicCalendarMockData {
       forecast: '—',
       category: 'RBI Policy',
       impactLabel: 'High',
-      marketImpact: 'Guidance on inflation path and liquidity moves INR & banks.',
+      marketImpact:
+          'Guidance on inflation path and liquidity moves INR & banks.',
     ),
     EconomicCalendarEvent(
       id: '5',

@@ -20,11 +20,7 @@ Future<void> openStockTradingPad(
   final portfolio = context.read<StockPortfolioProvider>();
   unawaited(portfolio.loadPortfolio(refreshQuotes: false));
 
-  await StockTradingPad.show(
-    context,
-    stock: stock,
-    initialSide: initialSide,
-  );
+  await StockTradingPad.show(context, stock: stock, initialSide: initialSide);
 }
 
 /// Entry point for Buy / Sell from stock detail, portfolio, paper trading.
@@ -32,5 +28,4 @@ Future<void> executeStockTrade(
   BuildContext context, {
   required StockModel stock,
   required String side,
-}) =>
-    openStockTradingPad(context, stock: stock, initialSide: side);
+}) => openStockTradingPad(context, stock: stock, initialSide: side);

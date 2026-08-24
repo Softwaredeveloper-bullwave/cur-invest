@@ -27,18 +27,27 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     if (!mounted) return;
     if (created) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('AI rebalancing alert added to your notifications.')),
+        const SnackBar(
+          content: Text('AI rebalancing alert added to your notifications.'),
+        ),
       );
     } else if (provider.rebalanceError != null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(provider.rebalanceError!)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(provider.rebalanceError!)));
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Portfolio within guardrails — no alert needed.')),
+        const SnackBar(
+          content: Text('Portfolio within guardrails — no alert needed.'),
+        ),
       );
     }
   }
 
-  void _onNotificationTap(BuildContext context, NotificationModel notification) {
+  void _onNotificationTap(
+    BuildContext context,
+    NotificationModel notification,
+  ) {
     context.read<NotificationProvider>().markAsRead(notification.id);
     if (notification.type == 'kyc') {
       final title = notification.title.toLowerCase();
@@ -69,7 +78,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           title: Text(notification.title),
           content: SingleChildScrollView(child: Text(notification.message)),
           actions: [
-            TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Close')),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Close'),
+            ),
           ],
         ),
       );
@@ -128,12 +140,17 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
                     child: Text(
                       'Rebalancing alerts',
-                      style: ThemeAType.sectionTitle(color: context.palette.textDark, size: 16),
+                      style: ThemeAType.sectionTitle(
+                        color: context.palette.textDark,
+                        size: 16,
+                      ),
                     ),
                   ),
                   ...rebalanceNotifications.map(
                     (n) => Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: AppDimensions.paddingMd),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppDimensions.paddingMd,
+                      ),
                       child: NotificationTile(
                         notification: n,
                         onTap: () => _onNotificationTap(context, n),
@@ -146,12 +163,17 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
                     child: Text(
                       'All notifications',
-                      style: ThemeAType.sectionTitle(color: context.palette.textDark, size: 16),
+                      style: ThemeAType.sectionTitle(
+                        color: context.palette.textDark,
+                        size: 16,
+                      ),
                     ),
                   ),
                   ...otherNotifications.map(
                     (n) => Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: AppDimensions.paddingMd),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppDimensions.paddingMd,
+                      ),
                       child: NotificationTile(
                         notification: n,
                         onTap: () => _onNotificationTap(context, n),
@@ -164,9 +186,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     padding: const EdgeInsets.all(32),
                     child: Column(
                       children: [
-                        Icon(Icons.notifications_off_outlined, size: 64, color: AppColors.textHint.withValues(alpha: 0.5)),
+                        Icon(
+                          Icons.notifications_off_outlined,
+                          size: 64,
+                          color: AppColors.textHint.withValues(alpha: 0.5),
+                        ),
                         const SizedBox(height: 16),
-                        Text('No other notifications', style: Theme.of(context).textTheme.titleLarge),
+                        Text(
+                          'No other notifications',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
                         const SizedBox(height: 8),
                         Text(
                           'Run an AI check above to monitor portfolio drift.',

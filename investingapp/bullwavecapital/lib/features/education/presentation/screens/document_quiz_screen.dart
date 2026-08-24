@@ -84,14 +84,16 @@ class _DocumentQuizScreenState extends State<DocumentQuizScreen> {
       final selected = i < _answers.length ? _answers[i] : null;
       final isCorrect = selected != null && selected == q.correctIndex;
       if (isCorrect) score++;
-      results.add(QuizQuestionResult(
-        prompt: q.prompt,
-        options: q.options,
-        selectedIndex: selected,
-        correctIndex: q.correctIndex,
-        isCorrect: isCorrect,
-        explanation: q.explanation,
-      ));
+      results.add(
+        QuizQuestionResult(
+          prompt: q.prompt,
+          options: q.options,
+          selectedIndex: selected,
+          correctIndex: q.correctIndex,
+          isCorrect: isCorrect,
+          explanation: q.explanation,
+        ),
+      );
     }
     final total = quiz.questions.length;
     return QuizAttemptResult(
@@ -162,10 +164,7 @@ class _DocumentQuizScreenState extends State<DocumentQuizScreen> {
     }
 
     if (_finished && _result != null) {
-      return _ResultsView(
-        result: _result!,
-        onRetry: _retry,
-      );
+      return _ResultsView(result: _result!, onRetry: _retry);
     }
 
     if (_submitting) {
@@ -178,7 +177,9 @@ class _DocumentQuizScreenState extends State<DocumentQuizScreen> {
     final question = quiz.questions[_index];
     final p = context.palette;
     final progress = (_index + 1) / quiz.questions.length;
-    final prompt = question.prompt.isNotEmpty ? question.prompt : 'Question ${_index + 1}';
+    final prompt = question.prompt.isNotEmpty
+        ? question.prompt
+        : 'Question ${_index + 1}';
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -205,7 +206,10 @@ class _DocumentQuizScreenState extends State<DocumentQuizScreen> {
             padding: const EdgeInsets.all(18),
             child: Text(
               prompt,
-              style: ThemeAType.sectionTitle(size: 18, color: p.textDark).copyWith(height: 1.4),
+              style: ThemeAType.sectionTitle(
+                size: 18,
+                color: p.textDark,
+              ).copyWith(height: 1.4),
             ),
           ),
           const SizedBox(height: 16),
@@ -228,21 +232,31 @@ class _DocumentQuizScreenState extends State<DocumentQuizScreen> {
               padding: const EdgeInsets.only(bottom: 10),
               child: GlassCard(
                 onTap: _answered ? null : () => setState(() => _selected = i),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 14,
+                ),
                 child: Row(
                   children: [
                     Icon(
                       _answered
                           ? (i == question.correctIndex
-                              ? Icons.check_circle_rounded
-                              : (selected ? Icons.cancel_rounded : Icons.radio_button_off))
-                          : (selected ? Icons.radio_button_checked : Icons.radio_button_off),
+                                ? Icons.check_circle_rounded
+                                : (selected
+                                      ? Icons.cancel_rounded
+                                      : Icons.radio_button_off))
+                          : (selected
+                                ? Icons.radio_button_checked
+                                : Icons.radio_button_off),
                       color: borderColor ?? p.textGrey,
                       size: 20,
                     ),
                     const SizedBox(width: 10),
                     Expanded(
-                      child: Text(label, style: ThemeAType.body(color: p.textDark)),
+                      child: Text(
+                        label,
+                        style: ThemeAType.body(color: p.textDark),
+                      ),
                     ),
                   ],
                 ),
@@ -263,9 +277,13 @@ class _DocumentQuizScreenState extends State<DocumentQuizScreen> {
             onPressed: _answered
                 ? _next
                 : (_selected == null ? null : _submitAnswer),
-            child: Text(_answered
-                ? (_index >= quiz.questions.length - 1 ? 'Submit & see marks' : 'Next question')
-                : 'Check answer'),
+            child: Text(
+              _answered
+                  ? (_index >= quiz.questions.length - 1
+                        ? 'Submit & see marks'
+                        : 'Next question')
+                  : 'Check answer',
+            ),
           ),
         ],
       ),
@@ -277,10 +295,7 @@ class _ResultsView extends StatelessWidget {
   final QuizAttemptResult result;
   final VoidCallback onRetry;
 
-  const _ResultsView({
-    required this.result,
-    required this.onRetry,
-  });
+  const _ResultsView({required this.result, required this.onRetry});
 
   @override
   Widget build(BuildContext context) {
@@ -288,8 +303,8 @@ class _ResultsView extends StatelessWidget {
     final message = result.percent >= 80
         ? 'Excellent — strong grasp of the material!'
         : result.percent >= 50
-            ? 'Good effort — re-read weak topics in Documents.'
-            : 'Keep learning — start with Beginner guides and retry.';
+        ? 'Good effort — re-read weak topics in Documents.'
+        : 'Keep learning — start with Beginner guides and retry.';
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -302,7 +317,9 @@ class _ResultsView extends StatelessWidget {
             child: Column(
               children: [
                 Icon(
-                  result.percent >= 50 ? Icons.emoji_events_outlined : Icons.menu_book_outlined,
+                  result.percent >= 50
+                      ? Icons.emoji_events_outlined
+                      : Icons.menu_book_outlined,
                   size: 56,
                   color: ThemeA.primary,
                 ),
@@ -321,12 +338,19 @@ class _ResultsView extends StatelessWidget {
                   style: ThemeAType.sectionTitle(color: ThemeA.primary),
                 ),
                 const SizedBox(height: 10),
-                Text(message, textAlign: TextAlign.center, style: ThemeAType.body(color: p.textGrey)),
+                Text(
+                  message,
+                  textAlign: TextAlign.center,
+                  style: ThemeAType.body(color: p.textGrey),
+                ),
               ],
             ),
           ),
           const SizedBox(height: 20),
-          Text('Answer review', style: ThemeAType.sectionTitle(color: p.textDark, size: 16)),
+          Text(
+            'Answer review',
+            style: ThemeAType.sectionTitle(color: p.textDark, size: 16),
+          ),
           const SizedBox(height: 12),
           ...result.results.asMap().entries.map((entry) {
             final idx = entry.key;
@@ -339,7 +363,10 @@ class _ResultsView extends StatelessWidget {
           const SizedBox(height: 8),
           FilledButton(onPressed: onRetry, child: const Text('Retry quiz')),
           const SizedBox(height: 10),
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Back to Documents')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Back to Documents'),
+          ),
         ],
       ),
     );
@@ -356,7 +383,8 @@ class _ReviewCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.palette;
     final statusColor = item.isCorrect ? AppColors.green : AppColors.error;
-    final selectedLabel = item.selectedIndex != null && item.selectedIndex! < item.options.length
+    final selectedLabel =
+        item.selectedIndex != null && item.selectedIndex! < item.options.length
         ? item.options[item.selectedIndex!]
         : 'Not answered';
     final correctLabel = item.correctIndex < item.options.length
@@ -382,11 +410,17 @@ class _ReviewCard extends StatelessWidget {
                 ),
               ),
               const Spacer(),
-              Text('Q$index', style: ThemeAType.label(size: 11, color: p.textMuted)),
+              Text(
+                'Q$index',
+                style: ThemeAType.label(size: 11, color: p.textMuted),
+              ),
             ],
           ),
           const SizedBox(height: 10),
-          Text(item.prompt, style: ThemeAType.cardTitle(color: p.textDark, size: 14)),
+          Text(
+            item.prompt,
+            style: ThemeAType.cardTitle(color: p.textDark, size: 14),
+          ),
           const SizedBox(height: 10),
           _AnswerRow(
             label: 'Your answer',
@@ -403,7 +437,10 @@ class _ReviewCard extends StatelessWidget {
             const SizedBox(height: 10),
             Text(
               item.explanation,
-              style: ThemeAType.secondary(size: 13, color: p.textGrey).copyWith(height: 1.4),
+              style: ThemeAType.secondary(
+                size: 13,
+                color: p.textGrey,
+              ).copyWith(height: 1.4),
             ),
           ],
         ],
@@ -432,9 +469,7 @@ class _AnswerRow extends StatelessWidget {
           width: 100,
           child: Text(label, style: ThemeAType.label(size: 12, color: color)),
         ),
-        Expanded(
-          child: Text(value, style: ThemeAType.body(size: 13)),
-        ),
+        Expanded(child: Text(value, style: ThemeAType.body(size: 13))),
       ],
     );
   }

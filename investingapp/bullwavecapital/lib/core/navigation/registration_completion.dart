@@ -33,8 +33,7 @@ class RegistrationCompletion {
     final auth = context.read<AuthProvider>();
     final kyc = context.read<KycFlowProvider>();
     if (!isRegistrationComplete(kyc)) return;
-    if (auth.isRegistrationFlow ||
-        !(await TokenStorage.hasSignedInSession())) {
+    if (auth.isRegistrationFlow || !(await TokenStorage.hasSignedInSession())) {
       await finishAndGoHome(context);
     }
   }

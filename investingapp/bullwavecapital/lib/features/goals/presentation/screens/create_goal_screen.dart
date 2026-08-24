@@ -29,7 +29,9 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = context.read<GoalPlanProvider>();
-      GoalTemplateModel? template = GoalTemplatesCatalog.byCategory(widget.category);
+      GoalTemplateModel? template = GoalTemplatesCatalog.byCategory(
+        widget.category,
+      );
       if (template == null) {
         for (final t in provider.templates) {
           if (t.category == widget.category) {
@@ -57,7 +59,9 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
         context.pop(true);
       }
     } else if (provider.error != null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(provider.error!)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(provider.error!)));
     }
   }
 
@@ -83,7 +87,10 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
                   size: 44,
                   legacyIcon: t.icon,
                 ),
-                title: Text(t.name, style: const TextStyle(fontWeight: FontWeight.w800)),
+                title: Text(
+                  t.name,
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
                 subtitle: Text(t.tagline),
               ),
               const SizedBox(height: 20),
@@ -92,7 +99,9 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
                 child: TextFormField(
                   initialValue: provider.title,
                   onChanged: provider.setTitle,
-                  decoration: const InputDecoration(hintText: 'My dream home fund'),
+                  decoration: const InputDecoration(
+                    hintText: 'My dream home fund',
+                  ),
                 ),
               ),
               _Field(
@@ -106,7 +115,10 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
                   onChanged: provider.setTargetAmount,
                 ),
               ),
-              Text('Target: ${CurrencyFormatter.format(provider.targetAmount)}', style: TextStyle(color: colors.textSecondary)),
+              Text(
+                'Target: ${CurrencyFormatter.format(provider.targetAmount)}',
+                style: TextStyle(color: colors.textSecondary),
+              ),
               _Field(
                 label: 'Monthly savings',
                 child: Column(
@@ -117,18 +129,27 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
                       min: 500,
                       max: 100000,
                       divisions: 40,
-                      label: CurrencyFormatter.format(provider.monthlyContribution),
+                      label: CurrencyFormatter.format(
+                        provider.monthlyContribution,
+                      ),
                       onChanged: provider.setMonthlyContribution,
                     ),
                     Row(
                       children: [
                         Expanded(
                           child: Text(
-                            CurrencyFormatter.format(provider.monthlyContribution),
-                            style: TextStyle(fontWeight: FontWeight.w800, color: colors.textPrimary),
+                            CurrencyFormatter.format(
+                              provider.monthlyContribution,
+                            ),
+                            style: TextStyle(
+                              fontWeight: FontWeight.w800,
+                              color: colors.textPrimary,
+                            ),
                           ),
                         ),
-                        GoalReturnBadge(annualReturnRate: provider.selectedAnnualRate),
+                        GoalReturnBadge(
+                          annualReturnRate: provider.selectedAnnualRate,
+                        ),
                       ],
                     ),
                     const SizedBox(height: 6),
@@ -160,22 +181,33 @@ class _CreateGoalScreenState extends State<CreateGoalScreen> {
               const SizedBox(height: 8),
               Container(
                 padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(color: colors.surfaceSecondary, borderRadius: BorderRadius.circular(12)),
+                decoration: BoxDecoration(
+                  color: colors.surfaceSecondary,
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Wallet: ${CurrencyFormatter.format(provider.walletBalance)}', style: TextStyle(fontWeight: FontWeight.w700)),
+                    Text(
+                      'Wallet: ${CurrencyFormatter.format(provider.walletBalance)}',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
                     if (provider.shortfall > 0)
                       Text(
                         'First installment needs ${CurrencyFormatter.format(provider.shortfall)} top-up via UPI',
-                        style: const TextStyle(color: AppColors.yellow, fontSize: 12),
+                        style: const TextStyle(
+                          color: AppColors.yellow,
+                          fontSize: 12,
+                        ),
                       ),
                   ],
                 ),
               ),
               const SizedBox(height: 24),
               PrimaryButton(
-                label: provider.isSubmitting ? 'Processing…' : 'Start Goal & Pay First Installment',
+                label: provider.isSubmitting
+                    ? 'Processing…'
+                    : 'Start Goal & Pay First Installment',
                 isLoading: provider.isSubmitting,
                 onPressed: provider.isSubmitting ? null : _start,
               ),

@@ -76,14 +76,17 @@ class _DepositScreenState extends State<DepositScreen> {
       return;
     }
 
-    final checkout = await CashfreeCheckoutService.instance.startCheckout(session);
+    final checkout = await CashfreeCheckoutService.instance.startCheckout(
+      session,
+    );
     if (!mounted) return;
 
     switch (checkout.status) {
       case CashfreeCheckoutStatus.redirected:
         setState(() {
           _paying = false;
-          _statusMessage = 'Complete payment on the Cashfree page. '
+          _statusMessage =
+              'Complete payment on the Cashfree page. '
               'You will return here automatically.';
         });
         return;
@@ -92,7 +95,9 @@ class _DepositScreenState extends State<DepositScreen> {
         await refreshAllProviders(context);
         if (!mounted) return;
         setState(() => _paying = false);
-        context.push('${AppRoutes.depositSuccess}?amount=$amount&orderId=${session.orderId}');
+        context.push(
+          '${AppRoutes.depositSuccess}?amount=$amount&orderId=${session.orderId}',
+        );
         return;
       case CashfreeCheckoutStatus.cancelled:
         setState(() {
@@ -167,7 +172,10 @@ class _DepositScreenState extends State<DepositScreen> {
                     const SizedBox(height: 8),
                     Text(
                       kycFlow.error!,
-                      style: const TextStyle(color: AppColors.red, fontSize: 13),
+                      style: const TextStyle(
+                        color: AppColors.red,
+                        fontSize: 13,
+                      ),
                     ),
                   ],
                 ],

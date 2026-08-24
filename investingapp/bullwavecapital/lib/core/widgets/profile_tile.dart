@@ -66,13 +66,15 @@ class FaqTile extends StatelessWidget {
                   child: Text(
                     question,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: context.appColors.textPrimary,
-                          fontWeight: FontWeight.w700,
-                        ),
+                      color: context.appColors.textPrimary,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
                 Icon(
-                  isExpanded ? Icons.expand_less_rounded : Icons.expand_more_rounded,
+                  isExpanded
+                      ? Icons.expand_less_rounded
+                      : Icons.expand_more_rounded,
                   color: AppColors.green,
                 ),
               ],
@@ -82,8 +84,8 @@ class FaqTile extends StatelessWidget {
               Text(
                 answer,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: context.appColors.textSecondary,
-                    ),
+                  color: context.appColors.textSecondary,
+                ),
               ),
             ],
           ],

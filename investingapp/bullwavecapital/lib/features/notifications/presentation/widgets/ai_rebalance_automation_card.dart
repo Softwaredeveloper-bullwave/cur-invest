@@ -25,7 +25,11 @@ class AiRebalanceAutomationCard extends StatelessWidget {
     final p = context.palette;
     final drift = status?.driftScore ?? 0;
     final needsAction = status?.needsRebalance ?? false;
-    final driftColor = drift >= 55 ? AppColors.error : drift >= 35 ? AppColors.warning : p.positive;
+    final driftColor = drift >= 55
+        ? AppColors.error
+        : drift >= 35
+        ? AppColors.warning
+        : p.positive;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
@@ -48,14 +52,24 @@ class AiRebalanceAutomationCard extends StatelessWidget {
                     ),
                     borderRadius: BorderRadius.circular(14),
                   ),
-                  child: const Icon(Icons.auto_fix_high_rounded, color: ThemeA.primary, size: 24),
+                  child: const Icon(
+                    Icons.auto_fix_high_rounded,
+                    color: ThemeA.primary,
+                    size: 24,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('AI Portfolio Rebalancing', style: ThemeAType.cardTitle(color: p.textDark, size: 16)),
+                      Text(
+                        'AI Portfolio Rebalancing',
+                        style: ThemeAType.cardTitle(
+                          color: p.textDark,
+                          size: 16,
+                        ),
+                      ),
                       Text(
                         'Automation monitors sector drift & concentration',
                         style: ThemeAType.body(color: p.textGrey, size: 12),
@@ -64,12 +78,18 @@ class AiRebalanceAutomationCard extends StatelessWidget {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: p.positive.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Text('ACTIVE', style: ThemeAType.label(size: 10, color: p.positive)),
+                  child: Text(
+                    'ACTIVE',
+                    style: ThemeAType.label(size: 10, color: p.positive),
+                  ),
                 ),
               ],
             ),
@@ -86,7 +106,9 @@ class AiRebalanceAutomationCard extends StatelessWidget {
                   child: _MetricChip(
                     label: 'Portfolio',
                     value: status != null && status!.portfolioValue > 0
-                        ? CurrencyFormatter.formatCompact(status!.portfolioValue)
+                        ? CurrencyFormatter.formatCompact(
+                            status!.portfolioValue,
+                          )
                         : '—',
                     color: p.textDark,
                   ),
@@ -110,7 +132,10 @@ class AiRebalanceAutomationCard extends StatelessWidget {
                         ? const SizedBox(
                             width: 16,
                             height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
                           )
                         : const Icon(Icons.psychology_rounded, size: 18),
                     label: Text(isChecking ? 'Analyzing…' : 'Run AI check'),
@@ -142,7 +167,11 @@ class _MetricChip extends StatelessWidget {
   final String value;
   final Color color;
 
-  const _MetricChip({required this.label, required this.value, required this.color});
+  const _MetricChip({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {

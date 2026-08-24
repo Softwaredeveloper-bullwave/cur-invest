@@ -27,7 +27,8 @@ class NoteEditorSheet extends StatefulWidget {
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => NoteEditorSheet(note: note, defaultCategory: defaultCategory),
+      builder: (_) =>
+          NoteEditorSheet(note: note, defaultCategory: defaultCategory),
     );
   }
 
@@ -76,13 +77,13 @@ class _NoteEditorSheetState extends State<NoteEditorSheet> {
 
     setState(() => _isSaving = true);
     final saved = await context.read<NotesProvider>().saveNote(
-          id: widget.note?.id,
-          title: title.isEmpty ? 'Untitled note' : title,
-          body: body,
-          symbol: _symbolController.text.trim().toUpperCase(),
-          category: _category,
-          isPinned: _isPinned,
-        );
+      id: widget.note?.id,
+      title: title.isEmpty ? 'Untitled note' : title,
+      body: body,
+      symbol: _symbolController.text.trim().toUpperCase(),
+      category: _category,
+      isPinned: _isPinned,
+    );
     if (!mounted) return;
     setState(() => _isSaving = false);
 
@@ -121,7 +122,9 @@ class _NoteEditorSheetState extends State<NoteEditorSheet> {
           return Container(
             decoration: BoxDecoration(
               color: p.surface,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(24),
+              ),
               border: Border.all(color: p.borderLight),
             ),
             child: ListView(
@@ -150,11 +153,16 @@ class _NoteEditorSheetState extends State<NoteEditorSheet> {
                     IconButton(
                       onPressed: () => setState(() => _isPinned = !_isPinned),
                       icon: Icon(
-                        _isPinned ? Icons.push_pin_rounded : Icons.push_pin_outlined,
+                        _isPinned
+                            ? Icons.push_pin_rounded
+                            : Icons.push_pin_outlined,
                         color: _isPinned ? ThemeA.primary : p.textGrey,
                       ),
                     ),
-                    TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Cancel'),
+                    ),
                     const SizedBox(width: 4),
                     FilledButton(
                       onPressed: _isSaving ? null : _save,
@@ -162,7 +170,10 @@ class _NoteEditorSheetState extends State<NoteEditorSheet> {
                           ? const SizedBox(
                               width: 18,
                               height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
                             )
                           : Text(_isEditing ? 'Update' : 'Save'),
                     ),
@@ -170,14 +181,20 @@ class _NoteEditorSheetState extends State<NoteEditorSheet> {
                 ),
                 const SizedBox(height: 20),
                 if (!_isEditing) ...[
-                  Text('Beginner templates', style: ThemeAType.label(size: 12, color: p.textMuted)),
+                  Text(
+                    'Beginner templates',
+                    style: ThemeAType.label(size: 12, color: p.textMuted),
+                  ),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
                     children: BeginnerNoteTemplates.templates.map((template) {
                       return ActionChip(
-                        label: Text(template.title, style: ThemeAType.label(size: 12)),
+                        label: Text(
+                          template.title,
+                          style: ThemeAType.label(size: 12),
+                        ),
                         onPressed: () {
                           _titleController.text = template.title;
                           _bodyController.text = template.body;
@@ -196,7 +213,10 @@ class _NoteEditorSheetState extends State<NoteEditorSheet> {
                     hintStyle: ThemeAType.body(color: p.textMuted),
                     filled: true,
                     fillColor: p.card,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide.none,
+                    ),
                   ),
                   textCapitalization: TextCapitalization.sentences,
                 ),
@@ -211,7 +231,11 @@ class _NoteEditorSheetState extends State<NoteEditorSheet> {
                         decoration: InputDecoration(
                           hintText: 'Symbol (optional)',
                           hintStyle: ThemeAType.body(color: p.textMuted),
-                          prefixIcon: Icon(Icons.tag_rounded, color: p.textGrey, size: 20),
+                          prefixIcon: Icon(
+                            Icons.tag_rounded,
+                            color: p.textGrey,
+                            size: 20,
+                          ),
                           filled: true,
                           fillColor: p.card,
                           border: OutlineInputBorder(
@@ -234,10 +258,22 @@ class _NoteEditorSheetState extends State<NoteEditorSheet> {
                           ),
                         ),
                         items: const [
-                          DropdownMenuItem(value: 'general', child: Text('General')),
-                          DropdownMenuItem(value: 'stock', child: Text('Stock')),
-                          DropdownMenuItem(value: 'trade_idea', child: Text('Trade Idea')),
-                          DropdownMenuItem(value: 'journal', child: Text('Journal')),
+                          DropdownMenuItem(
+                            value: 'general',
+                            child: Text('General'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'stock',
+                            child: Text('Stock'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'trade_idea',
+                            child: Text('Trade Idea'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'journal',
+                            child: Text('Journal'),
+                          ),
                         ],
                         onChanged: (v) {
                           if (v != null) setState(() => _category = v);
@@ -259,7 +295,10 @@ class _NoteEditorSheetState extends State<NoteEditorSheet> {
                     alignLabelWithHint: true,
                     filled: true,
                     fillColor: p.card,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide.none,
+                    ),
                   ),
                   textCapitalization: TextCapitalization.sentences,
                 ),

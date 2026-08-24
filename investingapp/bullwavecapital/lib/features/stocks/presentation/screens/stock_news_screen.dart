@@ -48,7 +48,9 @@ class _StockNewsScreenState extends State<StockNewsScreen> {
       body: Consumer<StockFeaturesProvider>(
         builder: (context, features, _) {
           if (features.isNewsLoading && features.news.isEmpty) {
-            return const Center(child: CircularProgressIndicator(color: AppColors.brandPrimary));
+            return const Center(
+              child: CircularProgressIndicator(color: AppColors.brandPrimary),
+            );
           }
           if (features.news.isEmpty) {
             return RefreshIndicator(
@@ -68,7 +70,8 @@ class _StockNewsScreenState extends State<StockNewsScreen> {
             onRefresh: features.refreshNews,
             child: ListView.builder(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-              itemCount: features.news.length + (features.isUsingDemoNews ? 1 : 0),
+              itemCount:
+                  features.news.length + (features.isUsingDemoNews ? 1 : 0),
               itemBuilder: (_, i) {
                 if (features.isUsingDemoNews && i == 0) {
                   return const Padding(
@@ -91,8 +94,11 @@ class _StockNewsScreenState extends State<StockNewsScreen> {
                         await _openArticle(article.url);
                         return;
                       }
-                      if (article.relatedSymbols.isNotEmpty && context.mounted) {
-                        context.push('${AppRoutes.stockDetail}?symbol=${article.relatedSymbols.first}');
+                      if (article.relatedSymbols.isNotEmpty &&
+                          context.mounted) {
+                        context.push(
+                          '${AppRoutes.stockDetail}?symbol=${article.relatedSymbols.first}',
+                        );
                       }
                     },
                   ),
@@ -134,7 +140,9 @@ class _NewsArticleCard extends StatelessWidget {
             children: [
               if (hasImage)
                 ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(20),
+                  ),
                   child: CachedNetworkImage(
                     imageUrl: displayImageUrl,
                     height: 180,
@@ -152,7 +160,8 @@ class _NewsArticleCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                    errorWidget: (_, _, _) => _NewsImageFallback(category: article.category),
+                    errorWidget: (_, _, _) =>
+                        _NewsImageFallback(category: article.category),
                   ),
                 )
               else
@@ -208,11 +217,18 @@ class _NewsArticleCard extends StatelessWidget {
                         Expanded(
                           child: Text(
                             '${article.source} • ${DateFormatter.display(article.publishedAt)}',
-                            style: GoogleFonts.inter(fontSize: 11, color: colors.textMuted),
+                            style: GoogleFonts.inter(
+                              fontSize: 11,
+                              color: colors.textMuted,
+                            ),
                           ),
                         ),
                         if (article.url.isNotEmpty)
-                          const Icon(Icons.open_in_new_rounded, size: 15, color: AppColors.brandPrimary),
+                          const Icon(
+                            Icons.open_in_new_rounded,
+                            size: 15,
+                            color: AppColors.brandPrimary,
+                          ),
                       ],
                     ),
                   ],
@@ -238,7 +254,9 @@ class _CategoryChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.brandPrimary.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.brandPrimary.withValues(alpha: 0.25)),
+        border: Border.all(
+          color: AppColors.brandPrimary.withValues(alpha: 0.25),
+        ),
       ),
       child: Text(
         label,
@@ -283,10 +301,7 @@ class _NewsImageFallback extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            _accent.withValues(alpha: 0.28),
-            AppColors.surfaceSecondary,
-          ],
+          colors: [_accent.withValues(alpha: 0.28), AppColors.surfaceSecondary],
         ),
         borderRadius: compact
             ? const BorderRadius.vertical(top: Radius.circular(20))

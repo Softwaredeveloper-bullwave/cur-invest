@@ -92,7 +92,8 @@ class _InvestmentNotesScreenState extends State<InvestmentNotesScreen> {
                 ),
                 const SizedBox(height: 14),
                 _BeginnerLearnCard(
-                  onOpenDocs: () => context.push(AppRoutes.documentCategoryPath('beginner')),
+                  onOpenDocs: () =>
+                      context.push(AppRoutes.documentCategoryPath('beginner')),
                 ),
                 const SizedBox(height: 14),
                 _FilterChips(
@@ -146,10 +147,16 @@ class _InvestmentNotesScreenState extends State<InvestmentNotesScreen> {
             title: const Text('Delete note?'),
             content: Text('Remove "$title"? This cannot be undone.'),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancel'),
+              ),
               TextButton(
                 onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('Delete', style: TextStyle(color: AppColors.error)),
+                child: const Text(
+                  'Delete',
+                  style: TextStyle(color: AppColors.error),
+                ),
               ),
             ],
           ),
@@ -185,7 +192,10 @@ class _BeginnerLearnCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('New to investing?', style: ThemeAType.cardTitle(color: p.textDark)),
+                Text(
+                  'New to investing?',
+                  style: ThemeAType.cardTitle(color: p.textDark),
+                ),
                 Text(
                   'Read Beginner guides in Documents, then use templates when you write notes.',
                   style: ThemeAType.body(color: p.textGrey, size: 13),
@@ -234,7 +244,9 @@ class _FilterChips extends StatelessWidget {
                 size: 13,
                 color: selected ? ThemeA.primary : p.textGrey,
               ),
-              side: BorderSide(color: selected ? ThemeA.primary : p.borderLight),
+              side: BorderSide(
+                color: selected ? ThemeA.primary : p.borderLight,
+              ),
               backgroundColor: p.card,
             ),
           );
@@ -281,13 +293,19 @@ class _NoteCard extends StatelessWidget {
                 visualDensity: VisualDensity.compact,
                 onPressed: onPin,
                 icon: Icon(
-                  note.isPinned ? Icons.push_pin_rounded : Icons.push_pin_outlined,
+                  note.isPinned
+                      ? Icons.push_pin_rounded
+                      : Icons.push_pin_outlined,
                   size: 18,
                   color: note.isPinned ? ThemeA.primary : p.textGrey,
                 ),
               ),
               PopupMenuButton<String>(
-                icon: Icon(Icons.more_horiz_rounded, color: p.textGrey, size: 20),
+                icon: Icon(
+                  Icons.more_horiz_rounded,
+                  color: p.textGrey,
+                  size: 20,
+                ),
                 onSelected: (value) {
                   if (value == 'delete') onDelete();
                   if (value == 'edit') onTap();
@@ -340,10 +358,7 @@ class _TagChip extends StatelessWidget {
         color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(8),
       ),
-      child: Text(
-        label,
-        style: ThemeAType.label(size: 11, color: color),
-      ),
+      child: Text(label, style: ThemeAType.label(size: 11, color: color)),
     );
   }
 }
@@ -362,7 +377,10 @@ class _EmptyNotes extends StatelessWidget {
         children: [
           Icon(Icons.note_alt_outlined, size: 56, color: p.textMuted),
           const SizedBox(height: 16),
-          Text('No notes yet', style: ThemeAType.sectionTitle(color: p.textDark)),
+          Text(
+            'No notes yet',
+            style: ThemeAType.sectionTitle(color: p.textDark),
+          ),
           const SizedBox(height: 8),
           Text(
             'Capture trade ideas, stock research, and daily journal entries in one place.',

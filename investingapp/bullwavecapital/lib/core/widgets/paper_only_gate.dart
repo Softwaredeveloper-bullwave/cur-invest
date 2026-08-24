@@ -29,9 +29,7 @@ class _PaperOnlyGateState extends State<PaperOnlyGate> {
   @override
   Widget build(BuildContext context) {
     if (PaperOnlyMode.enabled) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     return widget.child;
   }

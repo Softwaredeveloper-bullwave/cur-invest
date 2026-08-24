@@ -50,17 +50,25 @@ class KycStepScaffold extends StatelessWidget {
                     Align(
                       alignment: Alignment.centerLeft,
                       child: TextButton.icon(
-                        onPressed: onBack ??
+                        onPressed:
+                            onBack ??
                             () {
                               if (context.canPop()) {
                                 context.pop();
                               }
                             },
-                        icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 16),
+                        icon: const Icon(
+                          Icons.arrow_back_ios_new_rounded,
+                          size: 16,
+                        ),
                         label: const Text('Back'),
                         style: TextButton.styleFrom(
-                          foregroundColor: theme.colorScheme.onSurface.withValues(alpha: 0.75),
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          foregroundColor: theme.colorScheme.onSurface
+                              .withValues(alpha: 0.75),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                         ),
                       ),
                     ),
@@ -72,7 +80,11 @@ class KycStepScaffold extends StatelessWidget {
                           color: AppColors.brandOrange.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Icon(icon, color: AppColors.brandOrange, size: 24),
+                        child: Icon(
+                          icon,
+                          color: AppColors.brandOrange,
+                          size: 24,
+                        ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -102,7 +114,9 @@ class KycStepScaffold extends StatelessWidget {
                   Text(
                     subtitle,
                     style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.65),
+                      color: theme.colorScheme.onSurface.withValues(
+                        alpha: 0.65,
+                      ),
                       height: 1.45,
                     ),
                   ),
@@ -112,7 +126,9 @@ class KycStepScaffold extends StatelessWidget {
                     child: LinearProgressIndicator(
                       value: progress,
                       minHeight: 4,
-                      backgroundColor: theme.dividerColor.withValues(alpha: 0.25),
+                      backgroundColor: theme.dividerColor.withValues(
+                        alpha: 0.25,
+                      ),
                       color: AppColors.brandOrange,
                     ),
                   ),
@@ -151,10 +167,26 @@ class KycInfoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (Color bg, Color fg, IconData icon) = switch (tone) {
-      KycInfoTone.success => (AppColors.green.withValues(alpha: 0.1), AppColors.green, Icons.check_circle_outline),
-      KycInfoTone.warning => (AppColors.brandOrange.withValues(alpha: 0.1), AppColors.brandOrange, Icons.schedule),
-      KycInfoTone.error => (Colors.red.withValues(alpha: 0.08), Colors.red.shade700, Icons.error_outline),
-      KycInfoTone.neutral => (Theme.of(context).colorScheme.surfaceContainerHighest, Theme.of(context).colorScheme.onSurface, Icons.info_outline),
+      KycInfoTone.success => (
+        AppColors.green.withValues(alpha: 0.1),
+        AppColors.green,
+        Icons.check_circle_outline,
+      ),
+      KycInfoTone.warning => (
+        AppColors.brandOrange.withValues(alpha: 0.1),
+        AppColors.brandOrange,
+        Icons.schedule,
+      ),
+      KycInfoTone.error => (
+        Colors.red.withValues(alpha: 0.08),
+        Colors.red.shade700,
+        Icons.error_outline,
+      ),
+      KycInfoTone.neutral => (
+        Theme.of(context).colorScheme.surfaceContainerHighest,
+        Theme.of(context).colorScheme.onSurface,
+        Icons.info_outline,
+      ),
     };
 
     return Container(
@@ -174,9 +206,18 @@ class KycInfoCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: TextStyle(fontWeight: FontWeight.w700, color: fg)),
+                Text(
+                  title,
+                  style: TextStyle(fontWeight: FontWeight.w700, color: fg),
+                ),
                 const SizedBox(height: 4),
-                Text(message, style: TextStyle(color: fg.withValues(alpha: 0.9), height: 1.4)),
+                Text(
+                  message,
+                  style: TextStyle(
+                    color: fg.withValues(alpha: 0.9),
+                    height: 1.4,
+                  ),
+                ),
               ],
             ),
           ),

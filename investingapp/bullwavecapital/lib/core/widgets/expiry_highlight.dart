@@ -175,9 +175,7 @@ class ExpirySelectorChip extends StatelessWidget {
           decoration: BoxDecoration(
             color: AppColors.surfaceSecondary.withValues(alpha: 0.6),
             borderRadius: BorderRadius.circular(999),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.12),
-            ),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
           ),
           child: Text(
             DateFormatter.expiryLabel(expiryIso),

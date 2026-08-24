@@ -19,11 +19,7 @@ class FeaturedPlanScreen extends StatefulWidget {
   final String planId;
   final InvestmentPlanModel? initialPlan;
 
-  const FeaturedPlanScreen({
-    super.key,
-    required this.planId,
-    this.initialPlan,
-  });
+  const FeaturedPlanScreen({super.key, required this.planId, this.initialPlan});
 
   @override
   State<FeaturedPlanScreen> createState() => _FeaturedPlanScreenState();
@@ -35,7 +31,10 @@ class _FeaturedPlanScreenState extends State<FeaturedPlanScreen> {
   @override
   void initState() {
     super.initState();
-    _provider = FeaturedPlanProvider(planId: widget.planId, initialPlan: widget.initialPlan);
+    _provider = FeaturedPlanProvider(
+      planId: widget.planId,
+      initialPlan: widget.initialPlan,
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) => _provider.load());
   }
 
@@ -55,7 +54,9 @@ class _FeaturedPlanScreenState extends State<FeaturedPlanScreen> {
 
     if (message != null) {
       if (message.contains('Complete payment')) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(message)));
         return;
       }
       ScaffoldMessenger.of(context).showSnackBar(
@@ -109,7 +110,9 @@ class _FeaturedPlanScreenState extends State<FeaturedPlanScreen> {
                       end: Alignment.bottomRight,
                     ),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.brandOrange.withValues(alpha: 0.35)),
+                    border: Border.all(
+                      color: AppColors.brandOrange.withValues(alpha: 0.35),
+                    ),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -117,14 +120,23 @@ class _FeaturedPlanScreenState extends State<FeaturedPlanScreen> {
                       Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
-                              color: AppColors.brandOrange.withValues(alpha: 0.15),
+                              color: AppColors.brandOrange.withValues(
+                                alpha: 0.15,
+                              ),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: const Text(
                               'Featured',
-                              style: TextStyle(color: AppColors.brandOrange, fontWeight: FontWeight.w700, fontSize: 12),
+                              style: TextStyle(
+                                color: AppColors.brandOrange,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 12,
+                              ),
                             ),
                           ),
                         ],
@@ -132,12 +144,19 @@ class _FeaturedPlanScreenState extends State<FeaturedPlanScreen> {
                       const SizedBox(height: 12),
                       Text(
                         plan.name,
-                        style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         plan.description,
-                        style: TextStyle(color: Colors.white.withValues(alpha: 0.72), height: 1.45),
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.72),
+                          height: 1.45,
+                        ),
                       ),
                     ],
                   ),
@@ -174,16 +193,25 @@ class _FeaturedPlanScreenState extends State<FeaturedPlanScreen> {
                     children: [
                       const Text(
                         'Investment Amount',
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 15),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       MoneyText(
-                        amount: CurrencyFormatter.format(provider.investmentAmount),
+                        amount: CurrencyFormatter.format(
+                          provider.investmentAmount,
+                        ),
                         fontSize: 32,
                         color: Colors.white,
                       ),
                       Slider(
-                        value: provider.investmentAmount.clamp(plan.minimumInvestment, maxAmount),
+                        value: provider.investmentAmount.clamp(
+                          plan.minimumInvestment,
+                          maxAmount,
+                        ),
                         min: plan.minimumInvestment,
                         max: maxAmount,
                         divisions: 20,
@@ -196,11 +224,17 @@ class _FeaturedPlanScreenState extends State<FeaturedPlanScreen> {
                         children: [
                           Text(
                             'Min ${CurrencyFormatter.formatCompact(plan.minimumInvestment)}',
-                            style: const TextStyle(color: Colors.white54, fontSize: 12),
+                            style: const TextStyle(
+                              color: Colors.white54,
+                              fontSize: 12,
+                            ),
                           ),
                           Text(
                             'Max ${CurrencyFormatter.formatCompact(maxAmount)}',
-                            style: const TextStyle(color: Colors.white54, fontSize: 12),
+                            style: const TextStyle(
+                              color: Colors.white54,
+                              fontSize: 12,
+                            ),
                           ),
                         ],
                       ),
@@ -212,22 +246,33 @@ class _FeaturedPlanScreenState extends State<FeaturedPlanScreen> {
                   child: plan.hasFixedMonthlyReturn
                       ? _ReturnRow(
                           label: 'Est. monthly return',
-                          value: CurrencyFormatter.format(provider.minMonthlyReturn),
-                          sub: plan.monthlyReturnLabel.replaceAll(' monthly', ''),
+                          value: CurrencyFormatter.format(
+                            provider.minMonthlyReturn,
+                          ),
+                          sub: plan.monthlyReturnLabel.replaceAll(
+                            ' monthly',
+                            '',
+                          ),
                           highlight: true,
                         )
                       : Column(
                           children: [
                             _ReturnRow(
                               label: 'Est. monthly return (min)',
-                              value: CurrencyFormatter.format(provider.minMonthlyReturn),
-                              sub: '${plan.monthlyReturnMin.toStringAsFixed(2)}%',
+                              value: CurrencyFormatter.format(
+                                provider.minMonthlyReturn,
+                              ),
+                              sub:
+                                  '${plan.monthlyReturnMin.toStringAsFixed(2)}%',
                             ),
                             const Divider(color: Colors.white12, height: 24),
                             _ReturnRow(
                               label: 'Est. monthly return (max)',
-                              value: CurrencyFormatter.format(provider.maxMonthlyReturn),
-                              sub: '${plan.monthlyReturnMax.toStringAsFixed(2)}%',
+                              value: CurrencyFormatter.format(
+                                provider.maxMonthlyReturn,
+                              ),
+                              sub:
+                                  '${plan.monthlyReturnMax.toStringAsFixed(2)}%',
                               highlight: true,
                             ),
                           ],
@@ -237,16 +282,29 @@ class _FeaturedPlanScreenState extends State<FeaturedPlanScreen> {
                 _DarkCard(
                   child: Row(
                     children: [
-                      const Icon(Icons.account_balance_wallet_outlined, color: AppColors.brandOrange),
+                      const Icon(
+                        Icons.account_balance_wallet_outlined,
+                        color: AppColors.brandOrange,
+                      ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Wallet Balance', style: TextStyle(color: Colors.white54, fontSize: 12)),
+                            const Text(
+                              'Wallet Balance',
+                              style: TextStyle(
+                                color: Colors.white54,
+                                fontSize: 12,
+                              ),
+                            ),
                             Text(
                               CurrencyFormatter.format(provider.walletBalance),
-                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 18),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 18,
+                              ),
                             ),
                           ],
                         ),
@@ -254,7 +312,11 @@ class _FeaturedPlanScreenState extends State<FeaturedPlanScreen> {
                       if (provider.shortfall > 0)
                         Text(
                           'Need ${CurrencyFormatter.formatCompact(provider.shortfall)} more',
-                          style: const TextStyle(color: AppColors.yellow, fontSize: 12, fontWeight: FontWeight.w600),
+                          style: const TextStyle(
+                            color: AppColors.yellow,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                     ],
                   ),
@@ -262,7 +324,11 @@ class _FeaturedPlanScreenState extends State<FeaturedPlanScreen> {
                 const SizedBox(height: 20),
                 const Text(
                   'Payment Method',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 15,
+                  ),
                 ),
                 const SizedBox(height: 10),
                 ...['UPI', 'Debit Card', 'Credit Card', 'Net Banking'].map(
@@ -280,10 +346,19 @@ class _FeaturedPlanScreenState extends State<FeaturedPlanScreen> {
                                 : Colors.white12,
                           ),
                         ),
-                        title: Text(method, style: const TextStyle(color: Colors.white)),
+                        title: Text(
+                          method,
+                          style: const TextStyle(color: Colors.white),
+                        ),
                         trailing: provider.paymentMethod == method
-                            ? const Icon(Icons.check_circle, color: AppColors.brandOrange)
-                            : const Icon(Icons.circle_outlined, color: Colors.white24),
+                            ? const Icon(
+                                Icons.check_circle,
+                                color: AppColors.brandOrange,
+                              )
+                            : const Icon(
+                                Icons.circle_outlined,
+                                color: Colors.white24,
+                              ),
                         onTap: () => provider.setPaymentMethod(method),
                       ),
                     ),
@@ -297,9 +372,14 @@ class _FeaturedPlanScreenState extends State<FeaturedPlanScreen> {
                     decoration: BoxDecoration(
                       color: AppColors.red.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: AppColors.red.withValues(alpha: 0.35)),
+                      border: Border.all(
+                        color: AppColors.red.withValues(alpha: 0.35),
+                      ),
                     ),
-                    child: Text(provider.error!, style: const TextStyle(color: AppColors.red, height: 1.4)),
+                    child: Text(
+                      provider.error!,
+                      style: const TextStyle(color: AppColors.red, height: 1.4),
+                    ),
                   ),
                 ],
                 const SizedBox(height: 20),
@@ -312,7 +392,11 @@ class _FeaturedPlanScreenState extends State<FeaturedPlanScreen> {
                 const SizedBox(height: 10),
                 Text(
                   'Funds are allocated to your plan after payment. Returns are credited monthly to your wallet.',
-                  style: TextStyle(color: Colors.white.withValues(alpha: 0.45), fontSize: 12, height: 1.4),
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.45),
+                    fontSize: 12,
+                    height: 1.4,
+                  ),
                   textAlign: TextAlign.center,
                 ),
               ],
@@ -369,7 +453,11 @@ class _DetailGrid extends StatelessWidget {
                   children: [
                     Text(
                       item.label,
-                      style: const TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.w600),
+                      style: const TextStyle(
+                        color: Colors.white54,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -421,7 +509,11 @@ class _DetailItem {
   final String label;
   final String value;
 
-  const _DetailItem({required this.icon, required this.label, required this.value});
+  const _DetailItem({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
 }
 
 class _ReturnRow extends StatelessWidget {
@@ -445,7 +537,10 @@ class _ReturnRow extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label, style: const TextStyle(color: Colors.white54, fontSize: 12)),
+              Text(
+                label,
+                style: const TextStyle(color: Colors.white54, fontSize: 12),
+              ),
               const SizedBox(height: 4),
               Text(
                 value,
@@ -461,7 +556,9 @@ class _ReturnRow extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
-            color: (highlight ? AppColors.green : Colors.white).withValues(alpha: 0.12),
+            color: (highlight ? AppColors.green : Colors.white).withValues(
+              alpha: 0.12,
+            ),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(

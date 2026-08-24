@@ -60,7 +60,11 @@ class HomeSearchBar extends StatelessWidget {
                     style: ThemeAType.secondary(size: 14, color: p.textGrey),
                   ),
                 ),
-                Icon(PhosphorIcons.slidersHorizontal, size: 16, color: p.textMuted),
+                Icon(
+                  PhosphorIcons.slidersHorizontal,
+                  size: 16,
+                  color: p.textMuted,
+                ),
               ],
             ),
           ),

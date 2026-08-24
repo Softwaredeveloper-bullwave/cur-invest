@@ -53,9 +53,11 @@ class HomePendingActionsSection extends StatelessWidget {
       final user = auth.user;
       String subtitle;
       if (auth.needsEmailVerification) {
-        subtitle = 'Verify your email to secure your account and unlock all features.';
+        subtitle =
+            'Verify your email to secure your account and unlock all features.';
       } else if (auth.needsProfileSetup) {
-        subtitle = 'Add your name and photo — it only takes a minute to finish.';
+        subtitle =
+            'Add your name and photo — it only takes a minute to finish.';
       } else if (user != null && user.name.trim().isEmpty) {
         subtitle = 'Add your name to personalise your BullWave experience.';
       } else {
@@ -77,7 +79,8 @@ class HomePendingActionsSection extends StatelessWidget {
     }
 
     if (!kyc.isFullyVerified) {
-      final pending = kyc.status.identityReviewPending ||
+      final pending =
+          kyc.status.identityReviewPending ||
           kyc.status.selfieReviewPending ||
           kyc.status.bankReviewPending ||
           kyc.status.paymentReviewPending ||
@@ -85,7 +88,8 @@ class HomePendingActionsSection extends StatelessWidget {
           (kyc.status.manualFinalApprovalRequired &&
               !kyc.status.finalKycApproved);
 
-      if (kyc.manualStatus.isRejected || kyc.status.overallStatus == 'rejected') {
+      if (kyc.manualStatus.isRejected ||
+          kyc.status.overallStatus == 'rejected') {
         items.add(
           _PendingActionItem(
             title: 'KYC verification failed',
@@ -138,7 +142,8 @@ class HomePendingActionsSection extends StatelessWidget {
         items.add(
           _PendingActionItem(
             title: 'F&O access declined',
-            subtitle: fno.status.latestRequest?.rejectionReason?.isNotEmpty == true
+            subtitle:
+                fno.status.latestRequest?.rejectionReason?.isNotEmpty == true
                 ? fno.status.latestRequest!.rejectionReason!
                 : 'Submit income or portfolio proof to unlock futures & options trading.',
             actionLabel: 'Try again',
@@ -195,7 +200,8 @@ class HomePendingActionsSection extends StatelessWidget {
     if (s.panVerified) done++;
     if (s.aadhaarVerified) done++;
     if (s.bankVerified || s.bankReviewPending || s.bankDraftReady) done++;
-    final identityDone = (!kyc.upiRequired || s.upiVerified || s.paymentReviewPending) &&
+    final identityDone =
+        (!kyc.upiRequired || s.upiVerified || s.paymentReviewPending) &&
         (s.selfieVerified || s.selfieReviewPending);
     if (identityDone) done++;
     return (done / total).clamp(0.0, 0.95);
@@ -264,7 +270,9 @@ class _SetupSectionHeader extends StatelessWidget {
             decoration: BoxDecoration(
               color: HomeThemeA.primary.withValues(alpha: 0.25),
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: HomeThemeA.primary.withValues(alpha: 0.5)),
+              border: Border.all(
+                color: HomeThemeA.primary.withValues(alpha: 0.5),
+              ),
             ),
             child: const Icon(
               PhosphorIcons.lightning,
@@ -443,7 +451,11 @@ class _PendingActionCard extends StatelessWidget {
                                 ),
                               ],
                             ),
-                            child: Icon(item.icon, color: item.accent, size: 26),
+                            child: Icon(
+                              item.icon,
+                              color: item.accent,
+                              size: 26,
+                            ),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
@@ -499,7 +511,8 @@ class _PendingActionCard extends StatelessWidget {
                       Row(
                         children: [
                           if (progress != null &&
-                              item.state == _PendingActionState.actionRequired) ...[
+                              item.state ==
+                                  _PendingActionState.actionRequired) ...[
                             Expanded(
                               flex: 2,
                               child: Column(
@@ -519,8 +532,9 @@ class _PendingActionCard extends StatelessWidget {
                                     child: LinearProgressIndicator(
                                       value: progress,
                                       minHeight: 6,
-                                      backgroundColor:
-                                          item.accent.withValues(alpha: 0.15),
+                                      backgroundColor: item.accent.withValues(
+                                        alpha: 0.15,
+                                      ),
                                       color: item.accent,
                                     ),
                                   ),
@@ -583,8 +597,8 @@ class _StatusPill extends StatelessWidget {
     final bg = isRejected
         ? AppColors.red
         : isReview
-            ? accent
-            : HomeThemeA.primary;
+        ? accent
+        : HomeThemeA.primary;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

@@ -65,7 +65,8 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
     final latest = DateTime(now.year - 18, now.month, now.day);
     final selected = await showDatePicker(
       context: context,
-      initialDate: _dateOfBirth ?? DateTime(latest.year - 10, latest.month, latest.day),
+      initialDate:
+          _dateOfBirth ?? DateTime(latest.year - 10, latest.month, latest.day),
       firstDate: DateTime(1900),
       lastDate: latest,
       helpText: 'Select date of birth',
@@ -79,11 +80,17 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
 
   Future<void> _pickImage(ImageSource source) async {
     try {
-      final picked = await ImagePickHelper.pickProfileAvatar(context: context, source: source);
+      final picked = await ImagePickHelper.pickProfileAvatar(
+        context: context,
+        source: source,
+      );
       if (picked == null) {
         if (!mounted) return;
         if (source == ImageSource.camera) {
-          AppSnackbar.error(context, ImagePickHelper.permissionDeniedMessage(source));
+          AppSnackbar.error(
+            context,
+            ImagePickHelper.permissionDeniedMessage(source),
+          );
         }
         return;
       }
@@ -99,7 +106,10 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
     }
   }
 
-  Future<void> _onPhotoOptionSelected(BuildContext sheetContext, ImageSource source) async {
+  Future<void> _onPhotoOptionSelected(
+    BuildContext sheetContext,
+    ImageSource source,
+  ) async {
     Navigator.pop(sheetContext);
     await Future<void>.delayed(const Duration(milliseconds: 350));
     if (!mounted) return;
@@ -124,7 +134,9 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
       await auth.removeAvatar();
     }
 
-    final verifiedEmail = auth.user?.emailVerified == true ? auth.user!.email : '';
+    final verifiedEmail = auth.user?.emailVerified == true
+        ? auth.user!.email
+        : '';
 
     final success = await auth.completeProfileSetup(
       name: _nameController.text,
@@ -161,10 +173,17 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
               onTap: () => _onPhotoOptionSelected(ctx, ImageSource.camera),
             ),
             if (_pickedImageBytes != null ||
-                (context.read<AuthProvider>().user?.avatarUrl.isNotEmpty ?? false))
+                (context.read<AuthProvider>().user?.avatarUrl.isNotEmpty ??
+                    false))
               ListTile(
-                leading: const Icon(Icons.delete_outline, color: AppColors.error),
-                title: const Text('Remove photo', style: TextStyle(color: AppColors.error)),
+                leading: const Icon(
+                  Icons.delete_outline,
+                  color: AppColors.error,
+                ),
+                title: const Text(
+                  'Remove photo',
+                  style: TextStyle(color: AppColors.error),
+                ),
                 onTap: () {
                   Navigator.pop(ctx);
                   setState(() {
@@ -222,7 +241,8 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                       ? 'Verified +91 ${user!.phone}. Add your details to unlock live markets.'
                       : 'Add your details to unlock live markets and portfolio.',
                 ),
-                if (user?.emailVerified == true && (user?.email.isNotEmpty ?? false)) ...[
+                if (user?.emailVerified == true &&
+                    (user?.email.isNotEmpty ?? false)) ...[
                   const SizedBox(height: 16),
                   PremiumAuthStatusChip(
                     icon: Icons.alternate_email_rounded,
@@ -240,7 +260,11 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                         backgroundColor: Colors.white.withValues(alpha: 0.08),
                         backgroundImage: avatarImage,
                         child: avatarImage == null
-                            ? Icon(Icons.person, size: 44, color: Colors.white.withValues(alpha: 0.5))
+                            ? Icon(
+                                Icons.person,
+                                size: 44,
+                                color: Colors.white.withValues(alpha: 0.5),
+                              )
                             : null,
                       ),
                       Positioned(
@@ -255,7 +279,11 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                               shape: BoxShape.circle,
                               color: Colors.white,
                             ),
-                            child: const Icon(Icons.camera_alt_rounded, color: Colors.black, size: 18),
+                            child: const Icon(
+                              Icons.camera_alt_rounded,
+                              color: Colors.black,
+                              size: 18,
+                            ),
                           ),
                         ),
                       ),
@@ -268,8 +296,9 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                   label: 'Full Name',
                   hint: 'Your name',
                   textCapitalization: TextCapitalization.words,
-                  validator: (v) =>
-                      v == null || v.trim().length < 2 ? 'Enter your full name' : null,
+                  validator: (v) => v == null || v.trim().length < 2
+                      ? 'Enter your full name'
+                      : null,
                 ),
                 const SizedBox(height: AppDimensions.paddingMd),
                 AppTextField(
@@ -291,10 +320,13 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
                     auth.user?.dobVerifiedFromKyc == true
                         ? Icons.verified_outlined
                         : Icons.calendar_month_outlined,
-                    color: auth.user?.dobVerifiedFromKyc == true ? AppColors.greenSoft : null,
+                    color: auth.user?.dobVerifiedFromKyc == true
+                        ? AppColors.greenSoft
+                        : null,
                   ),
                   validator: (_) {
-                    if (auth.user?.dobVerifiedFromKyc == true || _dateOfBirth != null) {
+                    if (auth.user?.dobVerifiedFromKyc == true ||
+                        _dateOfBirth != null) {
                       return null;
                     }
                     return 'Date of birth is required for identity verification';

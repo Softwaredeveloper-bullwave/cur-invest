@@ -38,7 +38,9 @@ class OrderSuccessSheet extends StatelessWidget {
     final pnl = order.realizedPnl;
     final pnlPct = order.realizedPnlPercent;
     final isProfit = (pnl ?? 0) >= 0;
-    final accent = isSell ? (isProfit ? AppColors.green : AppColors.red) : AppColors.green;
+    final accent = isSell
+        ? (isProfit ? AppColors.green : AppColors.red)
+        : AppColors.green;
 
     return Consumer<StockPortfolioProvider>(
       builder: (context, portfolio, _) {
@@ -60,194 +62,266 @@ class OrderSuccessSheet extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-              Container(
-                width: 72,
-                height: 72,
-                decoration: BoxDecoration(
-                  color: accent.withValues(alpha: 0.12),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  isSell ? Icons.sell_rounded : Icons.shopping_bag_rounded,
-                  color: accent,
-                  size: 36,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                isSell ? 'Sell Order Executed' : 'Buy Order Executed',
-                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 22),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                order.stockName.isNotEmpty ? order.stockName : order.symbol,
-                style: TextStyle(color: colors.textSecondary, fontSize: 14),
-              ),
-              const SizedBox(height: 24),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  color: colors.surfaceSecondary,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: colors.border),
-                ),
-                child: Column(
-                  children: [
-                    _Row(label: 'Symbol', value: order.symbol),
-                    _Row(label: 'Order Type', value: 'MARKET ${order.side}'),
-                    _Row(label: 'Quantity', value: '${order.quantity} shares'),
-                    _Row(label: 'Price', value: CurrencyFormatter.format(order.price)),
-                    _Row(
-                      label: isSell ? 'Sell Value' : 'Invested',
-                      value: CurrencyFormatter.format(order.totalValue),
-                      bold: true,
+                  Container(
+                    width: 72,
+                    height: 72,
+                    decoration: BoxDecoration(
+                      color: accent.withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
                     ),
-                    if (isSell && order.avgCost != null) ...[
-                      const Divider(height: 24),
-                      _Row(label: 'Avg Buy Price', value: CurrencyFormatter.format(order.avgCost!)),
-                    ],
-                    if (isSell && pnl != null) ...[
-                      const SizedBox(height: 12),
-                      Text('Realized P&L', style: TextStyle(color: colors.textMuted, fontSize: 12)),
-                      const SizedBox(height: 6),
-                      Text(
-                        '${pnl >= 0 ? '+' : ''}${CurrencyFormatter.format(pnl)}',
-                        style: TextStyle(
-                          color: isProfit ? AppColors.green : AppColors.red,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 32,
-                        ),
-                      ),
-                      if (pnlPct != null)
-                        Text(
-                          '${pnlPct >= 0 ? '+' : ''}${pnlPct.toStringAsFixed(2)}%',
-                          style: TextStyle(
-                            color: isProfit ? AppColors.green : AppColors.red,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 15,
-                          ),
-                        ),
-                    ],
-                    if (isSell && pnl != null) ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        isProfit ? 'You made a profit on this sale' : 'You booked a loss on this sale',
-                        style: TextStyle(color: colors.textSecondary, fontSize: 13),
-                      ),
-                    ],
-                    if (!isSell && order.holdingQty != null) ...[
-                      const Divider(height: 24),
-                      _Row(label: 'Holdings', value: '${order.holdingQty} shares'),
-                      if (order.holdingAvgPrice != null)
-                        _Row(
-                          label: 'New Avg Price',
-                          value: CurrencyFormatter.format(order.holdingAvgPrice!),
-                        ),
-                      if (order.unrealizedPnl != null)
-                        _Row(
-                          label: 'Unrealized P&L',
-                          value:
-                              '${order.unrealizedPnl! >= 0 ? '+' : ''}${CurrencyFormatter.format(order.unrealizedPnl!)}',
-                          valueColor: order.unrealizedPnl! >= 0 ? AppColors.green : AppColors.red,
-                        ),
-                    ],
-                  ],
-                ),
-              ),
-              if (portfolio.holdingsCount > 0) ...[
-                const SizedBox(height: 14),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: AppColors.brandOrange.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: AppColors.brandOrange.withValues(alpha: 0.2)),
+                    child: Icon(
+                      isSell ? Icons.sell_rounded : Icons.shopping_bag_rounded,
+                      color: accent,
+                      size: 36,
+                    ),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Portfolio updated',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w800,
-                          color: colors.textSecondary,
-                          fontSize: 12,
+                  const SizedBox(height: 16),
+                  Text(
+                    isSell ? 'Sell Order Executed' : 'Buy Order Executed',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 22,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    order.stockName.isNotEmpty ? order.stockName : order.symbol,
+                    style: TextStyle(color: colors.textSecondary, fontSize: 14),
+                  ),
+                  const SizedBox(height: 24),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      color: colors.surfaceSecondary,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: colors.border),
+                    ),
+                    child: Column(
+                      children: [
+                        _Row(label: 'Symbol', value: order.symbol),
+                        _Row(
+                          label: 'Order Type',
+                          value: 'MARKET ${order.side}',
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text('Holdings', style: TextStyle(color: colors.textMuted, fontSize: 12)),
-                          Text(
-                            '${portfolio.holdingsCount} stocks',
-                            style: const TextStyle(fontWeight: FontWeight.w800),
+                        _Row(
+                          label: 'Quantity',
+                          value: '${order.quantity} shares',
+                        ),
+                        _Row(
+                          label: 'Price',
+                          value: CurrencyFormatter.format(order.price),
+                        ),
+                        _Row(
+                          label: isSell ? 'Sell Value' : 'Invested',
+                          value: CurrencyFormatter.format(order.totalValue),
+                          bold: true,
+                        ),
+                        if (isSell && order.avgCost != null) ...[
+                          const Divider(height: 24),
+                          _Row(
+                            label: 'Avg Buy Price',
+                            value: CurrencyFormatter.format(order.avgCost!),
                           ),
                         ],
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text('Portfolio value', style: TextStyle(color: colors.textMuted, fontSize: 12)),
+                        if (isSell && pnl != null) ...[
+                          const SizedBox(height: 12),
                           Text(
-                            CurrencyFormatter.format(summary.currentValue),
-                            style: const TextStyle(fontWeight: FontWeight.w800),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text('Total P&L', style: TextStyle(color: colors.textMuted, fontSize: 12)),
-                          Text(
-                            '${summary.totalPnl >= 0 ? '+' : ''}${CurrencyFormatter.format(summary.totalPnl)}',
+                            'Realized P&L',
                             style: TextStyle(
-                              fontWeight: FontWeight.w800,
-                              color: summary.totalPnl >= 0 ? AppColors.green : AppColors.red,
+                              color: colors.textMuted,
+                              fontSize: 12,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            '${pnl >= 0 ? '+' : ''}${CurrencyFormatter.format(pnl)}',
+                            style: TextStyle(
+                              color: isProfit ? AppColors.green : AppColors.red,
+                              fontWeight: FontWeight.w900,
+                              fontSize: 32,
+                            ),
+                          ),
+                          if (pnlPct != null)
+                            Text(
+                              '${pnlPct >= 0 ? '+' : ''}${pnlPct.toStringAsFixed(2)}%',
+                              style: TextStyle(
+                                color: isProfit
+                                    ? AppColors.green
+                                    : AppColors.red,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 15,
+                              ),
+                            ),
+                        ],
+                        if (isSell && pnl != null) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            isProfit
+                                ? 'You made a profit on this sale'
+                                : 'You booked a loss on this sale',
+                            style: TextStyle(
+                              color: colors.textSecondary,
+                              fontSize: 13,
                             ),
                           ),
                         ],
+                        if (!isSell && order.holdingQty != null) ...[
+                          const Divider(height: 24),
+                          _Row(
+                            label: 'Holdings',
+                            value: '${order.holdingQty} shares',
+                          ),
+                          if (order.holdingAvgPrice != null)
+                            _Row(
+                              label: 'New Avg Price',
+                              value: CurrencyFormatter.format(
+                                order.holdingAvgPrice!,
+                              ),
+                            ),
+                          if (order.unrealizedPnl != null)
+                            _Row(
+                              label: 'Unrealized P&L',
+                              value:
+                                  '${order.unrealizedPnl! >= 0 ? '+' : ''}${CurrencyFormatter.format(order.unrealizedPnl!)}',
+                              valueColor: order.unrealizedPnl! >= 0
+                                  ? AppColors.green
+                                  : AppColors.red,
+                            ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  if (portfolio.holdingsCount > 0) ...[
+                    const SizedBox(height: 14),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: AppColors.brandOrange.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: AppColors.brandOrange.withValues(alpha: 0.2),
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Portfolio updated',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w800,
+                              color: colors.textSecondary,
+                              fontSize: 12,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Holdings',
+                                style: TextStyle(
+                                  color: colors.textMuted,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              Text(
+                                '${portfolio.holdingsCount} stocks',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Portfolio value',
+                                style: TextStyle(
+                                  color: colors.textMuted,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              Text(
+                                CurrencyFormatter.format(summary.currentValue),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Total P&L',
+                                style: TextStyle(
+                                  color: colors.textMuted,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              Text(
+                                '${summary.totalPnl >= 0 ? '+' : ''}${CurrencyFormatter.format(summary.totalPnl)}',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                  color: summary.totalPnl >= 0
+                                      ? AppColors.green
+                                      : AppColors.red,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => _openPortfolio(context),
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                          child: const Text(
+                            'Portfolio',
+                            style: TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: FilledButton(
+                          onPressed: () =>
+                              Navigator.of(context, rootNavigator: true).pop(),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: AppColors.brandOrange,
+                            minimumSize: const Size.fromHeight(50),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                          child: const Text(
+                            'Done',
+                            style: TextStyle(fontWeight: FontWeight.w800),
+                          ),
+                        ),
                       ),
                     ],
                   ),
-                ),
-              ],
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => _openPortfolio(context),
-                      style: OutlinedButton.styleFrom(
-                        minimumSize: const Size.fromHeight(50),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                      ),
-                      child: const Text('Portfolio', style: TextStyle(fontWeight: FontWeight.w700)),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: FilledButton(
-                      onPressed: () => Navigator.of(context, rootNavigator: true).pop(),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: AppColors.brandOrange,
-                        minimumSize: const Size.fromHeight(50),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                      ),
-                      child: const Text('Done', style: TextStyle(fontWeight: FontWeight.w800)),
-                    ),
-                  ),
                 ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
-    );
+        );
       },
     );
   }
@@ -273,7 +347,10 @@ class _Row extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+          Text(
+            label,
+            style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+          ),
           Text(
             value,
             style: TextStyle(
@@ -378,14 +455,20 @@ class _TradeOrderSheetState extends State<TradeOrderSheet> {
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
                       decoration: BoxDecoration(
                         color: sideColor.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
                         widget.side,
-                        style: TextStyle(color: sideColor, fontWeight: FontWeight.w800),
+                        style: TextStyle(
+                          color: sideColor,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -395,13 +478,19 @@ class _TradeOrderSheetState extends State<TradeOrderSheet> {
                         children: [
                           Text(
                             widget.stock.symbol,
-                            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 18,
+                            ),
                           ),
                           Text(
                             widget.stock.name,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(color: colors.textSecondary, fontSize: 12),
+                            style: TextStyle(
+                              color: colors.textSecondary,
+                              fontSize: 12,
+                            ),
                           ),
                         ],
                       ),
@@ -409,10 +498,19 @@ class _TradeOrderSheetState extends State<TradeOrderSheet> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Text('LTP', style: TextStyle(color: colors.textMuted, fontSize: 11)),
+                        Text(
+                          'LTP',
+                          style: TextStyle(
+                            color: colors.textMuted,
+                            fontSize: 11,
+                          ),
+                        ),
                         Text(
                           CurrencyFormatter.format(widget.stock.ltp),
-                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 16,
+                          ),
                         ),
                       ],
                     ),
@@ -425,14 +523,24 @@ class _TradeOrderSheetState extends State<TradeOrderSheet> {
                         ? 'Available: ${widget.availableQty} shares'
                         : 'No shares available to sell',
                     style: TextStyle(
-                      color: widget.availableQty > 0 ? colors.textSecondary : AppColors.red,
+                      color: widget.availableQty > 0
+                          ? colors.textSecondary
+                          : AppColors.red,
                       fontSize: 13,
-                      fontWeight: widget.availableQty > 0 ? FontWeight.normal : FontWeight.w600,
+                      fontWeight: widget.availableQty > 0
+                          ? FontWeight.normal
+                          : FontWeight.w600,
                     ),
                   ),
                 ],
                 const SizedBox(height: 20),
-                Text('Quantity', style: TextStyle(color: colors.textMuted, fontWeight: FontWeight.w600)),
+                Text(
+                  'Quantity',
+                  style: TextStyle(
+                    color: colors.textMuted,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
                 const SizedBox(height: 10),
                 Row(
                   children: [
@@ -447,7 +555,10 @@ class _TradeOrderSheetState extends State<TradeOrderSheet> {
                         ),
                         child: Text(
                           '$_qty',
-                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 22),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 22,
+                          ),
                         ),
                       ),
                     ),
@@ -456,7 +567,8 @@ class _TradeOrderSheetState extends State<TradeOrderSheet> {
                       Padding(
                         padding: const EdgeInsets.only(left: 8),
                         child: TextButton(
-                          onPressed: () => setState(() => _qty = widget.availableQty),
+                          onPressed: () =>
+                              setState(() => _qty = widget.availableQty),
                           child: const Text('Max'),
                         ),
                       ),
@@ -476,7 +588,10 @@ class _TradeOrderSheetState extends State<TradeOrderSheet> {
                       ),
                       Text(
                         CurrencyFormatter.format(_estimatedTotal),
-                        style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 18,
+                        ),
                       ),
                     ],
                   ),
@@ -486,14 +601,24 @@ class _TradeOrderSheetState extends State<TradeOrderSheet> {
                   width: double.infinity,
                   height: 52,
                   child: FilledButton(
-                    onPressed: canSell ? () => Navigator.of(context, rootNavigator: true).pop(_qty) : null,
+                    onPressed: canSell
+                        ? () => Navigator.of(
+                            context,
+                            rootNavigator: true,
+                          ).pop(_qty)
+                        : null,
                     style: FilledButton.styleFrom(
                       backgroundColor: sideColor,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                     ),
                     child: Text(
                       _isSell ? 'Sell $_qty shares' : 'Buy $_qty shares',
-                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 16,
+                      ),
                     ),
                   ),
                 ),
@@ -522,11 +647,7 @@ class _QtyButton extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(12),
-          child: SizedBox(
-            width: 48,
-            height: 48,
-            child: Icon(icon, size: 22),
-          ),
+          child: SizedBox(width: 48, height: 48, child: Icon(icon, size: 22)),
         ),
       ),
     );

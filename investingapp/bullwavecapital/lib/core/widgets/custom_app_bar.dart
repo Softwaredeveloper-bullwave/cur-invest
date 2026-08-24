@@ -61,7 +61,8 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                   color: colors.textPrimary,
                 ),
               ),
-              onPressed: onBack ??
+              onPressed:
+                  onBack ??
                   () {
                     if (context.canPop()) {
                       context.pop();
@@ -86,7 +87,11 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           if (subtitle != null)
             Text(
               subtitle!,
-              style: TextStyle(fontSize: 11, color: colors.textMuted, fontWeight: FontWeight.w600),
+              style: TextStyle(
+                fontSize: 11,
+                color: colors.textMuted,
+                fontWeight: FontWeight.w600,
+              ),
             ),
         ],
       ),

@@ -5,6 +5,7 @@ import '../../../../core/config/app_env.dart';
 import '../../../../core/config/dev_config.dart';
 import '../../../../core/api/api_config.dart';
 import '../../../../core/api/api_exception.dart';
+import '../../../../core/security/app_lock_service.dart';
 import '../../../../core/api/bullwave_api.dart';
 import '../../../../core/api/dev_auth_service.dart';
 import '../../../../core/api/token_storage.dart';
@@ -160,7 +161,8 @@ class AuthProvider extends ChangeNotifier {
 
   void _applyDevSession({UserModel? user}) {
     _isAuthenticated = true;
-    _user = user ??
+    _user =
+        user ??
         const UserModel(
           id: 'dev-user',
           name: 'Dev User',
@@ -192,12 +194,8 @@ class AuthProvider extends ChangeNotifier {
       return;
     }
     await _api.init();
-    final resumeKycOnboarding = await TokenStorage.isRegistrationInProgress();
+    await _loadSessionFlags();
     beginSignIn();
-    final accessToken = await TokenStorage.getAccessToken();
-    if (accessToken != null && accessToken.isNotEmpty) {
-      await _api.logout();
-    }
     _isAuthenticated = false;
     _user = null;
     _phoneNumber = '';
@@ -206,12 +204,6 @@ class AuthProvider extends ChangeNotifier {
     _phoneIsRegistered = null;
     _hasSignedInSession = false;
     await TokenStorage.setSignedInSession(false);
-    if (resumeKycOnboarding) {
-      _flowMode = AuthFlowMode.registration;
-      await TokenStorage.setRegistrationInProgress(true);
-    } else {
-      await TokenStorage.setRegistrationInProgress(false);
-    }
     _termsAccepted = false;
     WidgetsBinding.instance.addPostFrameCallback((_) => notifyListeners());
   }
@@ -244,17 +236,30 @@ class AuthProvider extends ChangeNotifier {
         _pendingEmail = _user!.email.trim().toLowerCase();
       }
 
-      // Keep session only for an active signed-in visit — not a stale registration token.
+      // Only clear a completed registration token when registration is not active.
       if (!_hasSignedInSession && hasCompletedRegistration) {
-        await TokenStorage.setRegistrationInProgress(false);
-        _flowMode = AuthFlowMode.signIn;
-        await logout();
-        return false;
+        final regInProgress = await TokenStorage.isRegistrationInProgress();
+        if (!regInProgress) {
+          await TokenStorage.setRegistrationInProgress(false);
+          _flowMode = AuthFlowMode.signIn;
+          await logout();
+          return false;
+        }
       }
 
       notifyListeners();
       return _isAuthenticated;
     } catch (_) {
+      final refreshed = await _api.refreshAccessToken();
+      if (refreshed) {
+        try {
+          _user = await _api.getProfile();
+          _isAuthenticated = true;
+          _isNewUser = false;
+          notifyListeners();
+          return true;
+        } catch (_) {}
+      }
       await logout();
       return false;
     }
@@ -317,6 +322,7 @@ class AuthProvider extends ChangeNotifier {
       _user = result.user;
       _isNewUser = result.isNewUser;
       _isAuthenticated = true;
+      await AppLockService.clearIfDifferentUser(_user?.id ?? '');
       await _syncPendingEmailState();
 
       if (_flowMode == AuthFlowMode.signIn) {
@@ -342,6 +348,7 @@ class AuthProvider extends ChangeNotifier {
       _error = e.message;
       _isLoading = false;
       _isAuthenticated = false;
+      await _api.logout();
       notifyListeners();
       return false;
     } catch (e) {
@@ -350,6 +357,7 @@ class AuthProvider extends ChangeNotifier {
           : 'Could not verify OTP. Check your connection.';
       _isLoading = false;
       _isAuthenticated = false;
+      await _api.logout();
       notifyListeners();
       return false;
     }
@@ -375,7 +383,9 @@ class AuthProvider extends ChangeNotifier {
       await TokenStorage.savePendingEmail(normalized);
       _devOtp = result.devOtp;
       _emailOtpMode = result.otpMode;
-      _user = result.user ?? _user?.copyWith(email: normalized, emailVerified: false);
+      _user =
+          result.user ??
+          _user?.copyWith(email: normalized, emailVerified: false);
       _isLoading = false;
       notifyListeners();
       return true;

@@ -13,7 +13,8 @@ class InvestmentDocumentsScreen extends StatefulWidget {
   const InvestmentDocumentsScreen({super.key});
 
   @override
-  State<InvestmentDocumentsScreen> createState() => _InvestmentDocumentsScreenState();
+  State<InvestmentDocumentsScreen> createState() =>
+      _InvestmentDocumentsScreenState();
 }
 
 class _InvestmentDocumentsScreenState extends State<InvestmentDocumentsScreen> {
@@ -45,7 +46,11 @@ class _InvestmentDocumentsScreenState extends State<InvestmentDocumentsScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(education.error!, textAlign: TextAlign.center, style: ThemeAType.body(color: p.textGrey)),
+                    Text(
+                      education.error!,
+                      textAlign: TextAlign.center,
+                      style: ThemeAType.body(color: p.textGrey),
+                    ),
                     const SizedBox(height: 16),
                     FilledButton(
                       onPressed: education.refresh,
@@ -78,22 +83,37 @@ class _InvestmentDocumentsScreenState extends State<InvestmentDocumentsScreen> {
                           color: ThemeA.primary.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(14),
                         ),
-                        child: const Icon(Icons.menu_book_rounded, color: ThemeA.primary),
+                        child: const Icon(
+                          Icons.menu_book_rounded,
+                          color: ThemeA.primary,
+                        ),
                       ),
                       const SizedBox(width: 14),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Learn to invest', style: ThemeAType.cardTitle(color: p.textDark)),
+                            Text(
+                              'Learn to invest',
+                              style: ThemeAType.cardTitle(color: p.textDark),
+                            ),
                             const SizedBox(height: 4),
                             Text(
                               'Curated guides for Indian markets — start with Beginner, then explore topics at your pace.',
-                              style: ThemeAType.body(color: p.textGrey, size: 13),
+                              style: ThemeAType.body(
+                                color: p.textGrey,
+                                size: 13,
+                              ),
                             ),
                             if (updatedLabel != null) ...[
                               const SizedBox(height: 6),
-                              Text(updatedLabel, style: ThemeAType.label(size: 11, color: p.textMuted)),
+                              Text(
+                                updatedLabel,
+                                style: ThemeAType.label(
+                                  size: 11,
+                                  color: p.textMuted,
+                                ),
+                              ),
                             ],
                           ],
                         ),
@@ -102,14 +122,21 @@ class _InvestmentDocumentsScreenState extends State<InvestmentDocumentsScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                Text('Topics', style: ThemeAType.sectionTitle(color: p.textDark)),
+                Text(
+                  'Topics',
+                  style: ThemeAType.sectionTitle(color: p.textDark),
+                ),
                 const SizedBox(height: 12),
                 if (categories.isEmpty)
                   GlassCard(
                     padding: const EdgeInsets.all(20),
                     child: Column(
                       children: [
-                        Icon(Icons.cloud_off_outlined, size: 40, color: p.textMuted),
+                        Icon(
+                          Icons.cloud_off_outlined,
+                          size: 40,
+                          color: p.textMuted,
+                        ),
                         const SizedBox(height: 10),
                         Text(
                           'No topics loaded yet',
@@ -140,7 +167,20 @@ class _InvestmentDocumentsScreenState extends State<InvestmentDocumentsScreen> {
   }
 
   String _formatDate(DateTime dt) {
-    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    final months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
     return '${months[dt.month - 1]} ${dt.day}, ${dt.year}';
   }
 }
@@ -167,7 +207,10 @@ class _CategoryTile extends StatelessWidget {
             height: 44,
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [category.accent, category.accent.withValues(alpha: 0.75)],
+                colors: [
+                  category.accent,
+                  category.accent.withValues(alpha: 0.75),
+                ],
               ),
               borderRadius: BorderRadius.circular(12),
             ),
@@ -178,7 +221,10 @@ class _CategoryTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(category.title, style: ThemeAType.cardTitle(color: p.textDark, size: 16)),
+                Text(
+                  category.title,
+                  style: ThemeAType.cardTitle(color: p.textDark, size: 16),
+                ),
                 const SizedBox(height: 2),
                 Text(
                   category.subtitle,
@@ -193,7 +239,10 @@ class _CategoryTile extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(countLabel, style: ThemeAType.label(size: 11, color: p.textMuted)),
+              Text(
+                countLabel,
+                style: ThemeAType.label(size: 11, color: p.textMuted),
+              ),
               Icon(Icons.chevron_right_rounded, color: p.textGrey, size: 22),
             ],
           ),

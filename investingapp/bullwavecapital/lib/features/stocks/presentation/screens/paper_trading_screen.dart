@@ -79,7 +79,9 @@ class _PaperTradingScreenState extends State<PaperTradingScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Could not refresh paper trading data. Pull to retry.'),
+            content: Text(
+              'Could not refresh paper trading data. Pull to retry.',
+            ),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -297,7 +299,10 @@ class _PracticeFundsCard extends StatelessWidget {
                     ),
                     const Spacer(),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.green.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(999),
@@ -329,7 +334,11 @@ class _PracticeFundsCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   'Refills to ₹1,00,000 below ${CurrencyFormatter.format(refillThreshold)}',
-                  style: TextStyle(color: colors.textSecondary, fontSize: 11, height: 1.35),
+                  style: TextStyle(
+                    color: colors.textSecondary,
+                    fontSize: 11,
+                    height: 1.35,
+                  ),
                 ),
               ],
             ),
@@ -403,9 +412,9 @@ class _PaperFeatureGrid extends StatelessWidget {
       children: [
         Text(
           'Practice Every Market',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w900,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
         ),
         const SizedBox(height: 4),
         Text(
@@ -460,9 +469,9 @@ class _PaperMarketTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         onTap: onTap,
         child: Ink(
-          decoration: AppDecorations.card(context).copyWith(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          decoration: AppDecorations.card(
+            context,
+          ).copyWith(borderRadius: BorderRadius.circular(12)),
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
           child: Row(
             children: [
@@ -488,7 +497,11 @@ class _PaperMarketTile extends StatelessWidget {
                   ),
                 ),
               ),
-              Icon(Icons.chevron_right_rounded, size: 16, color: colors.textMuted),
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 16,
+                color: colors.textMuted,
+              ),
             ],
           ),
         ),

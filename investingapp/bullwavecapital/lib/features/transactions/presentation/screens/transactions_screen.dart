@@ -39,7 +39,9 @@ class TransactionsScreen extends StatelessWidget {
               ),
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: AppDimensions.paddingMd),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppDimensions.paddingMd,
+                ),
                 child: Row(
                   children: [
                     _FilterChip(
@@ -49,7 +51,8 @@ class TransactionsScreen extends StatelessWidget {
                     ),
                     _FilterChip(
                       label: 'Investment',
-                      selected: provider.selectedTab == TransactionType.investment,
+                      selected:
+                          provider.selectedTab == TransactionType.investment,
                       onTap: () => provider.setTab(TransactionType.investment),
                     ),
                     _FilterChip(
@@ -59,7 +62,8 @@ class TransactionsScreen extends StatelessWidget {
                     ),
                     _FilterChip(
                       label: 'Withdrawal',
-                      selected: provider.selectedTab == TransactionType.withdrawal,
+                      selected:
+                          provider.selectedTab == TransactionType.withdrawal,
                       onTap: () => provider.setTab(TransactionType.withdrawal),
                     ),
                   ],

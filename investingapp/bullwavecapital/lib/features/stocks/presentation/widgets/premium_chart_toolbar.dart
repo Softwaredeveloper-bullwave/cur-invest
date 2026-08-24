@@ -141,8 +141,8 @@ class _ToggleButton extends StatelessWidget {
             label,
             style: TextStyle(
               color: selected
-                ? AppColors.brandPrimaryDark
-                : Theme.of(context).colorScheme.onSurfaceVariant,
+                  ? AppColors.brandPrimaryDark
+                  : Theme.of(context).colorScheme.onSurfaceVariant,
               fontSize: 11,
               fontWeight: FontWeight.w700,
             ),

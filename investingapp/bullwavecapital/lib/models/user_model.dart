@@ -41,38 +41,39 @@ class UserModel {
     bool? hasCompletedOnboarding,
     bool? emailVerified,
     bool? dobVerifiedFromKyc,
-  }) =>
-      UserModel(
-        id: id,
-        name: name ?? this.name,
-        phone: phone,
-        email: email ?? this.email,
-        panStatus: panStatus,
-        kycStatus: kycStatus,
-        avatarUrl: avatarUrl ?? this.avatarUrl,
-        city: city ?? this.city,
-        bio: bio ?? this.bio,
-        dateOfBirth: dateOfBirth ?? this.dateOfBirth,
-        hasCompletedOnboarding: hasCompletedOnboarding ?? this.hasCompletedOnboarding,
-        emailVerified: emailVerified ?? this.emailVerified,
-        dobVerifiedFromKyc: dobVerifiedFromKyc ?? this.dobVerifiedFromKyc,
-      );
+  }) => UserModel(
+    id: id,
+    name: name ?? this.name,
+    phone: phone,
+    email: email ?? this.email,
+    panStatus: panStatus,
+    kycStatus: kycStatus,
+    avatarUrl: avatarUrl ?? this.avatarUrl,
+    city: city ?? this.city,
+    bio: bio ?? this.bio,
+    dateOfBirth: dateOfBirth ?? this.dateOfBirth,
+    hasCompletedOnboarding:
+        hasCompletedOnboarding ?? this.hasCompletedOnboarding,
+    emailVerified: emailVerified ?? this.emailVerified,
+    dobVerifiedFromKyc: dobVerifiedFromKyc ?? this.dobVerifiedFromKyc,
+  );
 
   factory UserModel.fromJson(Map<String, dynamic> json) => UserModel(
-        id: json['id']?.toString() ?? '',
-        name: (json['name'] as String?)?.trim() ?? '',
-        phone: json['phone']?.toString() ?? '',
-        email: json['email'] as String? ?? '',
-        panStatus: json['panStatus'] as String? ?? 'Pending',
-        kycStatus: json['kycStatus'] as String? ?? 'Pending',
-        avatarUrl: json['avatarUrl'] as String? ?? '',
-        city: json['city'] as String? ?? '',
-        bio: json['bio'] as String? ?? '',
-        dateOfBirth: json['dateOfBirth'] != null && json['dateOfBirth'].toString().isNotEmpty
-            ? DateTime.tryParse(json['dateOfBirth'] as String)
-            : null,
-        hasCompletedOnboarding: json['hasCompletedOnboarding'] as bool? ?? false,
-        emailVerified: json['emailVerified'] as bool? ?? false,
-        dobVerifiedFromKyc: json['dobVerifiedFromKyc'] as bool? ?? false,
-      );
+    id: json['id']?.toString() ?? '',
+    name: (json['name'] as String?)?.trim() ?? '',
+    phone: json['phone']?.toString() ?? '',
+    email: json['email'] as String? ?? '',
+    panStatus: json['panStatus'] as String? ?? 'Pending',
+    kycStatus: json['kycStatus'] as String? ?? 'Pending',
+    avatarUrl: json['avatarUrl'] as String? ?? '',
+    city: json['city'] as String? ?? '',
+    bio: json['bio'] as String? ?? '',
+    dateOfBirth:
+        json['dateOfBirth'] != null && json['dateOfBirth'].toString().isNotEmpty
+        ? DateTime.tryParse(json['dateOfBirth'] as String)
+        : null,
+    hasCompletedOnboarding: json['hasCompletedOnboarding'] as bool? ?? false,
+    emailVerified: json['emailVerified'] as bool? ?? false,
+    dobVerifiedFromKyc: json['dobVerifiedFromKyc'] as bool? ?? false,
+  );
 }

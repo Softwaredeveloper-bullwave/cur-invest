@@ -11,6 +11,7 @@ import 'core/config/dev_config.dart';
 import 'core/constants/brand.dart';
 import 'core/routes/app_router.dart';
 import 'core/services/app_error_reporter.dart';
+import 'core/security/app_lock_provider.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/premium_background.dart';
 import 'features/authentication/presentation/widgets/splash_animation.dart';
@@ -87,8 +88,9 @@ class BullWaveApp extends StatefulWidget {
   State<BullWaveApp> createState() => _BullWaveAppState();
 }
 
-class _BullWaveAppState extends State<BullWaveApp> {
+class _BullWaveAppState extends State<BullWaveApp> with WidgetsBindingObserver {
   late final AuthProvider _authProvider = AuthProvider();
+  late final AppLockProvider _appLockProvider = AppLockProvider();
   late final KycFlowProvider _kycFlowProvider = KycFlowProvider()
     ..onIdentityUpdated = () async {
       await _authProvider.refreshProfile();
@@ -97,7 +99,30 @@ class _BullWaveAppState extends State<BullWaveApp> {
     _authProvider,
     _kycFlowProvider,
     widget.appProvider,
+    _appLockProvider,
   );
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Lock only when the app is fully backgrounded. Do not lock on inactive —
+    // that state also fires when the biometric sheet opens and would cancel auth.
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden) {
+      _appLockProvider.lock();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -105,6 +130,7 @@ class _BullWaveAppState extends State<BullWaveApp> {
       providers: [
         ChangeNotifierProvider.value(value: widget.appProvider),
         ChangeNotifierProvider.value(value: _authProvider),
+        ChangeNotifierProvider.value(value: _appLockProvider),
         ChangeNotifierProvider.value(value: _kycFlowProvider),
         ChangeNotifierProvider(create: (_) => HomeProvider()),
         ChangeNotifierProvider(create: (_) => InvestmentProvider()),
@@ -135,7 +161,9 @@ class _BullWaveAppState extends State<BullWaveApp> {
             debugShowCheckedModeBanner: false,
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
-            themeMode: appProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+            themeMode: appProvider.isDarkMode
+                ? ThemeMode.dark
+                : ThemeMode.light,
             routerConfig: _router,
             builder: (context, child) {
               if (child == null) {

@@ -30,11 +30,17 @@ class KycSuccessScreen extends StatelessWidget {
                   color: AppColors.success.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.verified_user, color: AppColors.success, size: 72),
+                child: const Icon(
+                  Icons.verified_user,
+                  color: AppColors.success,
+                  size: 72,
+                ),
               ),
               const SizedBox(height: AppDimensions.paddingLg),
               Text(
-                finishingRegistration ? 'Verification complete' : 'KYC Verified!',
+                finishingRegistration
+                    ? 'Verification complete'
+                    : 'KYC Verified!',
                 style: Theme.of(context).textTheme.headlineLarge,
               ),
               const SizedBox(height: 8),

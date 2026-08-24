@@ -35,21 +35,22 @@ class BlockDealModel {
   bool get isBlock => dealType == 'block';
 
   factory BlockDealModel.fromJson(Map<String, dynamic> json) => BlockDealModel(
-        id: json['id']?.toString() ?? '',
-        symbol: json['symbol'] as String? ?? '',
-        companyName: json['companyName'] as String? ?? '',
-        exchange: json['exchange'] as String? ?? 'NSE',
-        dealType: json['dealType'] as String? ?? 'block',
-        side: json['side'] as String? ?? 'BUY',
-        price: _d(json['price']),
-        quantity: _i(json['quantity']),
-        valueCr: _d(json['valueCr']),
-        ltp: _d(json['ltp']),
-        premiumPercent: _d(json['premiumPercent']),
-        clientName: json['clientName'] as String? ?? '',
-        counterparty: json['counterparty'] as String? ?? '',
-        tradedAt: DateTime.tryParse(json['tradedAt']?.toString() ?? '') ?? DateTime.now(),
-      );
+    id: json['id']?.toString() ?? '',
+    symbol: json['symbol'] as String? ?? '',
+    companyName: json['companyName'] as String? ?? '',
+    exchange: json['exchange'] as String? ?? 'NSE',
+    dealType: json['dealType'] as String? ?? 'block',
+    side: json['side'] as String? ?? 'BUY',
+    price: _d(json['price']),
+    quantity: _i(json['quantity']),
+    valueCr: _d(json['valueCr']),
+    ltp: _d(json['ltp']),
+    premiumPercent: _d(json['premiumPercent']),
+    clientName: json['clientName'] as String? ?? '',
+    counterparty: json['counterparty'] as String? ?? '',
+    tradedAt:
+        DateTime.tryParse(json['tradedAt']?.toString() ?? '') ?? DateTime.now(),
+  );
 }
 
 class BlockDealSummary {
@@ -67,7 +68,8 @@ class BlockDealSummary {
     required this.bulkCount,
   });
 
-  factory BlockDealSummary.fromJson(Map<String, dynamic>? json) => BlockDealSummary(
+  factory BlockDealSummary.fromJson(Map<String, dynamic>? json) =>
+      BlockDealSummary(
         buyValueCr: _d(json?['buyValueCr']),
         sellValueCr: _d(json?['sellValueCr']),
         netValueCr: _d(json?['netValueCr']),
@@ -112,7 +114,8 @@ class DarkPoolPrintModel {
     required this.note,
   });
 
-  factory DarkPoolPrintModel.fromJson(Map<String, dynamic> json) => DarkPoolPrintModel(
+  factory DarkPoolPrintModel.fromJson(Map<String, dynamic> json) =>
+      DarkPoolPrintModel(
         id: json['id']?.toString() ?? '',
         symbol: json['symbol'] as String? ?? '',
         companyName: json['companyName'] as String? ?? '',
@@ -123,7 +126,9 @@ class DarkPoolPrintModel {
         vwap: _d(json['vwap']),
         vsVwapPercent: _d(json['vsVwapPercent']),
         bias: json['bias'] as String? ?? 'mixed',
-        printTime: DateTime.tryParse(json['printTime']?.toString() ?? '') ?? DateTime.now(),
+        printTime:
+            DateTime.tryParse(json['printTime']?.toString() ?? '') ??
+            DateTime.now(),
         note: json['note'] as String? ?? '',
       );
 }
@@ -141,7 +146,8 @@ class DarkPoolSummary {
     required this.avgVsVwap,
   });
 
-  factory DarkPoolSummary.fromJson(Map<String, dynamic>? json) => DarkPoolSummary(
+  factory DarkPoolSummary.fromJson(Map<String, dynamic>? json) =>
+      DarkPoolSummary(
         totalValueCr: _d(json?['totalValueCr']),
         buyBiased: _i(json?['buyBiased']),
         sellBiased: _i(json?['sellBiased']),

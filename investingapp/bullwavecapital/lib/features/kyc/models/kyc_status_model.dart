@@ -4,23 +4,22 @@ class ManualKycStatusModel {
   final String kycStatus;
   final KycRequestModel? latestRequest;
 
-  const ManualKycStatusModel({
-    required this.kycStatus,
-    this.latestRequest,
-  });
+  const ManualKycStatusModel({required this.kycStatus, this.latestRequest});
 
   static const empty = ManualKycStatusModel(kycStatus: 'not_submitted');
 
   factory ManualKycStatusModel.fromJson(Map<String, dynamic> json) =>
       ManualKycStatusModel(
-        kycStatus: (json['kycStatus'] as String? ?? 'not_submitted').toLowerCase(),
+        kycStatus: (json['kycStatus'] as String? ?? 'not_submitted')
+            .toLowerCase(),
         latestRequest: json['latestRequest'] != null
-            ? KycRequestModel.fromJson(json['latestRequest'] as Map<String, dynamic>)
+            ? KycRequestModel.fromJson(
+                json['latestRequest'] as Map<String, dynamic>,
+              )
             : null,
       );
 
-  bool get isVerified =>
-      kycStatus == 'verified' || kycStatus == 'completed';
+  bool get isVerified => kycStatus == 'verified' || kycStatus == 'completed';
 
   bool get isPending =>
       kycStatus == 'pending' ||
@@ -58,7 +57,8 @@ class KycRequestModel {
     required this.createdAt,
   });
 
-  factory KycRequestModel.fromJson(Map<String, dynamic> json) => KycRequestModel(
+  factory KycRequestModel.fromJson(Map<String, dynamic> json) =>
+      KycRequestModel(
         id: json['id']?.toString() ?? '',
         panNumber: json['panNumber'] as String? ?? '',
         fullName: json['fullName'] as String? ?? '',

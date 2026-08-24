@@ -36,16 +36,29 @@ class GoalReturnTiersStrip extends StatelessWidget {
     final subtitle = onDarkBackground
         ? Colors.white.withValues(alpha: 0.65)
         : context.appColors.textSecondary;
-    final titleColor = onDarkBackground ? Colors.white : context.appColors.textPrimary;
+    final titleColor = onDarkBackground
+        ? Colors.white
+        : context.appColors.textPrimary;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            Icon(Icons.insights_rounded, size: 18, color: AppColors.green.withValues(alpha: 0.9)),
+            Icon(
+              Icons.insights_rounded,
+              size: 18,
+              color: AppColors.green.withValues(alpha: 0.9),
+            ),
             const SizedBox(width: 8),
-            Text('Return plans', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: titleColor)),
+            Text(
+              'Return plans',
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 15,
+                color: titleColor,
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 4),
@@ -58,7 +71,11 @@ class GoalReturnTiersStrip extends StatelessWidget {
           final isActive = active?.id == tier.id;
           return Padding(
             padding: const EdgeInsets.only(bottom: 10),
-            child: _TierRow(tier: tier, isActive: isActive, onDarkBackground: onDarkBackground),
+            child: _TierRow(
+              tier: tier,
+              isActive: isActive,
+              onDarkBackground: onDarkBackground,
+            ),
           );
         }),
       ],
@@ -118,8 +135,12 @@ class _CompactTierCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final titleColor = onDarkBackground ? Colors.white : context.appColors.textPrimary;
-    final subColor = onDarkBackground ? Colors.white.withValues(alpha: 0.58) : context.appColors.textMuted;
+    final titleColor = onDarkBackground
+        ? Colors.white
+        : context.appColors.textPrimary;
+    final subColor = onDarkBackground
+        ? Colors.white.withValues(alpha: 0.58)
+        : context.appColors.textMuted;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 220),
@@ -154,8 +175,8 @@ class _CompactTierCard extends StatelessWidget {
                 tier.id == 'elite'
                     ? Icons.workspace_premium_rounded
                     : tier.id == 'growth'
-                        ? Icons.trending_up_rounded
-                        : Icons.savings_rounded,
+                    ? Icons.trending_up_rounded
+                    : Icons.savings_rounded,
                 color: tier.color,
                 size: 16,
               ),
@@ -173,7 +194,11 @@ class _CompactTierCard extends StatelessWidget {
           const Spacer(),
           Text(
             tier.name,
-            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: titleColor),
+            style: TextStyle(
+              fontWeight: FontWeight.w800,
+              fontSize: 13,
+              color: titleColor,
+            ),
           ),
           const SizedBox(height: 2),
           Text(
@@ -203,13 +228,21 @@ class _TierRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.appColors;
     final bg = onDarkBackground
-        ? (isActive ? tier.color.withValues(alpha: 0.18) : Colors.white.withValues(alpha: 0.06))
-        : (isActive ? tier.color.withValues(alpha: 0.12) : colors.surfaceSecondary);
+        ? (isActive
+              ? tier.color.withValues(alpha: 0.18)
+              : Colors.white.withValues(alpha: 0.06))
+        : (isActive
+              ? tier.color.withValues(alpha: 0.12)
+              : colors.surfaceSecondary);
     final border = onDarkBackground
-        ? (isActive ? tier.color.withValues(alpha: 0.55) : Colors.white.withValues(alpha: 0.08))
+        ? (isActive
+              ? tier.color.withValues(alpha: 0.55)
+              : Colors.white.withValues(alpha: 0.08))
         : (isActive ? tier.color.withValues(alpha: 0.4) : colors.border);
     final titleColor = onDarkBackground ? Colors.white : colors.textPrimary;
-    final subColor = onDarkBackground ? Colors.white.withValues(alpha: 0.55) : colors.textMuted;
+    final subColor = onDarkBackground
+        ? Colors.white.withValues(alpha: 0.55)
+        : colors.textMuted;
     final rateColor = isActive ? AppColors.green : titleColor;
 
     return AnimatedContainer(
@@ -233,8 +266,8 @@ class _TierRow extends StatelessWidget {
               tier.id == 'elite'
                   ? Icons.workspace_premium_rounded
                   : tier.id == 'growth'
-                      ? Icons.trending_up_rounded
-                      : Icons.savings_rounded,
+                  ? Icons.trending_up_rounded
+                  : Icons.savings_rounded,
               color: tier.color,
               size: 22,
             ),
@@ -246,25 +279,41 @@ class _TierRow extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Text(tier.name, style: TextStyle(fontWeight: FontWeight.w800, color: titleColor)),
+                    Text(
+                      tier.name,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        color: titleColor,
+                      ),
+                    ),
                     if (isActive) ...[
                       const SizedBox(width: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: tier.color.withValues(alpha: 0.25),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
                           'YOUR PLAN',
-                          style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: tier.color),
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w800,
+                            color: tier.color,
+                          ),
                         ),
                       ),
                     ],
                   ],
                 ),
                 const SizedBox(height: 2),
-                Text(tier.rangeLabel, style: TextStyle(fontSize: 11, color: subColor)),
+                Text(
+                  tier.rangeLabel,
+                  style: TextStyle(fontSize: 11, color: subColor),
+                ),
               ],
             ),
           ),
@@ -273,7 +322,11 @@ class _TierRow extends StatelessWidget {
             children: [
               Text(
                 '${tier.annualReturnRate.toStringAsFixed(0)}%',
-                style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20, color: rateColor),
+                style: TextStyle(
+                  fontWeight: FontWeight.w900,
+                  fontSize: 20,
+                  color: rateColor,
+                ),
               ),
               Text('p.a.', style: TextStyle(fontSize: 10, color: subColor)),
             ],
@@ -330,14 +383,21 @@ class GoalProjectionCard extends StatelessWidget {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: color.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
                   '${tier.name} • ${annualReturnRate.toStringAsFixed(0)}% p.a.',
-                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 11, color: color),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 11,
+                    color: color,
+                  ),
                 ),
               ),
               const Spacer(),
@@ -345,11 +405,18 @@ class GoalProjectionCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          Text('Est. at maturity', style: TextStyle(fontSize: 12, color: colors.textSecondary)),
+          Text(
+            'Est. at maturity',
+            style: TextStyle(fontSize: 12, color: colors.textSecondary),
+          ),
           const SizedBox(height: 4),
           Text(
             CurrencyFormatter.format(projection.maturity),
-            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 26, color: colors.textPrimary),
+            style: TextStyle(
+              fontWeight: FontWeight.w900,
+              fontSize: 26,
+              color: colors.textPrimary,
+            ),
           ),
           const SizedBox(height: 14),
           Row(
@@ -373,7 +440,11 @@ class GoalProjectionCard extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             'Returns accrue monthly on your balance. Withdraw anytime to wallet.',
-            style: TextStyle(fontSize: 11, height: 1.35, color: colors.textMuted),
+            style: TextStyle(
+              fontSize: 11,
+              height: 1.35,
+              color: colors.textMuted,
+            ),
           ),
         ],
       ),
@@ -404,7 +475,9 @@ class _StatChip extends StatelessWidget {
         decoration: BoxDecoration(
           color: context.appColors.surface,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: context.appColors.border.withValues(alpha: 0.5)),
+          border: Border.all(
+            color: context.appColors.border.withValues(alpha: 0.5),
+          ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -430,12 +503,19 @@ class GoalReturnBadge extends StatelessWidget {
   final double annualReturnRate;
   final bool compact;
 
-  const GoalReturnBadge({super.key, required this.annualReturnRate, this.compact = false});
+  const GoalReturnBadge({
+    super.key,
+    required this.annualReturnRate,
+    this.compact = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: compact ? 8 : 10, vertical: compact ? 3 : 5),
+      padding: EdgeInsets.symmetric(
+        horizontal: compact ? 8 : 10,
+        vertical: compact ? 3 : 5,
+      ),
       decoration: BoxDecoration(
         color: AppColors.green.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(8),
@@ -444,7 +524,11 @@ class GoalReturnBadge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.arrow_upward_rounded, size: compact ? 12 : 14, color: AppColors.green),
+          Icon(
+            Icons.arrow_upward_rounded,
+            size: compact ? 12 : 14,
+            color: AppColors.green,
+          ),
           const SizedBox(width: 4),
           Text(
             '${annualReturnRate.toStringAsFixed(0)}% p.a.',

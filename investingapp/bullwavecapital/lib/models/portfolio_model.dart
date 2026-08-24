@@ -38,7 +38,10 @@ class PortfolioModel {
       final v = json[key];
       if (v == null) return 0;
       if (v is num) return v.toInt();
-      if (v is String) return int.tryParse(v.trim()) ?? double.tryParse(v.trim())?.toInt() ?? 0;
+      if (v is String)
+        return int.tryParse(v.trim()) ??
+            double.tryParse(v.trim())?.toInt() ??
+            0;
       return 0;
     }
 

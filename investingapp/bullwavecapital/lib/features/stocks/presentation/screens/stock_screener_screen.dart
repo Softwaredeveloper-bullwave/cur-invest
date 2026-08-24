@@ -19,7 +19,9 @@ class StockScreenerScreen extends StatelessWidget {
       body: Consumer<StockFeaturesProvider>(
         builder: (context, features, _) {
           if (features.isScreenerLoading && features.screenerResults.isEmpty) {
-            return const Center(child: CircularProgressIndicator(color: AppColors.green));
+            return const Center(
+              child: CircularProgressIndicator(color: AppColors.green),
+            );
           }
           return Column(
             children: [
@@ -27,11 +29,17 @@ class StockScreenerScreen extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
                 child: Row(
                   children: [
-                    const Icon(Icons.bolt_rounded, size: 16, color: AppColors.green),
+                    const Icon(
+                      Icons.bolt_rounded,
+                      size: 16,
+                      color: AppColors.green,
+                    ),
                     const SizedBox(width: 6),
                     Text(
                       'Live Nifty 50 • ${context.watch<StockMarketProvider>().marketProvider.isNotEmpty ? context.watch<StockMarketProvider>().marketProvider : 'Alpha Vantage'}',
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(color: AppColors.green),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.labelSmall?.copyWith(color: AppColors.green),
                     ),
                   ],
                 ),
@@ -40,7 +48,10 @@ class StockScreenerScreen extends StatelessWidget {
                 height: 44,
                 child: ListView(
                   scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   children: features.sectors.map((s) {
                     final selected = features.screenerSector == s;
                     return Padding(
@@ -74,8 +85,9 @@ class StockScreenerScreen extends StatelessWidget {
                           itemBuilder: (_, i) {
                             final item = features.screenerResults[i];
                             final stock = item.stock;
-                            final changeColor =
-                                stock.changePercent >= 0 ? AppColors.green : AppColors.red;
+                            final changeColor = stock.changePercent >= 0
+                                ? AppColors.green
+                                : AppColors.red;
                             return Padding(
                               padding: const EdgeInsets.only(bottom: 10),
                               child: RobinhoodCard(
@@ -93,29 +105,56 @@ class StockScreenerScreen extends StatelessWidget {
                                             style: Theme.of(context)
                                                 .textTheme
                                                 .titleMedium
-                                                ?.copyWith(fontWeight: FontWeight.w800),
+                                                ?.copyWith(
+                                                  fontWeight: FontWeight.w800,
+                                                ),
                                           ),
                                         ),
                                         Text(
                                           IndexFormatter.format(stock.ltp),
-                                          style: const TextStyle(fontWeight: FontWeight.w800),
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w800,
+                                          ),
                                         ),
                                       ],
                                     ),
-                                    Text(stock.name, style: Theme.of(context).textTheme.bodySmall),
+                                    Text(
+                                      stock.name,
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodySmall,
+                                    ),
                                     const SizedBox(height: 4),
                                     Text(
                                       '${stock.changePercent >= 0 ? '+' : ''}${stock.changePercent.toStringAsFixed(2)}%',
-                                      style: TextStyle(color: changeColor, fontSize: 12),
+                                      style: TextStyle(
+                                        color: changeColor,
+                                        fontSize: 12,
+                                      ),
                                     ),
                                     const SizedBox(height: 8),
                                     Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
                                       children: [
-                                        _Metric('PE', stock.pe > 0 ? stock.pe.toStringAsFixed(1) : '—'),
-                                        _Metric('ROE', '${item.roe.toStringAsFixed(1)}%'),
-                                        _Metric('D/E', item.debtToEquity.toStringAsFixed(2)),
-                                        _Metric('Growth', '${item.revenueGrowth.toStringAsFixed(0)}%'),
+                                        _Metric(
+                                          'PE',
+                                          stock.pe > 0
+                                              ? stock.pe.toStringAsFixed(1)
+                                              : '—',
+                                        ),
+                                        _Metric(
+                                          'ROE',
+                                          '${item.roe.toStringAsFixed(1)}%',
+                                        ),
+                                        _Metric(
+                                          'D/E',
+                                          item.debtToEquity.toStringAsFixed(2),
+                                        ),
+                                        _Metric(
+                                          'Growth',
+                                          '${item.revenueGrowth.toStringAsFixed(0)}%',
+                                        ),
                                       ],
                                     ),
                                   ],
@@ -144,7 +183,10 @@ class _Metric extends StatelessWidget {
     return Column(
       children: [
         Text(label, style: Theme.of(context).textTheme.labelSmall),
-        Text(value, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
+        Text(
+          value,
+          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
+        ),
       ],
     );
   }

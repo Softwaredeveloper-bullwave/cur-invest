@@ -24,7 +24,8 @@ class TradingViewPlatformChart extends StatefulWidget {
   });
 
   @override
-  State<TradingViewPlatformChart> createState() => _TradingViewPlatformChartState();
+  State<TradingViewPlatformChart> createState() =>
+      _TradingViewPlatformChartState();
 }
 
 class _TradingViewPlatformChartState extends State<TradingViewPlatformChart> {
@@ -47,7 +48,8 @@ class _TradingViewPlatformChartState extends State<TradingViewPlatformChart> {
   }
 
   void _registerView() {
-    _viewType = 'tradingview-${widget.tvSymbol}-${widget.interval}-${widget.theme}-${DateTime.now().microsecondsSinceEpoch}';
+    _viewType =
+        'tradingview-${widget.tvSymbol}-${widget.interval}-${widget.theme}-${DateTime.now().microsecondsSinceEpoch}';
     final url = TradingViewEmbedUrl.build(
       symbol: widget.tvSymbol,
       interval: widget.interval,

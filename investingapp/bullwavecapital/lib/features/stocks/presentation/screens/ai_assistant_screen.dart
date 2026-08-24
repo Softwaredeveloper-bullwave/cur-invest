@@ -105,7 +105,10 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
       return;
     }
     setState(() => _controller.text = text);
-    if (isFinal && _autoSendEnabled && text.trim().isNotEmpty && !text.startsWith('Listening')) {
+    if (isFinal &&
+        _autoSendEnabled &&
+        text.trim().isNotEmpty &&
+        !text.startsWith('Listening')) {
       _send(text);
     }
   }
@@ -127,7 +130,9 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
     _scrollToBottom();
 
     if (_voiceReplyEnabled && _voice.ttsAvailable && features.aiError == null) {
-      final last = features.aiMessages.isNotEmpty ? features.aiMessages.last : null;
+      final last = features.aiMessages.isNotEmpty
+          ? features.aiMessages.last
+          : null;
       if (last != null && last.role == 'assistant') {
         try {
           setState(() => _voiceErrorMsg = null);
@@ -165,7 +170,10 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
       } on ApiException catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(e.message), behavior: SnackBarBehavior.floating),
+            SnackBar(
+              content: Text(e.message),
+              behavior: SnackBarBehavior.floating,
+            ),
           );
         }
       }
@@ -221,13 +229,19 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                     setState(() => _voiceReplyEnabled = next);
                     await _saveVoicePref(_prefVoiceReply, next);
                   },
-                  onClear: () => context.read<StockFeaturesProvider>().clearAiChat(),
+                  onClear: () =>
+                      context.read<StockFeaturesProvider>().clearAiChat(),
                 ),
                 if (isListening)
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 8,
+                    ),
                     child: Text(
-                      _controller.text.isNotEmpty ? _controller.text : 'Listening…',
+                      _controller.text.isNotEmpty
+                          ? _controller.text
+                          : 'Listening…',
                       textAlign: TextAlign.center,
                       style: ThemeAType.body(size: 16, color: p.textDark),
                     ),
@@ -237,21 +251,26 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                     builder: (context, features, _) {
                       _scrollToBottom();
 
-                      if (features.aiMessages.isEmpty && !features.isAiLoading) {
+                      if (features.aiMessages.isEmpty &&
+                          !features.isAiLoading) {
                         return _GreetingPanel(
                           greeting: '${_greeting()}, $firstName',
                           isListening: isListening,
                           onTalk: _toggleMic,
-                          onPortfolio: () => _send('Summarize my portfolio holdings and P&L'),
+                          onPortfolio: () =>
+                              _send('Summarize my portfolio holdings and P&L'),
                         );
                       }
 
                       return ListView.builder(
                         controller: _scrollController,
                         padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
-                        itemCount: features.aiMessages.length + (features.isAiLoading ? 1 : 0),
+                        itemCount:
+                            features.aiMessages.length +
+                            (features.isAiLoading ? 1 : 0),
                         itemBuilder: (_, i) {
-                          if (features.isAiLoading && i == features.aiMessages.length) {
+                          if (features.isAiLoading &&
+                              i == features.aiMessages.length) {
                             return AiGlassBubble(
                               isUser: false,
                               child: Row(
@@ -281,7 +300,10 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                                 ? IconButton(
                                     visualDensity: VisualDensity.compact,
                                     padding: EdgeInsets.zero,
-                                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                                    constraints: const BoxConstraints(
+                                      minWidth: 32,
+                                      minHeight: 32,
+                                    ),
                                     tooltip: 'Listen',
                                     icon: Icon(
                                       _voice.isSpeaking
@@ -324,7 +346,8 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                 ),
                 Consumer<StockFeaturesProvider>(
                   builder: (context, features, _) {
-                    if (features.aiSuggestions.isEmpty) return const SizedBox.shrink();
+                    if (features.aiSuggestions.isEmpty)
+                      return const SizedBox.shrink();
                     return SizedBox(
                       height: 44,
                       child: ListView.separated(
@@ -432,7 +455,9 @@ class _ChatHeader extends StatelessWidget {
           const Spacer(),
           if (ttsAvailable)
             _CircleBtn(
-              icon: voiceReplyEnabled ? Icons.volume_up_rounded : Icons.volume_off_rounded,
+              icon: voiceReplyEnabled
+                  ? Icons.volume_up_rounded
+                  : Icons.volume_off_rounded,
               onTap: onToggleVoice,
               active: voiceReplyEnabled,
             )
@@ -473,7 +498,9 @@ class _CircleBtn extends StatelessWidget {
               ? BoxDecoration(
                   shape: BoxShape.circle,
                   color: Colors.white.withValues(alpha: 0.08),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.1),
+                  ),
                 )
               : p.cardDecoration(radius: 20),
           child: Icon(
@@ -481,7 +508,9 @@ class _CircleBtn extends StatelessWidget {
             size: 20,
             color: active
                 ? (p.isDark ? p.primary : p.heroCard)
-                : (p.isDark ? Colors.white.withValues(alpha: 0.85) : p.textDark),
+                : (p.isDark
+                      ? Colors.white.withValues(alpha: 0.85)
+                      : p.textDark),
           ),
         ),
       ),
@@ -512,13 +541,14 @@ class _GreetingPanel extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (!isListening) ...[
-            const AiOrbLogo(size: 52, showArc: true, animate: true, showName: true),
-            const SizedBox(height: 16),
-            WavyText(
-              text: kWavyChatbotName,
-              fontSize: 34,
-              color: p.textDark,
+            const AiOrbLogo(
+              size: 52,
+              showArc: true,
+              animate: true,
+              showName: true,
             ),
+            const SizedBox(height: 16),
+            WavyText(text: kWavyChatbotName, fontSize: 34, color: p.textDark),
             const SizedBox(height: 6),
             Text(
               'Your BullWave AI assistant',
@@ -594,9 +624,7 @@ class _ActionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.palette;
 
-    final fg = featured
-        ? (p.isDark ? p.textDark : p.heroCardFg)
-        : p.textDark;
+    final fg = featured ? (p.isDark ? p.textDark : p.heroCardFg) : p.textDark;
     final subtitleColor = featured
         ? (p.isDark ? p.textGrey : p.heroCardMuted)
         : p.textGrey;
@@ -610,7 +638,9 @@ class _ActionCard extends StatelessWidget {
           width: double.infinity,
           padding: EdgeInsets.all(compact ? 14 : 18),
           decoration: featured
-              ? (p.isDark ? p.accentCardDecoration(radius: 20) : p.heroCardDecoration(radius: 20))
+              ? (p.isDark
+                    ? p.accentCardDecoration(radius: 20)
+                    : p.heroCardDecoration(radius: 20))
               : p.cardDecoration(radius: 20),
           child: compact
               ? Column(
@@ -623,7 +653,10 @@ class _ActionCard extends StatelessWidget {
                       child: Icon(icon, color: p.textDark, size: 18),
                     ),
                     const SizedBox(height: 10),
-                    Text(title, style: ThemeAType.cardTitle(size: 14, color: fg)),
+                    Text(
+                      title,
+                      style: ThemeAType.cardTitle(size: 14, color: fg),
+                    ),
                     if (subtitle.isNotEmpty) ...[
                       const SizedBox(height: 2),
                       Text(
@@ -654,15 +687,25 @@ class _ActionCard extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(title, style: ThemeAType.cardTitle(size: 16, color: fg)),
+                          Text(
+                            title,
+                            style: ThemeAType.cardTitle(size: 16, color: fg),
+                          ),
                           Text(
                             subtitle,
-                            style: ThemeAType.secondary(size: 12, color: subtitleColor),
+                            style: ThemeAType.secondary(
+                              size: 12,
+                              color: subtitleColor,
+                            ),
                           ),
                         ],
                       ),
                     ),
-                    Icon(Icons.north_east_rounded, color: fg.withValues(alpha: 0.75), size: 20),
+                    Icon(
+                      Icons.north_east_rounded,
+                      color: fg.withValues(alpha: 0.75),
+                      size: 20,
+                    ),
                   ],
                 ),
         ),
@@ -704,9 +747,17 @@ class _ChatInputBar extends StatelessWidget {
         children: [
           Row(
             children: [
-              _MiniToggle(label: 'Auto send', on: autoSend, onChanged: onToggleAutoSend),
+              _MiniToggle(
+                label: 'Auto send',
+                on: autoSend,
+                onChanged: onToggleAutoSend,
+              ),
               const SizedBox(width: 8),
-              _MiniToggle(label: 'Auto mic', on: autoMic, onChanged: onToggleAutoMic),
+              _MiniToggle(
+                label: 'Auto mic',
+                on: autoMic,
+                onChanged: onToggleAutoMic,
+              ),
             ],
           ),
           const SizedBox(height: 10),
@@ -726,18 +777,25 @@ class _ChatInputBar extends StatelessWidget {
             height: 44,
             decoration: isListening
                 ? (p.isDark
-                    ? BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: LinearGradient(
-                          colors: [p.primary.withValues(alpha: 0.8), p.primaryDark],
-                        ),
-                      )
-                    : p.heroCardDecoration(radius: 22))
+                      ? BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: LinearGradient(
+                            colors: [
+                              p.primary.withValues(alpha: 0.8),
+                              p.primaryDark,
+                            ],
+                          ),
+                        )
+                      : p.heroCardDecoration(radius: 22))
                 : BoxDecoration(
                     shape: BoxShape.circle,
-                    color: p.isDark ? Colors.white.withValues(alpha: 0.06) : p.iconBg,
+                    color: p.isDark
+                        ? Colors.white.withValues(alpha: 0.06)
+                        : p.iconBg,
                     border: Border.all(
-                      color: p.isDark ? Colors.white.withValues(alpha: 0.08) : p.iconBorder,
+                      color: p.isDark
+                          ? Colors.white.withValues(alpha: 0.08)
+                          : p.iconBorder,
                     ),
                   ),
             child: Icon(
@@ -774,7 +832,10 @@ class _ChatInputBar extends StatelessWidget {
                 ? BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
-                      colors: [p.primary.withValues(alpha: 0.85), const Color(0xFF6366F1)],
+                      colors: [
+                        p.primary.withValues(alpha: 0.85),
+                        const Color(0xFF6366F1),
+                      ],
                     ),
                   )
                 : p.heroCardDecoration(radius: 22),
@@ -841,7 +902,9 @@ class _MiniToggle extends StatelessWidget {
           border: Border.all(
             color: on
                 ? (p.isDark ? p.primaryBorder : p.primaryBorder)
-                : (p.isDark ? Colors.white.withValues(alpha: 0.08) : p.borderLight),
+                : (p.isDark
+                      ? Colors.white.withValues(alpha: 0.08)
+                      : p.borderLight),
           ),
         ),
         child: Text(

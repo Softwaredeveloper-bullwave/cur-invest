@@ -20,25 +20,46 @@ class TechnicalIndicatorsPanel extends StatelessWidget {
         children: [
           Text(
             'Technical Indicators',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 12),
           Wrap(
             spacing: 8,
             runSpacing: 8,
             children: [
-              _Chip(label: 'RSI', value: indicators.rsi.toStringAsFixed(1), color: _rsiColor(indicators.rsi)),
-              _Chip(label: 'MACD', value: indicators.macdSignal, color: AppColors.blue),
-              _Chip(label: 'SMA 50', value: '₹${indicators.sma50.toStringAsFixed(0)}', color: colors.textSecondary),
-              _Chip(label: 'SMA 200', value: '₹${indicators.sma200.toStringAsFixed(0)}', color: colors.textSecondary),
+              _Chip(
+                label: 'RSI',
+                value: indicators.rsi.toStringAsFixed(1),
+                color: _rsiColor(indicators.rsi),
+              ),
+              _Chip(
+                label: 'MACD',
+                value: indicators.macdSignal,
+                color: AppColors.blue,
+              ),
+              _Chip(
+                label: 'SMA 50',
+                value: '₹${indicators.sma50.toStringAsFixed(0)}',
+                color: colors.textSecondary,
+              ),
+              _Chip(
+                label: 'SMA 200',
+                value: '₹${indicators.sma200.toStringAsFixed(0)}',
+                color: colors.textSecondary,
+              ),
               _Chip(
                 label: 'Trend',
                 value: indicators.trend,
-                color: indicators.trend == 'Uptrend' || indicators.trend == 'Bullish'
+                color:
+                    indicators.trend == 'Uptrend' ||
+                        indicators.trend == 'Bullish'
                     ? AppColors.green
-                    : indicators.trend == 'Downtrend' || indicators.trend == 'Bearish'
-                        ? AppColors.red
-                        : AppColors.yellow,
+                    : indicators.trend == 'Downtrend' ||
+                          indicators.trend == 'Bearish'
+                    ? AppColors.red
+                    : AppColors.yellow,
               ),
             ],
           ),
@@ -73,8 +94,18 @@ class _Chip extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600)),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              color: color,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          Text(
+            value,
+            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+          ),
         ],
       ),
     );
@@ -82,7 +113,8 @@ class _Chip extends StatelessWidget {
 }
 
 class MarketsFeatureGrid extends StatelessWidget {
-  final List<({IconData icon, String label, Color color, VoidCallback onTap})> items;
+  final List<({IconData icon, String label, Color color, VoidCallback onTap})>
+  items;
 
   const MarketsFeatureGrid({super.key, required this.items});
 
@@ -115,9 +147,9 @@ class MarketsFeatureGrid extends StatelessWidget {
                   item.label,
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 10,
-                      ),
+                    fontWeight: FontWeight.w700,
+                    fontSize: 10,
+                  ),
                   maxLines: 2,
                 ),
               ],

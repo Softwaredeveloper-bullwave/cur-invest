@@ -35,11 +35,13 @@ class _MarketsTopMoversState extends State<MarketsTopMovers> {
       case TopMoverTab.active:
         return list..sort((a, b) => b.volume.compareTo(a.volume));
       case TopMoverTab.weekHigh:
-        return list
-          ..sort((a, b) => (b.ltp / b.week52High).compareTo(a.ltp / a.week52High));
+        return list..sort(
+          (a, b) => (b.ltp / b.week52High).compareTo(a.ltp / a.week52High),
+        );
       case TopMoverTab.weekLow:
-        return list
-          ..sort((a, b) => (a.ltp / a.week52Low).compareTo(b.ltp / b.week52Low));
+        return list..sort(
+          (a, b) => (a.ltp / a.week52Low).compareTo(b.ltp / b.week52Low),
+        );
     }
   }
 
@@ -75,12 +77,19 @@ class _MarketsTopMoversState extends State<MarketsTopMovers> {
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 220),
                   curve: Curves.easeOutCubic,
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
-                    color: selected ? p.primary.withValues(alpha: 0.15) : p.card,
+                    color: selected
+                        ? p.primary.withValues(alpha: 0.15)
+                        : p.card,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: selected ? p.primary.withValues(alpha: 0.5) : p.borderLight,
+                      color: selected
+                          ? p.primary.withValues(alpha: 0.5)
+                          : p.borderLight,
                     ),
                   ),
                   child: Text(
@@ -104,7 +113,10 @@ class _MarketsTopMoversState extends State<MarketsTopMovers> {
               ? Padding(
                   key: ValueKey(_tab),
                   padding: const EdgeInsets.all(24),
-                  child: Text('No data for this filter', style: ThemeAType.body(color: p.textMuted)),
+                  child: Text(
+                    'No data for this filter',
+                    style: ThemeAType.body(color: p.textMuted),
+                  ),
                 )
               : Column(
                   key: ValueKey(_tab),
@@ -140,15 +152,18 @@ class _MoverRow extends StatelessWidget {
       case TopMoverTab.active:
         trailing = '${(stock.volume / 100000).toStringAsFixed(1)}L vol';
       case TopMoverTab.weekHigh:
-        trailing = '${((stock.ltp / stock.week52High) * 100).toStringAsFixed(1)}% of 52W H';
+        trailing =
+            '${((stock.ltp / stock.week52High) * 100).toStringAsFixed(1)}% of 52W H';
       case TopMoverTab.weekLow:
-        trailing = '${((stock.ltp / stock.week52Low) * 100).toStringAsFixed(1)}% of 52W L';
+        trailing =
+            '${((stock.ltp / stock.week52Low) * 100).toStringAsFixed(1)}% of 52W L';
       default:
         trailing = IndexFormatter.formatPercent(stock.changePercent);
     }
 
     return ScaleTap(
-      onTap: () => context.push('${AppRoutes.stockDetail}?symbol=${stock.symbol}'),
+      onTap: () =>
+          context.push('${AppRoutes.stockDetail}?symbol=${stock.symbol}'),
       child: GlassCard(
         radius: 16,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -158,15 +173,26 @@ class _MoverRow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(stock.symbol, style: ThemeAType.cardTitle(color: p.textDark, size: 14)),
-                  Text(stock.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: ThemeAType.body(color: p.textGrey, size: 12)),
+                  Text(
+                    stock.symbol,
+                    style: ThemeAType.cardTitle(color: p.textDark, size: 14),
+                  ),
+                  Text(
+                    stock.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: ThemeAType.body(color: p.textGrey, size: 12),
+                  ),
                 ],
               ),
             ),
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(CurrencyFormatter.format(stock.ltp), style: ThemeAType.cardTitle(color: p.textDark, size: 14)),
+                Text(
+                  CurrencyFormatter.format(stock.ltp),
+                  style: ThemeAType.cardTitle(color: p.textDark, size: 14),
+                ),
                 Text(trailing, style: ThemeAType.label(size: 12, color: color)),
               ],
             ),

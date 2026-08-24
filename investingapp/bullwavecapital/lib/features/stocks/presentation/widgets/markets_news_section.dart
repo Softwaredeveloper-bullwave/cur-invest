@@ -25,12 +25,14 @@ class MarketNewsItem {
   });
 
   factory MarketNewsItem.fromMap(Map<String, String> map) => MarketNewsItem(
-        headline: _cleanHeadline(map['title'] ?? map['headline'] ?? ''),
-        time: _shortTime(map),
-        category: map['category']?.trim().isNotEmpty == true ? map['category']! : 'Markets',
-        imageUrl: map['imageUrl']?.trim() ?? '',
-        url: map['url']?.trim() ?? '',
-      );
+    headline: _cleanHeadline(map['title'] ?? map['headline'] ?? ''),
+    time: _shortTime(map),
+    category: map['category']?.trim().isNotEmpty == true
+        ? map['category']!
+        : 'Markets',
+    imageUrl: map['imageUrl']?.trim() ?? '',
+    url: map['url']?.trim() ?? '',
+  );
 
   static String _cleanHeadline(String raw) {
     if (raw.length <= 120) return raw.isEmpty ? 'Market update' : raw;
@@ -39,9 +41,13 @@ class MarketNewsItem {
 
   static String _shortTime(Map<String, String> map) {
     final t = map['time']?.trim();
-    if (t != null && t.isNotEmpty && t.length <= 20 && !t.startsWith('http')) return t;
+    if (t != null && t.isNotEmpty && t.length <= 20 && !t.startsWith('http'))
+      return t;
     final sub = map['subtitle']?.trim();
-    if (sub != null && sub.isNotEmpty && sub.length <= 24 && !sub.startsWith('http')) {
+    if (sub != null &&
+        sub.isNotEmpty &&
+        sub.length <= 24 &&
+        !sub.startsWith('http')) {
       return sub;
     }
     if (sub != null && sub.contains('•')) {
@@ -63,7 +69,8 @@ class MarketsNewsSection extends StatelessWidget {
       category: 'Indices',
     ),
     MarketNewsItem(
-      headline: 'RBI keeps repo rate unchanged; focus stays on inflation glide path',
+      headline:
+          'RBI keeps repo rate unchanged; focus stays on inflation glide path',
       time: '45 min ago',
       category: 'Macro',
     ),
@@ -125,7 +132,9 @@ class _NewsCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(20),
+                ),
                 child: SizedBox(
                   height: 84,
                   width: double.infinity,
@@ -146,14 +155,20 @@ class _NewsCard extends StatelessWidget {
                         left: 14,
                         bottom: 10,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.black.withValues(alpha: 0.45),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
                             item.category,
-                            style: ThemeAType.label(size: 10, color: Colors.white),
+                            style: ThemeAType.label(
+                              size: 10,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
                       ),
@@ -172,19 +187,29 @@ class _NewsCard extends StatelessWidget {
                           item.headline,
                           maxLines: 3,
                           overflow: TextOverflow.ellipsis,
-                          style: ThemeAType.cardTitle(color: p.textDark, size: 14),
+                          style: ThemeAType.cardTitle(
+                            color: p.textDark,
+                            size: 14,
+                          ),
                         ),
                       ),
                       Row(
                         children: [
-                          Icon(Icons.schedule_rounded, size: 14, color: p.textMuted),
+                          Icon(
+                            Icons.schedule_rounded,
+                            size: 14,
+                            color: p.textMuted,
+                          ),
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
                               item.time,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: ThemeAType.label(size: 11, color: p.textMuted),
+                              style: ThemeAType.label(
+                                size: 11,
+                                color: p.textMuted,
+                              ),
                             ),
                           ),
                           Text('More', style: ThemeAType.action(size: 12)),
@@ -218,7 +243,11 @@ class _NewsImagePlaceholder extends StatelessWidget {
         ),
       ),
       child: Center(
-        child: Icon(Icons.newspaper_rounded, color: p.primary.withValues(alpha: 0.7), size: 28),
+        child: Icon(
+          Icons.newspaper_rounded,
+          color: p.primary.withValues(alpha: 0.7),
+          size: 28,
+        ),
       ),
     );
   }

@@ -47,14 +47,24 @@ class PortfolioHealthScoreCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Text('Portfolio Health', style: ThemeAType.sectionTitle(color: p.textDark, size: 18)),
+              Text(
+                'Portfolio Health',
+                style: ThemeAType.sectionTitle(color: p.textDark, size: 18),
+              ),
               const Spacer(),
               if (onRefresh != null)
                 IconButton(
                   onPressed: onRefresh,
-                  icon: Icon(Icons.refresh_rounded, color: p.textMuted, size: 20),
+                  icon: Icon(
+                    Icons.refresh_rounded,
+                    color: p.textMuted,
+                    size: 20,
+                  ),
                   padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                  constraints: const BoxConstraints(
+                    minWidth: 32,
+                    minHeight: 32,
+                  ),
                 ),
             ],
           ),
@@ -80,8 +90,17 @@ class PortfolioHealthScoreCard extends StatelessWidget {
                     Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text('${h.score}', style: ThemeAType.sectionTitle(color: color, size: 26)),
-                        Text(h.gradeLetter, style: ThemeAType.label(size: 12, color: p.textMuted)),
+                        Text(
+                          '${h.score}',
+                          style: ThemeAType.sectionTitle(
+                            color: color,
+                            size: 26,
+                          ),
+                        ),
+                        Text(
+                          h.gradeLetter,
+                          style: ThemeAType.label(size: 12, color: p.textMuted),
+                        ),
                       ],
                     ),
                   ],
@@ -92,9 +111,15 @@ class PortfolioHealthScoreCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(h.label, style: ThemeAType.cardTitle(color: p.textDark, size: 16)),
+                    Text(
+                      h.label,
+                      style: ThemeAType.cardTitle(color: p.textDark, size: 16),
+                    ),
                     const SizedBox(height: 4),
-                    Text(h.summary, style: ThemeAType.body(color: p.textGrey, size: 13)),
+                    Text(
+                      h.summary,
+                      style: ThemeAType.body(color: p.textGrey, size: 13),
+                    ),
                     const SizedBox(height: 8),
                     Wrap(
                       spacing: 8,
@@ -103,7 +128,12 @@ class PortfolioHealthScoreCard extends StatelessWidget {
                         _Chip(label: '${h.holdingsCount} holdings', p: p),
                         _Chip(label: 'Drift ${h.driftScore}', p: p),
                         if (h.portfolioValue > 0)
-                          _Chip(label: CurrencyFormatter.formatCompact(h.portfolioValue), p: p),
+                          _Chip(
+                            label: CurrencyFormatter.formatCompact(
+                              h.portfolioValue,
+                            ),
+                            p: p,
+                          ),
                       ],
                     ),
                   ],
@@ -121,7 +151,9 @@ class PortfolioHealthScoreCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Icon(
-                      f.isPositive ? Icons.check_circle_rounded : Icons.warning_amber_rounded,
+                      f.isPositive
+                          ? Icons.check_circle_rounded
+                          : Icons.warning_amber_rounded,
                       size: 16,
                       color: factorColor,
                     ),
@@ -130,8 +162,17 @@ class PortfolioHealthScoreCard extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(f.label, style: ThemeAType.cardTitle(color: p.textDark, size: 13)),
-                          Text(f.detail, style: ThemeAType.body(color: p.textGrey, size: 12)),
+                          Text(
+                            f.label,
+                            style: ThemeAType.cardTitle(
+                              color: p.textDark,
+                              size: 13,
+                            ),
+                          ),
+                          Text(
+                            f.detail,
+                            style: ThemeAType.body(color: p.textGrey, size: 12),
+                          ),
                         ],
                       ),
                     ),

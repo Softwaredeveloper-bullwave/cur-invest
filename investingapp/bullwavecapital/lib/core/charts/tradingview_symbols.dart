@@ -2,9 +2,7 @@
 class TradingViewSymbols {
   TradingViewSymbols._();
 
-  static const _stockOverrides = {
-    'M&M': 'NSE:M&M',
-  };
+  static const _stockOverrides = {'M&M': 'NSE:M&M'};
 
   static const commodityIds = {
     'GOLD': 'TVC:GOLD',

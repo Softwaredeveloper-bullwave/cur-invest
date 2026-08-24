@@ -51,24 +51,36 @@ class PortfolioSummaryCard extends StatelessWidget {
                     color: Colors.white.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(Icons.pie_chart_rounded, size: 20, color: p.heroCardFg),
+                  child: Icon(
+                    Icons.pie_chart_rounded,
+                    size: 20,
+                    color: p.heroCardFg,
+                  ),
                 ),
                 const Spacer(),
                 if (todayPnl != 0)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
-                      color: (pnlPositive ? p.positive : p.negative).withValues(alpha: 0.18),
+                      color: (pnlPositive ? p.positive : p.negative).withValues(
+                        alpha: 0.18,
+                      ),
                       borderRadius: BorderRadius.circular(999),
                       border: Border.all(
-                        color: (pnlPositive ? p.positive : p.negative).withValues(alpha: 0.35),
+                        color: (pnlPositive ? p.positive : p.negative)
+                            .withValues(alpha: 0.35),
                       ),
                     ),
                     child: Text(
                       '${pnlPositive ? '+' : ''}${CurrencyFormatter.formatCompact(todayPnl)} today',
                       style: ThemeAType.label(
                         size: 11,
-                        color: pnlPositive ? const Color(0xFF4ADE80) : const Color(0xFFFF6B6B),
+                        color: pnlPositive
+                            ? const Color(0xFF4ADE80)
+                            : const Color(0xFFFF6B6B),
                       ).copyWith(fontWeight: FontWeight.w800),
                     ),
                   ),
@@ -89,7 +101,9 @@ class PortfolioSummaryCard extends StatelessWidget {
               Text(
                 '${todayPnlPercent! >= 0 ? '+' : ''}${todayPnlPercent!.toStringAsFixed(2)}% today',
                 style: TextStyle(
-                  color: pnlPositive ? const Color(0xFF4ADE80) : const Color(0xFFFF6B6B),
+                  color: pnlPositive
+                      ? const Color(0xFF4ADE80)
+                      : const Color(0xFFFF6B6B),
                   fontWeight: FontWeight.w600,
                   fontSize: 13,
                 ),
@@ -112,7 +126,9 @@ class PortfolioSummaryCard extends StatelessWidget {
                     value: CurrencyFormatter.formatCompact(totalProfit),
                     fg: p.heroCardFg,
                     muted: p.heroCardMuted,
-                    valueColor: totalProfit >= 0 ? const Color(0xFF4ADE80) : const Color(0xFFFF6B6B),
+                    valueColor: totalProfit >= 0
+                        ? const Color(0xFF4ADE80)
+                        : const Color(0xFFFF6B6B),
                   ),
                 ),
               ],
@@ -132,9 +148,15 @@ class PortfolioSummaryCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Portfolio Value', style: AppTypography.moneyLabel(colors)),
+                    Text(
+                      'Portfolio Value',
+                      style: AppTypography.moneyLabel(colors),
+                    ),
                     const SizedBox(height: 6),
-                    MoneyText(amount: CurrencyFormatter.format(currentValue), fontSize: 38),
+                    MoneyText(
+                      amount: CurrencyFormatter.format(currentValue),
+                      fontSize: 38,
+                    ),
                   ],
                 ),
               ),
@@ -145,7 +167,11 @@ class PortfolioSummaryCard extends StatelessWidget {
                   shape: BoxShape.circle,
                   color: ThemeA.primaryLight,
                 ),
-                child: const Icon(Icons.donut_large_rounded, color: ThemeA.primaryDark, size: 32),
+                child: const Icon(
+                  Icons.donut_large_rounded,
+                  color: ThemeA.primaryDark,
+                  size: 32,
+                ),
               ),
             ],
           ),
@@ -312,9 +338,9 @@ class InvestmentCard extends StatelessWidget {
                   maxLines: compact ? 1 : 2,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: colors.textPrimary,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    color: colors.textPrimary,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
@@ -339,9 +365,24 @@ class InvestmentCard extends StatelessWidget {
             ],
           ),
           SizedBox(height: compact ? 10 : 12),
-          _RowLabel(label: 'Return', value: _returnDetail, colors: colors, compact: compact),
-          _RowLabel(label: 'Risk', value: risk, colors: colors, compact: compact),
-          _RowLabel(label: 'Min', value: CurrencyFormatter.format(minimumInvestment), colors: colors, compact: compact),
+          _RowLabel(
+            label: 'Return',
+            value: _returnDetail,
+            colors: colors,
+            compact: compact,
+          ),
+          _RowLabel(
+            label: 'Risk',
+            value: risk,
+            colors: colors,
+            compact: compact,
+          ),
+          _RowLabel(
+            label: 'Min',
+            value: CurrencyFormatter.format(minimumInvestment),
+            colors: colors,
+            compact: compact,
+          ),
           SizedBox(height: compact ? 10 : 14),
           ScaleTap(
             onTap: onTap,
@@ -391,7 +432,10 @@ class _RowLabel extends StatelessWidget {
         children: [
           Text(
             label,
-            style: TextStyle(color: colors.textSecondary, fontSize: compact ? 12 : 13),
+            style: TextStyle(
+              color: colors.textSecondary,
+              fontSize: compact ? 12 : 13,
+            ),
           ),
           Text(
             value,

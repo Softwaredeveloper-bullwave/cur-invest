@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../config/paper_only_mode.dart';
 import '../constants/routes.dart';
 import '../api/refresh_providers.dart';
+import '../security/app_lock_provider.dart';
 import '../../features/authentication/presentation/provider/auth_provider.dart';
 import '../../features/kyc/presentation/provider/kyc_flow_provider.dart';
 import 'onboarding_flow_navigator.dart';
@@ -47,6 +48,22 @@ class AuthFlowNavigation {
     }
 
     await auth.markSignedInSession();
+    await context.read<AppLockProvider>().init(userId: auth.user?.id);
+
+    final appLock = context.read<AppLockProvider>();
+    if (!appLock.hasMpin) {
+      router.go('${AppRoutes.setupMpin}?optional=true');
+      unawaited(refreshAllProviders(context));
+      return;
+    }
+
+    if (appLock.isEnabled) {
+      router.go(AppRoutes.appLock);
+      unawaited(refreshAllProviders(context));
+      return;
+    }
+
+    appLock.markUnlocked();
     router.go(OnboardingFlowNavigator.routeForReturningUser(kyc));
     unawaited(refreshAllProviders(context));
   }

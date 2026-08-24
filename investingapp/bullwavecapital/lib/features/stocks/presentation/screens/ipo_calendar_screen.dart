@@ -54,7 +54,10 @@ class _IpoCalendarScreenState extends State<IpoCalendarScreen>
     return events.where((e) => e.status == key).toList();
   }
 
-  Future<void> _showOrderSheet(IpoEventModel event, {required bool isSell}) async {
+  Future<void> _showOrderSheet(
+    IpoEventModel event, {
+    required bool isSell,
+  }) async {
     final features = context.read<StockFeaturesProvider>();
     final holding = features.ipoHoldingFor(event.id);
     final maxLots = isSell ? (holding?.lots ?? 0) : 10;
@@ -66,7 +69,9 @@ class _IpoCalendarScreenState extends State<IpoCalendarScreen>
     }
 
     var lots = 1;
-    final price = isSell ? (event.listingPrice > 0 ? event.listingPrice : event.priceBandMax) : event.applyPrice;
+    final price = isSell
+        ? (event.listingPrice > 0 ? event.listingPrice : event.priceBandMax)
+        : event.applyPrice;
     final colors = context.appColors;
 
     final confirmed = await showModalBottomSheet<bool>(
@@ -81,7 +86,12 @@ class _IpoCalendarScreenState extends State<IpoCalendarScreen>
           builder: (ctx, setSheetState) {
             final amount = lots * event.lotSize * price;
             return Padding(
-              padding: EdgeInsets.fromLTRB(20, 16, 20, MediaQuery.paddingOf(ctx).bottom + 20),
+              padding: EdgeInsets.fromLTRB(
+                20,
+                16,
+                20,
+                MediaQuery.paddingOf(ctx).bottom + 20,
+              ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -95,16 +105,24 @@ class _IpoCalendarScreenState extends State<IpoCalendarScreen>
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text(event.companyName, style: TextStyle(color: colors.textSecondary)),
+                  Text(
+                    event.companyName,
+                    style: TextStyle(color: colors.textSecondary),
+                  ),
                   const SizedBox(height: 20),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Lots', style: TextStyle(color: colors.textSecondary)),
+                      Text(
+                        'Lots',
+                        style: TextStyle(color: colors.textSecondary),
+                      ),
                       Row(
                         children: [
                           IconButton(
-                            onPressed: lots > 1 ? () => setSheetState(() => lots--) : null,
+                            onPressed: lots > 1
+                                ? () => setSheetState(() => lots--)
+                                : null,
                             icon: const Icon(Icons.remove_circle_outline),
                           ),
                           Text(
@@ -116,7 +134,9 @@ class _IpoCalendarScreenState extends State<IpoCalendarScreen>
                             ),
                           ),
                           IconButton(
-                            onPressed: lots < maxLots ? () => setSheetState(() => lots++) : null,
+                            onPressed: lots < maxLots
+                                ? () => setSheetState(() => lots++)
+                                : null,
                             icon: const Icon(Icons.add_circle_outline),
                           ),
                         ],
@@ -145,9 +165,13 @@ class _IpoCalendarScreenState extends State<IpoCalendarScreen>
                     width: double.infinity,
                     child: FilledButton(
                       style: FilledButton.styleFrom(
-                        backgroundColor: isSell ? AppColors.red : AppColors.green,
+                        backgroundColor: isSell
+                            ? AppColors.red
+                            : AppColors.green,
                         padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
                       ),
                       onPressed: () => Navigator.pop(ctx, true),
                       child: Text(
@@ -176,14 +200,19 @@ class _IpoCalendarScreenState extends State<IpoCalendarScreen>
     if (ok) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(isSell ? 'IPO sold successfully!' : 'IPO application submitted!'),
+          content: Text(
+            isSell ? 'IPO sold successfully!' : 'IPO application submitted!',
+          ),
           backgroundColor: AppColors.green,
         ),
       );
       setState(() {});
     } else if (features.ipoTradeError != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(features.ipoTradeError!), backgroundColor: AppColors.red),
+        SnackBar(
+          content: Text(features.ipoTradeError!),
+          backgroundColor: AppColors.red,
+        ),
       );
     }
   }
@@ -203,7 +232,10 @@ class _IpoCalendarScreenState extends State<IpoCalendarScreen>
           labelColor: AppColors.brandOrange,
           unselectedLabelColor: colors.textSecondary,
           indicatorColor: AppColors.brandOrange,
-          labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+          labelStyle: const TextStyle(
+            fontWeight: FontWeight.w700,
+            fontSize: 13,
+          ),
           tabs: _filters.map((f) => Tab(text: f.$2)).toList(),
         ),
       ),
@@ -227,12 +259,18 @@ class _IpoCalendarScreenState extends State<IpoCalendarScreen>
                       if (holdings.isNotEmpty)
                         Padding(
                           padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                          child: _HoldingsPanel(holdings: holdings, colors: colors),
+                          child: _HoldingsPanel(
+                            holdings: holdings,
+                            colors: colors,
+                          ),
                         ),
                       if (events.isNotEmpty)
                         Padding(
                           padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                          child: _SummaryStrip(openCount: openCount, colors: colors),
+                          child: _SummaryStrip(
+                            openCount: openCount,
+                            colors: colors,
+                          ),
                         ),
                       Expanded(
                         child: TabBarView(
@@ -243,11 +281,17 @@ class _IpoCalendarScreenState extends State<IpoCalendarScreen>
                               return ListView(
                                 physics: const AlwaysScrollableScrollPhysics(),
                                 children: [
-                                  SizedBox(height: MediaQuery.sizeOf(context).height * 0.15),
+                                  SizedBox(
+                                    height:
+                                        MediaQuery.sizeOf(context).height *
+                                        0.15,
+                                  ),
                                   Center(
                                     child: Text(
                                       'No ${filter.$2.toLowerCase()} IPOs right now',
-                                      style: TextStyle(color: colors.textSecondary),
+                                      style: TextStyle(
+                                        color: colors.textSecondary,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -255,20 +299,38 @@ class _IpoCalendarScreenState extends State<IpoCalendarScreen>
                             }
                             return ListView.builder(
                               physics: const AlwaysScrollableScrollPhysics(),
-                              padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                              itemCount: rows.length + (filter.$1 == 'all' && trades.isNotEmpty ? 1 : 0),
+                              padding: const EdgeInsets.fromLTRB(
+                                16,
+                                12,
+                                16,
+                                24,
+                              ),
+                              itemCount:
+                                  rows.length +
+                                  (filter.$1 == 'all' && trades.isNotEmpty
+                                      ? 1
+                                      : 0),
                               itemBuilder: (context, index) {
-                                if (filter.$1 == 'all' && trades.isNotEmpty && index == rows.length) {
-                                  return _RecentTrades(trades: trades.take(5).toList(), colors: colors);
+                                if (filter.$1 == 'all' &&
+                                    trades.isNotEmpty &&
+                                    index == rows.length) {
+                                  return _RecentTrades(
+                                    trades: trades.take(5).toList(),
+                                    colors: colors,
+                                  );
                                 }
                                 final event = rows[index];
-                                final holding = features.ipoHoldingFor(event.id);
+                                final holding = features.ipoHoldingFor(
+                                  event.id,
+                                );
                                 return _IpoCard(
                                   event: event,
                                   holding: holding,
                                   colors: colors,
-                                  onApply: () => _showOrderSheet(event, isSell: false),
-                                  onSell: () => _showOrderSheet(event, isSell: true),
+                                  onApply: () =>
+                                      _showOrderSheet(event, isSell: false),
+                                  onSell: () =>
+                                      _showOrderSheet(event, isSell: true),
                                 );
                               },
                             );
@@ -334,7 +396,10 @@ class _HoldingsPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('My IPO Holdings', style: TextStyle(color: colors.textSecondary, fontSize: 12)),
+          Text(
+            'My IPO Holdings',
+            style: TextStyle(color: colors.textSecondary, fontSize: 12),
+          ),
           const SizedBox(height: 4),
           Text(
             CurrencyFormatter.format(total),
@@ -353,7 +418,11 @@ class _HoldingsPanel extends StatelessWidget {
                   Expanded(
                     child: Text(
                       h.companyName,
-                      style: TextStyle(color: colors.textPrimary, fontWeight: FontWeight.w600, fontSize: 13),
+                      style: TextStyle(
+                        color: colors.textPrimary,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
                     ),
                   ),
                   Text(
@@ -400,7 +469,10 @@ class _SummaryStrip extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             '$openCount IPO${openCount == 1 ? '' : 's'} open for subscription',
-            style: const TextStyle(color: AppColors.green, fontWeight: FontWeight.w700),
+            style: const TextStyle(
+              color: AppColors.green,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ],
       ),
@@ -420,7 +492,13 @@ class _RecentTrades extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 8),
-        Text('Recent IPO Orders', style: TextStyle(color: colors.textPrimary, fontWeight: FontWeight.w800)),
+        Text(
+          'Recent IPO Orders',
+          style: TextStyle(
+            color: colors.textPrimary,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
         const SizedBox(height: 8),
         ...trades.map(
           (t) => Container(
@@ -433,7 +511,9 @@ class _RecentTrades extends StatelessWidget {
             child: Row(
               children: [
                 Icon(
-                  t.isApply ? Icons.shopping_cart_outlined : Icons.sell_outlined,
+                  t.isApply
+                      ? Icons.shopping_cart_outlined
+                      : Icons.sell_outlined,
                   color: t.isApply ? AppColors.green : AppColors.red,
                   size: 18,
                 ),
@@ -442,10 +522,19 @@ class _RecentTrades extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(t.companyName, style: TextStyle(color: colors.textPrimary, fontWeight: FontWeight.w600)),
+                      Text(
+                        t.companyName,
+                        style: TextStyle(
+                          color: colors.textPrimary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                       Text(
                         '${t.isApply ? 'Applied' : 'Sold'} ${t.lots} lot(s)',
-                        style: TextStyle(color: colors.textSecondary, fontSize: 11),
+                        style: TextStyle(
+                          color: colors.textSecondary,
+                          fontSize: 11,
+                        ),
                       ),
                     ],
                   ),
@@ -533,7 +622,10 @@ class _IpoCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       '${event.sector} • ${event.exchange}',
-                      style: TextStyle(color: colors.textSecondary, fontSize: 12),
+                      style: TextStyle(
+                        color: colors.textSecondary,
+                        fontSize: 12,
+                      ),
                     ),
                   ],
                 ),
@@ -546,7 +638,11 @@ class _IpoCard extends StatelessWidget {
                 ),
                 child: Text(
                   _statusLabel(),
-                  style: TextStyle(color: statusColor, fontWeight: FontWeight.w800, fontSize: 10),
+                  style: TextStyle(
+                    color: statusColor,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 10,
+                  ),
                 ),
               ),
             ],
@@ -557,7 +653,11 @@ class _IpoCard extends StatelessWidget {
               event.description,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(color: colors.textSecondary, fontSize: 12.5, height: 1.35),
+              style: TextStyle(
+                color: colors.textSecondary,
+                fontSize: 12.5,
+                height: 1.35,
+              ),
             ),
           ],
           const SizedBox(height: 12),
@@ -565,7 +665,11 @@ class _IpoCard extends StatelessWidget {
             spacing: 8,
             runSpacing: 8,
             children: [
-              _InfoPill(label: 'Price band', value: event.priceBandLabel, colors: colors),
+              _InfoPill(
+                label: 'Price band',
+                value: event.priceBandLabel,
+                colors: colors,
+              ),
               if (event.isListed && event.listingPrice > 0)
                 _InfoPill(
                   label: 'Listing',
@@ -599,11 +703,19 @@ class _IpoCard extends StatelessWidget {
                       style: FilledButton.styleFrom(
                         backgroundColor: AppColors.green,
                         padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                       onPressed: onApply,
-                      icon: const Icon(Icons.add_shopping_cart_rounded, size: 18),
-                      label: const Text('Apply', style: TextStyle(fontWeight: FontWeight.w800)),
+                      icon: const Icon(
+                        Icons.add_shopping_cart_rounded,
+                        size: 18,
+                      ),
+                      label: const Text(
+                        'Apply',
+                        style: TextStyle(fontWeight: FontWeight.w800),
+                      ),
                     ),
                   ),
                 if (canApply && canSell) const SizedBox(width: 10),
@@ -613,11 +725,16 @@ class _IpoCard extends StatelessWidget {
                       style: FilledButton.styleFrom(
                         backgroundColor: AppColors.red,
                         padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                       onPressed: onSell,
                       icon: const Icon(Icons.sell_rounded, size: 18),
-                      label: const Text('Sell', style: TextStyle(fontWeight: FontWeight.w800)),
+                      label: const Text(
+                        'Sell',
+                        style: TextStyle(fontWeight: FontWeight.w800),
+                      ),
                     ),
                   ),
               ],

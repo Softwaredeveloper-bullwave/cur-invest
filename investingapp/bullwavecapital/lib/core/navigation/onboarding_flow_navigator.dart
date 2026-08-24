@@ -94,18 +94,15 @@ class OnboardingFlowNavigator {
   }
 
   /// UPI + live selfie are one manual admin-review step.
-  static bool _identityStepComplete(
-    KycStatusModel status,
-    bool upiRequired,
-  ) {
-    final upiDone = !upiRequired ||
+  static bool _identityStepComplete(KycStatusModel status, bool upiRequired) {
+    final upiDone =
+        !upiRequired ||
         status.upiVerified ||
         status.paymentReviewPending ||
         (status.upiManual &&
             status.upiStatus == 'pending' &&
             status.upiVpaMasked.isNotEmpty);
-    final selfieDone =
-        status.selfieVerified || status.selfieReviewPending;
+    final selfieDone = status.selfieVerified || status.selfieReviewPending;
     return upiDone && selfieDone;
   }
 
@@ -116,7 +113,8 @@ class OnboardingFlowNavigator {
     if (!status.panVerified) return AppRoutes.panVerification;
     if (!status.aadhaarVerified) return AppRoutes.aadhaarVerificationKyc;
 
-    final bankDone = status.bankVerified ||
+    final bankDone =
+        status.bankVerified ||
         status.bankReviewPending ||
         status.bankDraftReady;
     if (!bankDone) return AppRoutes.bankVerificationKyc;
@@ -162,8 +160,7 @@ class OnboardingFlowNavigator {
       AppRoutes.nameMatch ||
       AppRoutes.selfieVerification ||
       AppRoutes.upiVerification ||
-      AppRoutes.identityVerification =>
-        AppRoutes.bankVerificationKyc,
+      AppRoutes.identityVerification => AppRoutes.bankVerificationKyc,
       AppRoutes.bankVerificationKyc => AppRoutes.aadhaarVerificationKyc,
       AppRoutes.aadhaarVerificationKyc => AppRoutes.panVerification,
       AppRoutes.panVerification => AppRoutes.completeProfile,
@@ -179,7 +176,10 @@ class OnboardingFlowNavigator {
     context.go(previousKycStep(kyc, currentRoute: currentRoute));
   }
 
-  static String labelForPreviousKycStep(KycFlowProvider kyc, {String? currentRoute}) {
+  static String labelForPreviousKycStep(
+    KycFlowProvider kyc, {
+    String? currentRoute,
+  }) {
     final previous = previousKycStep(kyc, currentRoute: currentRoute);
     return switch (previous) {
       AppRoutes.panVerification => 'Back to PAN Verification',
@@ -199,8 +199,7 @@ class OnboardingFlowNavigator {
       AppRoutes.bankVerificationKyc => 'Continue to Bank Verification',
       AppRoutes.identityVerification ||
       AppRoutes.selfieVerification ||
-      AppRoutes.upiVerification =>
-        'Continue to UPI & Selfie Verification',
+      AppRoutes.upiVerification => 'Continue to UPI & Selfie Verification',
       AppRoutes.nameMatch => 'Continue to Name Match',
       _ => 'Continue to Home',
     };

@@ -95,7 +95,10 @@ class AppTheme {
             borderRadius: BorderRadius.circular(999),
           ),
           elevation: 0,
-          textStyle: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700),
+          textStyle: GoogleFonts.inter(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+          ),
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
@@ -109,7 +112,10 @@ class AppTheme {
             borderRadius: BorderRadius.circular(999),
           ),
           elevation: 0,
-          textStyle: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700),
+          textStyle: GoogleFonts.inter(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+          ),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -121,10 +127,15 @@ class AppTheme {
             borderRadius: BorderRadius.circular(999),
           ),
           side: BorderSide(
-            color: isDark ? colors.border : colors.textPrimary.withValues(alpha: 0.15),
+            color: isDark
+                ? colors.border
+                : colors.textPrimary.withValues(alpha: 0.15),
             width: 1,
           ),
-          textStyle: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600),
+          textStyle: GoogleFonts.inter(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -170,9 +181,7 @@ class AppTheme {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
       ),
       dividerTheme: DividerThemeData(color: colors.border, thickness: 1),
-      progressIndicatorTheme: ProgressIndicatorThemeData(
-        color: colors.primary,
-      ),
+      progressIndicatorTheme: ProgressIndicatorThemeData(color: colors.primary),
       expansionTileTheme: ExpansionTileThemeData(
         iconColor: colors.primary,
         collapsedIconColor: colors.textSecondary,

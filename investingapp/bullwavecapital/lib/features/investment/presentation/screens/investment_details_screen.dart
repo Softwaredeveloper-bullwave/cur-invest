@@ -12,7 +12,8 @@ class InvestmentDetailsScreen extends StatefulWidget {
   const InvestmentDetailsScreen({super.key});
 
   @override
-  State<InvestmentDetailsScreen> createState() => _InvestmentDetailsScreenState();
+  State<InvestmentDetailsScreen> createState() =>
+      _InvestmentDetailsScreenState();
 }
 
 class _InvestmentDetailsScreenState extends State<InvestmentDetailsScreen> {
@@ -72,14 +73,24 @@ class _InvestmentDetailsScreenState extends State<InvestmentDetailsScreen> {
                 child: Column(
                   children: [
                     _DetailRow(label: 'Investment ID', value: investment.id),
-                    _DetailRow(label: 'Amount', value: CurrencyFormatter.format(investment.amount)),
-                    _DetailRow(label: 'Date', value: DateFormatter.display(investment.date)),
+                    _DetailRow(
+                      label: 'Amount',
+                      value: CurrencyFormatter.format(investment.amount),
+                    ),
+                    _DetailRow(
+                      label: 'Date',
+                      value: DateFormatter.display(investment.date),
+                    ),
                     _DetailRow(
                       label: 'Monthly Returns',
                       value: CurrencyFormatter.format(investment.monthlyReturn),
                       valueColor: AppColors.accent,
                     ),
-                    _DetailRow(label: 'Status', value: investment.status, valueColor: AppColors.success),
+                    _DetailRow(
+                      label: 'Status',
+                      value: investment.status,
+                      valueColor: AppColors.success,
+                    ),
                   ],
                 ),
               ),
@@ -90,7 +101,10 @@ class _InvestmentDetailsScreenState extends State<InvestmentDetailsScreen> {
             ...investment.documents.map(
               (doc) => Card(
                 child: ListTile(
-                  leading: const Icon(Icons.description_outlined, color: AppColors.primary),
+                  leading: const Icon(
+                    Icons.description_outlined,
+                    color: AppColors.primary,
+                  ),
                   title: Text(doc),
                   trailing: const Icon(Icons.download_outlined),
                   onTap: () {
@@ -107,7 +121,9 @@ class _InvestmentDetailsScreenState extends State<InvestmentDetailsScreen> {
               icon: Icons.receipt_long,
               onPressed: () {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Receipt downloaded successfully')),
+                  const SnackBar(
+                    content: Text('Receipt downloaded successfully'),
+                  ),
                 );
               },
             ),
@@ -123,11 +139,7 @@ class _DetailRow extends StatelessWidget {
   final String value;
   final Color? valueColor;
 
-  const _DetailRow({
-    required this.label,
-    required this.value,
-    this.valueColor,
-  });
+  const _DetailRow({required this.label, required this.value, this.valueColor});
 
   @override
   Widget build(BuildContext context) {
@@ -140,9 +152,9 @@ class _DetailRow extends StatelessWidget {
           Text(
             value,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: valueColor,
-                  fontWeight: FontWeight.w600,
-                ),
+              color: valueColor,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),

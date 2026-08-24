@@ -129,7 +129,10 @@ class _EventCard extends StatelessWidget {
                 const Spacer(),
                 Flexible(
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 7,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
                       color: p.surface.withValues(alpha: 0.6),
                       borderRadius: BorderRadius.circular(8),
@@ -152,7 +155,10 @@ class _EventCard extends StatelessWidget {
               style: ThemeAType.cardTitle(color: p.textDark, size: 13),
             ),
             const SizedBox(height: 4),
-            Text(item.time, style: ThemeAType.label(size: 11, color: p.textMuted)),
+            Text(
+              item.time,
+              style: ThemeAType.label(size: 11, color: p.textMuted),
+            ),
           ],
         ),
       ),

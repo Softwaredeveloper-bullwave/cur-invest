@@ -11,11 +11,7 @@ class NewsHeadlineTicker extends StatefulWidget {
   final List<Map<String, String>> headlines;
   final VoidCallback? onTap;
 
-  const NewsHeadlineTicker({
-    super.key,
-    required this.headlines,
-    this.onTap,
-  });
+  const NewsHeadlineTicker({super.key, required this.headlines, this.onTap});
 
   @override
   State<NewsHeadlineTicker> createState() => _NewsHeadlineTickerState();
@@ -24,12 +20,30 @@ class NewsHeadlineTicker extends StatefulWidget {
 class _NewsHeadlineTickerState extends State<NewsHeadlineTicker>
     with SingleTickerProviderStateMixin {
   static const _fallbackHeadlines = [
-    {'title': 'Nifty 50 eyes fresh highs as FII inflows strengthen', 'subtitle': 'Markets'},
-    {'title': 'RBI holds repo rate steady; stance remains accommodative', 'subtitle': 'Policy'},
-    {'title': 'IT majors lead gains ahead of earnings season', 'subtitle': 'Stocks'},
-    {'title': 'Gold rallies on safe-haven demand amid global volatility', 'subtitle': 'Commodities'},
-    {'title': 'Bank Nifty tracks PSU banks amid rate-cut speculation', 'subtitle': 'Banking'},
-    {'title': 'FII inflows turn positive for third consecutive session', 'subtitle': 'Flows'},
+    {
+      'title': 'Nifty 50 eyes fresh highs as FII inflows strengthen',
+      'subtitle': 'Markets',
+    },
+    {
+      'title': 'RBI holds repo rate steady; stance remains accommodative',
+      'subtitle': 'Policy',
+    },
+    {
+      'title': 'IT majors lead gains ahead of earnings season',
+      'subtitle': 'Stocks',
+    },
+    {
+      'title': 'Gold rallies on safe-haven demand amid global volatility',
+      'subtitle': 'Commodities',
+    },
+    {
+      'title': 'Bank Nifty tracks PSU banks amid rate-cut speculation',
+      'subtitle': 'Banking',
+    },
+    {
+      'title': 'FII inflows turn positive for third consecutive session',
+      'subtitle': 'Flows',
+    },
   ];
 
   AnimationController? _controller;
@@ -99,11 +113,10 @@ class _NewsHeadlineTickerState extends State<NewsHeadlineTicker>
 
   TextStyle _headlineStyle(BuildContext context) {
     final p = context.palette;
-    return ThemeAType.body(size: 13.5, color: p.textDark).copyWith(
-      fontWeight: FontWeight.w600,
-      height: 1.2,
-      letterSpacing: 0.1,
-    );
+    return ThemeAType.body(
+      size: 13.5,
+      color: p.textDark,
+    ).copyWith(fontWeight: FontWeight.w600, height: 1.2, letterSpacing: 0.1);
   }
 
   @override
@@ -126,7 +139,10 @@ class _NewsHeadlineTickerState extends State<NewsHeadlineTicker>
                 child: _LiveBadge(palette: p),
               ),
               Expanded(
-                child: _controller == null || _segmentWidth <= 0 || _loopText.isEmpty
+                child:
+                    _controller == null ||
+                        _segmentWidth <= 0 ||
+                        _loopText.isEmpty
                     ? Padding(
                         padding: const EdgeInsets.only(right: 10),
                         child: Text(
@@ -263,8 +279,10 @@ class _LiveBadgeState extends State<_LiveBadge> {
           const SizedBox(width: 4),
           Text(
             'LIVE',
-            style: ThemeAType.label(size: 10, color: widget.palette.positive)
-                .copyWith(letterSpacing: 0.6, fontWeight: FontWeight.w800),
+            style: ThemeAType.label(
+              size: 10,
+              color: widget.palette.positive,
+            ).copyWith(letterSpacing: 0.6, fontWeight: FontWeight.w800),
           ),
         ],
       ),

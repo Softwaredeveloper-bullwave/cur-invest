@@ -30,7 +30,10 @@ class AppDecorations {
     );
   }
 
-  static BoxDecoration premiumTile(BuildContext context, {required Color accent}) {
+  static BoxDecoration premiumTile(
+    BuildContext context, {
+    required Color accent,
+  }) {
     return context.palette.cardDecoration(shadowTint: accent, radius: 24);
   }
 

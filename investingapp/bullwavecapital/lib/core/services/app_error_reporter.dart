@@ -73,7 +73,10 @@ class AppErrorReporter {
         // Discard malformed local reports.
       }
     }
-    await prefs.setStringList(_queueKey, remaining.take(_maxQueueSize).toList());
+    await prefs.setStringList(
+      _queueKey,
+      remaining.take(_maxQueueSize).toList(),
+    );
   }
 
   Future<bool> _send(Map<String, Object?> payload) async {
@@ -136,28 +139,42 @@ class AppErrorReporter {
   }
 
   @visibleForTesting
-  static bool isReportingLocation(String location) => location.contains(_reportPath);
+  static bool isReportingLocation(String location) =>
+      location.contains(_reportPath);
 
   @visibleForTesting
   bool registerFingerprint(String fingerprint, DateTime now) {
-    _recent.removeWhere((_, seen) => now.difference(seen) > const Duration(minutes: 5));
+    _recent.removeWhere(
+      (_, seen) => now.difference(seen) > const Duration(minutes: 5),
+    );
     final seen = _recent[fingerprint];
     if (seen != null && now.difference(seen) < const Duration(minutes: 1)) {
       return false;
     }
     _recent[fingerprint] = now;
-    _sentAt.removeWhere((sent) => now.difference(sent) > const Duration(minutes: 1));
+    _sentAt.removeWhere(
+      (sent) => now.difference(sent) > const Duration(minutes: 1),
+    );
     return _sentAt.length < _maxReportsPerMinute;
   }
 
   static String sanitize(String value, {int limit = 1000}) {
     var cleaned = value
         .replaceAll(
-          RegExp(r'\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b', caseSensitive: false),
+          RegExp(
+            r'\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b',
+            caseSensitive: false,
+          ),
           '[email]',
         )
-        .replaceAll(RegExp(r'(?<!\d)(?:\+?91[- ]?)?[6-9]\d{9}(?!\d)'), '[phone]')
-        .replaceAll(RegExp(r'\b[A-Z]{5}\d{4}[A-Z]\b', caseSensitive: false), '[pan]')
+        .replaceAll(
+          RegExp(r'(?<!\d)(?:\+?91[- ]?)?[6-9]\d{9}(?!\d)'),
+          '[phone]',
+        )
+        .replaceAll(
+          RegExp(r'\b[A-Z]{5}\d{4}[A-Z]\b', caseSensitive: false),
+          '[pan]',
+        )
         .replaceAll(RegExp(r'(?<!\d)\d{12}(?!\d)'), '[number]');
     if (cleaned.length > limit) cleaned = cleaned.substring(0, limit);
     return cleaned;

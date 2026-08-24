@@ -56,7 +56,8 @@ class DateFormatter {
   static final DateFormat _short = DateFormat('dd/MM/yyyy');
 
   static String display(DateTime date) => _display.format(date.toLocal());
-  static String displayWithTime(DateTime date) => _displayTime.format(date.toLocal());
+  static String displayWithTime(DateTime date) =>
+      _displayTime.format(date.toLocal());
   static String short(DateTime date) => _short.format(date.toLocal());
 
   /// Parse API date-only strings (yyyy-MM-dd) without UTC timezone shift.
@@ -82,11 +83,22 @@ class DateFormatter {
     if (date == today.add(const Duration(days: 1))) return 'Tomorrow';
     const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     final showYear = d.year != now.year;
-    final dayPart = '${d.day} ${months[d.month - 1]}${showYear ? ' ${d.year}' : ''}';
+    final dayPart =
+        '${d.day} ${months[d.month - 1]}${showYear ? ' ${d.year}' : ''}';
     return '${weekdays[d.weekday - 1]}, $dayPart';
   }
 }

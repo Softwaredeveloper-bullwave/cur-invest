@@ -59,9 +59,7 @@ class LegalAcceptanceCheckbox extends StatelessWidget {
               TextSpan(
                 style: baseStyle,
                 children: [
-                  const TextSpan(
-                    text: 'I agree to the ',
-                  ),
+                  const TextSpan(text: 'I agree to the '),
                   TextSpan(
                     text: 'Terms & Conditions',
                     style: linkStyle,
@@ -123,7 +121,9 @@ class KycConsentCard extends StatelessWidget {
             Expanded(
               child: Text.rich(
                 TextSpan(
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.5),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(height: 1.5),
                   children: [
                     const TextSpan(
                       text:

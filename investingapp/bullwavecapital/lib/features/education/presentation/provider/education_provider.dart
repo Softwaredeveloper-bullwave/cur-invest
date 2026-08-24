@@ -20,7 +20,8 @@ class EducationProvider extends ChangeNotifier {
   String? get error => _error;
   DateTime? get updatedAt => _updatedAt;
 
-  QuizAttemptResult? latestAttemptFor(String quizSlug) => _latestAttempts[quizSlug];
+  QuizAttemptResult? latestAttemptFor(String quizSlug) =>
+      _latestAttempts[quizSlug];
 
   Future<void> ensureLoaded({bool force = false}) async {
     if (_hasLoaded && _categories.isNotEmpty && !force) return;
@@ -85,7 +86,10 @@ class EducationProvider extends ChangeNotifier {
     return null;
   }
 
-  Future<InvestmentDocCategory?> fetchCategory(String slug, {bool force = false}) async {
+  Future<InvestmentDocCategory?> fetchCategory(
+    String slug, {
+    bool force = false,
+  }) async {
     await ensureLoaded(force: force);
     final cached = categoryById(slug);
     if (cached != null && !force) return cached;
@@ -119,7 +123,10 @@ class EducationProvider extends ChangeNotifier {
     }
   }
 
-  Future<InvestmentDocQuiz?> fetchQuiz(String quizSlug, {bool force = false}) async {
+  Future<InvestmentDocQuiz?> fetchQuiz(
+    String quizSlug, {
+    bool force = false,
+  }) async {
     await ensureLoaded();
     final cached = quizById(quizSlug);
     if (cached != null && cached.questions.isNotEmpty && !force) return cached;
@@ -134,7 +141,10 @@ class EducationProvider extends ChangeNotifier {
     }
   }
 
-  Future<QuizAttemptResult?> submitQuiz(String quizSlug, List<int?> answers) async {
+  Future<QuizAttemptResult?> submitQuiz(
+    String quizSlug,
+    List<int?> answers,
+  ) async {
     try {
       final result = await _api.submitEducationQuiz(quizSlug, answers);
       _latestAttempts[quizSlug] = result;
@@ -150,7 +160,8 @@ class EducationProvider extends ChangeNotifier {
     if (idx >= 0) {
       _categories[idx] = category;
     } else {
-      _categories = [..._categories, category]..sort((a, b) => a.title.compareTo(b.title));
+      _categories = [..._categories, category]
+        ..sort((a, b) => a.title.compareTo(b.title));
     }
   }
 

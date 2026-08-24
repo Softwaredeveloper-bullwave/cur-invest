@@ -1,7 +1,7 @@
 name: bullwave_invest
 description: Capital BullWave — Market Learning & Paper Trading Simulator (no real money)
 publish_to: 'none'
-version: 1.2.1+8
+version: 1.2.3+10
 
 environment:
   sdk: ^3.12.2
@@ -22,6 +22,9 @@ dependencies:
   http_parser: ^4.1.2
   dio: ^5.7.0
   shared_preferences: ^2.3.3
+  flutter_secure_storage: ^11.0.0
+  local_auth: ^2.3.0
+  crypto: ^3.0.6
   image_picker: ^1.1.2
   camera: ^0.11.0+2
   camera_desktop: ^1.2.1

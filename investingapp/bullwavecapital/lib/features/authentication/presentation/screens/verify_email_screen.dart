@@ -25,7 +25,9 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
     super.initState();
     final auth = context.read<AuthProvider>();
     _emailController = TextEditingController(
-      text: auth.pendingEmail.isNotEmpty ? auth.pendingEmail : (auth.user?.email ?? ''),
+      text: auth.pendingEmail.isNotEmpty
+          ? auth.pendingEmail
+          : (auth.user?.email ?? ''),
     );
   }
 

@@ -16,7 +16,8 @@ class FeaturedPlansListScreen extends StatefulWidget {
   const FeaturedPlansListScreen({super.key});
 
   @override
-  State<FeaturedPlansListScreen> createState() => _FeaturedPlansListScreenState();
+  State<FeaturedPlansListScreen> createState() =>
+      _FeaturedPlansListScreenState();
 }
 
 class _FeaturedPlansListScreenState extends State<FeaturedPlansListScreen> {

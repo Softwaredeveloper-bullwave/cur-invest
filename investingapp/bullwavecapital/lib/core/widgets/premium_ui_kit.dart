@@ -145,9 +145,16 @@ class PremiumSearchBar extends StatelessWidget {
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: GoogleFonts.inter(color: ThemeA.textGrey, fontSize: 15),
-            prefixIcon: const Icon(Icons.search_rounded, color: ThemeA.textGrey, size: 22),
+            prefixIcon: const Icon(
+              Icons.search_rounded,
+              color: ThemeA.textGrey,
+              size: 22,
+            ),
             border: InputBorder.none,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 8,
+              vertical: 14,
+            ),
           ),
         ),
       );
@@ -209,7 +216,9 @@ class GradientActionButton extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(999),
             border: Border.all(
-              color: p.isDark ? p.primary.withValues(alpha: 0.45) : p.borderLight,
+              color: p.isDark
+                  ? p.primary.withValues(alpha: 0.45)
+                  : p.borderLight,
             ),
             color: p.isDark ? p.surface : p.card,
           ),
@@ -235,7 +244,9 @@ class GradientActionButton extends StatelessWidget {
           color: p.isDark ? p.primary : p.heroCard,
           boxShadow: [
             BoxShadow(
-              color: (p.isDark ? p.primary : p.heroCard).withValues(alpha: 0.22),
+              color: (p.isDark ? p.primary : p.heroCard).withValues(
+                alpha: 0.22,
+              ),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -246,7 +257,11 @@ class GradientActionButton extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (icon != null) ...[
-              Icon(icon, color: p.isDark ? p.onPrimary : p.heroCardFg, size: 18),
+              Icon(
+                icon,
+                color: p.isDark ? p.onPrimary : p.heroCardFg,
+                size: 18,
+              ),
               const SizedBox(width: 6),
             ],
             Text(
@@ -380,7 +395,9 @@ class AiInsightCard extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(24),
           gradient: AppColors.aiInsightGradient,
-          border: Border.all(color: AppColors.brandPrimaryLight.withValues(alpha: 0.35)),
+          border: Border.all(
+            color: AppColors.brandPrimaryLight.withValues(alpha: 0.35),
+          ),
           boxShadow: [
             BoxShadow(
               color: AppColors.brandPrimary.withValues(alpha: 0.35),
@@ -410,7 +427,11 @@ class AiInsightCard extends StatelessWidget {
                   ),
                 ],
               ),
-              child: const Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 24),
+              child: const Icon(
+                Icons.auto_awesome_rounded,
+                color: Colors.white,
+                size: 24,
+              ),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -446,7 +467,11 @@ class AiInsightCard extends StatelessWidget {
                 color: Colors.white.withValues(alpha: 0.12),
                 border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
               ),
-              child: const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 20),
+              child: const Icon(
+                Icons.arrow_forward_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
             ),
           ],
         ),

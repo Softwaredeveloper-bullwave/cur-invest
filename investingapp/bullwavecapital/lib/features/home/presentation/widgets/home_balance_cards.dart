@@ -42,8 +42,8 @@ class HomeBalanceCards extends StatelessWidget {
             sublabel: dayPnl != 0
                 ? '${pnlPositive ? '+' : ''}${CurrencyFormatter.formatCompact(dayPnl)} today'
                 : paperOnly
-                    ? 'Virtual holdings value'
-                    : 'Total holdings value',
+                ? 'Virtual holdings value'
+                : 'Total holdings value',
             pnlBadge: dayPnl != 0
                 ? _PnlBadge(value: dayPnl, positive: pnlPositive)
                 : null,
@@ -60,19 +60,24 @@ class HomeBalanceCards extends StatelessWidget {
             sublabel: paperOnly
                 ? 'Virtual money for paper trades'
                 : walletBalance > 0
-                    ? 'Ready to invest'
-                    : 'Tap to add funds',
+                ? 'Ready to invest'
+                : 'Tap to add funds',
             trailing: !paperOnly && walletBalance <= 0
                 ? Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: p.accentSurfaceFg.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(999),
                     ),
                     child: Text(
                       '+ Add',
-                      style: ThemeAType.label(size: 10, color: p.accentSurfaceFg)
-                          .copyWith(fontWeight: FontWeight.w800),
+                      style: ThemeAType.label(
+                        size: 10,
+                        color: p.accentSurfaceFg,
+                      ).copyWith(fontWeight: FontWeight.w800),
                     ),
                   )
                 : null,
@@ -111,8 +116,10 @@ class _PnlBadge extends StatelessWidget {
           const SizedBox(width: 3),
           Text(
             CurrencyFormatter.formatCompact(value.abs()),
-            style: ThemeAType.label(size: 10, color: color)
-                .copyWith(fontWeight: FontWeight.w800),
+            style: ThemeAType.label(
+              size: 10,
+              color: color,
+            ).copyWith(fontWeight: FontWeight.w800),
           ),
         ],
       ),
@@ -147,8 +154,12 @@ class _BalanceCard extends StatelessWidget {
     final isHero = style == _BalanceCardStyle.hero;
 
     final fg = isHero ? p.heroCardFg : p.accentSurfaceFg;
-    final muted = isHero ? p.heroCardMuted : p.accentSurfaceFg.withValues(alpha: 0.7);
-    final decoration = isHero ? p.heroCardDecoration() : p.accentCardDecoration();
+    final muted = isHero
+        ? p.heroCardMuted
+        : p.accentSurfaceFg.withValues(alpha: 0.7);
+    final decoration = isHero
+        ? p.heroCardDecoration()
+        : p.accentCardDecoration();
     final iconBg = isHero
         ? Colors.white.withValues(alpha: 0.12)
         : Colors.black.withValues(alpha: 0.1);
@@ -193,10 +204,7 @@ class _BalanceCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 6),
-                Text(
-                  label,
-                  style: ThemeAType.cardTitle(size: 13, color: fg),
-                ),
+                Text(label, style: ThemeAType.cardTitle(size: 13, color: fg)),
                 const SizedBox(height: 2),
                 Text(
                   sublabel,

@@ -12,9 +12,11 @@ List<LegalSection> get cbwPrivacySections => <LegalSection>[
     number: 1,
     title: 'INFORMATION WE COLLECT',
     blocks: [
-      LegalBlock(paragraphs: [
-        'CBW collects information necessary to create and verify your account, provide our Services, maintain security, comply with applicable legal requirements, and prevent fraud.',
-      ]),
+      LegalBlock(
+        paragraphs: [
+          'CBW collects information necessary to create and verify your account, provide our Services, maintain security, comply with applicable legal requirements, and prevent fraud.',
+        ],
+      ),
       LegalBlock(
         paragraphs: [
           '1.1 Mobile Number',
@@ -28,9 +30,11 @@ List<LegalSection> get cbwPrivacySections => <LegalSection>[
           'Important service-related communications',
         ],
       ),
-      LegalBlock(paragraphs: [
-        'CBW may use a third-party telecommunications or OTP service provider to deliver or place an OTP verification call.',
-      ]),
+      LegalBlock(
+        paragraphs: [
+          'CBW may use a third-party telecommunications or OTP service provider to deliver or place an OTP verification call.',
+        ],
+      ),
     ],
   ),
   LegalSection(
@@ -49,9 +53,11 @@ List<LegalSection> get cbwPrivacySections => <LegalSection>[
           'Security and verification logs',
         ],
       ),
-      LegalBlock(paragraphs: [
-        'OTP information is used for authentication and security purposes. Users should never share an OTP with another person, including CBW personnel.',
-      ]),
+      LegalBlock(
+        paragraphs: [
+          'OTP information is used for authentication and security purposes. Users should never share an OTP with another person, including CBW personnel.',
+        ],
+      ),
     ],
   ),
   LegalSection(
@@ -59,7 +65,9 @@ List<LegalSection> get cbwPrivacySections => <LegalSection>[
     title: 'EMAIL VERIFICATION',
     blocks: [
       LegalBlock(
-        paragraphs: ['After mobile verification, CBW may request your email address. We may collect:'],
+        paragraphs: [
+          'After mobile verification, CBW may request your email address. We may collect:',
+        ],
         bullets: [
           'Email address',
           'Email verification status and records',
@@ -94,7 +102,9 @@ List<LegalSection> get cbwPrivacySections => <LegalSection>[
         ],
       ),
       LegalBlock(
-        paragraphs: ['PAN information is used for identity verification, onboarding, compliance, fraud prevention, and maintaining accurate records.'],
+        paragraphs: [
+          'PAN information is used for identity verification, onboarding, compliance, fraud prevention, and maintaining accurate records.',
+        ],
       ),
     ],
   ),
@@ -113,7 +123,11 @@ List<LegalSection> get cbwPrivacySections => <LegalSection>[
           'Information made available through the authorized verification process',
         ],
       ),
-      LegalBlock(paragraphs: ['CBW will only request and process information necessary for the relevant verification purpose.']),
+      LegalBlock(
+        paragraphs: [
+          'CBW will only request and process information necessary for the relevant verification purpose.',
+        ],
+      ),
     ],
   ),
   LegalSection(
@@ -121,7 +135,9 @@ List<LegalSection> get cbwPrivacySections => <LegalSection>[
     title: 'BANK ACCOUNT VERIFICATION',
     blocks: [
       LegalBlock(
-        paragraphs: ['CBW may require bank account verification. Information may include:'],
+        paragraphs: [
+          'CBW may require bank account verification. Information may include:',
+        ],
         bullets: [
           'Account holder name',
           'Bank account number or masked account number',
@@ -129,9 +145,11 @@ List<LegalSection> get cbwPrivacySections => <LegalSection>[
           'Verification status and reference IDs',
         ],
       ),
-      LegalBlock(paragraphs: [
-        'CBW will not request your internet banking password, ATM PIN, UPI PIN, or card PIN.',
-      ]),
+      LegalBlock(
+        paragraphs: [
+          'CBW will not request your internet banking password, ATM PIN, UPI PIN, or card PIN.',
+        ],
+      ),
     ],
   ),
   LegalSection(
@@ -139,7 +157,9 @@ List<LegalSection> get cbwPrivacySections => <LegalSection>[
     title: 'UPI INFORMATION',
     blocks: [
       LegalBlock(
-        paragraphs: ['CBW may request UPI information where required. This may include:'],
+        paragraphs: [
+          'CBW may request UPI information where required. This may include:',
+        ],
         bullets: [
           'UPI ID/VPA',
           'UPI verification status',
@@ -155,7 +175,9 @@ List<LegalSection> get cbwPrivacySections => <LegalSection>[
     title: 'SELFIE / PHOTOGRAPH VERIFICATION',
     blocks: [
       LegalBlock(
-        paragraphs: ['CBW may require a selfie for identity verification. The selfie may be:'],
+        paragraphs: [
+          'CBW may require a selfie for identity verification. The selfie may be:',
+        ],
         bullets: [
           'Uploaded through the CBW application',
           'Transmitted securely to our backend',
@@ -163,9 +185,11 @@ List<LegalSection> get cbwPrivacySections => <LegalSection>[
           'Compared with permitted identity information where applicable',
         ],
       ),
-      LegalBlock(paragraphs: [
-        'Selfie and related verification information may be accessible to authorized CBW personnel through the administrative panel solely for verification, compliance, fraud prevention, and customer support. We do not use selfies for advertising or unrelated purposes.',
-      ]),
+      LegalBlock(
+        paragraphs: [
+          'Selfie and related verification information may be accessible to authorized CBW personnel through the administrative panel solely for verification, compliance, fraud prevention, and customer support. We do not use selfies for advertising or unrelated purposes.',
+        ],
+      ),
     ],
   ),
   LegalSection(
@@ -173,7 +197,9 @@ List<LegalSection> get cbwPrivacySections => <LegalSection>[
     title: 'ADMIN PANEL ACCESS',
     blocks: [
       LegalBlock(
-        paragraphs: ['Authorized CBW personnel may access information necessary to:'],
+        paragraphs: [
+          'Authorized CBW personnel may access information necessary to:',
+        ],
         bullets: [
           'Review verification and KYC status',
           'Review submitted verification information and selfies',
@@ -182,7 +208,11 @@ List<LegalSection> get cbwPrivacySections => <LegalSection>[
           'Provide customer support and maintain compliance',
         ],
       ),
-      LegalBlock(paragraphs: ['Administrative access is restricted through authentication and access-control measures.']),
+      LegalBlock(
+        paragraphs: [
+          'Administrative access is restricted through authentication and access-control measures.',
+        ],
+      ),
     ],
   ),
   LegalSection(
@@ -199,9 +229,11 @@ List<LegalSection> get cbwPrivacySections => <LegalSection>[
           'Date and time of access',
         ],
       ),
-      LegalBlock(paragraphs: [
-        'This information may be used for security, fraud prevention, troubleshooting, performance, and service reliability.',
-      ]),
+      LegalBlock(
+        paragraphs: [
+          'This information may be used for security, fraud prevention, troubleshooting, performance, and service reliability.',
+        ],
+      ),
     ],
   ),
   LegalSection(
@@ -220,9 +252,11 @@ List<LegalSection> get cbwPrivacySections => <LegalSection>[
           'Selfie verification',
         ],
       ),
-      LegalBlock(paragraphs: [
-        'The exact information requested may vary depending on services, verification methods, legal requirements, and user circumstances.',
-      ]),
+      LegalBlock(
+        paragraphs: [
+          'The exact information requested may vary depending on services, verification methods, legal requirements, and user circumstances.',
+        ],
+      ),
     ],
   ),
   LegalSection(
@@ -246,12 +280,14 @@ List<LegalSection> get cbwPrivacySections => <LegalSection>[
     number: 13,
     title: 'FINANCIAL AND INVESTMENT DISCLAIMER',
     blocks: [
-      LegalBlock(paragraphs: [
-        'CBW may provide market information, analytical tools, charts, and investment-related features.',
-        'CBW does not guarantee profits, returns, investment performance, or financial outcomes.',
-        'Financial markets involve risk, and users may lose money. Past performance does not guarantee future performance.',
-        'Users should make investment decisions based on their own assessment and, where appropriate, seek advice from a qualified financial professional.',
-      ]),
+      LegalBlock(
+        paragraphs: [
+          'CBW may provide market information, analytical tools, charts, and investment-related features.',
+          'CBW does not guarantee profits, returns, investment performance, or financial outcomes.',
+          'Financial markets involve risk, and users may lose money. Past performance does not guarantee future performance.',
+          'Users should make investment decisions based on their own assessment and, where appropriate, seek advice from a qualified financial professional.',
+        ],
+      ),
     ],
   ),
   LegalSection(
@@ -259,7 +295,9 @@ List<LegalSection> get cbwPrivacySections => <LegalSection>[
     title: 'SHARING OF PERSONAL INFORMATION',
     blocks: [
       LegalBlock(
-        paragraphs: ['CBW may share information only when reasonably necessary. Information may be processed by:'],
+        paragraphs: [
+          'CBW may share information only when reasonably necessary. Information may be processed by:',
+        ],
         bullets: [
           'Verification, PAN, identity, DigiLocker, bank, and UPI providers',
           'OTP/voice-call service providers',
@@ -275,7 +313,9 @@ List<LegalSection> get cbwPrivacySections => <LegalSection>[
     title: 'DATA SECURITY',
     blocks: [
       LegalBlock(
-        paragraphs: ['CBW takes reasonable technical and organizational measures to protect information, including:'],
+        paragraphs: [
+          'CBW takes reasonable technical and organizational measures to protect information, including:',
+        ],
         bullets: [
           'Encryption during transmission and secure HTTPS/TLS connections',
           'Authentication controls and role-based administrative access',
@@ -283,9 +323,11 @@ List<LegalSection> get cbwPrivacySections => <LegalSection>[
           'Backup and recovery procedures',
         ],
       ),
-      LegalBlock(paragraphs: [
-        'No electronic system or internet transmission can be guaranteed to be completely secure.',
-      ]),
+      LegalBlock(
+        paragraphs: [
+          'No electronic system or internet transmission can be guaranteed to be completely secure.',
+        ],
+      ),
     ],
   ),
   LegalSection(
@@ -293,7 +335,9 @@ List<LegalSection> get cbwPrivacySections => <LegalSection>[
     title: 'DATA RETENTION',
     blocks: [
       LegalBlock(
-        paragraphs: ['CBW retains personal information only as long as reasonably necessary for:'],
+        paragraphs: [
+          'CBW retains personal information only as long as reasonably necessary for:',
+        ],
         bullets: [
           'Providing Services and maintaining accounts',
           'Completing verification and preventing fraud',
@@ -301,20 +345,24 @@ List<LegalSection> get cbwPrivacySections => <LegalSection>[
           'Meeting legal, regulatory, and financial record requirements',
         ],
       ),
-      LegalBlock(paragraphs: [
-        'Where information is no longer required, CBW will take reasonable steps to delete, anonymize, or securely dispose of it, subject to applicable retention obligations.',
-      ]),
+      LegalBlock(
+        paragraphs: [
+          'Where information is no longer required, CBW will take reasonable steps to delete, anonymize, or securely dispose of it, subject to applicable retention obligations.',
+        ],
+      ),
     ],
   ),
   LegalSection(
     number: 17,
     title: 'ACCOUNT DELETION',
     blocks: [
-      LegalBlock(paragraphs: [
-        'Users may request deletion of their CBW account through in-app options or ${LegalConfig.accountDeletionUrl}.',
-        'When a deletion request is processed, CBW will delete or anonymize applicable personal information unless retention is required or permitted by law.',
-        'Certain information may be retained for legal compliance, fraud prevention, security, dispute resolution, or financial record-keeping.',
-      ]),
+      LegalBlock(
+        paragraphs: [
+          'Users may request deletion of their CBW account through in-app options or ${LegalConfig.accountDeletionUrl}.',
+          'When a deletion request is processed, CBW will delete or anonymize applicable personal information unless retention is required or permitted by law.',
+          'Certain information may be retained for legal compliance, fraud prevention, security, dispute resolution, or financial record-keeping.',
+        ],
+      ),
     ],
   ),
   LegalSection(
@@ -331,29 +379,35 @@ List<LegalSection> get cbwPrivacySections => <LegalSection>[
           'Raise privacy-related complaints',
         ],
       ),
-      LegalBlock(paragraphs: [
-        'Users may exercise applicable rights by contacting CBW using the contact information below.',
-      ]),
+      LegalBlock(
+        paragraphs: [
+          'Users may exercise applicable rights by contacting CBW using the contact information below.',
+        ],
+      ),
     ],
   ),
   LegalSection(
     number: 19,
     title: 'CONSENT',
     blocks: [
-      LegalBlock(paragraphs: [
-        'CBW may request consent before collecting or processing certain personal or sensitive information.',
-        'For identity verification, users may be required to provide authorization through the applicable verification service.',
-      ]),
+      LegalBlock(
+        paragraphs: [
+          'CBW may request consent before collecting or processing certain personal or sensitive information.',
+          'For identity verification, users may be required to provide authorization through the applicable verification service.',
+        ],
+      ),
     ],
   ),
   LegalSection(
     number: 20,
     title: 'CHILDREN\'S PRIVACY',
     blocks: [
-      LegalBlock(paragraphs: [
-        'CBW is intended for users who are legally eligible to use the financial and investment-related services provided by the application.',
-        'CBW does not knowingly collect personal information from children in violation of applicable laws.',
-      ]),
+      LegalBlock(
+        paragraphs: [
+          'CBW is intended for users who are legally eligible to use the financial and investment-related services provided by the application.',
+          'CBW does not knowingly collect personal information from children in violation of applicable laws.',
+        ],
+      ),
     ],
   ),
   LegalSection(
@@ -368,37 +422,43 @@ List<LegalSection> get cbwPrivacySections => <LegalSection>[
           'Cloud hosting, security, analytics, and market data',
         ],
       ),
-      LegalBlock(paragraphs: [
-        'Third-party providers may process information according to their own privacy policies and applicable laws.',
-      ]),
+      LegalBlock(
+        paragraphs: [
+          'Third-party providers may process information according to their own privacy policies and applicable laws.',
+        ],
+      ),
     ],
   ),
   LegalSection(
     number: 22,
     title: 'CHANGES TO THIS PRIVACY POLICY',
     blocks: [
-      LegalBlock(paragraphs: [
-        'CBW may update this Privacy Policy from time to time. The "Last Updated" date will be updated.',
-        'Where required by applicable law, CBW may provide additional notice or obtain consent for material changes.',
-      ]),
+      LegalBlock(
+        paragraphs: [
+          'CBW may update this Privacy Policy from time to time. The "Last Updated" date will be updated.',
+          'Where required by applicable law, CBW may provide additional notice or obtain consent for material changes.',
+        ],
+      ),
     ],
   ),
   LegalSection(
     number: 23,
     title: 'CONTACT INFORMATION',
     blocks: [
-      LegalBlock(paragraphs: [
-        'Company: ${LegalConfig.legalCompanyName}',
-        'App: ${LegalConfig.appDisplayName}',
-        'Privacy Email: ${LegalConfig.privacyEmail}',
-        'Support Email: ${LegalConfig.supportEmail}',
-        'Phone: ${LegalConfig.supportPhone}',
-        'Website: ${LegalConfig.website}',
-        'Registered Address: ${LegalConfig.companyAddress}',
-        'Account Deletion: ${LegalConfig.accountDeletionUrl}',
-        'Grievance/Privacy Contact: ${LegalConfig.grievanceContact}',
-        'Grievance Email: ${LegalConfig.grievanceEmail}',
-      ]),
+      LegalBlock(
+        paragraphs: [
+          'Company: ${LegalConfig.legalCompanyName}',
+          'App: ${LegalConfig.appDisplayName}',
+          'Privacy Email: ${LegalConfig.privacyEmail}',
+          'Support Email: ${LegalConfig.supportEmail}',
+          'Phone: ${LegalConfig.supportPhone}',
+          'Website: ${LegalConfig.website}',
+          'Registered Address: ${LegalConfig.companyAddress}',
+          'Account Deletion: ${LegalConfig.accountDeletionUrl}',
+          'Grievance/Privacy Contact: ${LegalConfig.grievanceContact}',
+          'Grievance Email: ${LegalConfig.grievanceEmail}',
+        ],
+      ),
     ],
   ),
   LegalSection(
@@ -415,7 +475,11 @@ List<LegalSection> get cbwPrivacySections => <LegalSection>[
           'Card PIN',
         ],
       ),
-      LegalBlock(paragraphs: ['Users should never disclose these credentials to anyone.']),
+      LegalBlock(
+        paragraphs: [
+          'Users should never disclose these credentials to anyone.',
+        ],
+      ),
     ],
   ),
 ];

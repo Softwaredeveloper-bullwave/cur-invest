@@ -30,6 +30,9 @@ class AppRoutes {
   static const String upiVerification = '/kyc/upi';
   static const String identityVerification = '/kyc/identity';
   static const String nameMatch = '/kyc/name-match';
+  static const String setupMpin = '/setup-mpin';
+  static const String appLock = '/app-lock';
+  static const String changeMpin = '/change-mpin';
   static const String settings = '/settings';
   static const String editProfile = '/edit-profile';
   static const String referral = '/referral';
@@ -77,7 +80,8 @@ class AppRoutes {
   static const String documentArticle = '/documents/:categoryId/:articleId';
   static const String documentQuiz = '/documents/quiz/:quizId';
 
-  static String documentCategoryPath(String categoryId) => '/documents/$categoryId';
+  static String documentCategoryPath(String categoryId) =>
+      '/documents/$categoryId';
 
   static String documentArticlePath(String categoryId, String articleId) =>
       '/documents/$categoryId/$articleId';

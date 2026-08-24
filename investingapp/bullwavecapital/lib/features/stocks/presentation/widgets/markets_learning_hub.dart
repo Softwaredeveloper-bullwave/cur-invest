@@ -64,7 +64,10 @@ class MarketsLearningHub extends StatelessWidget {
                   child: ScaleTap(
                     onTap: item.onTap,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 12,
+                      ),
                       decoration: BoxDecoration(
                         color: p.surface.withValues(alpha: 0.45),
                         borderRadius: BorderRadius.circular(16),
@@ -83,8 +86,20 @@ class MarketsLearningHub extends StatelessWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(item.label, style: ThemeAType.cardTitle(color: p.textDark, size: 15)),
-                                Text(item.subtitle, style: ThemeAType.body(color: p.textGrey, size: 12)),
+                                Text(
+                                  item.label,
+                                  style: ThemeAType.cardTitle(
+                                    color: p.textDark,
+                                    size: 15,
+                                  ),
+                                ),
+                                Text(
+                                  item.subtitle,
+                                  style: ThemeAType.body(
+                                    color: p.textGrey,
+                                    size: 12,
+                                  ),
+                                ),
                               ],
                             ),
                           ),

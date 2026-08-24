@@ -33,7 +33,10 @@ class TradingViewEmbedUrl {
     }
 
     final query = params.entries
-        .map((e) => '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
+        .map(
+          (e) =>
+              '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}',
+        )
         .join('&');
     return 'https://s.tradingview.com/widgetembed/?$query';
   }

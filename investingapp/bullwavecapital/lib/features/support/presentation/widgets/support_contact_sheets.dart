@@ -44,7 +44,11 @@ class SupportContactSheets {
       builder: (ctx) => _EmailQuerySheet(
         onSend: (subject, message) async {
           Navigator.of(ctx).pop();
-          await SupportLauncher.openEmail(context, subject: subject, body: message);
+          await SupportLauncher.openEmail(
+            context,
+            subject: subject,
+            body: message,
+          );
         },
       ),
     );
@@ -114,14 +118,14 @@ class _SheetShell extends StatelessWidget {
                       children: [
                         Text(
                           title,
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.w800,
-                              ),
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.w800),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           subtitle,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
                                 color: AppColors.green,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -246,7 +250,9 @@ class _CallQuerySheetState extends State<_CallQuerySheet> {
           children: [
             Text(
               'Speak with our team',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 6),
             Text(
@@ -277,7 +283,9 @@ class _EmailQuerySheetState extends State<_EmailQuerySheet> {
   @override
   void initState() {
     super.initState();
-    _subjectController = TextEditingController(text: SupportContact.emailSubject);
+    _subjectController = TextEditingController(
+      text: SupportContact.emailSubject,
+    );
     _messageController = TextEditingController(
       text: 'Hi BullWave team,\n\nI need help with:\n\n',
     );

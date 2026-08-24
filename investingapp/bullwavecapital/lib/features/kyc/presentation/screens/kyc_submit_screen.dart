@@ -117,7 +117,9 @@ class _KycSubmitScreenState extends State<KycSubmitScreen> {
 
   void _showSnack(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _pickDob() async {
@@ -171,7 +173,9 @@ class _KycSubmitScreenState extends State<KycSubmitScreen> {
             children: [
               Text(
                 'Submit your PAN for manual verification',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
               ),
               const SizedBox(height: 8),
               Text(
@@ -203,8 +207,9 @@ class _KycSubmitScreenState extends State<KycSubmitScreen> {
                   labelText: 'Full name (as per PAN)',
                   border: OutlineInputBorder(),
                 ),
-                validator: (v) =>
-                    (v ?? '').trim().length < 2 ? 'Enter your name as on PAN' : null,
+                validator: (v) => (v ?? '').trim().length < 2
+                    ? 'Enter your name as on PAN'
+                    : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -217,13 +222,17 @@ class _KycSubmitScreenState extends State<KycSubmitScreen> {
                   border: OutlineInputBorder(),
                   suffixIcon: Icon(Icons.calendar_today_outlined),
                 ),
-                validator: (v) => (v ?? '').isEmpty ? 'Select date of birth' : null,
+                validator: (v) =>
+                    (v ?? '').isEmpty ? 'Select date of birth' : null,
               ),
               const SizedBox(height: 20),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('PAN card photos', style: Theme.of(context).textTheme.titleSmall),
+                  Text(
+                    'PAN card photos',
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
                   Text(
                     '${_photos.length}/$_maxPhotos',
                     style: Theme.of(context).textTheme.bodySmall,
@@ -262,7 +271,11 @@ class _KycSubmitScreenState extends State<KycSubmitScreen> {
                                 customBorder: const CircleBorder(),
                                 child: const Padding(
                                   padding: EdgeInsets.all(4),
-                                  child: Icon(Icons.close, color: Colors.white, size: 16),
+                                  child: Icon(
+                                    Icons.close,
+                                    color: Colors.white,
+                                    size: 16,
+                                  ),
                                 ),
                               ),
                             ),
@@ -302,14 +315,22 @@ class _KycSubmitScreenState extends State<KycSubmitScreen> {
                 height: 52,
                 child: FilledButton(
                   onPressed: kyc.isLoading ? null : _submit,
-                  style: FilledButton.styleFrom(backgroundColor: AppColors.brandOrange),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.brandOrange,
+                  ),
                   child: kyc.isLoading
                       ? const SizedBox(
                           width: 22,
                           height: 22,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
                         )
-                      : const Text('Submit for verification', style: TextStyle(fontWeight: FontWeight.w800)),
+                      : const Text(
+                          'Submit for verification',
+                          style: TextStyle(fontWeight: FontWeight.w800),
+                        ),
                 ),
               ),
             ],

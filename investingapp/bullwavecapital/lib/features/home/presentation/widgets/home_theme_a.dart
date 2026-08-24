@@ -27,15 +27,19 @@ class HomeThemeA {
   static const negative = ThemeA.negative;
   static const cardRadius = ThemeA.cardRadius;
 
-  static BoxDecoration cardDecoration(BuildContext context, {Color? shadowTint}) =>
-      of(context).cardDecoration(shadowTint: shadowTint);
+  static BoxDecoration cardDecoration(
+    BuildContext context, {
+    Color? shadowTint,
+  }) => of(context).cardDecoration(shadowTint: shadowTint);
 
   static BoxDecoration iconCircleDecoration(
     BuildContext context, {
     Color? borderColor,
     Color? backgroundColor,
-  }) =>
-      of(context).iconCircleDecoration(borderColor: borderColor, backgroundColor: backgroundColor);
+  }) => of(context).iconCircleDecoration(
+    borderColor: borderColor,
+    backgroundColor: backgroundColor,
+  );
 }
 
 typedef HomeSectionHeader = AppSectionHeader;

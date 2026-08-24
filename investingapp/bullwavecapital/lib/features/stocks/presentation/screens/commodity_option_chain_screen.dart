@@ -19,10 +19,12 @@ class CommodityOptionChainScreen extends StatefulWidget {
   const CommodityOptionChainScreen({super.key, required this.commodityId});
 
   @override
-  State<CommodityOptionChainScreen> createState() => _CommodityOptionChainScreenState();
+  State<CommodityOptionChainScreen> createState() =>
+      _CommodityOptionChainScreenState();
 }
 
-class _CommodityOptionChainScreenState extends State<CommodityOptionChainScreen> {
+class _CommodityOptionChainScreenState
+    extends State<CommodityOptionChainScreen> {
   late String _commodityId;
 
   static const _commodityList = [
@@ -62,7 +64,8 @@ class _CommodityOptionChainScreenState extends State<CommodityOptionChainScreen>
               preferredSize: const Size.fromHeight(kToolbarHeight),
               child: Consumer<CommodityProvider>(
                 builder: (context, p, _) {
-                  final name = p.commodityById(_commodityId)?.shortName ?? 'Options';
+                  final name =
+                      p.commodityById(_commodityId)?.shortName ?? 'Options';
                   return CustomAppBar(
                     title: '$name Options',
                     subtitle: 'MCX-style chain • USD',
@@ -74,7 +77,10 @@ class _CommodityOptionChainScreenState extends State<CommodityOptionChainScreen>
               height: 52,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 itemCount: _commodityList.length,
                 separatorBuilder: (_, _) => const SizedBox(width: 8),
                 itemBuilder: (_, i) {
@@ -88,13 +94,18 @@ class _CommodityOptionChainScreenState extends State<CommodityOptionChainScreen>
                         ? Container(
                             width: 8,
                             height: 8,
-                            decoration: BoxDecoration(color: accent, shape: BoxShape.circle),
+                            decoration: BoxDecoration(
+                              color: accent,
+                              shape: BoxShape.circle,
+                            ),
                           )
                         : null,
                     selectedColor: accent.withValues(alpha: 0.18),
                     backgroundColor: colors.surfaceSecondary,
                     side: BorderSide(
-                      color: selected ? accent.withValues(alpha: 0.5) : colors.border,
+                      color: selected
+                          ? accent.withValues(alpha: 0.5)
+                          : colors.border,
                     ),
                     labelStyle: TextStyle(
                       fontWeight: FontWeight.w700,
@@ -134,19 +145,28 @@ class _CommodityOptionChainScreenState extends State<CommodityOptionChainScreen>
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.candlestick_chart_outlined, size: 48, color: colors.textMuted),
+                            Icon(
+                              Icons.candlestick_chart_outlined,
+                              size: 48,
+                              color: colors.textMuted,
+                            ),
                             const SizedBox(height: 16),
                             Text(
                               error ?? 'No options data',
                               textAlign: TextAlign.center,
-                              style: TextStyle(color: colors.textSecondary, fontWeight: FontWeight.w600),
+                              style: TextStyle(
+                                color: colors.textSecondary,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                             const SizedBox(height: 16),
                             FilledButton.icon(
                               onPressed: _load,
                               icon: const Icon(Icons.refresh_rounded),
                               label: const Text('Retry'),
-                              style: FilledButton.styleFrom(backgroundColor: AppColors.brandOrange),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: AppColors.brandOrange,
+                              ),
                             ),
                           ],
                         ),
@@ -155,7 +175,9 @@ class _CommodityOptionChainScreenState extends State<CommodityOptionChainScreen>
                   }
 
                   final expiries = provider.optionExpiries(_commodityId);
-                  final selectedExpiry = provider.optionSelectedExpiry(_commodityId);
+                  final selectedExpiry = provider.optionSelectedExpiry(
+                    _commodityId,
+                  );
 
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -165,34 +187,69 @@ class _CommodityOptionChainScreenState extends State<CommodityOptionChainScreen>
                         child: Container(
                           width: double.infinity,
                           padding: const EdgeInsets.all(16),
-                          decoration: AppDecorations.card(context, premium: true, glow: true),
+                          decoration: AppDecorations.card(
+                            context,
+                            premium: true,
+                            glow: true,
+                          ),
                           child: Row(
                             children: [
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text('Spot', style: TextStyle(color: colors.textMuted, fontSize: 12)),
+                                    Text(
+                                      'Spot',
+                                      style: TextStyle(
+                                        color: colors.textMuted,
+                                        fontSize: 12,
+                                      ),
+                                    ),
                                     Text(
                                       '\$${IndexFormatter.format(spot)}',
-                                      style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 24),
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w900,
+                                        fontSize: 24,
+                                      ),
                                     ),
-                                    Text(unit, style: TextStyle(color: colors.textSecondary, fontSize: 11)),
+                                    Text(
+                                      unit,
+                                      style: TextStyle(
+                                        color: colors.textSecondary,
+                                        fontSize: 11,
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 6,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: AppColors.green.withValues(alpha: 0.12),
+                                  color: AppColors.green.withValues(
+                                    alpha: 0.12,
+                                  ),
                                   borderRadius: BorderRadius.circular(999),
                                 ),
                                 child: const Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Icon(Icons.bolt_rounded, size: 14, color: AppColors.green),
+                                    Icon(
+                                      Icons.bolt_rounded,
+                                      size: 14,
+                                      color: AppColors.green,
+                                    ),
                                     SizedBox(width: 4),
-                                    Text('LIVE', style: TextStyle(color: AppColors.green, fontWeight: FontWeight.w800, fontSize: 11)),
+                                    Text(
+                                      'LIVE',
+                                      style: TextStyle(
+                                        color: AppColors.green,
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: 11,
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ),
@@ -208,7 +265,8 @@ class _CommodityOptionChainScreenState extends State<CommodityOptionChainScreen>
                             scrollDirection: Axis.horizontal,
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             itemCount: expiries.length,
-                            separatorBuilder: (_, _) => const SizedBox(width: 8),
+                            separatorBuilder: (_, _) =>
+                                const SizedBox(width: 8),
                             itemBuilder: (_, i) {
                               final expiry = expiries[i];
                               final selected = expiry == selectedExpiry;
@@ -218,9 +276,9 @@ class _CommodityOptionChainScreenState extends State<CommodityOptionChainScreen>
                                 onTap: loading
                                     ? null
                                     : () => provider.loadOptionChain(
-                                          _commodityId,
-                                          expiry: expiry,
-                                        ),
+                                        _commodityId,
+                                        expiry: expiry,
+                                      ),
                               );
                             },
                           ),
@@ -231,7 +289,11 @@ class _CommodityOptionChainScreenState extends State<CommodityOptionChainScreen>
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: Text(
                           'Tap CE or PE price to buy or sell',
-                          style: TextStyle(color: colors.textMuted, fontSize: 11, fontWeight: FontWeight.w600),
+                          style: TextStyle(
+                            color: colors.textMuted,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -241,11 +303,12 @@ class _CommodityOptionChainScreenState extends State<CommodityOptionChainScreen>
                           spot: spot,
                           strikeDecimals: _strikeDecimals(spot),
                           currencySymbol: '\$',
-                          onContractTap: (contract) => openOptionContractTradingPad(
-                            context,
-                            contract: contract,
-                            chainContext: OptionChainContext.commodity,
-                          ),
+                          onContractTap: (contract) =>
+                              openOptionContractTradingPad(
+                                context,
+                                contract: contract,
+                                chainContext: OptionChainContext.commodity,
+                              ),
                         ),
                       ),
                     ],

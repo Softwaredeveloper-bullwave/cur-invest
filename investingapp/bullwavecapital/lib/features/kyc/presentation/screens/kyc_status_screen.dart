@@ -37,7 +37,9 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
       body: Consumer<KycFlowProvider>(
         builder: (context, kyc, _) {
           if (kyc.isLoading && kyc.status == KycStatusModel.empty) {
-            return const Center(child: CircularProgressIndicator(color: AppColors.brandOrange));
+            return const Center(
+              child: CircularProgressIndicator(color: AppColors.brandOrange),
+            );
           }
 
           final s = kyc.status;
@@ -53,7 +55,9 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
                     Expanded(
                       child: Text(
                         'Verification Progress',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                     ),
                     KycStatusBadge(status: s.overallStatus),
@@ -76,20 +80,24 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
                     children: [
                       KycStepTile(
                         title: 'Mobile Verified',
-                        subtitle: s.mobileVerified ? 'OTP verified' : 'Login with phone OTP',
+                        subtitle: s.mobileVerified
+                            ? 'OTP verified'
+                            : 'Login with phone OTP',
                         completed: s.mobileVerified,
                       ),
                       KycStepTile(
                         title: 'PAN Verified',
-                        subtitle: s.panVerified ? '${s.panName} • ${s.panNumberMasked}' : 'Verify your PAN',
+                        subtitle: s.panVerified
+                            ? '${s.panName} • ${s.panNumberMasked}'
+                            : 'Verify your PAN',
                         completed: s.panVerified,
                       ),
                       KycStepTile(
                         title: 'Aadhaar Verified',
                         subtitle: s.aadhaarVerified
                             ? (s.aadhaarName.isEmpty
-                                ? 'Verified through DigiLocker'
-                                : '${s.aadhaarName} • DigiLocker')
+                                  ? 'Verified through DigiLocker'
+                                  : '${s.aadhaarName} • DigiLocker')
                             : 'Verify Aadhaar through DigiLocker',
                         completed: s.aadhaarVerified,
                       ),
@@ -116,8 +124,8 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
                           title: 'UPI Verified',
                           subtitle: s.upiVerified
                               ? (s.upiName.isEmpty
-                                  ? s.upiVpaMasked
-                                  : '${s.upiName} • ${s.upiVpaMasked}')
+                                    ? s.upiVpaMasked
+                                    : '${s.upiName} • ${s.upiVpaMasked}')
                               : s.paymentReviewPending
                               ? 'Under manual review (up to 24h)'
                               : 'Verify your UPI ID',
@@ -140,14 +148,17 @@ class _KycStatusScreenState extends State<KycStatusScreen> {
                 ],
                 const SizedBox(height: 24),
                 if (kyc.upiRequired &&
-                    (s.paymentReviewPending || s.bankDraftReady || !s.upiVerified) &&
+                    (s.paymentReviewPending ||
+                        s.bankDraftReady ||
+                        !s.upiVerified) &&
                     s.bankVerified &&
                     !s.upiVerified)
                   PrimaryButton(
                     label: s.paymentReviewPending
                         ? 'View review status'
                         : 'Continue to identity verification',
-                    onPressed: () => context.push(AppRoutes.identityVerification),
+                    onPressed: () =>
+                        context.push(AppRoutes.identityVerification),
                   )
                 else
                   PrimaryButton(

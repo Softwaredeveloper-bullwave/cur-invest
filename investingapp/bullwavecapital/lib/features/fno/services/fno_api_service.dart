@@ -27,10 +27,7 @@ class FnoApiService {
       final bytes = await document.readAsBytes();
       final name = document.name.isNotEmpty ? document.name : 'document.jpg';
       form.files.add(
-        MapEntry(
-          'document',
-          MultipartFile.fromBytes(bytes, filename: name),
-        ),
+        MapEntry('document', MultipartFile.fromBytes(bytes, filename: name)),
       );
     }
 
@@ -47,10 +44,7 @@ class FnoApiService {
       return FnoStatusModel.fromJson(res.data ?? {});
     } on DioException catch (e) {
       if (e.error is ApiException) throw e.error!;
-      throw ApiException(
-        e.response?.statusCode ?? 500,
-        _extractMessage(e),
-      );
+      throw ApiException(e.response?.statusCode ?? 500, _extractMessage(e));
     }
   }
 

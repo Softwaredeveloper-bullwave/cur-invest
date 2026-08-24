@@ -7,20 +7,34 @@ import '../../../../core/constants/brand.dart';
 import '../../../../core/constants/dimensions.dart';
 import '../../../../core/constants/legal_config.dart';
 import '../../../../core/constants/routes.dart';
+import '../../../../core/security/app_lock_provider.dart';
 import '../../../../core/theme/colors.dart';
 import '../../../../core/widgets/custom_app_bar.dart';
 import '../../../../core/widgets/custom_dialog.dart';
 import '../provider/app_provider.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AppLockProvider>().refreshBiometricAvailability();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: const CustomAppBar(title: 'Settings'),
-      body: Consumer<AppProvider>(
-        builder: (context, provider, _) {
+      body: Consumer2<AppProvider, AppLockProvider>(
+        builder: (context, provider, appLock, _) {
           return FutureBuilder<PackageInfo>(
             future: PackageInfo.fromPlatform(),
             builder: (context, snapshot) {
@@ -35,6 +49,80 @@ class SettingsScreen extends StatelessWidget {
               return ListView(
                 padding: const EdgeInsets.all(AppDimensions.paddingMd),
                 children: [
+                  Card(
+                    child: Column(
+                      children: [
+                        ListTile(
+                          leading: const Icon(Icons.lock_outline),
+                          title: const Text('App lock (MPIN)'),
+                          subtitle: Text(
+                            appLock.hasMpin
+                                ? 'MPIN is set for this device'
+                                : 'Set a 4-digit PIN for quick unlock',
+                          ),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () {
+                            if (appLock.hasMpin) {
+                              context.push(AppRoutes.changeMpin);
+                            } else {
+                              context.push(
+                                '${AppRoutes.setupMpin}?optional=false&return=settings',
+                              );
+                            }
+                          },
+                        ),
+                        if (appLock.hasMpin && appLock.biometricAvailable) ...[
+                          const Divider(height: 1),
+                          SwitchListTile(
+                            title: Text(appLock.biometricLabel),
+                            subtitle: const Text(
+                              'Use biometrics instead of MPIN when opening the app',
+                            ),
+                            value: appLock.biometricEnabled,
+                            onChanged: (value) async {
+                              final ok = await appLock.setBiometricEnabled(value);
+                              if (!context.mounted) return;
+                              if (!ok && appLock.error != null) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(appLock.error!)),
+                                );
+                              }
+                            },
+                            secondary: Icon(
+                              appLock.biometricLabel.contains('Face')
+                                  ? Icons.face_rounded
+                                  : Icons.fingerprint,
+                            ),
+                          ),
+                        ],
+                        if (appLock.hasMpin) ...[
+                          const Divider(height: 1),
+                          ListTile(
+                            leading: const Icon(
+                              Icons.no_encryption_gmailerrorred_outlined,
+                              color: AppColors.error,
+                            ),
+                            title: const Text(
+                              'Disable app lock',
+                              style: TextStyle(color: AppColors.error),
+                            ),
+                            onTap: () async {
+                              final confirm = await CustomDialog.showConfirm(
+                                context,
+                                title: 'Disable app lock?',
+                                message:
+                                    'You will sign in with phone OTP only. MPIN and biometric unlock will be removed from this device.',
+                                confirmLabel: 'Disable',
+                              );
+                              if (confirm == true) {
+                                await appLock.disableAppLock();
+                              }
+                            },
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
                   Card(
                     child: SwitchListTile(
                       title: const Text('Dark Mode'),
@@ -83,7 +171,10 @@ class SettingsScreen extends StatelessWidget {
                   ),
                   Card(
                     child: ListTile(
-                      leading: const Icon(Icons.info_outline, color: AppColors.textSecondary),
+                      leading: const Icon(
+                        Icons.info_outline,
+                        color: AppColors.textSecondary,
+                      ),
                       title: const Text('App Version'),
                       subtitle: Text(buildLabel),
                     ),
@@ -105,7 +196,10 @@ class SettingsScreen extends StatelessWidget {
                         confirmLabel: 'Delete',
                       );
                       if (confirm == true && context.mounted) {
-                        AppSnackbar.error(context, 'Account deletion request submitted');
+                        AppSnackbar.error(
+                          context,
+                          'Account deletion request submitted',
+                        );
                       }
                     },
                     child: const Text('Delete Account'),

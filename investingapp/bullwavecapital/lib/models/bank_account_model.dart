@@ -27,7 +27,8 @@ class BankAccountModel {
     required this.verificationMessage,
   });
 
-  factory BankAccountModel.fromJson(Map<String, dynamic> json) => BankAccountModel(
+  factory BankAccountModel.fromJson(Map<String, dynamic> json) =>
+      BankAccountModel(
         accountHolderName: json['accountHolderName'] as String? ?? '',
         bankName: json['bankName'] as String? ?? '',
         accountNumber: json['accountNumber'] as String? ?? '',
@@ -70,7 +71,10 @@ class BankVerificationResponse {
       BankVerificationResponse(
         success: json['success'] as bool? ?? false,
         message: json['message'] as String? ?? '',
-        isVerified: json['isVerified'] as bool? ?? json['bankVerified'] as bool? ?? false,
+        isVerified:
+            json['isVerified'] as bool? ??
+            json['bankVerified'] as bool? ??
+            false,
         reviewPending: json['bankReviewStatus'] == 'pending',
         nameAtBank: json['nameAtBank'] as String?,
         nameMatchResult: json['nameMatchResult'] as String?,

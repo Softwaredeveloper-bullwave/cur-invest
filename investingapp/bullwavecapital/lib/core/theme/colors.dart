@@ -7,6 +7,7 @@ class AppColors {
   // ── Brand (Capital BullWave blue — matches reference banking header) ──
   static const Color brandPrimary = Color(0xFF4A90E2);
   static const Color brandPrimaryDark = Color(0xFF2E5FB7);
+
   /// White text/icons on blue brand surfaces.
   static const Color onBrandPrimary = Color(0xFFFFFFFF);
   static const Color onBrandPrimaryMuted = Color(0xE6FFFFFF);
@@ -36,6 +37,7 @@ class AppColors {
 
   // ── Semantic ──
   static const Color green = Color(0xFF22C55E);
+
   /// Readable mint accent on dark backgrounds.
   static const Color greenSoft = Color(0xFF86EFAC);
   static const Color greenTint = Color(0xFF1A2E14);
@@ -104,33 +106,21 @@ class AppColors {
   static const LinearGradient portfolioCardGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [
-      Color(0xFF152040),
-      Color(0xFF0F1628),
-      Color(0xFF0A2018),
-    ],
+    colors: [Color(0xFF152040), Color(0xFF0F1628), Color(0xFF0A2018)],
     stops: [0.0, 0.55, 1.0],
   );
 
   static const LinearGradient aiInsightGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [
-      Color(0xFF1A1040),
-      Color(0xFF627DFF),
-      Color(0xFF00A88A),
-    ],
+    colors: [Color(0xFF1A1040), Color(0xFF627DFF), Color(0xFF00A88A)],
     stops: [0.0, 0.5, 1.0],
   );
 
   static const LinearGradient profileHeroGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [
-      Color(0xFF152040),
-      Color(0xFF627DFF),
-      Color(0xFF00D4AA),
-    ],
+    colors: [Color(0xFF152040), Color(0xFF627DFF), Color(0xFF00D4AA)],
     stops: [0.0, 0.45, 1.0],
   );
 

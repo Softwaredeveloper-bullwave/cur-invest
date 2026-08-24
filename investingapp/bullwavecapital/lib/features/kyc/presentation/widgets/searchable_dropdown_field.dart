@@ -47,7 +47,9 @@ class SearchableDropdownField<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
-    final display = (valueLabel == null || valueLabel!.trim().isEmpty) ? hint : valueLabel!;
+    final display = (valueLabel == null || valueLabel!.trim().isEmpty)
+        ? hint
+        : valueLabel!;
 
     return FormField<String>(
       key: ValueKey<String?>(valueLabel),
@@ -74,10 +76,10 @@ class SearchableDropdownField<T> extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: valueLabel == null || valueLabel!.isEmpty
-                            ? colors.textSecondary
-                            : colors.textPrimary,
-                      ),
+                    color: valueLabel == null || valueLabel!.isEmpty
+                        ? colors.textSecondary
+                        : colors.textPrimary,
+                  ),
                 ),
               ),
             ),
@@ -174,7 +176,9 @@ class _SearchSheetState<T> extends State<_SearchSheet<T>> {
                 Expanded(
                   child: Text(
                     widget.title,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
                 IconButton(
@@ -198,23 +202,36 @@ class _SearchSheetState<T> extends State<_SearchSheet<T>> {
           const SizedBox(height: 12),
           Expanded(
             child: _loading
-                ? const Center(child: CircularProgressIndicator(color: AppColors.green))
+                ? const Center(
+                    child: CircularProgressIndicator(color: AppColors.green),
+                  )
                 : _error != null
-                    ? Center(child: Text(_error!, style: TextStyle(color: colors.textSecondary)))
-                    : _items.isEmpty
-                        ? Center(child: Text('No results found', style: TextStyle(color: colors.textSecondary)))
-                        : ListView.separated(
-                            padding: const EdgeInsets.fromLTRB(12, 0, 12, 24),
-                            itemCount: _items.length,
-                            separatorBuilder: (_, __) => Divider(color: colors.border.withValues(alpha: 0.6)),
-                            itemBuilder: (context, index) {
-                              final item = _items[index];
-                              return ListTile(
-                                title: Text(widget.itemLabel(item)),
-                                onTap: () => Navigator.pop(context, item),
-                              );
-                            },
-                          ),
+                ? Center(
+                    child: Text(
+                      _error!,
+                      style: TextStyle(color: colors.textSecondary),
+                    ),
+                  )
+                : _items.isEmpty
+                ? Center(
+                    child: Text(
+                      'No results found',
+                      style: TextStyle(color: colors.textSecondary),
+                    ),
+                  )
+                : ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(12, 0, 12, 24),
+                    itemCount: _items.length,
+                    separatorBuilder: (_, __) =>
+                        Divider(color: colors.border.withValues(alpha: 0.6)),
+                    itemBuilder: (context, index) {
+                      final item = _items[index];
+                      return ListTile(
+                        title: Text(widget.itemLabel(item)),
+                        onTap: () => Navigator.pop(context, item),
+                      );
+                    },
+                  ),
           ),
         ],
       ),
