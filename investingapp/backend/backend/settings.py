@@ -80,6 +80,11 @@ LOGGING = {
             'handlers': ['console'],
             'level': 'INFO',
         },
+        'bullwave.crypto': {
+            'handlers': ['console', 'error_database'],
+            'level': 'INFO',
+            'propagate': False,
+        },
         'bullwave.kyc': {
             'handlers': ['console', 'error_database'],
             'level': EKO_LOG_LEVEL,
@@ -116,6 +121,7 @@ INSTALLED_APPS = [
     'finance',
     'adminpanel.apps.AdminPanelConfig',
     'stocks.apps.StocksConfig',
+    'crypto.apps.CryptoConfig',
     'engagement',
     'education',
     'ai',
@@ -295,6 +301,19 @@ FINNHUB_API_KEY = config('FINNHUB_API_KEY', default='')
 MARKET_QUOTE_CACHE_SECONDS = config('MARKET_QUOTE_CACHE_SECONDS', default=30, cast=int)
 MARKET_UNIVERSE_CACHE_SECONDS = config('MARKET_UNIVERSE_CACHE_SECONDS', default=60, cast=int)
 NEWS_CACHE_MINUTES = config('NEWS_CACHE_MINUTES', default=15, cast=int)
+
+# Crypto market data — CoinGecko (public) / optional Pro key. Never expose keys to Flutter.
+CRYPTO_DATA_PROVIDER = _clean_env(config('CRYPTO_DATA_PROVIDER', default='coingecko')).lower() or 'coingecko'
+CRYPTO_API_KEY = _ascii_env(config('CRYPTO_API_KEY', default=''))
+CRYPTO_API_BASE_URL = _clean_env(config('CRYPTO_API_BASE_URL', default=''), strip_trailing_slash=True)
+CRYPTO_API_TIMEOUT = config('CRYPTO_API_TIMEOUT', default=20, cast=int)
+CRYPTO_MARKET_CACHE_SECONDS = config('CRYPTO_MARKET_CACHE_SECONDS', default=60, cast=int)
+CRYPTO_NEWS_PROVIDER = _clean_env(config('CRYPTO_NEWS_PROVIDER', default='rss')).lower() or 'rss'
+CRYPTO_NEWS_API_KEY = _ascii_env(config('CRYPTO_NEWS_API_KEY', default=''))
+CRYPTO_NEWS_CACHE_MINUTES = config('CRYPTO_NEWS_CACHE_MINUTES', default=15, cast=int)
+CRYPTO_USD_INR_RATE = config('CRYPTO_USD_INR_RATE', default='83')
+# Live exchange trading stays off until compliance + credentials are configured.
+CRYPTO_TRADING_ENABLED = config('CRYPTO_TRADING_ENABLED', default=False, cast=bool)
 
 # TradingView — widget embed works without a key; set these when using Charting Library + UDF
 TRADINGVIEW_API_KEY = config('TRADINGVIEW_API_KEY', default='')

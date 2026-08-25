@@ -23,6 +23,10 @@ DEFAULT_SUGGESTIONS = [
     'What are Featured Plans?',
     'Nifty outlook today',
     'What is P/E ratio?',
+    'What is Bitcoin?',
+    'Summarize today\'s crypto market',
+    'Why is BTC moving today?',
+    'Compare BTC and ETH',
 ]
 
 HISTORY_LIMIT = 6

@@ -15,6 +15,8 @@ import '../../../fno/fno_navigation.dart';
 import '../../../home/presentation/provider/home_provider.dart';
 import '../provider/stock_market_provider.dart';
 import '../provider/stock_portfolio_provider.dart';
+import '../../../crypto/presentation/provider/crypto_market_provider.dart';
+import '../../../crypto/presentation/screens/crypto_home_screen.dart';
 import '../widgets/markets_economic_calendar.dart';
 import '../widgets/markets_fno_indices.dart';
 import '../widgets/market_heat_map.dart';
@@ -151,7 +153,12 @@ class _StockMarketsScreenState extends State<StockMarketsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer2<StockMarketProvider, HomeProvider>(
+    return Consumer<CryptoMarketProvider>(
+      builder: (context, cryptoMarket, _) {
+        if (cryptoMarket.isCryptoActive) {
+          return const CryptoHomeScreen(hubMode: true);
+        }
+        return Consumer2<StockMarketProvider, HomeProvider>(
       builder: (context, market, home, _) {
         final searching = market.searchQuery.isNotEmpty;
         final stocks = searching ? market.searchResults : market.trendingStocks;
@@ -311,6 +318,8 @@ class _StockMarketsScreenState extends State<StockMarketsScreen> {
             ),
           ),
         );
+      },
+    );
       },
     );
   }

@@ -174,6 +174,13 @@ def integration_status() -> dict:
             'provider': ai_provider,
             'configured': ai_ready,
         },
+        'crypto_market_data': {
+            'provider': (getattr(settings, 'CRYPTO_DATA_PROVIDER', 'coingecko') or 'coingecko'),
+            'configured': True,  # CoinGecko public API works without a key
+            'api_key_configured': bool((getattr(settings, 'CRYPTO_API_KEY', '') or '').strip()),
+            'trading_enabled': bool(getattr(settings, 'CRYPTO_TRADING_ENABLED', False)),
+            'note': 'Market data + paper trading only unless CRYPTO_TRADING_ENABLED.',
+        },
         'broker': {
             'provider': 'paper_trading',
             'configured': False,

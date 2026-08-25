@@ -80,7 +80,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ),
                             value: appLock.biometricEnabled,
                             onChanged: (value) async {
-                              final ok = await appLock.setBiometricEnabled(value);
+                              final ok =
+                                  await appLock.setBiometricEnabled(value);
                               if (!context.mounted) return;
                               if (!ok && appLock.error != null) {
                                 ScaffoldMessenger.of(context).showSnackBar(
@@ -121,6 +122,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ),
                         ],
                       ],
+                    ),
+                  ),
+                  Card(
+                    child: ListTile(
+                      leading: const Icon(Icons.tune_outlined),
+                      title: const Text('Market Preferences'),
+                      subtitle: const Text('Indian & crypto markets'),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => context.push(AppRoutes.marketPreferences),
                     ),
                   ),
                   Card(

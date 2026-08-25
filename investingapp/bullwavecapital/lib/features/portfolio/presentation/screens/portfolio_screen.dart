@@ -21,6 +21,8 @@ import '../../../home/presentation/widgets/home_pending_actions.dart';
 import '../../../transactions/presentation/provider/transaction_provider.dart';
 import '../../../../core/widgets/paper_trading_disclaimer.dart';
 import '../../../stocks/presentation/provider/stock_portfolio_provider.dart';
+import '../../../crypto/presentation/provider/crypto_market_provider.dart';
+import '../../../crypto/presentation/screens/crypto_portfolio_screen.dart';
 import '../../../stocks/presentation/utils/stock_trading_flow.dart';
 import '../provider/portfolio_provider.dart';
 import '../../../stocks/presentation/widgets/stock_order_history_tile.dart';
@@ -57,7 +59,12 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer2<StockPortfolioProvider, PortfolioProvider>(
+    return Consumer<CryptoMarketProvider>(
+      builder: (context, cryptoMarket, _) {
+        if (cryptoMarket.isCryptoActive) {
+          return const CryptoPortfolioScreen(embedded: true);
+        }
+        return Consumer2<StockPortfolioProvider, PortfolioProvider>(
       builder: (context, stockPortfolio, planPortfolio, _) {
         if (stockPortfolio.isLoading && stockPortfolio.holdings.isEmpty) {
           return const SafeArea(
@@ -500,6 +507,8 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
             ),
           ),
         );
+      },
+    );
       },
     );
   }

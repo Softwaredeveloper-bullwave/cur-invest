@@ -38,6 +38,7 @@ import 'features/stocks/presentation/provider/paper_competition_provider.dart';
 import 'features/stocks/presentation/provider/institutional_flow_provider.dart';
 import 'features/fno/presentation/provider/fno_flow_provider.dart';
 import 'features/goals/presentation/provider/goal_plan_provider.dart';
+import 'features/crypto/presentation/provider/crypto_market_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -153,6 +154,7 @@ class _BullWaveAppState extends State<BullWaveApp> with WidgetsBindingObserver {
         ChangeNotifierProvider(create: (_) => OptionTradingProvider()),
         ChangeNotifierProvider(create: (_) => FnoFlowProvider()),
         ChangeNotifierProvider(create: (_) => GoalPlanProvider()),
+        ChangeNotifierProvider(create: (_) => CryptoMarketProvider()),
       ],
       child: Consumer<AppProvider>(
         builder: (context, appProvider, _) {

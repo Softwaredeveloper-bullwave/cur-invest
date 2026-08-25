@@ -23,6 +23,7 @@ import '../../models/bank_account_model.dart';
 import '../../models/bank_lookup_model.dart';
 import '../../models/user_model.dart';
 import '../../models/wallet_model.dart';
+import '../../models/crypto_models.dart';
 import 'package:flutter/foundation.dart';
 
 import 'api_client.dart';
@@ -1520,5 +1521,221 @@ class BullwaveApi {
         await _client.get('/paper-trading/competitions/$id/')
             as Map<String, dynamic>;
     return PaperCompetitionModel.fromJson(data);
+  }
+
+  // ── Crypto markets ──
+
+  Future<UserMarketPreferenceModel> getMarketPreference() async {
+    final data =
+        await _client.get('/crypto/market-preference/') as Map<String, dynamic>;
+    return UserMarketPreferenceModel.fromJson(data);
+  }
+
+  Future<UserMarketPreferenceModel> saveMarketPreference({
+    required bool indianMarketEnabled,
+    required bool cryptoMarketEnabled,
+    String? activeMarket,
+  }) async {
+    final data =
+        await _client.patch(
+              '/crypto/market-preference/',
+              body: {
+                'indian_market_enabled': indianMarketEnabled,
+                'crypto_market_enabled': cryptoMarketEnabled,
+                if (activeMarket != null) 'active_market': activeMarket,
+              },
+            )
+            as Map<String, dynamic>;
+    return UserMarketPreferenceModel.fromJson(data);
+  }
+
+  Future<CryptoOverviewModel> getCryptoOverview() async {
+    final data =
+        await _client.get('/crypto/overview/') as Map<String, dynamic>;
+    return CryptoOverviewModel.fromJson(data);
+  }
+
+  Future<List<CryptoAssetModel>> getCryptoAssets({
+    int page = 1,
+    int pageSize = 50,
+    String vsCurrency = 'usd',
+    String order = 'market_cap_desc',
+    bool top = false,
+  }) async {
+    final data =
+        await _client.get(
+              '/crypto/assets/',
+              query: {
+                'page': '$page',
+                'page_size': '$pageSize',
+                'vs_currency': vsCurrency,
+                'order': order,
+                if (top) 'top': '1',
+              },
+            )
+            as Map<String, dynamic>;
+    return parseCryptoAssetList(data['results']);
+  }
+
+  Future<CryptoAssetModel> getCryptoAsset(String assetId, {String vsCurrency = 'usd'}) async {
+    final data =
+        await _client.get(
+              '/crypto/assets/$assetId/',
+              query: {'vs_currency': vsCurrency},
+            )
+            as Map<String, dynamic>;
+    return CryptoAssetModel.fromJson(data);
+  }
+
+  Future<CryptoChartModel> getCryptoChart(
+    String assetId, {
+    String period = '1D',
+    String vsCurrency = 'usd',
+  }) async {
+    final data =
+        await _client.get(
+              '/crypto/assets/$assetId/chart/',
+              query: {'period': period, 'vs_currency': vsCurrency},
+            )
+            as Map<String, dynamic>;
+    return CryptoChartModel.fromJson(data);
+  }
+
+  Future<List<CryptoAssetModel>> searchCrypto(String query) async {
+    final data =
+        await _client.get(
+              '/crypto/search/',
+              query: {'q': query},
+            )
+            as Map<String, dynamic>;
+    return parseCryptoAssetList(data['results']);
+  }
+
+  Future<CryptoScreenerResult> getCryptoScreener({
+    int page = 1,
+    int pageSize = 50,
+    String sort = 'market_cap_desc',
+    double? minPrice,
+    double? maxPrice,
+    double? minChange24h,
+    double? maxChange24h,
+  }) async {
+    final data =
+        await _client.get(
+              '/crypto/screener/',
+              query: {
+                'page': '$page',
+                'page_size': '$pageSize',
+                'sort': sort,
+                if (minPrice != null) 'min_price': '$minPrice',
+                if (maxPrice != null) 'max_price': '$maxPrice',
+                if (minChange24h != null) 'min_change_24h': '$minChange24h',
+                if (maxChange24h != null) 'max_change_24h': '$maxChange24h',
+              },
+            )
+            as Map<String, dynamic>;
+    return CryptoScreenerResult.fromJson(data);
+  }
+
+  Future<List<CryptoAssetModel>> getCryptoMovers({
+    String type = 'gainers',
+    int limit = 20,
+  }) async {
+    final data =
+        await _client.get(
+              '/crypto/movers/',
+              query: {'type': type, 'limit': '$limit'},
+            )
+            as Map<String, dynamic>;
+    return parseCryptoAssetList(data['results']);
+  }
+
+  Future<List<CryptoWatchlistItemModel>> getCryptoWatchlist() async {
+    final data =
+        await _client.get('/crypto/watchlist/') as Map<String, dynamic>;
+    return (data['results'] as List<dynamic>? ?? [])
+        .whereType<Map<String, dynamic>>()
+        .map(CryptoWatchlistItemModel.fromJson)
+        .toList();
+  }
+
+  Future<CryptoWatchlistItemModel> addCryptoWatchlist(String assetId) async {
+    final data =
+        await _client.post(
+              '/crypto/watchlist/',
+              body: {'asset_id': assetId},
+            )
+            as Map<String, dynamic>;
+    return CryptoWatchlistItemModel.fromJson(data);
+  }
+
+  Future<void> removeCryptoWatchlist(String itemId) async {
+    await _client.delete('/crypto/watchlist/$itemId/');
+  }
+
+  Future<CryptoNewsResponse> getCryptoNews({String? category}) async {
+    final data =
+        await _client.get(
+              '/crypto/news/',
+              query: {if (category != null && category.isNotEmpty) 'category': category},
+            )
+            as Map<String, dynamic>;
+    return CryptoNewsResponse.fromJson(data);
+  }
+
+  Future<CryptoPortfolioModel> getCryptoPortfolio() async {
+    final data =
+        await _client.get('/crypto/portfolio/') as Map<String, dynamic>;
+    return CryptoPortfolioModel.fromJson(data);
+  }
+
+  Future<Map<String, dynamic>> placeCryptoPaperOrder({
+    required String assetId,
+    required String side,
+    required double quantity,
+  }) async {
+    return await _client.post(
+          '/crypto/paper-orders/',
+          body: {
+            'asset_id': assetId,
+            'side': side,
+            'quantity': quantity,
+          },
+        )
+        as Map<String, dynamic>;
+  }
+
+  Future<List<CryptoTransactionModel>> getCryptoTransactions() async {
+    final data =
+        await _client.get('/crypto/transactions/') as Map<String, dynamic>;
+    return (data['results'] as List<dynamic>? ?? [])
+        .whereType<Map<String, dynamic>>()
+        .map(CryptoTransactionModel.fromJson)
+        .toList();
+  }
+
+  Future<CryptoWalletModel> getCryptoWallet() async {
+    final data =
+        await _client.get('/crypto/wallet/') as Map<String, dynamic>;
+    return CryptoWalletModel.fromJson(data);
+  }
+
+  Future<CryptoNotificationPreferenceModel> getCryptoNotificationPreferences() async {
+    final data =
+        await _client.get('/crypto/notification-preferences/')
+            as Map<String, dynamic>;
+    return CryptoNotificationPreferenceModel.fromJson(data);
+  }
+
+  Future<CryptoNotificationPreferenceModel> saveCryptoNotificationPreferences(
+    CryptoNotificationPreferenceModel prefs,
+  ) async {
+    final data =
+        await _client.patch(
+              '/crypto/notification-preferences/',
+              body: prefs.toJson(),
+            )
+            as Map<String, dynamic>;
+    return CryptoNotificationPreferenceModel.fromJson(data);
   }
 }

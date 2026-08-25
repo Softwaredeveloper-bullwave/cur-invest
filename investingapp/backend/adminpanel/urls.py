@@ -9,6 +9,8 @@ from .views import (
     BankReviewDecisionView,
     BankReviewListView,
     CommoditiesReportView,
+    CryptoAdminOverviewView,
+    CryptoAdminTransactionsView,
     DashboardView,
     EducationOverviewView,
     ErrorBulkDeleteView,
@@ -133,4 +135,6 @@ urlpatterns = [
         name='admin-panel-support-ticket-action',
     ),
     path('broadcasts/', AdminBroadcastListView.as_view(), name='admin-panel-broadcasts'),
+    path('crypto/overview/', CryptoAdminOverviewView.as_view(), name='admin-panel-crypto-overview'),
+    path('crypto/transactions/', CryptoAdminTransactionsView.as_view(), name='admin-panel-crypto-transactions'),
 ]

@@ -87,4 +87,18 @@ class AppRoutes {
       '/documents/$categoryId/$articleId';
 
   static String documentQuizPath(String quizId) => '/documents/quiz/$quizId';
+
+  // ── Crypto module ──
+  static const String marketInterest = '/market-interest';
+  static const String marketPreferences = '/market-preferences';
+  static const String cryptoHome = '/crypto';
+  static const String cryptoSearch = '/crypto/search';
+  static const String cryptoDetail = '/crypto/:assetId';
+  static const String cryptoWatchlist = '/crypto/watchlist';
+  static const String cryptoNews = '/crypto/news';
+  static const String cryptoScreener = '/crypto/screener';
+  static const String cryptoPortfolio = '/crypto/portfolio';
+  static const String cryptoMovers = '/crypto/movers';
+
+  static String cryptoDetailPath(String assetId) => '/crypto/$assetId';
 }

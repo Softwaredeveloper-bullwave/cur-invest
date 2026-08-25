@@ -58,6 +58,30 @@ def _message_intents(message: str) -> set[str]:
         intents.add('app')
     if any(k in m for k in ('stock', 'share', 'nifty', 'banknifty', 'quote', 'ltp', 'price', 'buy', 'sell', 'view on', 'outlook', 'analysis')):
         intents.add('stocks')
+    if any(
+        k in m
+        for k in (
+            'crypto',
+            'bitcoin',
+            'btc',
+            'ethereum',
+            'eth',
+            'solana',
+            'sol',
+            'altcoin',
+            'blockchain',
+            'defi',
+            'web3',
+            'dogecoin',
+            'cardano',
+            'xrp',
+            'usdt',
+            'fear and greed',
+            'crypto news',
+            'crypto market',
+        )
+    ):
+        intents.add('crypto')
     return intents
 
 
@@ -254,4 +278,156 @@ def build_user_context(user, message: str = '', symbol: str = '') -> str:
                 )
             sections.append('\n'.join(tx_lines))
 
+    # ── Crypto market context (live data only; never fabricated) ──
+    if intents & {'crypto'} or _looks_like_crypto_symbol(symbol):
+        sections.append(_build_crypto_context(user, message=message, symbol=symbol))
+
     return '\n\n---\n\n'.join(sections)
+
+
+def _looks_like_crypto_symbol(symbol: str) -> bool:
+    s = (symbol or '').strip().lower()
+    return s in {
+        'btc',
+        'eth',
+        'sol',
+        'xrp',
+        'ada',
+        'doge',
+        'bnb',
+        'usdt',
+        'usdc',
+        'bitcoin',
+        'ethereum',
+        'solana',
+    }
+
+
+def _build_crypto_context(user, message: str = '', symbol: str = '') -> str:
+    """Attach real-time crypto quotes/news/portfolio; label data provenance for the LLM."""
+    from crypto.health import record_provider_call
+    from crypto.models import CryptoWatchlistItem, UserMarketPreference
+    from crypto.news_service import fetch_crypto_news
+    from crypto.paper_trading_service import portfolio_summary
+    from crypto.providers.base import CryptoProviderError
+    from crypto.services import CryptoService
+
+    lines = [
+        'CRYPTO MARKET DATA (real-time from backend provider — do not invent prices)',
+        'DISCLAIMER: Educational / paper-trading context only. Not guaranteed returns. Not live brokerage execution.',
+    ]
+    try:
+        pref = user.market_preference
+        lines.append(
+            f"User markets: indian={pref.indian_market_enabled} crypto={pref.crypto_market_enabled} "
+            f"active={pref.active_market}"
+        )
+    except UserMarketPreference.DoesNotExist:
+        lines.append('User markets: preference not set')
+
+    svc = CryptoService()
+    try:
+        overview = svc.get_market_overview()
+        lines.append(
+            f"Global crypto market cap (USD): {overview.get('total_market_cap')} "
+            f"(24h {overview.get('market_cap_change_percentage_24h')}%), "
+            f"BTC dominance {overview.get('btc_dominance')}%, "
+            f"volume {overview.get('total_volume')}"
+        )
+        fg = overview.get('fear_greed') or {}
+        if fg:
+            lines.append(f"Fear & Greed: {fg.get('value')} ({fg.get('classification')})")
+        record_provider_call(service='ai', endpoint='crypto_overview', success=True, provider_name='context')
+    except CryptoProviderError as exc:
+        lines.append(f'Live crypto overview unavailable: {exc}')
+        record_provider_call(
+            service='ai',
+            endpoint='crypto_overview',
+            success=False,
+            error_message=str(exc)[:400],
+            provider_name='context',
+        )
+
+    # Resolve common names to CoinGecko ids
+    name_map = {
+        'bitcoin': 'bitcoin',
+        'btc': 'bitcoin',
+        'ethereum': 'ethereum',
+        'eth': 'ethereum',
+        'solana': 'solana',
+        'sol': 'solana',
+        'xrp': 'ripple',
+        'cardano': 'cardano',
+        'ada': 'cardano',
+        'dogecoin': 'dogecoin',
+        'doge': 'dogecoin',
+        'bnb': 'binancecoin',
+        'tether': 'tether',
+        'usdt': 'tether',
+        'usdc': 'usd-coin',
+    }
+    m = (message or '').lower()
+    ids = []
+    for key, aid in name_map.items():
+        if key in m and aid not in ids:
+            ids.append(aid)
+    sym = (symbol or '').strip().lower()
+    if sym in name_map and name_map[sym] not in ids:
+        ids.insert(0, name_map[sym])
+    for aid in ids[:4]:
+        try:
+            asset = svc.get_asset(aid)
+            lines.append(
+                f"LIVE {asset.get('symbol')} ({asset.get('name')}): "
+                f"price USD {asset.get('current_price')} "
+                f"({asset.get('price_change_percentage_24h')}% 24h), "
+                f"mcap {asset.get('market_cap')}, vol {asset.get('total_volume')}"
+            )
+        except CryptoProviderError:
+            lines.append(f'Live quote unavailable for {aid}')
+
+    if any(k in m for k in ('news', 'headline', 'what happened')):
+        try:
+            news = fetch_crypto_news()[:5]
+            if news:
+                lines.append('CRYPTO NEWS (headlines from licensed/RSS sources):')
+                for n in news:
+                    lines.append(f"  • [{n.get('source')}] {n.get('title')}")
+        except Exception:
+            lines.append('Crypto news temporarily unavailable.')
+
+    try:
+        pf = portfolio_summary(user)
+        lines.append(
+            f"CRYPTO PAPER PORTFOLIO: value {pf.get('current_value')} INR, "
+            f"P&L {pf.get('profit_loss')} ({pf.get('profit_loss_percent')}%), "
+            f"cash {pf.get('wallet_balance')} — environment={pf.get('environment')}"
+        )
+        for h in (pf.get('holdings') or [])[:5]:
+            lines.append(
+                f"  • {h.get('symbol')}: qty {h.get('quantity')} avg {h.get('avg_price')} "
+                f"now {h.get('current_price')} P&L {h.get('unrealized_pnl_percent')}%"
+            )
+    except Exception:
+        pass
+
+    wl = CryptoWatchlistItem.objects.filter(user=user).select_related('asset')[:8]
+    if wl:
+        lines.append('CRYPTO WATCHLIST: ' + ', '.join(i.asset.symbol.upper() for i in wl))
+
+    if any(k in m for k in ('gainer', 'loser', 'top')):
+        try:
+            gainers = svc.get_top_gainers(limit=5)
+            lines.append('TOP GAINERS (live):')
+            for g in gainers:
+                lines.append(
+                    f"  • {g.get('symbol')}: {g.get('price_change_percentage_24h')}% @ {g.get('current_price')}"
+                )
+        except CryptoProviderError:
+            pass
+
+    lines.append(
+        'LABELING: Prefer phrases like "According to live market data…" / "Recent headlines…" / '
+        '"Educational note…" / "AI analysis (not financial advice)…"'
+    )
+    return '\n'.join(lines)

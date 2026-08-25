@@ -125,6 +125,10 @@ class ApiClient {
         return detail;
       }
     }
+    if (statusCode == 404) {
+      return 'Crypto market API is not available on the server yet. '
+          'Deploy the latest backend (migrate crypto + restart) and try again.';
+    }
     if (statusCode >= 500) {
       return 'Server error at ${ApiConfig.baseUrl}. The API responded but failed — '
           'check GET /health/ and backend logs on the server.';

@@ -141,6 +141,17 @@ import '../constants/routes.dart';
 
 import '../constants/dimensions.dart';
 
+import '../../features/crypto/presentation/screens/market_interest_screen.dart';
+import '../../features/crypto/presentation/screens/crypto_home_screen.dart';
+import '../../features/crypto/presentation/screens/crypto_search_screen.dart';
+import '../../features/crypto/presentation/screens/crypto_detail_screen.dart';
+import '../../features/crypto/presentation/screens/crypto_watchlist_screen.dart';
+import '../../features/crypto/presentation/screens/crypto_news_screen.dart';
+import '../../features/crypto/presentation/screens/crypto_screener_screen.dart';
+import '../../features/crypto/presentation/screens/crypto_portfolio_screen.dart';
+import '../../features/crypto/presentation/screens/crypto_movers_screen.dart';
+import '../../features/crypto/presentation/screens/market_preferences_settings_screen.dart';
+
 class AppRouter {
   AppRouter._();
 
@@ -945,6 +956,68 @@ class AppRouter {
 
           return CommodityOptionChainScreen(commodityId: commodityId);
         },
+      ),
+
+      GoRoute(
+        path: AppRoutes.marketInterest,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const MarketInterestScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.marketPreferences,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const MarketPreferencesSettingsScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.cryptoHome,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const CryptoHomeScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.cryptoSearch,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const CryptoSearchScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.cryptoDetail,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => CryptoDetailScreen(
+          assetId: state.pathParameters['assetId'] ?? '',
+        ),
+      ),
+
+      GoRoute(
+        path: AppRoutes.cryptoWatchlist,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const CryptoWatchlistScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.cryptoNews,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const CryptoNewsScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.cryptoScreener,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const CryptoScreenerScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.cryptoPortfolio,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const CryptoPortfolioScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.cryptoMovers,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const CryptoMoversScreen(),
       ),
     ],
   );

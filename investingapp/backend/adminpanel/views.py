@@ -1292,3 +1292,107 @@ class AdminBroadcastListView(AdminPanelAPIView):
             metadata={'category': category, 'audience': audience, 'recipientCount': broadcast.recipient_count},
         )
         return Response(serialize_broadcast(broadcast), status=201)
+
+
+class CryptoAdminOverviewView(AdminPanelAPIView):
+    """Staff view of crypto assets, preferences, health — never exposes API keys."""
+
+    def get(self, request):
+        from crypto.health import health_summary
+        from crypto.models import (
+            CryptoAsset,
+            CryptoHolding,
+            CryptoNewsArticle,
+            CryptoProviderHealth,
+            CryptoTransaction,
+            CryptoWatchlistItem,
+            UserMarketPreference,
+        )
+
+        q = (request.query_params.get('q') or '').strip()
+        assets = CryptoAsset.objects.all()
+        if q:
+            assets = assets.filter(
+                Q(symbol__icontains=q) | Q(name__icontains=q) | Q(id__icontains=q)
+            )
+        prefs = UserMarketPreference.objects.select_related('user').order_by('-updated_at')[:50]
+        return Response(
+            {
+                'health': health_summary(),
+                'counts': {
+                    'assets': CryptoAsset.objects.count(),
+                    'watchlist_items': CryptoWatchlistItem.objects.count(),
+                    'holdings': CryptoHolding.objects.count(),
+                    'transactions': CryptoTransaction.objects.count(),
+                    'news': CryptoNewsArticle.objects.count(),
+                    'users_with_crypto': UserMarketPreference.objects.filter(
+                        crypto_market_enabled=True
+                    ).count(),
+                },
+                'assets': [
+                    {
+                        'id': a.id,
+                        'symbol': a.symbol,
+                        'name': a.name,
+                        'market_cap_rank': a.market_cap_rank,
+                        'is_active': a.is_active,
+                    }
+                    for a in assets[:100]
+                ],
+                'preferences': [
+                    {
+                        'user_id': str(p.user_id),
+                        'phone': getattr(p.user, 'phone', ''),
+                        'indian_market_enabled': p.indian_market_enabled,
+                        'crypto_market_enabled': p.crypto_market_enabled,
+                        'active_market': p.active_market,
+                        'has_completed_selection': p.has_completed_selection,
+                    }
+                    for p in prefs
+                ],
+                'provider_rows': [
+                    {
+                        'service': h.service,
+                        'status': h.status,
+                        'provider_name': h.provider_name,
+                        'avg_response_ms': h.avg_response_ms,
+                        'last_success_at': h.last_success_at,
+                        'error_count': h.error_count,
+                        'rate_limit_hits': h.rate_limit_hits,
+                        # Intentionally omit any credential fields
+                    }
+                    for h in CryptoProviderHealth.objects.all()
+                ],
+                'note': 'Live trading disabled until CRYPTO_TRADING_ENABLED + compliance.',
+            }
+        )
+
+
+class CryptoAdminTransactionsView(AdminPanelAPIView):
+    def get(self, request):
+        from crypto.models import CryptoTransaction
+
+        qs = CryptoTransaction.objects.select_related('user', 'asset').order_by('-created_at')
+        status_f = request.query_params.get('status')
+        if status_f:
+            qs = qs.filter(status=status_f)
+        paper = request.query_params.get('is_paper')
+        if paper in ('1', 'true', 'True'):
+            qs = qs.filter(is_paper=True)
+        results = [
+            {
+                'id': str(t.id),
+                'user_phone': getattr(t.user, 'phone', ''),
+                'asset_id': t.asset_id,
+                'symbol': t.asset.symbol.upper() if t.asset_id else '',
+                'tx_type': t.tx_type,
+                'quantity': str(t.quantity),
+                'price': str(t.price),
+                'total_value': str(t.total_value),
+                'status': t.status,
+                'is_paper': t.is_paper,
+                'created_at': t.created_at,
+            }
+            for t in qs[:200]
+        ]
+        return Response({'results': results})

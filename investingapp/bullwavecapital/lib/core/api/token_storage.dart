@@ -11,6 +11,8 @@ class TokenStorage {
   static const _signedInSessionKey = 'signed_in_session';
   static const _registrationInProgressKey = 'registration_in_progress';
   static const _migrationDoneKey = 'secure_token_migration_done';
+  static const _marketPreferenceCompletedKey = 'market_preference_completed';
+  static const _activeMarketKey = 'active_market';
 
   static const _secure = FlutterSecureStorage();
 
@@ -92,6 +94,26 @@ class TokenStorage {
     await _prefs!.setBool(_registrationInProgressKey, value);
   }
 
+  static Future<bool> hasMarketPreferenceCompleted() async {
+    await init();
+    return _prefs!.getBool(_marketPreferenceCompletedKey) ?? false;
+  }
+
+  static Future<void> setMarketPreferenceCompleted(bool value) async {
+    await init();
+    await _prefs!.setBool(_marketPreferenceCompletedKey, value);
+  }
+
+  static Future<String?> getActiveMarket() async {
+    await init();
+    return _prefs!.getString(_activeMarketKey);
+  }
+
+  static Future<void> setActiveMarket(String market) async {
+    await init();
+    await _prefs!.setString(_activeMarketKey, market);
+  }
+
   static Future<void> clear() async {
     await init();
     await _secure.delete(key: _accessKey);
@@ -99,5 +121,7 @@ class TokenStorage {
     await _prefs!.remove(_pendingEmailKey);
     await _prefs!.remove(_signedInSessionKey);
     await _prefs!.remove(_registrationInProgressKey);
+    await _prefs!.remove(_marketPreferenceCompletedKey);
+    await _prefs!.remove(_activeMarketKey);
   }
 }

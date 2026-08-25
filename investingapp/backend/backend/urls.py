@@ -48,6 +48,7 @@ urlpatterns = [
     path('api/v1/', include('payments.urls')),
     path('api/v1/', include('finance.urls')),
     path('api/v1/', include('stocks.urls')),
+    path('api/v1/', include('crypto.urls')),
     path('api/v1/', include('engagement.urls')),
     path('api/v1/', include('education.urls')),
     path('api/v1/', include('ai.urls')),

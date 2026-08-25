@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/api/refresh_providers.dart';
+import '../../../../core/api/token_storage.dart';
 import '../../../../core/config/dev_config.dart';
 import '../../../../core/constants/routes.dart';
 import '../../../../core/navigation/onboarding_flow_navigator.dart';
@@ -65,14 +66,19 @@ class _SplashScreenState extends State<SplashScreen> {
       appLock.markUnlocked();
     }
 
-    context.go(
-      OnboardingFlowNavigator.routeAfterSplash(
-        hasCompletedOnboarding: app.hasCompletedOnboarding,
-        isAuthenticated: auth.isAuthenticated,
-        auth: auth,
-        kyc: kyc,
-      ),
+    var next = OnboardingFlowNavigator.routeAfterSplash(
+      hasCompletedOnboarding: app.hasCompletedOnboarding,
+      isAuthenticated: auth.isAuthenticated,
+      auth: auth,
+      kyc: kyc,
     );
+    if (auth.isAuthenticated &&
+        next == AppRoutes.home &&
+        !(await TokenStorage.hasMarketPreferenceCompleted())) {
+      next = AppRoutes.marketInterest;
+    }
+    if (!mounted) return;
+    context.go(next);
   }
 
   @override

@@ -28,6 +28,9 @@ import '../../../../core/widgets/paper_trading_disclaimer.dart';
 import '../../../wallet/presentation/provider/wallet_provider.dart';
 import '../../../stocks/presentation/provider/stock_features_provider.dart';
 import '../../../stocks/presentation/provider/stock_market_provider.dart';
+import '../../../crypto/presentation/provider/crypto_market_provider.dart';
+import '../../../crypto/presentation/screens/crypto_home_screen.dart';
+import '../../../crypto/presentation/widgets/market_switcher.dart';
 import '../provider/home_provider.dart';
 import '../widgets/home_theme_a.dart';
 import '../widgets/home_balance_cards.dart';
@@ -69,6 +72,7 @@ class _HomeScreenState extends State<HomeScreen> {
       features.refreshIpoCalendar(limit: 6),
       features.prefetchHomeIndexExpiries(),
       context.read<StockMarketProvider>().ensureLoaded(),
+      context.read<CryptoMarketProvider>().ensurePreferenceLoaded(),
       context.read<KycFlowProvider>().loadStatus(),
       if (!PaperOnlyMode.enabled)
         context.read<FnoFlowProvider>().ensureLoaded(),
@@ -149,7 +153,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<HomeProvider>(
+    return Consumer<CryptoMarketProvider>(
+      builder: (context, cryptoMarket, _) {
+        if (cryptoMarket.isCryptoActive) {
+          return const CryptoHomeScreen(embedded: true);
+        }
+        return Consumer<HomeProvider>(
       builder: (context, provider, _) {
         if (provider.isLoading) {
           return const SafeArea(
@@ -197,6 +206,11 @@ class _HomeScreenState extends State<HomeScreen> {
                             onMenuTap: () => _showQuickMenu(context),
                             onNotificationTap: () =>
                                 context.push(AppRoutes.notifications),
+                          ),
+                          const SizedBox(height: 10),
+                          const Align(
+                            alignment: Alignment.centerLeft,
+                            child: MarketSwitcher(),
                           ),
                           const SizedBox(height: 18),
                           if (PaperOnlyMode.enabled) ...[
@@ -355,6 +369,8 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         );
+      },
+    );
       },
     );
   }
