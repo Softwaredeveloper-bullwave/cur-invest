@@ -1673,11 +1673,14 @@ class BullwaveApi {
     await _client.delete('/crypto/watchlist/$itemId/');
   }
 
-  Future<CryptoNewsResponse> getCryptoNews({String? category}) async {
+  Future<CryptoNewsResponse> getCryptoNews({String? category, bool refresh = false}) async {
     final data =
         await _client.get(
               '/crypto/news/',
-              query: {if (category != null && category.isNotEmpty) 'category': category},
+              query: {
+                if (category != null && category.isNotEmpty) 'category': category,
+                if (refresh) 'refresh': '1',
+              },
             )
             as Map<String, dynamic>;
     return CryptoNewsResponse.fromJson(data);

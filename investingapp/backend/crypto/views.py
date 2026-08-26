@@ -289,7 +289,8 @@ class CryptoWatchlistDetailView(APIView):
 class CryptoNewsView(APIView):
     def get(self, request):
         category = request.query_params.get('category')
-        articles = fetch_crypto_news(category=category)
+        force = (request.query_params.get('refresh') or '') in ('1', 'true', 'yes')
+        articles = fetch_crypto_news(category=category, force=force)
         return Response({'results': articles, 'categories': list(CATEGORIES)})
 
 

@@ -183,7 +183,7 @@ class CryptoNewsArticle(models.Model):
     id = models.CharField(primary_key=True, max_length=64)
     title = models.CharField(max_length=400)
     summary = models.TextField(blank=True, default='')
-    image_url = models.URLField(max_length=500, blank=True, default='')
+    image_url = models.CharField(max_length=1000, blank=True, default='')
     source = models.CharField(max_length=120)
     published_at = models.DateTimeField(db_index=True)
     category = models.CharField(max_length=40, default='Market Analysis', db_index=True)

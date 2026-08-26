@@ -229,8 +229,8 @@ class CryptoNewsResponse {
   factory CryptoNewsResponse.fromJson(Map<String, dynamic> json) =>
       CryptoNewsResponse(
         results: (json['results'] as List<dynamic>? ?? [])
-            .whereType<Map<String, dynamic>>()
-            .map(CryptoNewsModel.fromJson)
+            .whereType<Map>()
+            .map((e) => CryptoNewsModel.fromJson(Map<String, dynamic>.from(e)))
             .toList(),
         categories: (json['categories'] as List<dynamic>? ?? [])
             .map((e) => e.toString())
@@ -263,18 +263,18 @@ class CryptoNewsModel {
 
   factory CryptoNewsModel.fromJson(Map<String, dynamic> json) => CryptoNewsModel(
         id: (_pick(json, 'id', 'id') ?? '').toString(),
-        title: (_pick(json, 'title', 'title') as String?) ?? '',
-        summary: (_pick(json, 'summary', 'summary') as String?) ?? '',
-        imageUrl: (_pick(json, 'imageUrl', 'image_url') as String?) ?? '',
-        source: (_pick(json, 'source', 'source') as String?) ?? '',
+        title: (_pick(json, 'title', 'title') ?? '').toString(),
+        summary: (_pick(json, 'summary', 'summary') ?? '').toString(),
+        imageUrl: (_pick(json, 'imageUrl', 'image_url') ?? '').toString(),
+        source: (_pick(json, 'source', 'source') ?? '').toString(),
         publishedAt: _date(_pick(json, 'publishedAt', 'published_at')),
-        category: (_pick(json, 'category', 'category') as String?) ?? '',
+        category: (_pick(json, 'category', 'category') ?? '').toString(),
         relatedCryptocurrencies: (_pick(json, 'relatedCryptocurrencies', 'related_cryptocurrencies')
                     as List<dynamic>? ??
                 [])
             .map((e) => e.toString())
             .toList(),
-        externalUrl: (_pick(json, 'externalUrl', 'external_url') as String?) ?? '',
+        externalUrl: (_pick(json, 'externalUrl', 'external_url') ?? '').toString(),
       );
 }
 

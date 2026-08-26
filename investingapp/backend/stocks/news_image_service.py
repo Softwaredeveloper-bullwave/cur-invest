@@ -15,6 +15,7 @@ from .news_service import RSS_HEADERS
 logger = logging.getLogger('bullwave.news')
 
 ALLOWED_IMAGE_HOST_SUFFIXES = (
+    # Indian market
     'etimg.com',
     'indiatimes.com',
     'livemint.com',
@@ -24,6 +25,26 @@ ALLOWED_IMAGE_HOST_SUFFIXES = (
     'finnhub.io',
     'reuters.com',
     'bloomberg.com',
+    # Crypto / global news CDNs
+    'ctmedia.io',
+    'cointelegraph.com',
+    'coindesk.com',
+    'bitcoinmagazine.com',
+    'decrypt.co',
+    'theblock.co',
+    'blockworks.co',
+    'cryptonews.com',
+    'newsapi.org',
+    'cloudfront.net',
+    'googleusercontent.com',
+    'wp.com',
+    'substackcdn.com',
+    'imgix.net',
+    'fastly.net',
+    'akamaized.net',
+    'cnbcfm.com',
+    'vox-cdn.com',
+    'twimg.com',
 )
 
 

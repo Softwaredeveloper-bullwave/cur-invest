@@ -365,11 +365,11 @@ class CryptoMarketProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> loadNews({String? category}) async {
+  Future<void> loadNews({String? category, bool refresh = false}) async {
     _isLoading = true;
     notifyListeners();
     try {
-      final response = await _api.getCryptoNews(category: category);
+      final response = await _api.getCryptoNews(category: category, refresh: refresh);
       _news = response.results;
       _newsCategories = response.categories;
       _error = null;

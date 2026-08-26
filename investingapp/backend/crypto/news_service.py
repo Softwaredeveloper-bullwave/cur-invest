@@ -22,7 +22,7 @@ logger = logging.getLogger('bullwave.crypto')
 IST = ZoneInfo('Asia/Kolkata')
 
 CRYPTO_FEEDS = (
-    ('CoinDesk', 'https://www.coindesk.com/arc/outboundfeeds/rss/'),
+    ('CoinDesk', 'https://www.coindesk.com/arc/outboundfeeds/rss/?outputType=xml'),
     ('CoinTelegraph', 'https://cointelegraph.com/rss'),
     ('Bitcoin Magazine', 'https://bitcoinmagazine.com/.rss/full/'),
 )
@@ -111,15 +111,70 @@ def _related_assets(title: str, summary: str) -> list[str]:
     return found[:5]
 
 
-def _entry_image(entry) -> str:
-    media = getattr(entry, 'media_content', None) or getattr(entry, 'media_thumbnail', None)
-    if isinstance(media, list) and media:
-        url = media[0].get('url') if isinstance(media[0], dict) else ''
-        if url:
+def _first_http_url(value) -> str:
+    if isinstance(value, str):
+        url = value.strip()
+        if url.startswith('//'):
+            url = f'https:{url}'
+        if url.startswith(('http://', 'https://')):
+            lower = url.lower()
+            if any(skip in lower for skip in ('1x1', 'pixel.gif', 'spacer.', 'blank.gif')):
+                return ''
             return url
-    summary = getattr(entry, 'summary', '') or ''
-    m = re.search(r'<img[^>]+src=["\']([^"\']+)["\']', summary, re.I)
-    return m.group(1) if m else ''
+        return ''
+    if isinstance(value, dict):
+        return _first_http_url(value.get('url') or value.get('href') or value.get('src') or '')
+    if isinstance(value, (list, tuple)):
+        for item in value:
+            found = _first_http_url(item)
+            if found:
+                return found
+    return ''
+
+
+def _entry_image(entry) -> str:
+    url = _first_http_url(getattr(entry, 'media_content', None))
+    if url:
+        return url
+    url = _first_http_url(getattr(entry, 'media_thumbnail', None))
+    if url:
+        return url
+    url = _first_http_url(getattr(entry, 'image', None))
+    if url:
+        return url
+    url = _first_http_url(getattr(entry, 'enclosures', None))
+    if url:
+        return url
+    for link in getattr(entry, 'links', None) or []:
+        if not isinstance(link, dict):
+            continue
+        typ = (link.get('type') or '').lower()
+        rel = (link.get('rel') or '').lower()
+        if typ.startswith('image') or 'image' in rel or rel == 'enclosure':
+            found = _first_http_url(link.get('href') or '')
+            if found:
+                return found
+    html_parts = [
+        getattr(entry, 'summary', '') or '',
+        getattr(entry, 'description', '') or '',
+    ]
+    for block in getattr(entry, 'content', None) or []:
+        if isinstance(block, dict):
+            html_parts.append(block.get('value') or '')
+        else:
+            html_parts.append(str(block))
+    html = ' '.join(html_parts)
+    for pattern in (
+        r'<img[^>]+src=["\']([^"\']+)["\']',
+        r'<media:content[^>]+url=["\']([^"\']+)["\']',
+        r'<media:thumbnail[^>]+url=["\']([^"\']+)["\']',
+    ):
+        match = re.search(pattern, html, re.I)
+        if match:
+            found = _first_http_url(match.group(1))
+            if found:
+                return found
+    return ''
 
 
 def fetch_crypto_news(*, category: str | None = None, force: bool = False) -> list[dict]:
@@ -134,7 +189,7 @@ def _fetch_newsapi(*, category: str | None = None, force: bool = False) -> list[
     cache_key = f'crypto:newsapi:{category or "all"}'
     if not force:
         cached = cache.get(cache_key)
-        if cached is not None:
+        if cached is not None and any((a.get('image_url') or '').strip() for a in cached):
             return cached
 
     api_key = (getattr(settings, 'CRYPTO_NEWS_API_KEY', '') or '').strip()
@@ -178,7 +233,7 @@ def _fetch_newsapi(*, category: str | None = None, force: bool = False) -> list[
                 'id': aid,
                 'title': title[:400],
                 'summary': summary,
-                'image_url': (item.get('urlToImage') or '')[:500],
+                'image_url': (item.get('urlToImage') or '')[:1000],
                 'source': ((item.get('source') or {}).get('name') or 'NewsAPI')[:120],
                 'published_at': published.isoformat(),
                 'category': cat,
@@ -226,7 +281,7 @@ def _fetch_rss_news(*, category: str | None = None, force: bool = False) -> list
     cache_key = f'crypto:news:{category or "all"}'
     if not force:
         cached = cache.get(cache_key)
-        if cached is not None:
+        if cached is not None and any((a.get('image_url') or '').strip() for a in cached):
             return cached
 
     articles: list[dict] = []
@@ -234,7 +289,7 @@ def _fetch_rss_news(*, category: str | None = None, force: bool = False) -> list
     try:
         for source, url in CRYPTO_FEEDS:
             try:
-                with httpx.Client(timeout=15) as client:
+                with httpx.Client(timeout=15, follow_redirects=True) as client:
                     resp = client.get(url, headers=RSS_HEADERS)
                 if resp.status_code != 200:
                     continue
@@ -261,7 +316,7 @@ def _fetch_rss_news(*, category: str | None = None, force: bool = False) -> list
                     'id': aid,
                     'title': title[:400],
                     'summary': summary,
-                    'image_url': _entry_image(entry)[:500],
+                    'image_url': _entry_image(entry)[:1000],
                     'source': source,
                     'published_at': published.isoformat(),
                     'category': cat,
@@ -269,19 +324,22 @@ def _fetch_rss_news(*, category: str | None = None, force: bool = False) -> list
                     'external_url': link[:500],
                 }
                 articles.append(row)
-                CryptoNewsArticle.objects.update_or_create(
-                    id=aid,
-                    defaults={
-                        'title': row['title'],
-                        'summary': summary,
-                        'image_url': row['image_url'],
-                        'source': source,
-                        'published_at': published,
-                        'category': cat,
-                        'related_assets': row['related_cryptocurrencies'],
-                        'external_url': row['external_url'],
-                    },
-                )
+                try:
+                    CryptoNewsArticle.objects.update_or_create(
+                        id=aid,
+                        defaults={
+                            'title': row['title'],
+                            'summary': summary,
+                            'image_url': row['image_url'],
+                            'source': source,
+                            'published_at': published,
+                            'category': cat,
+                            'related_assets': row['related_cryptocurrencies'],
+                            'external_url': row['external_url'],
+                        },
+                    )
+                except Exception:
+                    logger.debug('Could not persist crypto news row', exc_info=True)
 
         articles.sort(key=lambda a: a['published_at'], reverse=True)
         articles = articles[:80]
