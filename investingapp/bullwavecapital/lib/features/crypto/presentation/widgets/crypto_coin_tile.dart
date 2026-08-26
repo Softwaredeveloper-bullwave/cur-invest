@@ -92,9 +92,11 @@ class CryptoCoinTile extends StatelessWidget {
   }
 
   static String _formatUsd(double value) {
+    if (value <= 0) return '\$0.00';
     if (value >= 1000) return '\$${value.toStringAsFixed(2)}';
     if (value >= 1) return '\$${value.toStringAsFixed(2)}';
-    return '\$${value.toStringAsFixed(4)}';
+    if (value >= 0.01) return '\$${value.toStringAsFixed(4)}';
+    return '\$${value.toStringAsFixed(6)}';
   }
 }
 

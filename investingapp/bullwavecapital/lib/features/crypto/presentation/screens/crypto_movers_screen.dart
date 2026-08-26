@@ -77,11 +77,20 @@ class _CryptoMoversScreenState extends State<CryptoMoversScreen>
                         children: [
                           Padding(
                             padding: const EdgeInsets.all(24),
-                            child: Text(
-                              provider.error ??
-                                  'Market data is temporarily unavailable. Please try again.',
-                              textAlign: TextAlign.center,
-                              style: context.typeSecondary(14),
+                            child: Column(
+                              children: [
+                                Text(
+                                  provider.error ??
+                                      'Market data is temporarily unavailable. Please try again.',
+                                  textAlign: TextAlign.center,
+                                  style: context.typeSecondary(14),
+                                ),
+                                const SizedBox(height: 12),
+                                FilledButton(
+                                  onPressed: () => provider.loadMovers(type),
+                                  child: const Text('Retry'),
+                                ),
+                              ],
                             ),
                           ),
                         ],

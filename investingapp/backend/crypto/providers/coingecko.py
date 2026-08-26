@@ -27,8 +27,12 @@ PERIOD_TO_DAYS = {
 
 
 def _dec(value) -> Decimal | None:
-    if value is None:
+    if value is None or value == '':
         return None
+    if isinstance(value, str):
+        value = value.replace('$', '').replace(',', '').replace('₹', '').strip()
+        if not value:
+            return None
     try:
         return Decimal(str(value))
     except (InvalidOperation, ValueError, TypeError):
@@ -45,10 +49,16 @@ class CoinGeckoProvider(BaseCryptoProvider):
     def __init__(self):
         self.api_key = (getattr(settings, 'CRYPTO_API_KEY', '') or '').strip()
         base = (getattr(settings, 'CRYPTO_API_BASE_URL', '') or '').strip().rstrip('/')
+        # Demo keys (CG-...) use public host + x-cg-demo-api-key.
+        # Pro keys use pro-api.coingecko.com + x-cg-pro-api-key.
+        self._is_pro = bool(self.api_key) and (
+            'pro' in (base or '').lower()
+            or (getattr(settings, 'CRYPTO_DATA_PROVIDER', '') or '').lower() == 'coingecko_pro'
+        )
         if not base:
             base = (
                 'https://pro-api.coingecko.com/api/v3'
-                if self.api_key
+                if self._is_pro
                 else 'https://api.coingecko.com/api/v3'
             )
         self.base_url = base
@@ -61,9 +71,10 @@ class CoinGeckoProvider(BaseCryptoProvider):
             'User-Agent': 'CapitalBullWave/1.0 (crypto-market-data)',
         }
         if self.api_key:
-            # CoinGecko Pro / Demo header
-            headers['x-cg-pro-api-key'] = self.api_key
-            headers['x-cg-demo-api-key'] = self.api_key
+            if self._is_pro:
+                headers['x-cg-pro-api-key'] = self.api_key
+            else:
+                headers['x-cg-demo-api-key'] = self.api_key
         return headers
 
     def _get(self, path: str, params: dict | None = None, *, cache_key: str | None = None, ttl: int | None = None):
@@ -108,27 +119,57 @@ class CoinGeckoProvider(BaseCryptoProvider):
             data = {**data, '_meta_response_ms': elapsed_ms}
         return data
 
-    def get_market_overview(self) -> dict[str, Any]:
+    def get_global_stats(self) -> dict[str, Any]:
+        """Market-cap / dominance only — does not fetch trending (avoids 429 cascading)."""
         data = self._get('/global', cache_key='crypto:cg:global', ttl=self.cache_seconds)
         g = (data or {}).get('data') or {}
-        total_mcap = (g.get('total_market_cap') or {}).get('usd')
-        mcap_change = g.get('market_cap_change_percentage_24h_usd')
-        btc_dom = (g.get('market_cap_percentage') or {}).get('btc')
-        volume = (g.get('total_volume') or {}).get('usd')
-        fear = self.get_fear_greed()
-        trending = self.get_trending()
         return {
-            'total_market_cap': _dec(total_mcap),
-            'market_cap_change_percentage_24h': _dec(mcap_change),
-            'btc_dominance': _dec(btc_dom),
-            'total_volume': _dec(volume),
+            'total_market_cap': _dec((g.get('total_market_cap') or {}).get('usd')),
+            'market_cap_change_percentage_24h': _dec(g.get('market_cap_change_percentage_24h_usd')),
+            'btc_dominance': _dec((g.get('market_cap_percentage') or {}).get('btc')),
+            'total_volume': _dec((g.get('total_volume') or {}).get('usd')),
             'active_cryptocurrencies': g.get('active_cryptocurrencies'),
             'markets': g.get('markets'),
-            'fear_greed': fear,
-            'trending': trending[:10],
+        }
+
+    def get_market_overview(self) -> dict[str, Any]:
+        overview: dict[str, Any] = {
+            'total_market_cap': None,
+            'market_cap_change_percentage_24h': None,
+            'btc_dominance': None,
+            'total_volume': None,
+            'active_cryptocurrencies': None,
+            'markets': None,
+            'fear_greed': None,
+            'trending': [],
             'provider': self.name,
             'stale': False,
         }
+        try:
+            overview.update(self.get_global_stats())
+        except CryptoProviderError:
+            logger.warning('CoinGecko /global failed; serving partial overview')
+        try:
+            overview['fear_greed'] = self.get_fear_greed()
+        except Exception:
+            overview['fear_greed'] = None
+        trending: list[dict[str, Any]] = []
+        try:
+            trending = self.get_trending()
+        except CryptoProviderError:
+            logger.warning('CoinGecko trending failed; falling back to top markets')
+        if not trending:
+            try:
+                trending = self.get_assets(page=1, page_size=10)
+            except CryptoProviderError:
+                trending = []
+        overview['trending'] = trending[:10]
+        if overview['total_market_cap'] is None and not trending:
+            raise CryptoProviderError(
+                'Crypto market data is temporarily unavailable.',
+                retryable=True,
+            )
+        return overview
 
     def get_assets(
         self,
@@ -226,7 +267,9 @@ class CoinGeckoProvider(BaseCryptoProvider):
         days: str = '1',
     ) -> dict[str, Any]:
         aid = (asset_id or '').strip().lower()
-        day_param = PERIOD_TO_DAYS.get(days.upper(), days) if days else '1'
+        day_param = PERIOD_TO_DAYS.get((days or '1').upper(), None)
+        if day_param is None:
+            day_param = days if str(days).replace('.', '', 1).isdigit() or days == 'max' else '1'
         params = {'vs_currency': vs_currency, 'days': day_param}
         data = self._get(
             f'/coins/{aid}/market_chart',
@@ -236,12 +279,31 @@ class CoinGeckoProvider(BaseCryptoProvider):
         )
         prices = data.get('prices') or []
         volumes = data.get('total_volumes') or []
+        candles = []
+        prev = None
+        for p in prices:
+            if len(p) < 2:
+                continue
+            t, close = int(p[0]), float(p[1])
+            open_ = float(prev) if prev is not None else close
+            candles.append(
+                {
+                    't': t,
+                    'o': open_,
+                    'h': max(open_, close),
+                    'l': min(open_, close),
+                    'c': close,
+                    'v': 0,
+                }
+            )
+            prev = close
         return {
             'id': aid,
             'currency': vs_currency,
             'period': days,
             'prices': [{'t': int(p[0]), 'v': float(p[1])} for p in prices if len(p) >= 2],
             'volumes': [{'t': int(v[0]), 'v': float(v[1])} for v in volumes if len(v) >= 2],
+            'candles': candles,
             'provider': self.name,
         }
 
@@ -254,6 +316,10 @@ class CoinGeckoProvider(BaseCryptoProvider):
         out = []
         for item in coins:
             c = item.get('item') or {}
+            extra = c.get('data') or {}
+            chg = extra.get('price_change_percentage_24h')
+            if isinstance(chg, dict):
+                chg = chg.get('usd')
             out.append(
                 {
                     'id': c.get('id'),
@@ -262,8 +328,33 @@ class CoinGeckoProvider(BaseCryptoProvider):
                     'image_url': c.get('large') or c.get('thumb') or '',
                     'market_cap_rank': c.get('market_cap_rank'),
                     'score': c.get('score'),
+                    'current_price': _dec(extra.get('price')),
+                    'price_change_percentage_24h': _dec(chg),
+                    'sparkline_7d': [],
                 }
             )
+        missing_ids = [r['id'] for r in out if r.get('id') and not r.get('current_price')]
+        if missing_ids:
+            try:
+                markets = self.get_assets(ids=missing_ids, page_size=len(missing_ids))
+                by_id = {r['id']: r for r in markets}
+                for row in out:
+                    quote = by_id.get(row.get('id'))
+                    if not quote:
+                        continue
+                    row['current_price'] = quote.get('current_price') or row.get('current_price')
+                    row['price_change_percentage_24h'] = (
+                        quote.get('price_change_percentage_24h')
+                        or row.get('price_change_percentage_24h')
+                    )
+                    row['image_url'] = row.get('image_url') or quote.get('image_url') or ''
+                    row['sparkline_7d'] = quote.get('sparkline_7d') or []
+                    row['high_24h'] = quote.get('high_24h')
+                    row['low_24h'] = quote.get('low_24h')
+                    row['total_volume'] = quote.get('total_volume')
+                    row['market_cap'] = quote.get('market_cap')
+            except CryptoProviderError:
+                logger.debug('Could not enrich CoinGecko trending prices', exc_info=True)
         return out
 
     def get_top_gainers(self, *, limit: int = 20, vs_currency: str = 'usd') -> list[dict[str, Any]]:

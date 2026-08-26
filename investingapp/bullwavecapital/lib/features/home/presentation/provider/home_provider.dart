@@ -113,6 +113,16 @@ class HomeProvider extends ChangeNotifier {
       _error = 'Could not load home data. Pull to refresh.';
     }
 
+    // Fallback: live market board often has indices even when /home/ DB rows are empty.
+    if (_marketIndices.isEmpty) {
+      try {
+        final live = await _api.getLiveMarket(fast: true);
+        if (live.indices.isNotEmpty) {
+          _marketIndices = live.indices;
+        }
+      } catch (_) {}
+    }
+
     try {
       _monthlyEarnings = await _api.getEarnings();
     } catch (_) {}

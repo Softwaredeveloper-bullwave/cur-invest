@@ -123,6 +123,105 @@ def _entry_image(entry) -> str:
 
 
 def fetch_crypto_news(*, category: str | None = None, force: bool = False) -> list[dict]:
+    provider = (getattr(settings, 'CRYPTO_NEWS_PROVIDER', 'rss') or 'rss').lower()
+    if provider == 'newsapi' and (getattr(settings, 'CRYPTO_NEWS_API_KEY', '') or '').strip():
+        return _fetch_newsapi(category=category, force=force)
+    return _fetch_rss_news(category=category, force=force)
+
+
+def _fetch_newsapi(*, category: str | None = None, force: bool = False) -> list[dict]:
+    cache_minutes = int(getattr(settings, 'CRYPTO_NEWS_CACHE_MINUTES', 15) or 15)
+    cache_key = f'crypto:newsapi:{category or "all"}'
+    if not force:
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return cached
+
+    api_key = (getattr(settings, 'CRYPTO_NEWS_API_KEY', '') or '').strip()
+    query = (category or 'cryptocurrency OR bitcoin OR ethereum').strip()
+    if category and category.lower() not in {'all', 'market analysis'}:
+        query = category
+    started = timezone.now()
+    try:
+        with httpx.Client(timeout=20) as client:
+            resp = client.get(
+                'https://newsapi.org/v2/everything',
+                params={
+                    'q': query,
+                    'language': 'en',
+                    'sortBy': 'publishedAt',
+                    'pageSize': 40,
+                    'apiKey': api_key,
+                },
+                headers={'User-Agent': 'CapitalBullWave/1.0'},
+            )
+        if resp.status_code >= 400:
+            logger.warning('NewsAPI failed: %s %s', resp.status_code, resp.text[:200])
+            return _fetch_rss_news(category=category, force=True)
+
+        payload = resp.json()
+        articles = []
+        for item in payload.get('articles') or []:
+            title = _clean_html(item.get('title') or '')
+            if not title or title.lower() == '[removed]':
+                continue
+            link = item.get('url') or ''
+            summary = _clean_html(item.get('description') or '')[:600]
+            cat = _category_for(title, summary)
+            published_raw = item.get('publishedAt')
+            try:
+                published = datetime.fromisoformat(published_raw.replace('Z', '+00:00')) if published_raw else timezone.now()
+            except Exception:
+                published = timezone.now()
+            aid = _stable_id(link, title)
+            row = {
+                'id': aid,
+                'title': title[:400],
+                'summary': summary,
+                'image_url': (item.get('urlToImage') or '')[:500],
+                'source': ((item.get('source') or {}).get('name') or 'NewsAPI')[:120],
+                'published_at': published.isoformat(),
+                'category': cat,
+                'related_cryptocurrencies': _related_assets(title, summary),
+                'external_url': link[:500],
+            }
+            articles.append(row)
+            CryptoNewsArticle.objects.update_or_create(
+                id=aid,
+                defaults={
+                    'title': row['title'],
+                    'summary': summary,
+                    'image_url': row['image_url'],
+                    'source': row['source'],
+                    'published_at': published,
+                    'category': cat,
+                    'related_assets': row['related_cryptocurrencies'],
+                    'external_url': row['external_url'],
+                },
+            )
+        elapsed = int((timezone.now() - started).total_seconds() * 1000)
+        record_provider_call(
+            service='news',
+            endpoint='newsapi',
+            success=True,
+            response_ms=elapsed,
+            provider_name='newsapi',
+        )
+        cache.set(cache_key, articles, cache_minutes * 60)
+        return articles
+    except Exception as exc:
+        record_provider_call(
+            service='news',
+            endpoint='newsapi',
+            success=False,
+            error_type=type(exc).__name__,
+            error_message=str(exc)[:400],
+            provider_name='newsapi',
+        )
+        return _fetch_rss_news(category=category, force=True)
+
+
+def _fetch_rss_news(*, category: str | None = None, force: bool = False) -> list[dict]:
     cache_minutes = int(getattr(settings, 'CRYPTO_NEWS_CACHE_MINUTES', 15) or 15)
     cache_key = f'crypto:news:{category or "all"}'
     if not force:
@@ -192,7 +291,7 @@ def fetch_crypto_news(*, category: str | None = None, force: bool = False) -> li
             endpoint='rss',
             success=True,
             response_ms=elapsed,
-            provider_name=getattr(settings, 'CRYPTO_NEWS_PROVIDER', 'rss') or 'rss',
+            provider_name='rss',
         )
         cache.set(cache_key, articles, cache_minutes * 60)
         return articles
@@ -208,7 +307,6 @@ def fetch_crypto_news(*, category: str | None = None, force: bool = False) -> li
         cached = cache.get(cache_key)
         if cached:
             return cached
-        # DB fallback
         qs = CryptoNewsArticle.objects.all()[:50]
         return [
             {

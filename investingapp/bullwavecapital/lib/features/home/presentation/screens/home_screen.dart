@@ -267,26 +267,40 @@ class _HomeScreenState extends State<HomeScreen> {
                         onAction: () => provider.refresh(),
                       ),
                     ),
-                  Consumer<StockFeaturesProvider>(
-                    builder: (context, features, _) {
-                      if (provider.marketIndicesUnavailable) {
+                  Consumer2<HomeProvider, StockMarketProvider>(
+                    builder: (context, home, market, _) {
+                      final indices = home.marketIndices.isNotEmpty
+                          ? home.marketIndices
+                          : market.marketIndices;
+                      if (indices.isEmpty &&
+                          !home.isLoading &&
+                          !market.isLoading) {
                         return Padding(
                           padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
                           child: PremiumAlertBanner(
-                            message: 'Live market indices are unavailable. Pull to refresh.',
+                            message:
+                                'Live market indices are unavailable. Pull to refresh.',
                             type: PremiumAlertType.warning,
                             actionLabel: 'Retry',
-                            onAction: () => provider.refresh(),
+                            onAction: () async {
+                              await home.refresh();
+                              await market.refresh();
+                            },
                           ),
                         );
                       }
+                      if (indices.isEmpty) {
+                        return const SizedBox.shrink();
+                      }
                       return MarketOverview(
-                        indices: provider.marketIndices,
+                        indices: indices,
                         expiryFor: (index) {
                           final symbol = FnoIndexCatalog.symbolForMarketIndex(
                             index.shortName,
                           );
                           if (symbol == null) return null;
+                          final features =
+                              context.read<StockFeaturesProvider>();
                           final expiry = features.optionSelectedExpiry(symbol);
                           return expiry.isNotEmpty ? expiry : null;
                         },

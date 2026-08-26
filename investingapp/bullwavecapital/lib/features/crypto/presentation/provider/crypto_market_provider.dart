@@ -229,25 +229,44 @@ class CryptoMarketProvider extends ChangeNotifier {
     _isLoading = true;
     _error = null;
     notifyListeners();
-    try {
-      await Future.wait([
-        _loadOverview(),
-        _loadAssets(),
-        _loadWatchlist(),
-        _loadPortfolio(),
-      ]);
-      _initialized = true;
-      _isStale = _overview?.stale ?? false;
-    } on ApiException catch (e) {
-      _error = e.message.contains('unavailable')
-          ? e.message
-          : 'Market data is temporarily unavailable. Please try again.';
-    } catch (_) {
-      _error = 'Market data is temporarily unavailable. Please try again.';
-    } finally {
-      _isLoading = false;
-      notifyListeners();
+
+    Object? overviewErr;
+    Object? assetsErr;
+    await Future.wait([
+      _tryLoad(_loadOverview, onError: (e) => overviewErr = e),
+      _tryLoad(_loadAssets, onError: (e) => assetsErr = e),
+      _tryLoad(_loadWatchlist),
+      _tryLoad(_loadPortfolio),
+    ]);
+
+    _initialized = _overview != null || _assets.isNotEmpty;
+    _isStale = _overview?.stale ?? false;
+    if (_overview == null && _assets.isEmpty) {
+      _error = _marketError(overviewErr ?? assetsErr);
+    } else {
+      _error = null;
     }
+    _isLoading = false;
+    notifyListeners();
+  }
+
+  Future<void> _tryLoad(
+    Future<void> Function() fn, {
+    void Function(Object error)? onError,
+  }) async {
+    try {
+      await fn();
+    } catch (e) {
+      onError?.call(e);
+    }
+  }
+
+  String _marketError(Object? error) {
+    if (error is ApiException) {
+      final message = error.message.trim();
+      if (message.isNotEmpty) return message;
+    }
+    return 'Market data is temporarily unavailable. Please try again.';
   }
 
   Future<void> refreshOverview() async {

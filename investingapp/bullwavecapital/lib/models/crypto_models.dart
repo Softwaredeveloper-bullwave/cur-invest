@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 
+import 'stock_model.dart';
+
 dynamic _pick(Map<String, dynamic> json, String camel, String snake) =>
     json[camel] ?? json[snake];
 
@@ -30,6 +32,16 @@ DateTime _date(dynamic v) {
   } catch (_) {
     return DateTime.now();
   }
+}
+
+DateTime _chartTime(dynamic v) {
+  final ms = _int(v);
+  if (ms <= 0) return DateTime.now();
+  // CoinGecko / CoinDCX use ms; tolerate accidental seconds.
+  if (ms < 100000000000) {
+    return DateTime.fromMillisecondsSinceEpoch(ms * 1000);
+  }
+  return DateTime.fromMillisecondsSinceEpoch(ms);
 }
 
 List<double> _sparkline(dynamic raw) {
@@ -123,11 +135,15 @@ class CryptoAssetModel {
   factory CryptoAssetModel.fromJson(Map<String, dynamic> json) {
     final sparkRaw = _pick(json, 'sparkline7d', 'sparkline_7d') ??
         _pick(json, 'sparkline', 'sparkline');
+    final descriptionRaw = _pick(json, 'description', 'description');
+    final description = descriptionRaw is Map
+        ? (descriptionRaw['en'] ?? descriptionRaw.values.firstOrNull ?? '').toString()
+        : (descriptionRaw ?? '').toString();
     return CryptoAssetModel(
       id: (_pick(json, 'id', 'id') ?? '').toString(),
-      symbol: ((_pick(json, 'symbol', 'symbol') as String?) ?? '').toUpperCase(),
-      name: (_pick(json, 'name', 'name') as String?) ?? '',
-      imageUrl: (_pick(json, 'imageUrl', 'image_url') as String?) ?? '',
+      symbol: (_pick(json, 'symbol', 'symbol') ?? '').toString().toUpperCase(),
+      name: (_pick(json, 'name', 'name') ?? '').toString(),
+      imageUrl: (_pick(json, 'imageUrl', 'image_url') ?? '').toString(),
       currentPrice: _num(_pick(json, 'currentPrice', 'current_price')),
       change24hPct: _num(
         _pick(json, 'change24hPct', 'price_change_percentage_24h') ??
@@ -140,8 +156,8 @@ class CryptoAssetModel {
       marketCap: _num(_pick(json, 'marketCap', 'market_cap')),
       marketCapRank: _int(_pick(json, 'marketCapRank', 'market_cap_rank')),
       sparkline: _sparkline(sparkRaw),
-      description: (_pick(json, 'description', 'description') as String?) ?? '',
-      currency: (_pick(json, 'currency', 'currency') as String?) ?? 'usd',
+      description: description,
+      currency: (_pick(json, 'currency', 'currency') ?? 'usd').toString(),
       circulatingSupply: _num(_pick(json, 'circulatingSupply', 'circulating_supply')),
       totalSupply: _num(_pick(json, 'totalSupply', 'total_supply')),
       maxSupply: _num(_pick(json, 'maxSupply', 'max_supply')),
@@ -192,8 +208,8 @@ class CryptoOverviewModel {
       fearGreedValue: fear is Map ? _int(fear['value']) : 0,
       fearGreedLabel: fear is Map ? (fear['classification'] as String? ?? '') : '',
       trending: trendingRaw
-          .whereType<Map<String, dynamic>>()
-          .map(CryptoAssetModel.fromJson)
+          .whereType<Map>()
+          .map((e) => CryptoAssetModel.fromJson(Map<String, dynamic>.from(e)))
           .toList(),
       stale: json['stale'] as bool? ?? false,
       provider: (json['provider'] as String?) ?? '',
@@ -443,12 +459,14 @@ class CryptoChartModel {
     required this.period,
     this.prices = const [],
     this.volumes = const [],
+    this.candles = const [],
   });
 
   final String assetId;
   final String period;
   final List<CryptoChartPoint> prices;
   final List<CryptoChartPoint> volumes;
+  final List<CandleModel> candles;
 
   factory CryptoChartModel.fromJson(Map<String, dynamic> json) {
     List<CryptoChartPoint> parsePoints(dynamic raw) {
@@ -457,12 +475,12 @@ class CryptoChartModel {
       for (final item in raw) {
         if (item is Map) {
           out.add(CryptoChartPoint(
-            time: DateTime.fromMillisecondsSinceEpoch(_int(item['t'])),
+            time: _chartTime(item['t']),
             value: _num(item['v']),
           ));
         } else if (item is List && item.length >= 2) {
           out.add(CryptoChartPoint(
-            time: DateTime.fromMillisecondsSinceEpoch(_int(item[0])),
+            time: _chartTime(item[0]),
             value: _num(item[1]),
           ));
         }
@@ -470,11 +488,55 @@ class CryptoChartModel {
       return out;
     }
 
+    List<CandleModel> parseCandles(dynamic raw) {
+      if (raw is! List) return const [];
+      final out = <CandleModel>[];
+      for (final item in raw) {
+        if (item is! Map) continue;
+        final close = _num(item['c'] ?? item['close'] ?? item['v']);
+        final open = _num(item['o'] ?? item['open'] ?? close);
+        final high = _num(item['h'] ?? item['high'] ?? close);
+        final low = _num(item['l'] ?? item['low'] ?? close);
+        final volRaw = _num(item['v'] ?? item['volume']);
+        final vol = volRaw.isFinite ? volRaw.round().clamp(0, 2147483647) : 0;
+        if (close <= 0 && open <= 0) continue;
+        final hi = high > 0 ? high : (open > close ? open : close);
+        final lo = low > 0 ? low : (open < close ? open : close);
+        out.add(CandleModel(
+          time: _chartTime(item['t'] ?? item['time']),
+          open: open,
+          high: hi,
+          low: lo,
+          close: close > 0 ? close : open,
+          volume: vol,
+        ));
+      }
+      return out;
+    }
+
+    final prices = parsePoints(json['prices']);
+    var candles = parseCandles(json['candles']);
+    // Synthesize candles from close prices when provider only returns line data.
+    if (candles.isEmpty && prices.isNotEmpty) {
+      candles = [
+        for (var i = 0; i < prices.length; i++)
+          CandleModel(
+            time: prices[i].time,
+            open: i == 0 ? prices[i].value : prices[i - 1].value,
+            high: prices[i].value,
+            low: prices[i].value,
+            close: prices[i].value,
+            volume: 0,
+          ),
+      ];
+    }
+
     return CryptoChartModel(
       assetId: (_pick(json, 'id', 'id') ?? '').toString(),
       period: (_pick(json, 'period', 'period') as String?) ?? '1D',
-      prices: parsePoints(json['prices']),
+      prices: prices,
       volumes: parsePoints(json['volumes']),
+      candles: candles,
     );
   }
 }
@@ -595,8 +657,8 @@ class CryptoScreenerResult {
 List<CryptoAssetModel> parseCryptoAssetList(dynamic data) {
   if (data is! List) return const [];
   return data
-      .whereType<Map<String, dynamic>>()
-      .map(CryptoAssetModel.fromJson)
+      .whereType<Map>()
+      .map((e) => CryptoAssetModel.fromJson(Map<String, dynamic>.from(e)))
       .toList();
 }
 

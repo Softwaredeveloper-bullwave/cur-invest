@@ -15,6 +15,7 @@ from .health import record_provider_call
 from .models import CryptoAsset, CryptoMarketSnapshot
 from .providers.base import BaseCryptoProvider, CryptoProviderError
 from .providers.coingecko import CoinGeckoProvider
+from .providers.coindcx import CoinDCXProvider
 
 logger = logging.getLogger('bullwave.crypto')
 
@@ -33,11 +34,12 @@ TOP_IDS = (
 
 
 def active_crypto_provider() -> BaseCryptoProvider:
-    name = (getattr(settings, 'CRYPTO_DATA_PROVIDER', 'coingecko') or 'coingecko').lower().strip()
-    if name in ('coingecko', 'auto', ''):
+    name = (getattr(settings, 'CRYPTO_DATA_PROVIDER', 'coindcx') or 'coindcx').lower().strip()
+    if name in ('coindcx', 'auto', ''):
+        return CoinDCXProvider()
+    if name in ('coingecko', 'coingecko_pro'):
         return CoinGeckoProvider()
-    # Future: CryptoProviderB
-    return CoinGeckoProvider()
+    return CoinDCXProvider()
 
 
 def provider_label() -> str:

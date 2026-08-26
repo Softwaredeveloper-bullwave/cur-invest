@@ -46,6 +46,19 @@ class HomeView(APIView):
         portfolio['wallet_balance'] = wallet.balance
 
         indices = list(MarketIndex.objects.all().order_by('id')[:6])
+        if not indices:
+            # Prefer live quote refresh; fall back to seed rows so Home never looks empty.
+            try:
+                from stocks.market_data_service import refresh_all_indices
+
+                refreshed = refresh_all_indices()
+                if refreshed:
+                    indices = refreshed[:6]
+            except Exception:
+                indices = []
+        if not indices:
+            indices = _ensure_default_indices()
+
         recent = user.transactions.all()[:5]
 
         try:
@@ -66,6 +79,31 @@ class HomeView(APIView):
                 'recentActivity': TransactionSerializer(recent, many=True).data,
             }
         )
+
+
+def _ensure_default_indices():
+    """Create baseline index rows when DB was never seeded (AWS empty MarketIndex table)."""
+    from decimal import Decimal
+
+    defaults = (
+        ('NIFTY50', 'Nifty 50', 'NIFTY', '24832.45', '156.30', '0.63'),
+        ('SENSEX', 'Sensex', 'SENSEX', '81524.78', '582.15', '0.72'),
+        ('BANKNIFTY', 'Bank Nifty', 'BANK NIFTY', '52318.60', '-124.40', '-0.24'),
+    )
+    out = []
+    for row in defaults:
+        obj, _ = MarketIndex.objects.update_or_create(
+            id=row[0],
+            defaults={
+                'name': row[1],
+                'short_name': row[2],
+                'value': Decimal(row[3]),
+                'change': Decimal(row[4]),
+                'change_percent': Decimal(row[5]),
+            },
+        )
+        out.append(obj)
+    return out
 
 
 class InvestmentPlanListView(APIView):

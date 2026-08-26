@@ -983,14 +983,6 @@ class AppRouter {
       ),
 
       GoRoute(
-        path: AppRoutes.cryptoDetail,
-        parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => CryptoDetailScreen(
-          assetId: state.pathParameters['assetId'] ?? '',
-        ),
-      ),
-
-      GoRoute(
         path: AppRoutes.cryptoWatchlist,
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const CryptoWatchlistScreen(),
@@ -1018,6 +1010,16 @@ class AppRouter {
         path: AppRoutes.cryptoMovers,
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const CryptoMoversScreen(),
+      ),
+
+      // Keep parameterized detail AFTER static /crypto/... paths so
+      // /crypto/movers is not treated as an asset named "movers".
+      GoRoute(
+        path: AppRoutes.cryptoDetail,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => CryptoDetailScreen(
+          assetId: state.pathParameters['assetId'] ?? '',
+        ),
       ),
     ],
   );

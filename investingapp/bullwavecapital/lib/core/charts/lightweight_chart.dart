@@ -16,6 +16,9 @@ class LightweightMarketChart extends StatelessWidget {
   final MarketChartType chartType;
   final bool showVolume;
   final bool showSma;
+  final bool showEma;
+  final bool showBollinger;
+  final bool enableZoom;
   final double? lastPrice;
   final ValueChanged<CandleModel?>? onCrosshair;
 
@@ -28,6 +31,9 @@ class LightweightMarketChart extends StatelessWidget {
     this.chartType = MarketChartType.candlestick,
     this.showVolume = true,
     this.showSma = false,
+    this.showEma = false,
+    this.showBollinger = false,
+    this.enableZoom = true,
     this.lastPrice,
     this.onCrosshair,
   });
@@ -42,6 +48,9 @@ class LightweightMarketChart extends StatelessWidget {
       chartType: chartType,
       showVolume: showVolume,
       showSma: showSma,
+      showEma: showEma,
+      showBollinger: showBollinger,
+      enableZoom: enableZoom,
       intervalLabel: intervalLabel,
       lastPrice: lastPrice,
       onCrosshair: onCrosshair,

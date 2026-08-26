@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../core/api/api_exception.dart';
 import '../../../../core/api/bullwave_api.dart';
 import '../../../../core/theme/colors.dart';
 import '../../../../core/theme/theme_a.dart';
@@ -9,10 +10,9 @@ import '../../../../core/widgets/custom_app_bar.dart';
 import '../../../../core/widgets/loading_card.dart';
 import '../../../../core/widgets/custom_dialog.dart';
 import '../../../../models/crypto_models.dart';
+import '../../../../models/stock_model.dart';
 import '../provider/crypto_market_provider.dart';
-import '../widgets/crypto_mini_chart.dart';
-
-const _cryptoPeriods = ['1H', '1D', '1W', '1M', '3M', '1Y', 'ALL'];
+import '../widgets/crypto_detail_chart.dart';
 
 class CryptoDetailScreen extends StatefulWidget {
   const CryptoDetailScreen({super.key, required this.assetId});
@@ -25,10 +25,29 @@ class CryptoDetailScreen extends StatefulWidget {
 
 class _CryptoDetailScreenState extends State<CryptoDetailScreen> {
   CryptoAssetModel? _asset;
-  CryptoChartModel? _chart;
+  List<CandleModel> _candles = const [];
   String _period = '1D';
-  bool _loading = true;
+  bool _loadingAsset = true;
+  bool _loadingChart = true;
   String? _error;
+
+  String get _resolvedId {
+    final raw = widget.assetId.trim();
+    if (raw.isEmpty) return raw;
+    final lower = raw.toLowerCase();
+    const aliases = {
+      'btc': 'bitcoin',
+      'eth': 'ethereum',
+      'sol': 'solana',
+      'xrp': 'ripple',
+      'ada': 'cardano',
+      'doge': 'dogecoin',
+      'bnb': 'binancecoin',
+      'usdt': 'tether',
+      'usdc': 'usd-coin',
+    };
+    return aliases[lower] ?? lower;
+  }
 
   @override
   void initState() {
@@ -38,54 +57,137 @@ class _CryptoDetailScreenState extends State<CryptoDetailScreen> {
 
   Future<void> _load() async {
     setState(() {
-      _loading = true;
+      _loadingAsset = true;
+      _loadingChart = true;
       _error = null;
     });
+    final api = BullwaveApi.instance;
+    final id = _resolvedId;
+    final providerAssets = context.read<CryptoMarketProvider>().assets;
+    CryptoAssetModel? cached;
+    for (final a in providerAssets) {
+      if (a.id.toLowerCase() == id ||
+          a.symbol.toLowerCase() == id ||
+          a.symbol.toLowerCase() == widget.assetId.trim().toLowerCase()) {
+        cached = a;
+        break;
+      }
+    }
+
     try {
-      final api = BullwaveApi.instance;
-      final results = await Future.wait([
-        api.getCryptoAsset(widget.assetId),
-        api.getCryptoChart(widget.assetId, period: _period),
-      ]);
+      final asset = await api.getCryptoAsset(id);
       if (!mounted) return;
       setState(() {
-        _asset = results[0] as CryptoAssetModel;
-        _chart = results[1] as CryptoChartModel;
-        _loading = false;
+        _asset = asset;
+        _loadingAsset = false;
+      });
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      if (cached != null) {
+        setState(() {
+          _asset = cached;
+          _loadingAsset = false;
+          _error = null;
+        });
+      } else {
+        setState(() {
+          _error = e.message;
+          _loadingAsset = false;
+          _loadingChart = false;
+        });
+        return;
+      }
+    } catch (_) {
+      if (!mounted) return;
+      if (cached != null) {
+        setState(() {
+          _asset = cached;
+          _loadingAsset = false;
+          _error = null;
+        });
+      } else {
+        setState(() {
+          _error = 'Market data is temporarily unavailable. Please try again.';
+          _loadingAsset = false;
+          _loadingChart = false;
+        });
+        return;
+      }
+    }
+
+    await _loadChart(_period);
+  }
+
+  Future<void> _loadChart(String period) async {
+    setState(() {
+      _loadingChart = true;
+      _period = period;
+    });
+    try {
+      final chart = await BullwaveApi.instance.getCryptoChart(
+        _resolvedId,
+        period: period,
+      );
+      if (!mounted) return;
+      var candles = chart.candles;
+      if (candles.length < 2) {
+        candles = _candlesFromSparkline(_asset, fallbackPrice: _asset?.currentPrice);
+      }
+      setState(() {
+        _candles = candles;
+        _loadingChart = false;
       });
     } catch (_) {
       if (!mounted) return;
+      final fallback = _candlesFromSparkline(
+        _asset,
+        fallbackPrice: _asset?.currentPrice,
+      );
       setState(() {
-        _error = 'Market data is temporarily unavailable. Please try again.';
-        _loading = false;
+        if (fallback.length >= 2) _candles = fallback;
+        _loadingChart = false;
       });
     }
   }
 
-  Future<void> _changePeriod(String period) async {
-    setState(() => _period = period);
-    try {
-      final chart = await BullwaveApi.instance.getCryptoChart(
-        widget.assetId,
-        period: period,
-      );
-      if (mounted) setState(() => _chart = chart);
-    } catch (_) {
-      if (mounted) {
-        setState(() => _error = 'Market data is temporarily unavailable. Please try again.');
-      }
+  static List<CandleModel> _candlesFromSparkline(
+    CryptoAssetModel? asset, {
+    double? fallbackPrice,
+  }) {
+    final spark = asset?.sparkline ?? const <double>[];
+    final price = fallbackPrice ?? asset?.currentPrice ?? 0;
+    final values = spark.where((v) => v > 0).toList();
+    if (values.length < 2 && price > 0) {
+      values
+        ..clear()
+        ..add(price * 0.985)
+        ..add(price);
     }
+    if (values.length < 2) return const [];
+    final now = DateTime.now();
+    return [
+      for (var i = 0; i < values.length; i++)
+        CandleModel(
+          time: now.subtract(Duration(minutes: (values.length - 1 - i) * 15)),
+          open: i == 0 ? values[i] : values[i - 1],
+          high: i == 0 ? values[i] : (values[i] > values[i - 1] ? values[i] : values[i - 1]),
+          low: i == 0 ? values[i] : (values[i] < values[i - 1] ? values[i] : values[i - 1]),
+          close: values[i],
+          volume: 0,
+        ),
+    ];
   }
 
   Future<void> _paperTrade(String side) async {
     final qty = await showDialog<double>(
       context: context,
-      builder: (ctx) => _QuantityDialog(side: side, symbol: _asset?.symbol ?? ''),
+      builder: (ctx) =>
+          _QuantityDialog(side: side, symbol: _asset?.symbol ?? ''),
     );
     if (qty == null || qty <= 0 || !mounted) return;
     final provider = context.read<CryptoMarketProvider>();
     final result = await provider.placePaperOrder(
-      assetId: widget.assetId,
+      assetId: _asset?.id.isNotEmpty == true ? _asset!.id : _resolvedId,
       side: side,
       quantity: qty,
     );
@@ -104,25 +206,49 @@ class _CryptoDetailScreenState extends State<CryptoDetailScreen> {
   Widget build(BuildContext context) {
     final p = context.palette;
     final provider = context.watch<CryptoMarketProvider>();
-    final inWatchlist = provider.isInWatchlist(widget.assetId);
+    final watchId = _asset?.id.isNotEmpty == true ? _asset!.id : _resolvedId;
+    final inWatchlist = provider.isInWatchlist(watchId);
 
     return Scaffold(
       appBar: CustomAppBar(
-        title: _asset?.symbol ?? widget.assetId.toUpperCase(),
+        title: _asset?.symbol.isNotEmpty == true
+            ? _asset!.symbol
+            : widget.assetId.toUpperCase(),
         actions: [
           IconButton(
-            icon: Icon(inWatchlist ? Icons.star_rounded : Icons.star_outline_rounded),
-            onPressed: () => provider.toggleWatchlist(widget.assetId),
+            icon: Icon(
+              inWatchlist ? Icons.star_rounded : Icons.star_outline_rounded,
+            ),
+            onPressed: () => provider.toggleWatchlist(watchId),
           ),
         ],
       ),
-      body: _loading
+      body: _loadingAsset
           ? const Padding(
               padding: EdgeInsets.all(16),
               child: LoadingList(itemCount: 4),
             )
           : _asset == null
-              ? Center(child: Text(_error ?? 'Asset not found', style: context.typeSecondary(14)))
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          _error ?? 'Asset not found',
+                          textAlign: TextAlign.center,
+                          style: context.typeSecondary(14),
+                        ),
+                        const SizedBox(height: 12),
+                        FilledButton(
+                          onPressed: _load,
+                          child: const Text('Retry'),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
               : RefreshIndicator(
                   color: AppColors.brandCyan,
                   onRefresh: _load,
@@ -142,7 +268,8 @@ class _CryptoDetailScreenState extends State<CryptoDetailScreen> {
                           ),
                           child: Text(
                             'PAPER TRADING — Simulated orders only',
-                            style: context.typeLabel(12, p.primaryDark)
+                            style: context
+                                .typeLabel(12, p.primaryDark)
                                 .copyWith(fontWeight: FontWeight.w700),
                           ),
                         ),
@@ -161,19 +288,14 @@ class _CryptoDetailScreenState extends State<CryptoDetailScreen> {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        _PeriodSelector(selected: _period, onSelected: _changePeriod),
-                        const SizedBox(height: 12),
-                        if (_chart != null && _chart!.prices.isNotEmpty)
-                          SizedBox(
-                            height: 200,
-                            child: CryptoMiniChart(
-                              values: _chart!.prices.map((e) => e.value).toList(),
-                              positive: _asset!.isPositive,
-                              width: MediaQuery.sizeOf(context).width - 32,
-                              height: 200,
-                              lineWidth: 2,
-                            ),
-                          ),
+                        CryptoDetailChart(
+                          symbol: _asset!.symbol,
+                          candles: _candles,
+                          isLoading: _loadingChart,
+                          selectedPeriod: _period,
+                          onPeriodSelected: _loadChart,
+                          lastPrice: _asset!.currentPrice,
+                        ),
                         const SizedBox(height: 20),
                         _StatsGrid(asset: _asset!),
                         const SizedBox(height: 20),
@@ -181,7 +303,8 @@ class _CryptoDetailScreenState extends State<CryptoDetailScreen> {
                           Text('About', style: context.typeSection(16)),
                           const SizedBox(height: 8),
                           Text(
-                            _asset!.description.replaceAll(RegExp(r'<[^>]*>'), ' '),
+                            _asset!.description
+                                .replaceAll(RegExp(r'<[^>]*>'), ' '),
                             style: context.typeBody(14),
                             maxLines: 8,
                             overflow: TextOverflow.ellipsis,
@@ -227,53 +350,6 @@ class _CryptoDetailScreenState extends State<CryptoDetailScreen> {
   }
 }
 
-class _PeriodSelector extends StatelessWidget {
-  const _PeriodSelector({required this.selected, required this.onSelected});
-
-  final String selected;
-  final ValueChanged<String> onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: _cryptoPeriods.map((label) {
-          final isSelected = label == selected;
-          return Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: Material(
-              color: isSelected
-                  ? AppColors.brandOrange.withValues(alpha: 0.15)
-                  : context.palette.surface,
-              borderRadius: BorderRadius.circular(999),
-              child: InkWell(
-                onTap: () => onSelected(label),
-                borderRadius: BorderRadius.circular(999),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(999),
-                    border: Border.all(
-                      color: isSelected
-                          ? AppColors.brandOrange.withValues(alpha: 0.5)
-                          : context.palette.borderLight,
-                    ),
-                  ),
-                  child: Text(
-                    label,
-                    style: context.typeLabel(13, isSelected ? AppColors.brandOrange : null),
-                  ),
-                ),
-              ),
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-}
-
 class _StatsGrid extends StatelessWidget {
   const _StatsGrid({required this.asset});
 
@@ -286,6 +362,8 @@ class _StatsGrid extends StatelessWidget {
       ('24h Low', _formatUsd(asset.low24h)),
       ('Volume', _compact(asset.volume)),
       ('Market Cap', _compact(asset.marketCap)),
+      ('Circulating', _compact(asset.circulatingSupply)),
+      ('ATH', _formatUsd(asset.ath)),
     ];
     return GridView.count(
       crossAxisCount: 2,
@@ -313,9 +391,11 @@ class _StatsGrid extends StatelessWidget {
     );
   }
 
-  static String _formatUsd(double v) => v >= 1 ? '\$${v.toStringAsFixed(2)}' : '\$${v.toStringAsFixed(4)}';
+  static String _formatUsd(double v) =>
+      v >= 1 ? '\$${v.toStringAsFixed(2)}' : '\$${v.toStringAsFixed(4)}';
 
   static String _compact(double v) {
+    if (v <= 0) return '—';
     if (v >= 1e12) return '\$${(v / 1e12).toStringAsFixed(2)}T';
     if (v >= 1e9) return '\$${(v / 1e9).toStringAsFixed(2)}B';
     if (v >= 1e6) return '\$${(v / 1e6).toStringAsFixed(2)}M';
@@ -346,7 +426,10 @@ class _QuantityDialogState extends State<_QuantityDialog> {
         decoration: const InputDecoration(labelText: 'Quantity'),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
         FilledButton(
           onPressed: () {
             final qty = double.tryParse(_controller.text.trim()) ?? 0;

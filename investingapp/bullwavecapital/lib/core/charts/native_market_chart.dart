@@ -13,6 +13,9 @@ class NativeMarketChart extends StatefulWidget {
   final MarketChartType chartType;
   final bool showVolume;
   final bool showSma;
+  final bool showEma;
+  final bool showBollinger;
+  final bool enableZoom;
   final String intervalLabel;
   final double? lastPrice;
   final ValueChanged<CandleModel?>? onCrosshair;
@@ -24,6 +27,9 @@ class NativeMarketChart extends StatefulWidget {
     this.chartType = MarketChartType.candlestick,
     this.showVolume = true,
     this.showSma = false,
+    this.showEma = false,
+    this.showBollinger = false,
+    this.enableZoom = true,
     this.intervalLabel = '1D',
     this.lastPrice,
     this.onCrosshair,
@@ -35,6 +41,9 @@ class NativeMarketChart extends StatefulWidget {
 
 class _NativeMarketChartState extends State<NativeMarketChart> {
   int? _hoverIndex;
+  int _visibleCount = 80;
+  int _endIndex = 0;
+  double _pinchStartVisible = 80;
 
   static const _bg = Color(0xFF0B0E11);
   static const _grid = Color(0x14FFFFFF);
@@ -43,12 +52,35 @@ class _NativeMarketChartState extends State<NativeMarketChart> {
   static const _red = Color(0xFFEF5350);
   static const _sma20 = Color(0xFF38BDF8);
   static const _sma50 = Color(0xFFF59E0B);
+  static const _ema = Color(0xFFE879F9);
+  static const _bb = Color(0x66FFFFFF);
 
-  List<CandleModel> get _candles => normalizeCandles(widget.candles);
+  List<CandleModel> get _all => normalizeCandles(widget.candles);
+
+  List<CandleModel> get _window {
+    final all = _all;
+    if (all.length < 2) return all;
+    final vis = _visibleCount.clamp(8, all.length);
+    var end = _endIndex;
+    if (end <= 0 || end > all.length) end = all.length;
+    end = end.clamp(vis, all.length);
+    final start = (end - vis).clamp(0, all.length);
+    return all.sublist(start, end);
+  }
+
+  @override
+  void didUpdateWidget(covariant NativeMarketChart oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.candles.length != widget.candles.length ||
+        oldWidget.intervalLabel != widget.intervalLabel) {
+      _endIndex = 0;
+      _visibleCount = widget.candles.length < 80 ? widget.candles.length : 80;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final candles = _candles;
+    final candles = _window;
     if (candles.length < 2) {
       return SizedBox(
         height: widget.height,
@@ -61,9 +93,12 @@ class _NativeMarketChartState extends State<NativeMarketChart> {
       );
     }
 
+    final all = _all;
     final intraday = isIntradayInterval(widget.intervalLabel);
     final sma20 = widget.showSma ? smaValues(candles, 20) : null;
     final sma50 = widget.showSma ? smaValues(candles, 50) : null;
+    final ema20 = widget.showEma ? emaValues(candles, 20) : null;
+    final bb = widget.showBollinger ? bollingerBands(candles) : null;
 
     return SizedBox(
       height: widget.height,
@@ -76,90 +111,121 @@ class _NativeMarketChartState extends State<NativeMarketChart> {
           final volH = widget.showVolume ? widget.height * 0.18 : 0.0;
           final mainH = widget.height - timeAxisH - volH;
 
-          return Column(
+          return Stack(
             children: [
-              SizedBox(
-                height: mainH + volH,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Expanded(
-                      child: GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTapDown: (d) => _setIndexFromX(
-                          d.localPosition.dx,
-                          chartW,
-                          candles.length,
-                        ),
-                        onPanStart: (d) => _setIndexFromX(
-                          d.localPosition.dx,
-                          chartW,
-                          candles.length,
-                        ),
-                        onPanUpdate: (d) => _setIndexFromX(
-                          d.localPosition.dx,
-                          chartW,
-                          candles.length,
-                        ),
-                        onPanEnd: (_) {
-                          setState(() => _hoverIndex = null);
-                          widget.onCrosshair?.call(null);
-                        },
-                        onTapUp: (_) {
-                          setState(() => _hoverIndex = null);
-                          widget.onCrosshair?.call(null);
-                        },
-                        child: CustomPaint(
-                          painter: _MarketChartPainter(
-                            candles: candles,
-                            chartType: widget.chartType,
-                            showVolume: widget.showVolume,
-                            sma20: sma20,
-                            sma50: sma50,
-                            hoverIndex: _hoverIndex,
-                            lastPrice: widget.lastPrice,
-                            intraday: intraday,
-                            mainHeight: mainH,
-                            volumeHeight: volH,
-                            panOffset: 0,
+              Column(
+                children: [
+                  SizedBox(
+                    height: mainH + volH,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTapDown: (d) => _setIndexFromX(
+                              d.localPosition.dx,
+                              chartW,
+                              candles.length,
+                            ),
+                            onScaleStart: (_) {
+                              _pinchStartVisible = _visibleCount.toDouble();
+                            },
+                            onScaleUpdate: (d) {
+                              if (widget.enableZoom &&
+                                  (d.pointerCount > 1 || (d.scale - 1).abs() > 0.04)) {
+                                final allLen = all.length;
+                                final next = (_pinchStartVisible / d.scale)
+                                    .round()
+                                    .clamp(8, allLen);
+                                if (next != _visibleCount) {
+                                  setState(() => _visibleCount = next);
+                                }
+                              } else if (d.pointerCount == 1) {
+                                _panBy(d.focalPointDelta.dx, chartW);
+                                _setIndexFromX(
+                                  d.localFocalPoint.dx,
+                                  chartW,
+                                  candles.length,
+                                );
+                              }
+                            },
+                            onScaleEnd: (_) {
+                              setState(() => _hoverIndex = null);
+                              widget.onCrosshair?.call(null);
+                            },
+                            onTapUp: (_) {
+                              setState(() => _hoverIndex = null);
+                              widget.onCrosshair?.call(null);
+                            },
+                            child: CustomPaint(
+                              painter: _MarketChartPainter(
+                                candles: candles,
+                                chartType: widget.chartType,
+                                showVolume: widget.showVolume,
+                                sma20: sma20,
+                                sma50: sma50,
+                                ema20: ema20,
+                                bbUpper: bb?.upper,
+                                bbLower: bb?.lower,
+                                hoverIndex: _hoverIndex,
+                                lastPrice: widget.lastPrice,
+                                intraday: intraday,
+                                mainHeight: mainH,
+                                volumeHeight: volH,
+                                panOffset: 0,
+                              ),
+                              size: Size.infinite,
+                            ),
                           ),
-                          size: Size.infinite,
                         ),
-                      ),
-                    ),
-                    SizedBox(
-                      width: priceAxisW,
-                      child: CustomPaint(
-                        painter: _PriceAxisPainter(
-                          candles: candles,
-                          lastPrice: widget.lastPrice,
-                          mainHeight: mainH,
-                          volumeHeight: volH,
-                          showVolume: widget.showVolume,
+                        SizedBox(
+                          width: priceAxisW,
+                          child: CustomPaint(
+                            painter: _PriceAxisPainter(
+                              candles: candles,
+                              lastPrice: widget.lastPrice,
+                              mainHeight: mainH,
+                              volumeHeight: volH,
+                              showVolume: widget.showVolume,
+                            ),
+                            size: Size.infinite,
+                          ),
                         ),
-                        size: Size.infinite,
-                      ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                  SizedBox(
+                    height: timeAxisH,
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: CustomPaint(
+                            painter: _TimeAxisPainter(
+                              candles: candles,
+                              intraday: intraday,
+                            ),
+                            size: Size.infinite,
+                          ),
+                        ),
+                        const SizedBox(width: 54),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              SizedBox(
-                height: timeAxisH,
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: CustomPaint(
-                        painter: _TimeAxisPainter(
-                          candles: candles,
-                          intraday: intraday,
-                        ),
-                        size: Size.infinite,
-                      ),
-                    ),
-                    const SizedBox(width: 54),
-                  ],
+              if (widget.enableZoom && all.length > 8)
+                Positioned(
+                  right: 58,
+                  top: 6,
+                  child: Column(
+                    children: [
+                      _zoomBtn(Icons.add, () => _zoomBy(0.75)),
+                      const SizedBox(height: 4),
+                      _zoomBtn(Icons.remove, () => _zoomBy(1.35)),
+                    ],
+                  ),
                 ),
-              ),
             ],
           );
         },
@@ -167,9 +233,50 @@ class _NativeMarketChartState extends State<NativeMarketChart> {
     );
   }
 
+  Widget _zoomBtn(IconData icon, VoidCallback onTap) {
+    return Material(
+      color: const Color(0xCC1E2329),
+      borderRadius: BorderRadius.circular(6),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(6),
+        child: SizedBox(
+          width: 28,
+          height: 28,
+          child: Icon(icon, size: 16, color: _text),
+        ),
+      ),
+    );
+  }
+
+  void _zoomBy(double scale) {
+    final all = _all;
+    if (all.length < 8) return;
+    setState(() {
+      final next = (_visibleCount * scale).round().clamp(8, all.length);
+      _visibleCount = next;
+      if (_endIndex <= 0) _endIndex = all.length;
+    });
+  }
+
+  void _panBy(double dx, double width) {
+    final all = _all;
+    if (all.length <= _visibleCount || width <= 0) return;
+    final vis = _visibleCount.clamp(8, all.length);
+    final slot = width / vis;
+    if (slot <= 0) return;
+    final shift = -(dx / slot).round();
+    if (shift == 0) return;
+    setState(() {
+      var end = _endIndex <= 0 ? all.length : _endIndex;
+      end = (end + shift).clamp(vis, all.length);
+      _endIndex = end;
+    });
+  }
+
   void _setIndexFromX(double x, double width, int count) {
     if (count <= 0 || width <= 0) return;
-    final candles = _candles;
+    final candles = _window;
     final slot = width / count;
     final index = (x / slot).floor().clamp(0, count - 1);
     if (_hoverIndex != index) {
@@ -185,6 +292,9 @@ class _MarketChartPainter extends CustomPainter {
   final bool showVolume;
   final List<double?>? sma20;
   final List<double?>? sma50;
+  final List<double?>? ema20;
+  final List<double?>? bbUpper;
+  final List<double?>? bbLower;
   final int? hoverIndex;
   final double? lastPrice;
   final bool intraday;
@@ -198,6 +308,9 @@ class _MarketChartPainter extends CustomPainter {
     required this.showVolume,
     this.sma20,
     this.sma50,
+    this.ema20,
+    this.bbUpper,
+    this.bbLower,
     this.hoverIndex,
     this.lastPrice,
     required this.intraday,
@@ -304,6 +417,9 @@ class _MarketChartPainter extends CustomPainter {
 
     drawSma(sma20, _NativeMarketChartState._sma20);
     drawSma(sma50, _NativeMarketChartState._sma50);
+    drawSma(ema20, _NativeMarketChartState._ema);
+    drawSma(bbUpper, _NativeMarketChartState._bb);
+    drawSma(bbLower, _NativeMarketChartState._bb);
 
     // Main series
     if (chartType == MarketChartType.line ||
