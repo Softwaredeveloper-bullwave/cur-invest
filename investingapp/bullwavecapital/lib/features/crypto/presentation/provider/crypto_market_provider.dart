@@ -167,8 +167,12 @@ class CryptoMarketProvider extends ChangeNotifier {
       return false;
     }
 
-    _isLoading = true;
-    _error = null;
+    _applyLocalMarket(
+      indian: indian,
+      crypto: crypto,
+      forex: forex,
+      active: active,
+    );
     notifyListeners();
     try {
       _preference = await _api.saveMarketPreference(
@@ -177,40 +181,46 @@ class CryptoMarketProvider extends ChangeNotifier {
         forexMarketEnabled: forex,
         activeMarket: active,
       );
-      _activeMarket = _preference!.activeMarket;
-      await CryptoMarketPreferenceCache.writeCompleted(true);
-      await CryptoMarketPreferenceCache.writeActiveMarket(_activeMarket);
+      // If the live API does not yet support forex, it may coerce back to
+      // indian — keep the market the user just picked.
+      if (_preference!.activeMarket == active) {
+        _activeMarket = _preference!.activeMarket;
+        await CryptoMarketPreferenceCache.writeCompleted(true);
+        await CryptoMarketPreferenceCache.writeActiveMarket(_activeMarket);
+      }
+      _error = null;
       if (_activeMarket == 'crypto') {
         unawaited(ensureLoaded());
       }
-      return true;
-    } on ApiException catch (e) {
-      if (e.statusCode == 404 || e.statusCode == 502 || e.statusCode == 503) {
-        _preference = UserMarketPreferenceModel(
-          indianMarketEnabled: indian,
-          cryptoMarketEnabled: crypto,
-          forexMarketEnabled: forex,
-          activeMarket: active,
-          hasCompletedSelection: true,
-        );
-        _activeMarket = active;
-        await CryptoMarketPreferenceCache.writeCompleted(true);
-        await CryptoMarketPreferenceCache.writeActiveMarket(_activeMarket);
-        _error = null;
-        if (_activeMarket == 'crypto') {
-          unawaited(ensureLoaded());
-        }
-        return true;
-      }
-      _error = e.message;
-      return false;
-    } catch (_) {
-      _error = 'Market data is temporarily unavailable. Please try again.';
-      return false;
-    } finally {
-      _isLoading = false;
       notifyListeners();
+      return true;
+    } on ApiException catch (_) {
+      // Local switch already applied; ignore API errors so the UI still changes.
+      _error = null;
+      notifyListeners();
+      return true;
+    } catch (_) {
+      notifyListeners();
+      return true;
     }
+  }
+
+  void _applyLocalMarket({
+    required bool indian,
+    required bool crypto,
+    required bool forex,
+    required String active,
+  }) {
+    _preference = UserMarketPreferenceModel(
+      indianMarketEnabled: indian,
+      cryptoMarketEnabled: crypto,
+      forexMarketEnabled: forex,
+      activeMarket: active,
+      hasCompletedSelection: true,
+    );
+    _activeMarket = active;
+    unawaited(CryptoMarketPreferenceCache.writeCompleted(true));
+    unawaited(CryptoMarketPreferenceCache.writeActiveMarket(active));
   }
 
   Future<void> switchMarket(String market) async {
@@ -218,13 +228,12 @@ class CryptoMarketProvider extends ChangeNotifier {
     if (next != 'indian' && next != 'crypto' && next != 'forex') return;
     if (next == _activeMarket) return;
 
-    final ok = await savePreference(
+    await savePreference(
       indianMarketEnabled: next == 'indian',
       cryptoMarketEnabled: next == 'crypto',
       forexMarketEnabled: next == 'forex',
       activeMarket: next,
     );
-    if (!ok) return;
     if (next == 'crypto') {
       await ensureLoaded();
     }

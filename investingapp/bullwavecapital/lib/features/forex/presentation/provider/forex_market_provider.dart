@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/api/api_exception.dart';
 import '../../../../core/api/bullwave_api.dart';
 import '../../../../models/forex_models.dart';
+import '../data/forex_live_fallback.dart';
 
 class ForexMarketProvider extends ChangeNotifier {
   ForexMarketProvider();
@@ -74,7 +75,15 @@ class ForexMarketProvider extends ChangeNotifier {
     ]);
     _initialized = _overview != null || _pairs.isNotEmpty;
     if (_overview == null && _pairs.isEmpty) {
-      _error = _msg(overviewErr ?? pairsErr);
+      try {
+        final live = await ForexLiveFallback.load();
+        _overview = live.overview;
+        _pairs = live.pairs;
+        _initialized = _pairs.isNotEmpty;
+        _error = null;
+      } catch (_) {
+        _error = _msg(overviewErr ?? pairsErr);
+      }
     }
     _isLoading = false;
     notifyListeners();

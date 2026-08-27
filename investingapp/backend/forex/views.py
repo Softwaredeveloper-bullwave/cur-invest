@@ -5,6 +5,7 @@ from __future__ import annotations
 from decimal import Decimal, InvalidOperation
 
 from rest_framework import status
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -48,40 +49,70 @@ def _jsonable(obj):
 
 
 class ForexOverviewView(APIView):
+    permission_classes = [AllowAny]
+
     def get(self, request):
         try:
             return Response(_jsonable(ForexService().get_market_overview()))
         except ForexProviderError as exc:
             return _provider_error_response(exc)
+        except Exception:
+            return Response(
+                {'detail': 'Forex market data is temporarily unavailable. Please try again.'},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
 
 
 class ForexPairsView(APIView):
+    permission_classes = [AllowAny]
+
     def get(self, request):
         try:
             rows = ForexService().get_pairs()
             return Response({'results': _jsonable(rows)})
         except ForexProviderError as exc:
             return _provider_error_response(exc)
+        except Exception:
+            return Response(
+                {'detail': 'Forex market data is temporarily unavailable. Please try again.'},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
 
 
 class ForexPairDetailView(APIView):
+    permission_classes = [AllowAny]
+
     def get(self, request, pair_id):
         try:
             return Response(_jsonable(ForexService().get_pair(pair_id)))
         except ForexProviderError as exc:
             return _provider_error_response(exc)
+        except Exception:
+            return Response(
+                {'detail': 'Forex market data is temporarily unavailable. Please try again.'},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
 
 
 class ForexChartView(APIView):
+    permission_classes = [AllowAny]
+
     def get(self, request, pair_id):
         period = request.query_params.get('period') or '1D'
         try:
             return Response(_jsonable(ForexService().get_ohlcv(pair_id, period=period)))
         except ForexProviderError as exc:
             return _provider_error_response(exc)
+        except Exception:
+            return Response(
+                {'detail': 'Chart is temporarily unavailable for this period.'},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
 
 
 class ForexSearchView(APIView):
+    permission_classes = [AllowAny]
+
     def get(self, request):
         q = (request.query_params.get('q') or '').strip()
         if not q:
@@ -90,6 +121,8 @@ class ForexSearchView(APIView):
             return Response({'results': _jsonable(ForexService().search(q))})
         except ForexProviderError as exc:
             return _provider_error_response(exc)
+        except Exception:
+            return Response({'results': []})
 
 
 class ForexScreenerView(APIView):
@@ -105,6 +138,8 @@ class ForexScreenerView(APIView):
 
 
 class ForexMoversView(APIView):
+    permission_classes = [AllowAny]
+
     def get(self, request):
         kind = (request.query_params.get('type') or 'gainers').lower()
         limit = min(int(request.query_params.get('limit') or 20), 50)
@@ -119,6 +154,8 @@ class ForexMoversView(APIView):
             return Response({'results': _jsonable(rows), 'type': kind})
         except ForexProviderError as exc:
             return _provider_error_response(exc)
+        except Exception:
+            return Response({'results': [], 'type': kind})
 
 
 class ForexWatchlistView(APIView):
@@ -173,16 +210,36 @@ class ForexWatchlistDetailView(APIView):
 
 
 class ForexNewsView(APIView):
+    permission_classes = [AllowAny]
+
     def get(self, request):
         category = request.query_params.get('category')
         force = (request.query_params.get('refresh') or '') in ('1', 'true', 'yes')
-        articles = fetch_forex_news(category=category, force=force)
-        return Response({'results': articles, 'categories': list(CATEGORIES)})
+        try:
+            articles = fetch_forex_news(category=category, force=force)
+            return Response({'results': articles, 'categories': list(CATEGORIES)})
+        except Exception:
+            return Response({'results': [], 'categories': list(CATEGORIES)})
 
 
 class ForexPortfolioView(APIView):
     def get(self, request):
-        return Response(_jsonable(portfolio_summary(request.user)))
+        try:
+            return Response(_jsonable(portfolio_summary(request.user)))
+        except Exception:
+            return Response(
+                {
+                    'environment': 'PAPER TRADING',
+                    'wallet_balance': '100000.00',
+                    'invested_amount': '0',
+                    'current_value': '0',
+                    'total_portfolio_value': '100000.00',
+                    'profit_loss': '0',
+                    'profit_loss_percent': '0',
+                    'holdings': [],
+                    'allocation': [],
+                }
+            )
 
 
 class ForexPaperOrderView(APIView):

@@ -126,8 +126,8 @@ class ApiClient {
       }
     }
     if (statusCode == 404) {
-      return 'Crypto market API is not available on the server yet. '
-          'Deploy the latest backend (migrate crypto + restart) and try again.';
+      return 'This market API is not available on the live server yet. '
+          'Deploy the latest backend and run migrate, or the app will use a live fallback.';
     }
     if (statusCode >= 500) {
       return 'Server error at ${ApiConfig.baseUrl}. The API responded but failed — '

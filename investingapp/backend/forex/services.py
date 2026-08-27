@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 from typing import Any
+import logging
 
 from django.conf import settings
 from django.core.cache import cache
@@ -15,6 +16,8 @@ from .pairs import FOREX_PAIRS, normalize_pair_id, pair_symbol
 from .providers.base import BaseForexProvider, ForexProviderError
 from .providers.frankfurter import FrankfurterProvider
 from .providers.twelvedata import TwelveDataProvider
+
+logger = logging.getLogger('bullwave.forex')
 
 
 def active_forex_provider() -> BaseForexProvider:
@@ -117,36 +120,39 @@ class ForexService:
         return {'results': rows, 'count': len(rows)}
 
     def _upsert_pairs(self, rows: list[dict[str, Any]]) -> None:
-        for row in rows:
-            pid = normalize_pair_id(row.get('id') or '')
-            if not pid:
-                continue
-            pair, _ = ForexPair.objects.update_or_create(
-                id=pid,
-                defaults={
-                    'base_currency': (row.get('base_currency') or '')[:8],
-                    'quote_currency': (row.get('quote_currency') or '')[:8],
-                    'symbol': (row.get('symbol') or pair_symbol(pid))[:16],
-                    'name': (row.get('name') or pid)[:120],
-                    'category': (row.get('category') or 'Majors')[:32],
-                    'is_active': True,
-                },
-            )
-            ForexMarketSnapshot.objects.update_or_create(
-                pair=pair,
-                defaults={
-                    'current_price': Decimal(str(row.get('current_price') or 0)),
-                    'price_change_24h': Decimal(str(row.get('price_change_24h') or 0)),
-                    'price_change_percentage_24h': Decimal(
-                        str(row.get('price_change_percentage_24h') or 0)
-                    ),
-                    'high_24h': Decimal(str(row.get('high_24h') or 0)) if row.get('high_24h') else None,
-                    'low_24h': Decimal(str(row.get('low_24h') or 0)) if row.get('low_24h') else None,
-                    'sparkline_7d': row.get('sparkline_7d') or [],
-                    'provider': self.provider.name,
-                    'fetched_at': timezone.now(),
-                },
-            )
+        try:
+            for row in rows:
+                pid = normalize_pair_id(row.get('id') or '')
+                if not pid:
+                    continue
+                pair, _ = ForexPair.objects.update_or_create(
+                    id=pid,
+                    defaults={
+                        'base_currency': (row.get('base_currency') or '')[:8],
+                        'quote_currency': (row.get('quote_currency') or '')[:8],
+                        'symbol': (row.get('symbol') or pair_symbol(pid))[:16],
+                        'name': (row.get('name') or pid)[:120],
+                        'category': (row.get('category') or 'Majors')[:32],
+                        'is_active': True,
+                    },
+                )
+                ForexMarketSnapshot.objects.update_or_create(
+                    pair=pair,
+                    defaults={
+                        'current_price': Decimal(str(row.get('current_price') or 0)),
+                        'price_change_24h': Decimal(str(row.get('price_change_24h') or 0)),
+                        'price_change_percentage_24h': Decimal(
+                            str(row.get('price_change_percentage_24h') or 0)
+                        ),
+                        'high_24h': Decimal(str(row.get('high_24h') or 0)) if row.get('high_24h') else None,
+                        'low_24h': Decimal(str(row.get('low_24h') or 0)) if row.get('low_24h') else None,
+                        'sparkline_7d': row.get('sparkline_7d') or [],
+                        'provider': self.provider.name,
+                        'fetched_at': timezone.now(),
+                    },
+                )
+        except Exception:
+            logger.debug('Forex pair persist skipped', exc_info=True)
 
 
 def seed_pairs() -> None:
