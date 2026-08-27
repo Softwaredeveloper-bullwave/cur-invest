@@ -12,6 +12,7 @@ from django.utils import timezone
 
 from ..pairs import FOREX_PAIRS, PAIR_BY_ID, normalize_pair_id, pair_symbol
 from .base import BaseForexProvider, ForexProviderError
+from .keys import is_secret_error, twelve_data_api_key
 
 PERIOD_TO_INTERVAL = {
     '1H': '5min',
@@ -35,7 +36,7 @@ class TwelveDataProvider(BaseForexProvider):
     name = 'twelvedata'
 
     def __init__(self):
-        self.api_key = (getattr(settings, 'FOREX_API_KEY', '') or '').strip()
+        self.api_key = twelve_data_api_key()
         self.base_url = (
             getattr(settings, 'FOREX_API_BASE_URL', '') or 'https://api.twelvedata.com'
         ).rstrip('/')
@@ -44,20 +45,29 @@ class TwelveDataProvider(BaseForexProvider):
     def _get(self, path: str, params: dict | None = None) -> Any:
         if not self.api_key:
             raise ForexProviderError(
-                'FOREX_API_KEY is not set. Add it to investingapp/backend/.env',
-                retryable=False,
+                'Twelve Data API key is not set.',
+                retryable=True,
                 status_code=503,
             )
         query = {'apikey': self.api_key, **(params or {})}
         try:
             with httpx.Client(timeout=self.timeout, follow_redirects=True) as client:
-                resp = client.get(f'{self.base_url}{path}', params=query)
+                resp = client.get(
+                    f'{self.base_url}{path}',
+                    params=query,
+                    headers={'Authorization': f'apikey {self.api_key}'},
+                )
             data = resp.json() if resp.content else {}
             if resp.status_code == 429 or (isinstance(data, dict) and data.get('code') == 429):
                 raise ForexProviderError('Forex API rate limit. Try again shortly.', status_code=429)
             if resp.status_code >= 400 or (isinstance(data, dict) and data.get('status') == 'error'):
                 msg = (data.get('message') if isinstance(data, dict) else None) or 'Forex market data unavailable.'
-                raise ForexProviderError(str(msg)[:300], status_code=resp.status_code)
+                status_code = 401 if is_secret_error(str(msg)) else resp.status_code
+                raise ForexProviderError(
+                    'Twelve Data key was rejected.' if is_secret_error(str(msg)) else str(msg)[:300],
+                    retryable=True,
+                    status_code=status_code,
+                )
             return data
         except ForexProviderError:
             raise
@@ -89,23 +99,28 @@ class TwelveDataProvider(BaseForexProvider):
 
     def get_pairs(self, *, ids: list[str] | None = None) -> list[dict[str, Any]]:
         wanted = [normalize_pair_id(i) for i in ids] if ids else [row[0] for row in FOREX_PAIRS]
-        symbols = ','.join(pair_symbol(pid) for pid in wanted)
-        data = self._get('/quote', {'symbol': symbols})
+        by_symbol: dict[str, dict] = {}
+        chunk_size = 8
+        for i in range(0, len(wanted), chunk_size):
+            chunk = wanted[i : i + chunk_size]
+            symbols = ','.join(pair_symbol(pid) for pid in chunk)
+            data = self._get('/quote', {'symbol': symbols})
+            if isinstance(data, dict) and 'symbol' in data:
+                data = {data.get('symbol'): data}
+            if not isinstance(data, dict):
+                raise ForexProviderError('Unexpected forex quote payload.')
+            for key, value in data.items():
+                if isinstance(value, dict):
+                    by_symbol[str(key).upper().replace(' ', '')] = value
         rows = []
-        if isinstance(data, dict) and 'symbol' in data:
-            data = {data.get('symbol'): data}
-        if not isinstance(data, dict):
-            raise ForexProviderError('Unexpected forex quote payload.')
-        by_symbol = {str(k).upper().replace(' ', ''): v for k, v in data.items() if isinstance(v, dict)}
         for pid in wanted:
             sym = pair_symbol(pid).upper().replace(' ', '')
             payload = by_symbol.get(sym) or by_symbol.get(sym.replace('/', '')) or {}
-            if payload:
+            price = _d(payload.get('close') or payload.get('price') or payload.get('current_price'))
+            if payload and price > 0:
                 rows.append(self._quote_row(pid, payload))
-            else:
-                meta = PAIR_BY_ID.get(pid)
-                if meta:
-                    rows.append(self._quote_row(pid, {}))
+        if not rows:
+            raise ForexProviderError('Twelve Data returned no forex quotes.')
         return rows
 
     def get_pair(self, pair_id: str) -> dict[str, Any]:
@@ -167,6 +182,8 @@ class TwelveDataProvider(BaseForexProvider):
                 }
             )
             prices.append({'t': ts, 'v': float(close)})
+        if not candles:
+            raise ForexProviderError('Twelve Data returned no forex candles.')
         return {'asset_id': pid, 'pair_id': pid, 'period': period, 'candles': candles, 'prices': prices}
 
     def get_trending(self) -> list[dict[str, Any]]:

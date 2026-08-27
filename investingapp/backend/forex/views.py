@@ -19,6 +19,7 @@ from .paper_trading_service import (
     portfolio_summary,
 )
 from .providers.base import ForexProviderError
+from .providers.keys import is_secret_error
 from .serializers import (
     ForexNotificationPreferenceSerializer,
     ForexTransactionSerializer,
@@ -28,13 +29,23 @@ from .services import ForexService
 from .trading_provider import ForexTradingDisabled, get_trading_provider
 
 
+_GENERIC_FOREX_ERROR = 'Forex market data is temporarily unavailable. Please try again.'
+
+
+def _client_safe_detail(exc: ForexProviderError) -> str:
+    raw = str(exc) or _GENERIC_FOREX_ERROR
+    if is_secret_error(raw) or 'http' in raw.lower():
+        return _GENERIC_FOREX_ERROR
+    return raw[:200]
+
+
 def _provider_error_response(exc: ForexProviderError):
     return Response(
         {
-            'detail': str(exc) or 'Market data is temporarily unavailable. Please try again.',
-            'retryable': exc.retryable,
+            'detail': _client_safe_detail(exc),
+            'retryable': True,
         },
-        status=status.HTTP_503_SERVICE_UNAVAILABLE if exc.retryable else status.HTTP_400_BAD_REQUEST,
+        status=status.HTTP_503_SERVICE_UNAVAILABLE,
     )
 
 

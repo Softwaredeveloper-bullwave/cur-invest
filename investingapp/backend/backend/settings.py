@@ -299,7 +299,7 @@ KOTAK_NEO_QUOTE_CACHE_SECONDS = config('KOTAK_NEO_QUOTE_CACHE_SECONDS', default=
 KOTAK_NEO_UNIVERSE_CACHE_SECONDS = config('KOTAK_NEO_UNIVERSE_CACHE_SECONDS', default=15, cast=int)
 KOTAK_NEO_BATCH_SIZE = config('KOTAK_NEO_BATCH_SIZE', default=50, cast=int)
 MARKET_DATA_PROVIDER = config('MARKET_DATA_PROVIDER', default='auto')  # auto | kotak_neo | finnhub | yahoo
-ALPHA_VANTAGE_API_KEY = config('ALPHA_VANTAGE_API_KEY', default='')
+ALPHA_VANTAGE_API_KEY = _ascii_env(config('ALPHA_VANTAGE_API_KEY', default=''))
 ALPHA_VANTAGE_REQUEST_DELAY_SECONDS = config('ALPHA_VANTAGE_REQUEST_DELAY_SECONDS', default=12, cast=int)
 ALPHA_VANTAGE_QUOTE_CACHE_SECONDS = config('ALPHA_VANTAGE_QUOTE_CACHE_SECONDS', default=120, cast=int)
 ALPHA_VANTAGE_MAX_QUOTES_PER_REFRESH = config('ALPHA_VANTAGE_MAX_QUOTES_PER_REFRESH', default=5, cast=int)
@@ -326,9 +326,12 @@ CRYPTO_NEWS_CACHE_MINUTES = config('CRYPTO_NEWS_CACHE_MINUTES', default=15, cast
 CRYPTO_USD_INR_RATE = config('CRYPTO_USD_INR_RATE', default='83')
 CRYPTO_TRADING_ENABLED = config('CRYPTO_TRADING_ENABLED', default=False, cast=bool)
 
-# Forex market data — Twelve Data when FOREX_API_KEY is set, else free ECB Frankfurter
+# Forex market data — Twelve Data → Alpha Vantage → free ECB Frankfurter
 FOREX_DATA_PROVIDER = _clean_env(config('FOREX_DATA_PROVIDER', default='auto')).lower() or 'auto'
 FOREX_API_KEY = _ascii_env(config('FOREX_API_KEY', default=''))
+TWELVE_DATA_API_KEY = _ascii_env(config('TWELVE_DATA_API_KEY', default=''))
+FOREX_TWELVEDATA_API_KEY = _ascii_env(config('FOREX_TWELVEDATA_API_KEY', default=''))
+FOREX_ALPHAVANTAGE_API_KEY = _ascii_env(config('FOREX_ALPHAVANTAGE_API_KEY', default=''))
 FOREX_API_BASE_URL = _clean_env(
     config('FOREX_API_BASE_URL', default='https://api.twelvedata.com'),
     strip_trailing_slash=True,

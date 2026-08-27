@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/api/api_exception.dart';
 import '../../../../core/api/bullwave_api.dart';
 import '../../../../models/forex_models.dart';
-import '../data/forex_live_fallback.dart';
+import '../../data/forex_live_fallback.dart';
 
 class ForexMarketProvider extends ChangeNotifier {
   ForexMarketProvider();
@@ -100,7 +100,7 @@ class ForexMarketProvider extends ChangeNotifier {
       _searchResults = await _api.searchForex(query.trim());
       _error = null;
     } on ApiException catch (e) {
-      _error = e.message;
+      _error = _msg(e);
     } catch (_) {
       _error = 'Market data is temporarily unavailable. Please try again.';
     }
@@ -116,7 +116,7 @@ class ForexMarketProvider extends ChangeNotifier {
       _newsCategories = response.categories;
       _error = null;
     } on ApiException catch (e) {
-      _error = e.message;
+      _error = _msg(e);
     } catch (_) {
       _error = 'Market data is temporarily unavailable. Please try again.';
     } finally {
@@ -130,7 +130,7 @@ class ForexMarketProvider extends ChangeNotifier {
       _moversCache[type] = await _api.getForexMovers(type: type);
       _error = null;
     } on ApiException catch (e) {
-      _error = e.message;
+      _error = _msg(e);
     }
     notifyListeners();
   }
@@ -154,7 +154,7 @@ class ForexMarketProvider extends ChangeNotifier {
       }
       _error = null;
     } on ApiException catch (e) {
-      _error = e.message;
+      _error = _msg(e);
     }
     notifyListeners();
   }
@@ -168,7 +168,15 @@ class ForexMarketProvider extends ChangeNotifier {
   }
 
   String _msg(Object? err) {
-    if (err is ApiException) return err.message;
-    return 'Market data is temporarily unavailable. Please try again.';
+    final raw = err is ApiException ? err.message : '';
+    final lower = raw.toLowerCase();
+    if (raw.isEmpty ||
+        lower.contains('apikey') ||
+        lower.contains('api key') ||
+        lower.contains('twelvedata') ||
+        lower.contains('alphavantage')) {
+      return 'Market data is temporarily unavailable. Please try again.';
+    }
+    return raw;
   }
 }
