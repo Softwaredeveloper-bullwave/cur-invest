@@ -9,6 +9,7 @@ import '../../../../core/utils/formatters.dart';
 import '../../../../core/widgets/custom_app_bar.dart';
 import '../../../../core/widgets/loading_card.dart';
 import '../../../../core/widgets/custom_dialog.dart';
+import '../../../../core/widgets/scroll_reveal.dart';
 import '../../../../models/crypto_models.dart';
 import '../../../../models/stock_model.dart';
 import '../provider/crypto_market_provider.dart';
@@ -297,17 +298,24 @@ class _CryptoDetailScreenState extends State<CryptoDetailScreen> {
                           lastPrice: _asset!.currentPrice,
                         ),
                         const SizedBox(height: 20),
-                        _StatsGrid(asset: _asset!),
+                        ScrollReveal(child: _StatsGrid(asset: _asset!)),
                         const SizedBox(height: 20),
                         if (_asset!.description.isNotEmpty) ...[
-                          Text('About', style: context.typeSection(16)),
-                          const SizedBox(height: 8),
-                          Text(
-                            _asset!.description
-                                .replaceAll(RegExp(r'<[^>]*>'), ' '),
-                            style: context.typeBody(14),
-                            maxLines: 8,
-                            overflow: TextOverflow.ellipsis,
+                          ScrollReveal(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('About', style: context.typeSection(16)),
+                                const SizedBox(height: 8),
+                                Text(
+                                  _asset!.description
+                                      .replaceAll(RegExp(r'<[^>]*>'), ' '),
+                                  style: context.typeBody(14),
+                                  maxLines: 8,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                         const SizedBox(height: 24),

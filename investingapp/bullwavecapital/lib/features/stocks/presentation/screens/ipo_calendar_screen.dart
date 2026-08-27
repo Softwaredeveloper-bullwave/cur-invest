@@ -7,6 +7,7 @@ import '../../../../core/theme/colors.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/widgets/custom_app_bar.dart';
 import '../../../../core/widgets/loading_card.dart';
+import '../../../../core/widgets/scroll_reveal.dart';
 import '../../../../models/stock_model.dart';
 import '../provider/stock_features_provider.dart';
 
@@ -323,14 +324,16 @@ class _IpoCalendarScreenState extends State<IpoCalendarScreen>
                                 final holding = features.ipoHoldingFor(
                                   event.id,
                                 );
-                                return _IpoCard(
-                                  event: event,
-                                  holding: holding,
-                                  colors: colors,
-                                  onApply: () =>
-                                      _showOrderSheet(event, isSell: false),
-                                  onSell: () =>
-                                      _showOrderSheet(event, isSell: true),
+                                return ScrollReveal(
+                                  child: _IpoCard(
+                                    event: event,
+                                    holding: holding,
+                                    colors: colors,
+                                    onApply: () =>
+                                        _showOrderSheet(event, isSell: false),
+                                    onSell: () =>
+                                        _showOrderSheet(event, isSell: true),
+                                  ),
                                 );
                               },
                             );

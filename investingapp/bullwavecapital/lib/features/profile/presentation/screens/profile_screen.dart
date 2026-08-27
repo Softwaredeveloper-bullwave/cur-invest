@@ -10,6 +10,7 @@ import '../../../../core/theme/colors.dart';
 import '../../../../core/theme/theme_a.dart';
 import '../../../../core/widgets/custom_dialog.dart';
 import '../../../../core/widgets/page_hero_background.dart';
+import '../../../../core/widgets/scroll_reveal.dart';
 import '../../../../core/widgets/profile_tile.dart';
 import '../../../../core/widgets/shell_highlight_actions.dart';
 import '../../../authentication/presentation/provider/auth_provider.dart';
@@ -239,6 +240,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  ScrollReveal(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                   const AppSectionHeader(title: 'Account'),
                   const SizedBox(height: 10),
                   ProfileTile(
@@ -282,7 +287,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     title: 'Notifications',
                     onTap: () => context.push(AppRoutes.notifications),
                   ),
+                      ],
+                    ),
+                  ),
                   const SizedBox(height: 8),
+                  ScrollReveal(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                   const AppSectionHeader(title: 'More'),
                   const SizedBox(height: 10),
                   ProfileTile(
@@ -329,6 +341,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       }
                     },
                   ),
+                      ],
+                    ),
+                  ),
                   SizedBox(height: ShellLayout.contentBottomInset),
                 ],
               ),
@@ -348,7 +363,6 @@ class _StatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = context.palette;
     final normalized = status.trim().toLowerCase();
     final verified =
         normalized.contains('verified') || normalized.contains('complete');

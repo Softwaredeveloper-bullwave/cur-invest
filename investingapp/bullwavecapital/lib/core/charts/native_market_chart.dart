@@ -57,10 +57,18 @@ class _NativeMarketChartState extends State<NativeMarketChart> {
 
   List<CandleModel> get _all => normalizeCandles(widget.candles);
 
+  /// Dart [num.clamp] throws `Invalid argument: 8` when lower > upper
+  /// (FX daily series often has fewer than 8 candles).
+  int _clampVisible(int desired, int length) {
+    if (length <= 0) return 0;
+    final lo = math.min(8, length);
+    return desired.clamp(lo, length);
+  }
+
   List<CandleModel> get _window {
     final all = _all;
     if (all.length < 2) return all;
-    final vis = _visibleCount.clamp(8, all.length);
+    final vis = _clampVisible(_visibleCount, all.length);
     var end = _endIndex;
     if (end <= 0 || end > all.length) end = all.length;
     end = end.clamp(vis, all.length);
@@ -68,13 +76,24 @@ class _NativeMarketChartState extends State<NativeMarketChart> {
     return all.sublist(start, end);
   }
 
+  void _resetWindow() {
+    final len = widget.candles.length;
+    _endIndex = 0;
+    _visibleCount = len == 0 ? 80 : (len < 80 ? len : 80);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _resetWindow();
+  }
+
   @override
   void didUpdateWidget(covariant NativeMarketChart oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.candles.length != widget.candles.length ||
         oldWidget.intervalLabel != widget.intervalLabel) {
-      _endIndex = 0;
-      _visibleCount = widget.candles.length < 80 ? widget.candles.length : 80;
+      _resetWindow();
     }
   }
 
@@ -105,7 +124,7 @@ class _NativeMarketChartState extends State<NativeMarketChart> {
       width: double.infinity,
       child: LayoutBuilder(
         builder: (context, constraints) {
-          const priceAxisW = 54.0;
+          const priceAxisW = 62.0;
           const timeAxisH = 20.0;
           final chartW = constraints.maxWidth - priceAxisW;
           final volH = widget.showVolume ? widget.height * 0.18 : 0.0;
@@ -135,9 +154,10 @@ class _NativeMarketChartState extends State<NativeMarketChart> {
                               if (widget.enableZoom &&
                                   (d.pointerCount > 1 || (d.scale - 1).abs() > 0.04)) {
                                 final allLen = all.length;
-                                final next = (_pinchStartVisible / d.scale)
-                                    .round()
-                                    .clamp(8, allLen);
+                                final next = _clampVisible(
+                                  (_pinchStartVisible / d.scale).round(),
+                                  allLen,
+                                );
                                 if (next != _visibleCount) {
                                   setState(() => _visibleCount = next);
                                 }
@@ -208,7 +228,7 @@ class _NativeMarketChartState extends State<NativeMarketChart> {
                             size: Size.infinite,
                           ),
                         ),
-                        const SizedBox(width: 54),
+                        const SizedBox(width: 62),
                       ],
                     ),
                   ),
@@ -216,7 +236,7 @@ class _NativeMarketChartState extends State<NativeMarketChart> {
               ),
               if (widget.enableZoom && all.length > 8)
                 Positioned(
-                  right: 58,
+                  right: 66,
                   top: 6,
                   child: Column(
                     children: [
@@ -253,8 +273,10 @@ class _NativeMarketChartState extends State<NativeMarketChart> {
     final all = _all;
     if (all.length < 8) return;
     setState(() {
-      final next = (_visibleCount * scale).round().clamp(8, all.length);
-      _visibleCount = next;
+      _visibleCount = _clampVisible(
+        (_visibleCount * scale).round(),
+        all.length,
+      );
       if (_endIndex <= 0) _endIndex = all.length;
     });
   }
@@ -262,7 +284,7 @@ class _NativeMarketChartState extends State<NativeMarketChart> {
   void _panBy(double dx, double width) {
     final all = _all;
     if (all.length <= _visibleCount || width <= 0) return;
-    final vis = _visibleCount.clamp(8, all.length);
+    final vis = _clampVisible(_visibleCount, all.length);
     final slot = width / vis;
     if (slot <= 0) return;
     final shift = -(dx / slot).round();
@@ -284,6 +306,15 @@ class _NativeMarketChartState extends State<NativeMarketChart> {
       widget.onCrosshair?.call(candles[index]);
     }
   }
+}
+
+/// Format axis labels for both equities and FX (0.59442 should not show as 0.59).
+String _formatAxisPrice(double price) {
+  final abs = price.abs();
+  if (abs >= 1000) return price.toStringAsFixed(0);
+  if (abs >= 100) return price.toStringAsFixed(2);
+  if (abs >= 1) return price.toStringAsFixed(4);
+  return price.toStringAsFixed(5);
 }
 
 class _MarketChartPainter extends CustomPainter {
@@ -567,7 +598,7 @@ class _PriceAxisPainter extends CustomPainter {
       final y = 4 + (mainHeight - 8) * i / 4;
       _drawText(
         canvas,
-        price.toStringAsFixed(2),
+        _formatAxisPrice(price),
         Offset(2, y - 6),
         style,
         size.width,
@@ -576,7 +607,7 @@ class _PriceAxisPainter extends CustomPainter {
 
     final lp = lastPrice ?? candles.last.close;
     final lpY = mainHeight - ((lp - yMin) / range) * (mainHeight - 8) - 4;
-    final tag = lp.toStringAsFixed(2);
+    final tag = _formatAxisPrice(lp);
     final tp = TextPainter(
       text: TextSpan(
         text: tag,

@@ -10,8 +10,11 @@ import '../../../../core/widgets/icon_badge.dart';
 import '../../../../core/widgets/loading_card.dart';
 import '../../../../core/widgets/page_hero_background.dart';
 import '../../../../core/widgets/premium_ui_kit.dart';
+import '../../../../core/widgets/scroll_reveal.dart';
 import '../../../authentication/presentation/provider/auth_provider.dart';
+import '../../../crypto/presentation/widgets/alt_market_shortcuts.dart';
 import '../../../crypto/presentation/widgets/market_switcher.dart';
+import '../../../stocks/presentation/widgets/markets_news_section.dart';
 import '../provider/forex_market_provider.dart';
 import '../widgets/forex_pair_tile.dart';
 
@@ -88,36 +91,29 @@ class _ForexHomeScreenState extends State<ForexHomeScreen> {
                           pnl: portfolio?.profitLoss ?? 0,
                           pnlPct: portfolio?.profitLossPercent ?? 0,
                         ),
-                        if (widget.hubMode) ...[
-                          const SizedBox(height: 16),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: [
-                              _HubChip(label: 'News', onTap: () => context.push(AppRoutes.forexNews)),
-                              _HubChip(label: 'Watchlist', onTap: () => context.push(AppRoutes.forexWatchlist)),
-                              _HubChip(label: 'Screener', onTap: () => context.push(AppRoutes.forexScreener)),
-                              _HubChip(label: 'Portfolio', onTap: () => context.push(AppRoutes.forexPortfolio)),
-                            ],
-                          ),
-                        ],
+                        const SizedBox(height: 16),
+                        const ScrollReveal(
+                          child: AltMarketShortcuts(kind: AltMarketKind.forex),
+                        ),
                       ],
                     ),
                   ),
                 ),
                 if (overview != null && overview.trending.isNotEmpty)
                   SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
-                      child: Row(
-                        children: [
-                          Text('Movers', style: context.typeSection(16)),
-                          const Spacer(),
-                          TextButton(
-                            onPressed: () => context.push(AppRoutes.forexMovers),
-                            child: const Text('See all'),
-                          ),
-                        ],
+                    child: ScrollReveal(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
+                        child: Row(
+                          children: [
+                            Text('Movers', style: context.typeSection(16)),
+                            const Spacer(),
+                            TextButton(
+                              onPressed: () => context.push(AppRoutes.forexMovers),
+                              child: const Text('See all'),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -129,17 +125,19 @@ class _ForexHomeScreenState extends State<ForexHomeScreen> {
                     ),
                   ),
                 SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-                    child: Row(
-                      children: [
-                        Text('Major pairs', style: context.typeSection(16)),
-                        const Spacer(),
-                        TextButton(
-                          onPressed: () => context.push(AppRoutes.forexSearch),
-                          child: const Text('Search'),
-                        ),
-                      ],
+                  child: ScrollReveal(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                      child: Row(
+                        children: [
+                          Text('Major pairs', style: context.typeSection(16)),
+                          const Spacer(),
+                          TextButton(
+                            onPressed: () => context.push(AppRoutes.forexSearch),
+                            child: const Text('Search'),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -147,6 +145,27 @@ class _ForexHomeScreenState extends State<ForexHomeScreen> {
                   delegate: SliverChildBuilderDelegate(
                     (context, index) => ForexPairTile(pair: provider.pairs[index]),
                     childCount: provider.pairs.length.clamp(0, 18),
+                  ),
+                ),
+                const SliverToBoxAdapter(child: SizedBox(height: 8)),
+                SliverToBoxAdapter(
+                  child: ScrollReveal(
+                    child: MarketsNewsSection(
+                      news: provider.news
+                          .take(4)
+                          .map(
+                            (n) => <String, String>{
+                              'title': n.title,
+                              'time': n.source,
+                              'category': n.category.isEmpty ? 'Forex' : n.category,
+                              'imageUrl': n.imageUrl,
+                              'url': n.externalUrl,
+                            },
+                          )
+                          .toList(),
+                      seeAllRoute: AppRoutes.forexNews,
+                      useFallback: false,
+                    ),
                   ),
                 ),
                 const SliverToBoxAdapter(child: SizedBox(height: 24)),
@@ -216,18 +235,5 @@ class _PortfolioCard extends StatelessWidget {
         ],
       ),
     );
-  }
-}
-
-class _HubChip extends StatelessWidget {
-  const _HubChip({required this.label, required this.onTap});
-
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = context.palette;
-    return ActionChip(label: Text(label), onPressed: onTap, backgroundColor: p.card);
   }
 }

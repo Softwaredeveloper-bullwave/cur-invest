@@ -13,6 +13,7 @@ import '../../../../core/widgets/loading_card.dart';
 import '../../../../core/widgets/page_hero_background.dart';
 import '../../../../core/widgets/portfolio_card.dart';
 import '../../../../core/widgets/premium_ui_kit.dart';
+import '../../../../core/widgets/scroll_reveal.dart';
 import '../../../../core/widgets/robinhood_card.dart';
 import '../../../../core/widgets/icon_badge.dart';
 import '../../../../core/widgets/shell_highlight_actions.dart';
@@ -213,7 +214,8 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                   ),
                   Padding(
                     padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-                    child: Column(
+                    child: ScrollReveal(
+                      child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         AppSectionHeader(
@@ -504,6 +506,7 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                           },
                         ),
                       ],
+                    ),
                     ),
                   ),
                 ],

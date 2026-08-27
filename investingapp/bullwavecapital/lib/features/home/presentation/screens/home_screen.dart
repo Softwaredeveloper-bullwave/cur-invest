@@ -15,6 +15,7 @@ import '../../../../core/navigation/shell_navigation.dart';
 import '../../../../core/theme/colors.dart';
 import '../../../../core/widgets/loading_card.dart';
 import '../../../../core/widgets/premium_ui_kit.dart';
+import '../../../../core/widgets/scroll_reveal.dart';
 import '../../../../core/widgets/scale_tap.dart';
 import '../../../../models/investment_model.dart';
 import '../../../goals/presentation/provider/goal_plan_provider.dart';
@@ -296,18 +297,20 @@ class _HomeScreenState extends State<HomeScreen> {
                       if (indices.isEmpty) {
                         return const SizedBox.shrink();
                       }
-                      return MarketOverview(
-                        indices: indices,
-                        expiryFor: (index) {
-                          final symbol = FnoIndexCatalog.symbolForMarketIndex(
-                            index.shortName,
-                          );
-                          if (symbol == null) return null;
-                          final features =
-                              context.read<StockFeaturesProvider>();
-                          final expiry = features.optionSelectedExpiry(symbol);
-                          return expiry.isNotEmpty ? expiry : null;
-                        },
+                      return ScrollReveal(
+                        child: MarketOverview(
+                          indices: indices,
+                          expiryFor: (index) {
+                            final symbol = FnoIndexCatalog.symbolForMarketIndex(
+                              index.shortName,
+                            );
+                            if (symbol == null) return null;
+                            final features =
+                                context.read<StockFeaturesProvider>();
+                            final expiry = features.optionSelectedExpiry(symbol);
+                            return expiry.isNotEmpty ? expiry : null;
+                          },
+                        ),
                       );
                     },
                   ),
@@ -316,9 +319,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       if (market.trendingStocks.isEmpty) {
                         return const SizedBox.shrink();
                       }
-                      return HomeTrendingStrip(
-                        stocks: market.trendingStocks,
-                        onSeeAll: () => context.go(AppRoutes.invest),
+                      return ScrollReveal(
+                        child: HomeTrendingStrip(
+                          stocks: market.trendingStocks,
+                          onSeeAll: () => context.go(AppRoutes.invest),
+                        ),
                       );
                     },
                   ),
@@ -330,51 +335,63 @@ class _HomeScreenState extends State<HomeScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         if (!PaperOnlyMode.enabled && plans.isNotEmpty) ...[
-                          HomeSectionHeader(
-                            title: 'Featured Plans',
-                            actionLabel: 'See All',
-                            onAction: () =>
-                                context.push(AppRoutes.featuredPlansList),
-                            reserveFabSpace: true,
-                          ),
-                          const SizedBox(height: 12),
-                          SizedBox(
-                            height: 148,
-                            child: ListView.separated(
-                              scrollDirection: Axis.horizontal,
-                              itemCount: plans.length,
-                              separatorBuilder: (_, _) =>
-                                  const SizedBox(width: 12),
-                              itemBuilder: (context, index) {
-                                final plan = plans[index];
-                                return _FeaturedPlanChip(
-                                  plan: plan,
-                                  risk: _riskFor(plan.id),
-                                  onTap: () => _openFeaturedPlan(context, plan),
-                                );
-                              },
+                          ScrollReveal(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                HomeSectionHeader(
+                                  title: 'Featured Plans',
+                                  actionLabel: 'See All',
+                                  onAction: () =>
+                                      context.push(AppRoutes.featuredPlansList),
+                                  reserveFabSpace: true,
+                                ),
+                                const SizedBox(height: 12),
+                                SizedBox(
+                                  height: 148,
+                                  child: ListView.separated(
+                                    scrollDirection: Axis.horizontal,
+                                    itemCount: plans.length,
+                                    separatorBuilder: (_, _) =>
+                                        const SizedBox(width: 12),
+                                    itemBuilder: (context, index) {
+                                      final plan = plans[index];
+                                      return _FeaturedPlanChip(
+                                        plan: plan,
+                                        risk: _riskFor(plan.id),
+                                        onTap: () =>
+                                            _openFeaturedPlan(context, plan),
+                                      );
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(height: 24),
+                              ],
                             ),
                           ),
-                          const SizedBox(height: 24),
                         ],
-                        const HomeIpoSection(),
+                        const ScrollReveal(child: HomeIpoSection()),
                         if (!PaperOnlyMode.enabled) ...[
                           const SizedBox(height: 24),
-                          provider.goalPlans.isNotEmpty
-                              ? HomeGoalsSection(
-                                  goals: provider.goalPlans,
-                                  onViewAll: () =>
-                                      context.push(AppRoutes.goalPlans),
-                                )
-                              : _GoalPlansPromo(
-                                  onTap: () =>
-                                      context.push(AppRoutes.goalPlans),
-                                ),
+                          ScrollReveal(
+                            child: provider.goalPlans.isNotEmpty
+                                ? HomeGoalsSection(
+                                    goals: provider.goalPlans,
+                                    onViewAll: () =>
+                                        context.push(AppRoutes.goalPlans),
+                                  )
+                                : _GoalPlansPromo(
+                                    onTap: () =>
+                                        context.push(AppRoutes.goalPlans),
+                                  ),
+                          ),
                         ],
                         if (!PaperOnlyMode.enabled) ...[
                           const SizedBox(height: 24),
-                          HomeRecentActivity(
-                            transactions: provider.recentTransactions,
+                          ScrollReveal(
+                            child: HomeRecentActivity(
+                              transactions: provider.recentTransactions,
+                            ),
                           ),
                         ],
                         const SizedBox(height: 12),

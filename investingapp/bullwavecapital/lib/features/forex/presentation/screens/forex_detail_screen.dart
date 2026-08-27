@@ -76,6 +76,7 @@ class _ForexDetailScreenState extends State<ForexDetailScreen> {
       if (!mounted) return;
       setState(() {
         _candles = chart.candles
+            .where((c) => c.close.isFinite && c.close > 0 && c.high >= c.low)
             .map(
               (c) => CandleModel(
                 time: c.time,
@@ -83,7 +84,7 @@ class _ForexDetailScreenState extends State<ForexDetailScreen> {
                 high: c.high,
                 low: c.low,
                 close: c.close,
-                volume: c.volume.toInt(),
+                volume: c.volume.isFinite ? c.volume.round() : 0,
               ),
             )
             .toList();

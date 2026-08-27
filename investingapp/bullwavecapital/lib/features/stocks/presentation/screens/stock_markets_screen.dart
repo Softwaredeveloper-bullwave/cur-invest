@@ -11,6 +11,7 @@ import '../../../../core/widgets/page_hero_background.dart';
 import '../../../../core/config/paper_only_mode.dart';
 import '../../../home/presentation/widgets/home_pending_actions.dart';
 import '../../../../core/widgets/premium_ui_kit.dart';
+import '../../../../core/widgets/scroll_reveal.dart';
 import '../../../fno/fno_navigation.dart';
 import '../../../home/presentation/provider/home_provider.dart';
 import '../provider/stock_market_provider.dart';
@@ -269,49 +270,71 @@ class _StockMarketsScreenState extends State<StockMarketsScreen> {
                     ),
                 ] else ...[
                   SliverToBoxAdapter(
-                    child: MarketsFnoIndicesSection(
-                      liveIndices: market.marketIndices,
+                    child: ScrollReveal(
+                      child: MarketsFnoIndicesSection(
+                        liveIndices: market.marketIndices,
+                      ),
                     ),
                   ),
                   SliverToBoxAdapter(
-                    child: MarketsQuickActions(
-                      onMore: () => _showMoreSheet(context),
+                    child: ScrollReveal(
+                      child: MarketsQuickActions(
+                        onMore: () => _showMoreSheet(context),
+                      ),
                     ),
                   ),
                   SliverToBoxAdapter(
                     child: KeyedSubtree(
                       key: MarketsHeatMapSectionAnchor.globalKey,
-                      child: MarketsHeatMapSection(
-                        onViewAll: () => context.push(AppRoutes.stockScreener),
+                      child: ScrollReveal(
+                        child: MarketsHeatMapSection(
+                          onViewAll: () => context.push(AppRoutes.stockScreener),
+                        ),
                       ),
                     ),
                   ),
                   SliverToBoxAdapter(
-                    child: MarketsEconomicCalendarStrip(
-                      onOpenFull: _openEconomicCalendar,
+                    child: ScrollReveal(
+                      child: MarketsEconomicCalendarStrip(
+                        onOpenFull: _openEconomicCalendar,
+                      ),
                     ),
                   ),
                   SliverToBoxAdapter(
-                    child: MarketsPortfolioSummary(
-                      portfolio: home.portfolio,
-                      isLoading: home.isLoading,
+                    child: ScrollReveal(
+                      child: MarketsPortfolioSummary(
+                        portfolio: home.portfolio,
+                        isLoading: home.isLoading,
+                      ),
                     ),
                   ),
                   SliverToBoxAdapter(
-                    child: PaperRiskMeterCard.market(
-                      meter: portfolio.marketRiskMeter,
-                      isLoading: portfolio.riskLoading,
+                    child: ScrollReveal(
+                      child: PaperRiskMeterCard.market(
+                        meter: portfolio.marketRiskMeter,
+                        isLoading: portfolio.riskLoading,
+                      ),
                     ),
                   ),
-                  const SliverToBoxAdapter(child: MarketsWatchlistPreview()),
-                  SliverToBoxAdapter(
-                    child: MarketsTopMovers(stocks: market.allStocks),
+                  const SliverToBoxAdapter(
+                    child: ScrollReveal(child: MarketsWatchlistPreview()),
                   ),
                   SliverToBoxAdapter(
-                    child: MarketsNewsSection(news: home.marketNews),
+                    child: ScrollReveal(
+                      child: MarketsTopMovers(stocks: market.allStocks),
+                    ),
                   ),
-                  const SliverToBoxAdapter(child: MarketsTodayEvents()),
-                  const SliverToBoxAdapter(child: MarketsLearningHub()),
+                  SliverToBoxAdapter(
+                    child: ScrollReveal(
+                      child: MarketsNewsSection(news: home.marketNews),
+                    ),
+                  ),
+                  const SliverToBoxAdapter(
+                    child: ScrollReveal(child: MarketsTodayEvents()),
+                  ),
+                  const SliverToBoxAdapter(
+                    child: ScrollReveal(child: MarketsLearningHub()),
+                  ),
                 ],
                 SliverPadding(
                   padding: EdgeInsets.only(

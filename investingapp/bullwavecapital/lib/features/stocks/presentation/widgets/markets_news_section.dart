@@ -59,8 +59,15 @@ class MarketNewsItem {
 
 class MarketsNewsSection extends StatelessWidget {
   final List<Map<String, String>> news;
+  final String seeAllRoute;
+  final bool useFallback;
 
-  const MarketsNewsSection({super.key, required this.news});
+  const MarketsNewsSection({
+    super.key,
+    required this.news,
+    this.seeAllRoute = AppRoutes.stockNews,
+    this.useFallback = true,
+  });
 
   static const _fallback = [
     MarketNewsItem(
@@ -85,7 +92,8 @@ class MarketsNewsSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final items = news.isNotEmpty
         ? news.take(4).map(MarketNewsItem.fromMap).toList()
-        : _fallback;
+        : (useFallback ? _fallback : const <MarketNewsItem>[]);
+    if (items.isEmpty) return const SizedBox.shrink();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -93,7 +101,7 @@ class MarketsNewsSection extends StatelessWidget {
         MarketsSectionHeader(
           title: 'Market News',
           actionLabel: 'Read More',
-          onAction: () => context.push(AppRoutes.stockNews),
+          onAction: () => context.push(seeAllRoute),
         ),
         SizedBox(
           height: 188,
@@ -102,7 +110,10 @@ class MarketsNewsSection extends StatelessWidget {
             scrollDirection: Axis.horizontal,
             itemCount: items.length,
             separatorBuilder: (_, _) => const SizedBox(width: 12),
-            itemBuilder: (context, index) => _NewsCard(item: items[index]),
+            itemBuilder: (context, index) => _NewsCard(
+              item: items[index],
+              seeAllRoute: seeAllRoute,
+            ),
           ),
         ),
       ],
@@ -112,8 +123,9 @@ class MarketsNewsSection extends StatelessWidget {
 
 class _NewsCard extends StatelessWidget {
   final MarketNewsItem item;
+  final String seeAllRoute;
 
-  const _NewsCard({required this.item});
+  const _NewsCard({required this.item, required this.seeAllRoute});
 
   @override
   Widget build(BuildContext context) {
@@ -122,7 +134,7 @@ class _NewsCard extends StatelessWidget {
     final hasImage = displayImageUrl.isNotEmpty;
 
     return ScaleTap(
-      onTap: () => context.push(AppRoutes.stockNews),
+      onTap: () => context.push(seeAllRoute),
       child: SizedBox(
         width: 260,
         child: GlassCard(

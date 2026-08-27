@@ -7,9 +7,15 @@ import '../../../../core/theme/colors.dart';
 import '../../../../core/theme/theme_a.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/widgets/custom_app_bar.dart';
+import '../../../../core/widgets/icon_badge.dart';
 import '../../../../core/widgets/loading_card.dart';
+import '../../../../core/widgets/page_hero_background.dart';
+import '../../../../core/widgets/paper_trading_disclaimer.dart';
+import '../../../../core/widgets/scroll_reveal.dart';
 import '../../../../models/crypto_models.dart';
 import '../provider/crypto_market_provider.dart';
+import '../widgets/alt_market_shortcuts.dart';
+import '../widgets/market_switcher.dart';
 
 class CryptoPortfolioScreen extends StatefulWidget {
   const CryptoPortfolioScreen({super.key, this.embedded = false});
@@ -40,88 +46,116 @@ class _CryptoPortfolioScreenState extends State<CryptoPortfolioScreen> {
             child: LoadingList(itemCount: 4),
           );
         }
-        if (portfolio == null) {
-          return Center(
-            child: Text(
-              provider.error ?? 'Market data is temporarily unavailable. Please try again.',
-              style: context.typeSecondary(14),
-              textAlign: TextAlign.center,
-            ),
-          );
-        }
 
+        final holdings = portfolio?.holdings ?? const [];
         return RefreshIndicator(
           color: AppColors.brandCyan,
           onRefresh: provider.refreshPortfolio,
-          child: SingleChildScrollView(
+          child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _PaperBanner(),
-                const SizedBox(height: 16),
-                _SummaryCard(portfolio: portfolio),
-                const SizedBox(height: 20),
-                Text('Holdings', style: context.typeSection(16)),
-                const SizedBox(height: 8),
-                if (portfolio.holdings.isEmpty)
-                  Text(
-                    'No crypto holdings yet. Place a PAPER TRADING order from any coin.',
-                    style: context.typeSecondary(14),
-                  )
-                else
-                  ...portfolio.holdings.map(
-                    (h) => Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: () => context.push(AppRoutes.cryptoDetailPath(h.assetId)),
-                          borderRadius: BorderRadius.circular(18),
-                          child: Ink(
-                            padding: const EdgeInsets.all(14),
-                            decoration: context.palette.cardDecoration(radius: 18),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(h.symbol, style: context.typeCardTitle(15)),
-                                      Text(h.name, style: context.typeSecondary(13)),
-                                      Text(
-                                        '${h.quantity.toStringAsFixed(4)} @ ${CurrencyFormatter.formatDecimal(h.avgPrice)}',
-                                        style: context.typeMuted(12),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              PageHeroBackground(
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Expanded(
+                          child: ShellPageHeader(
+                            title: 'Crypto Portfolio',
+                            subtitle: 'Paper wallet · virtual crypto holdings',
+                          ),
+                        ),
+                        if (widget.embedded) const MarketSwitcher(compact: true),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    const PaperTradingDisclaimer(compact: true),
+                    const SizedBox(height: 16),
+                    if (portfolio != null) _SummaryCard(portfolio: portfolio),
+                    const SizedBox(height: 18),
+                    const ScrollReveal(
+                      child: AltMarketShortcuts(kind: AltMarketKind.crypto),
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+                child: ScrollReveal(
+                  child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Holdings', style: context.typeSection(16)),
+                    const SizedBox(height: 10),
+                    if (holdings.isEmpty)
+                      AltMarketEmptyHoldings(
+                        title: 'No crypto holdings yet',
+                        subtitle:
+                            'Place a paper buy from any coin on Markets to build this book.',
+                        ctaLabel: 'Open Markets',
+                        onCta: () => context.go(AppRoutes.invest),
+                      )
+                    else
+                      ...holdings.map(
+                        (h) => Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () =>
+                                  context.push(AppRoutes.cryptoDetailPath(h.assetId)),
+                              borderRadius: BorderRadius.circular(18),
+                              child: Ink(
+                                padding: const EdgeInsets.all(14),
+                                decoration: context.palette.cardDecoration(radius: 18),
+                                child: Row(
                                   children: [
-                                    Text(
-                                      CurrencyFormatter.formatDecimal(h.currentValue),
-                                      style: context.typeCardTitle(14),
-                                    ),
-                                    Text(
-                                      IndexFormatter.formatPercent(h.unrealizedPnlPercent),
-                                      style: context.typeLabel(
-                                        12,
-                                        h.isPositive ? context.palette.positive : context.palette.negative,
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(h.symbol, style: context.typeCardTitle(15)),
+                                          Text(h.name, style: context.typeSecondary(13)),
+                                          Text(
+                                            '${h.quantity.toStringAsFixed(4)} @ ${CurrencyFormatter.formatDecimal(h.avgPrice)}',
+                                            style: context.typeMuted(12),
+                                          ),
+                                        ],
                                       ),
+                                    ),
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.end,
+                                      children: [
+                                        Text(
+                                          CurrencyFormatter.formatDecimal(h.currentValue),
+                                          style: context.typeCardTitle(14),
+                                        ),
+                                        Text(
+                                          IndexFormatter.formatPercent(h.unrealizedPnlPercent),
+                                          style: context.typeLabel(
+                                            12,
+                                            h.isPositive
+                                                ? context.palette.positive
+                                                : context.palette.negative,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
-                              ],
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                  ),
-              ],
-            ),
+                    const AltMarketBottomSpacer(),
+                  ],
+                ),
+                ),
+              ),
+            ],
           ),
         );
       },
@@ -131,26 +165,6 @@ class _CryptoPortfolioScreenState extends State<CryptoPortfolioScreen> {
     return Scaffold(
       appBar: const CustomAppBar(title: 'Crypto Portfolio'),
       body: body,
-    );
-  }
-}
-
-class _PaperBanner extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final p = context.palette;
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: p.primarySoft,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: p.primaryBorder),
-      ),
-      child: Text(
-        'PAPER TRADING — Virtual portfolio. No real crypto assets.',
-        style: context.typeLabel(12, p.primaryDark).copyWith(fontWeight: FontWeight.w700),
-      ),
     );
   }
 }

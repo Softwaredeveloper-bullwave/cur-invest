@@ -256,6 +256,7 @@ class CryptoMarketProvider extends ChangeNotifier {
       _tryLoad(_loadAssets, onError: (e) => assetsErr = e),
       _tryLoad(_loadWatchlist),
       _tryLoad(_loadPortfolio),
+      _tryLoad(_loadNewsSilent),
     ]);
 
     _initialized = _overview != null || _assets.isNotEmpty;
@@ -315,6 +316,12 @@ class CryptoMarketProvider extends ChangeNotifier {
 
   Future<void> _loadPortfolio() async {
     _portfolio = await _api.getCryptoPortfolio();
+  }
+
+  Future<void> _loadNewsSilent() async {
+    final response = await _api.getCryptoNews();
+    _news = response.results;
+    _newsCategories = response.categories;
   }
 
   Future<void> refreshPortfolio() async {

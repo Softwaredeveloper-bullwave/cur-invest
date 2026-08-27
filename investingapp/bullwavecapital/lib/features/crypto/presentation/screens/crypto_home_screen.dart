@@ -10,11 +10,14 @@ import '../../../../core/widgets/icon_badge.dart';
 import '../../../../core/widgets/loading_card.dart';
 import '../../../../core/widgets/page_hero_background.dart';
 import '../../../../core/widgets/premium_ui_kit.dart';
+import '../../../../core/widgets/scroll_reveal.dart';
 import '../../../authentication/presentation/provider/auth_provider.dart';
 import '../../../../models/crypto_models.dart';
 import '../provider/crypto_market_provider.dart';
+import '../widgets/alt_market_shortcuts.dart';
 import '../widgets/crypto_coin_tile.dart';
 import '../widgets/market_switcher.dart';
+import '../../../stocks/presentation/widgets/markets_news_section.dart';
 
 class CryptoHomeScreen extends StatefulWidget {
   const CryptoHomeScreen({
@@ -101,27 +104,29 @@ class _CryptoHomeScreenState extends State<CryptoHomeScreen> {
                           const SizedBox(height: 16),
                           _OverviewStats(overview: overview),
                         ],
-                        if (widget.hubMode) ...[
-                          const SizedBox(height: 16),
-                          _HubLinks(),
-                        ],
+                        const SizedBox(height: 16),
+                        const ScrollReveal(
+                          child: AltMarketShortcuts(kind: AltMarketKind.crypto),
+                        ),
                       ],
                     ),
                   ),
                 ),
                 if (overview != null && overview.trending.isNotEmpty)
                   SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
-                      child: Row(
-                        children: [
-                          Text('Trending', style: context.typeSection(16)),
-                          const Spacer(),
-                          TextButton(
-                            onPressed: () => context.push(AppRoutes.cryptoMovers),
-                            child: const Text('See movers'),
-                          ),
-                        ],
+                    child: ScrollReveal(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
+                        child: Row(
+                          children: [
+                            Text('Trending', style: context.typeSection(16)),
+                            const Spacer(),
+                            TextButton(
+                              onPressed: () => context.push(AppRoutes.cryptoMovers),
+                              child: const Text('See movers'),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -133,17 +138,19 @@ class _CryptoHomeScreenState extends State<CryptoHomeScreen> {
                     ),
                   ),
                 SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-                    child: Row(
-                      children: [
-                        Text('Top coins', style: context.typeSection(16)),
-                        const Spacer(),
-                        TextButton(
-                          onPressed: () => context.push(AppRoutes.cryptoSearch),
-                          child: const Text('Search'),
-                        ),
-                      ],
+                  child: ScrollReveal(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                      child: Row(
+                        children: [
+                          Text('Top coins', style: context.typeSection(16)),
+                          const Spacer(),
+                          TextButton(
+                            onPressed: () => context.push(AppRoutes.cryptoSearch),
+                            child: const Text('Search'),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -151,6 +158,27 @@ class _CryptoHomeScreenState extends State<CryptoHomeScreen> {
                   delegate: SliverChildBuilderDelegate(
                     (context, index) => CryptoCoinTile(asset: provider.assets[index]),
                     childCount: provider.assets.length.clamp(0, 15),
+                  ),
+                ),
+                const SliverToBoxAdapter(child: SizedBox(height: 8)),
+                SliverToBoxAdapter(
+                  child: ScrollReveal(
+                    child: MarketsNewsSection(
+                      news: provider.news
+                          .take(4)
+                          .map(
+                            (n) => <String, String>{
+                              'title': n.title,
+                              'time': n.source,
+                              'category': n.category.isEmpty ? 'Crypto' : n.category,
+                              'imageUrl': n.imageUrl,
+                              'url': n.externalUrl,
+                            },
+                          )
+                          .toList(),
+                      seeAllRoute: AppRoutes.cryptoNews,
+                      useFallback: false,
+                    ),
                   ),
                 ),
                 const SliverToBoxAdapter(child: SizedBox(height: 24)),
@@ -290,31 +318,6 @@ class _StatChip extends StatelessWidget {
           Text(value, style: context.typeCardTitle(13)),
         ],
       ),
-    );
-  }
-}
-
-class _HubLinks extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final links = [
-      ('Screener', AppRoutes.cryptoScreener, Icons.filter_alt_outlined),
-      ('Watchlist', AppRoutes.cryptoWatchlist, Icons.star_outline_rounded),
-      ('News', AppRoutes.cryptoNews, Icons.newspaper_outlined),
-      ('Portfolio', AppRoutes.cryptoPortfolio, Icons.account_balance_wallet_outlined),
-    ];
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: links
-          .map(
-            (e) => ActionChip(
-              avatar: Icon(e.$3, size: 18),
-              label: Text(e.$1),
-              onPressed: () => context.push(e.$2),
-            ),
-          )
-          .toList(),
     );
   }
 }

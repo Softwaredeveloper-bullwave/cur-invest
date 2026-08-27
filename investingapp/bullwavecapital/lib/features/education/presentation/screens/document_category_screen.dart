@@ -6,6 +6,7 @@ import '../../../../core/constants/routes.dart';
 import '../../../../core/theme/theme_a.dart';
 import '../../../../core/widgets/custom_app_bar.dart';
 import '../../../../core/widgets/premium_ui_kit.dart';
+import '../../../../core/widgets/scroll_reveal.dart';
 import '../../../../models/investment_doc_model.dart';
 import '../provider/education_provider.dart';
 
@@ -117,7 +118,8 @@ class _DocumentCategoryScreenState extends State<DocumentCategoryScreen> {
             ),
             const SizedBox(height: 16),
             if (items == 0)
-              GlassCard(
+              ScrollReveal(
+                child: GlassCard(
                 padding: const EdgeInsets.all(20),
                 child: Column(
                   children: [
@@ -141,19 +143,20 @@ class _DocumentCategoryScreenState extends State<DocumentCategoryScreen> {
                     ),
                   ],
                 ),
+              ),
               )
             else if (isQuizCategory)
               ...category.quizzes.map(
                 (quiz) => Padding(
                   padding: const EdgeInsets.only(bottom: 10),
-                  child: _QuizListTile(quiz: quiz),
+                  child: ScrollReveal(child: _QuizListTile(quiz: quiz)),
                 ),
               )
             else
               ...category.articles.map(
                 (article) => Padding(
                   padding: const EdgeInsets.only(bottom: 10),
-                  child: _ArticleListTile(article: article),
+                  child: ScrollReveal(child: _ArticleListTile(article: article)),
                 ),
               ),
           ],

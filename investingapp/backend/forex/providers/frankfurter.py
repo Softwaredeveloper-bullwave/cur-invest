@@ -126,8 +126,8 @@ class FrankfurterProvider(BaseForexProvider):
         if not row:
             raise ForexProviderError(f'Unknown forex pair: {pair_id}', retryable=False, status_code=404)
         _, base, quote, *_ = row
-        days = {'1H': 2, '1D': 7, '1W': 14, '1M': 30, '3M': 90, '1Y': 365, 'ALL': 365}.get(
-            (period or '1D').upper(), 7
+        days = {'1H': 45, '1D': 90, '1W': 120, '1M': 180, '3M': 270, '1Y': 365, 'ALL': 365}.get(
+            (period or '1D').upper(), 90
         )
         end = timezone.now().date()
         start = end - timedelta(days=days)

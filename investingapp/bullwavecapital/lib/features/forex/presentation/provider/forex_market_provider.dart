@@ -72,6 +72,11 @@ class ForexMarketProvider extends ChangeNotifier {
       _try(() async {
         _portfolio = await _api.getForexPortfolio();
       }),
+      _try(() async {
+        final response = await _api.getForexNews();
+        _news = response.results;
+        _newsCategories = response.categories;
+      }),
     ]);
     _initialized = _overview != null || _pairs.isNotEmpty;
     if (_overview == null && _pairs.isEmpty) {

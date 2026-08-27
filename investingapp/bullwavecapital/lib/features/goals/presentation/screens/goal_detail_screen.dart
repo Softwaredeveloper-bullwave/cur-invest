@@ -6,6 +6,7 @@ import '../../../../core/theme/colors.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/widgets/custom_app_bar.dart';
 import '../../../../core/widgets/primary_button.dart';
+import '../../../../core/widgets/scroll_reveal.dart';
 import '../../../../models/goal_plan_model.dart';
 import '../../../kyc/presentation/provider/kyc_flow_provider.dart';
 import '../widgets/goal_return_widgets.dart';
@@ -154,6 +155,10 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                 style: TextStyle(color: colors.textSecondary, fontSize: 13),
               ),
               const SizedBox(height: 20),
+              ScrollReveal(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -211,6 +216,9 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
               ),
               _InfoRow(label: 'Target date', value: goal.targetDate ?? '—'),
               _InfoRow(label: 'Status', value: goal.status.toUpperCase()),
+                  ],
+                ),
+              ),
               if (goal.isDue) ...[
                 const SizedBox(height: 20),
                 Container(

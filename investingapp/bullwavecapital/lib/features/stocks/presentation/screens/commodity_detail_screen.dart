@@ -12,6 +12,7 @@ import '../../../../core/widgets/ai_assistant_fab.dart';
 import '../../../../core/widgets/app_screen_background.dart';
 import '../../../../core/widgets/custom_app_bar.dart';
 import '../../../../core/widgets/robinhood_card.dart';
+import '../../../../core/widgets/scroll_reveal.dart';
 import '../../../../models/commodity_model.dart';
 import '../provider/commodity_provider.dart';
 import '../utils/commodity_trading_flow.dart';
@@ -128,6 +129,10 @@ class _CommodityDetailScreenState extends State<CommodityDetailScreen> {
                             ],
                           ),
                           const SizedBox(height: 16),
+                          ScrollReveal(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
                           Row(
                             children: [
                               Expanded(
@@ -201,6 +206,9 @@ class _CommodityDetailScreenState extends State<CommodityDetailScreen> {
                               ),
                             ),
                           ],
+                              ],
+                            ),
+                          ),
                         ],
                       ),
                     ),

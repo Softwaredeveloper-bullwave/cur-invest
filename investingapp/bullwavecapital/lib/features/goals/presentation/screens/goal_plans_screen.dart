@@ -11,6 +11,7 @@ import '../../../../core/widgets/custom_app_bar.dart';
 import '../../../../core/widgets/page_hero_background.dart';
 import '../../../../core/widgets/premium_ui_kit.dart';
 import '../../../../core/widgets/scale_tap.dart';
+import '../../../../core/widgets/scroll_reveal.dart';
 import '../../../../models/goal_plan_model.dart';
 import '../../data/goal_return_tiers.dart';
 import '../provider/goal_plan_provider.dart';
@@ -114,10 +115,12 @@ class _GoalPlansScreenState extends State<GoalPlansScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const SizedBox(height: 8),
-                      _SectionHeader(
-                        title: 'Choose a goal',
-                        subtitle:
-                            'Pick a life milestone and start saving monthly',
+                      const ScrollReveal(
+                        child: _SectionHeader(
+                          title: 'Choose a goal',
+                          subtitle:
+                              'Pick a life milestone and start saving monthly',
+                        ),
                       ),
                       const SizedBox(height: 14),
                       _CategoryChipRow(
@@ -151,33 +154,39 @@ class _GoalPlansScreenState extends State<GoalPlansScreen> {
                           itemCount: templates.length,
                           itemBuilder: (context, index) {
                             final template = templates[index];
-                            return _TemplateCard(
-                              template: template,
-                              onTap: () => context.push(
-                                '${AppRoutes.createGoal}?category=${template.category}',
+                            return ScrollReveal(
+                              child: _TemplateCard(
+                                template: template,
+                                onTap: () => context.push(
+                                  '${AppRoutes.createGoal}?category=${template.category}',
+                                ),
                               ),
                             );
                           },
                         ),
                       if (provider.goals.isNotEmpty) ...[
                         const SizedBox(height: 32),
-                        _SectionHeader(
-                          title: 'Your goals',
-                          subtitle:
-                              '${provider.goals.length} active plan${provider.goals.length == 1 ? '' : 's'}',
-                          actionLabel: provider.dueGoals.isNotEmpty
-                              ? '${provider.dueGoals.length} due'
-                              : null,
-                          actionColor: provider.dueGoals.isNotEmpty
-                              ? AppColors.red
-                              : null,
+                        ScrollReveal(
+                          child: _SectionHeader(
+                            title: 'Your goals',
+                            subtitle:
+                                '${provider.goals.length} active plan${provider.goals.length == 1 ? '' : 's'}',
+                            actionLabel: provider.dueGoals.isNotEmpty
+                                ? '${provider.dueGoals.length} due'
+                                : null,
+                            actionColor: provider.dueGoals.isNotEmpty
+                                ? AppColors.red
+                                : null,
+                          ),
                         ),
                         const SizedBox(height: 14),
                         ...provider.goals.map(
-                          (goal) => _GoalProgressCard(
-                            goal: goal,
-                            onTap: () => context.push(
-                              '${AppRoutes.goalDetail}?id=${goal.id}',
+                          (goal) => ScrollReveal(
+                            child: _GoalProgressCard(
+                              goal: goal,
+                              onTap: () => context.push(
+                                '${AppRoutes.goalDetail}?id=${goal.id}',
+                              ),
                             ),
                           ),
                         ),

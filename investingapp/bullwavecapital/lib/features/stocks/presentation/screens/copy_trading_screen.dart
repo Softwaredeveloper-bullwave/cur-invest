@@ -9,6 +9,7 @@ import '../../../../core/utils/formatters.dart';
 import '../../../../core/widgets/custom_app_bar.dart';
 import '../../../../core/widgets/premium_ui_kit.dart';
 import '../../../../core/widgets/scale_tap.dart';
+import '../../../../core/widgets/scroll_reveal.dart';
 import '../../../../models/copy_trading_model.dart';
 import '../provider/copy_trading_provider.dart';
 
@@ -193,10 +194,12 @@ class _DiscoverTab extends StatelessWidget {
           ...provider.traders.map(
             (t) => Padding(
               padding: const EdgeInsets.only(bottom: 12),
-              child: _TraderCard(
-                trader: t,
-                onTap: () =>
-                    context.push('${AppRoutes.copyTraderDetail}?id=${t.id}'),
+              child: ScrollReveal(
+                child: _TraderCard(
+                  trader: t,
+                  onTap: () =>
+                      context.push('${AppRoutes.copyTraderDetail}?id=${t.id}'),
+                ),
               ),
             ),
           ),
@@ -261,16 +264,18 @@ class _MyCopiesTab extends StatelessWidget {
         separatorBuilder: (_, _) => const SizedBox(height: 12),
         itemBuilder: (context, index) {
           final sub = subs[index];
-          return _SubscriptionCard(
-            subscription: sub,
-            onOpen: () => context.push(
-              '${AppRoutes.copyTraderDetail}?id=${sub.trader.id}',
+          return ScrollReveal(
+            child: _SubscriptionCard(
+              subscription: sub,
+              onOpen: () => context.push(
+                '${AppRoutes.copyTraderDetail}?id=${sub.trader.id}',
+              ),
+              onPause: () => provider.setSubscriptionStatus(
+                sub.id,
+                sub.isPaused ? 'active' : 'paused',
+              ),
+              onStop: () => provider.setSubscriptionStatus(sub.id, 'stopped'),
             ),
-            onPause: () => provider.setSubscriptionStatus(
-              sub.id,
-              sub.isPaused ? 'active' : 'paused',
-            ),
-            onStop: () => provider.setSubscriptionStatus(sub.id, 'stopped'),
           );
         },
       ),

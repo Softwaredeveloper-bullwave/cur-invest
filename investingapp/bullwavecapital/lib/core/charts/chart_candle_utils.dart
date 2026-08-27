@@ -2,9 +2,19 @@ import 'dart:math' as math;
 
 import '../../models/stock_model.dart';
 
+bool _isFiniteCandle(CandleModel candle) {
+  return candle.open.isFinite &&
+      candle.high.isFinite &&
+      candle.low.isFinite &&
+      candle.close.isFinite &&
+      candle.close > 0 &&
+      candle.high >= candle.low;
+}
+
 List<CandleModel> normalizeCandles(List<CandleModel> candles) {
   final byTime = <int, CandleModel>{};
   for (final candle in candles) {
+    if (!_isFiniteCandle(candle)) continue;
     byTime[_epochSeconds(candle.time)] = candle;
   }
   final entries = byTime.entries.toList()

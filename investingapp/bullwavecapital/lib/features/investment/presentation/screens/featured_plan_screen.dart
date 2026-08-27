@@ -11,6 +11,7 @@ import '../../../../core/widgets/custom_app_bar.dart';
 import '../../../../core/widgets/loading_card.dart';
 import '../../../../core/widgets/money_text.dart';
 import '../../../../core/widgets/primary_button.dart';
+import '../../../../core/widgets/scroll_reveal.dart';
 import '../../../kyc/presentation/provider/kyc_flow_provider.dart';
 import '../../../../models/investment_model.dart';
 import '../provider/featured_plan_provider.dart';
@@ -162,7 +163,8 @@ class _FeaturedPlanScreenState extends State<FeaturedPlanScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                _DetailGrid(
+                ScrollReveal(
+                  child: _DetailGrid(
                   items: [
                     _DetailItem(
                       icon: Icons.savings_outlined,
@@ -186,8 +188,10 @@ class _FeaturedPlanScreenState extends State<FeaturedPlanScreen> {
                     ),
                   ],
                 ),
+                ),
                 const SizedBox(height: 20),
-                _DarkCard(
+                ScrollReveal(
+                  child: _DarkCard(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -241,8 +245,10 @@ class _FeaturedPlanScreenState extends State<FeaturedPlanScreen> {
                     ],
                   ),
                 ),
+                ),
                 const SizedBox(height: 16),
-                _DarkCard(
+                ScrollReveal(
+                  child: _DarkCard(
                   child: plan.hasFixedMonthlyReturn
                       ? _ReturnRow(
                           label: 'Est. monthly return',
@@ -278,8 +284,10 @@ class _FeaturedPlanScreenState extends State<FeaturedPlanScreen> {
                           ],
                         ),
                 ),
+                ),
                 const SizedBox(height: 16),
-                _DarkCard(
+                ScrollReveal(
+                  child: _DarkCard(
                   child: Row(
                     children: [
                       const Icon(
@@ -321,7 +329,12 @@ class _FeaturedPlanScreenState extends State<FeaturedPlanScreen> {
                     ],
                   ),
                 ),
+                ),
                 const SizedBox(height: 20),
+                ScrollReveal(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                 const Text(
                   'Payment Method',
                   style: TextStyle(
@@ -382,6 +395,9 @@ class _FeaturedPlanScreenState extends State<FeaturedPlanScreen> {
                     ),
                   ),
                 ],
+                    ],
+                  ),
+                ),
                 const SizedBox(height: 20),
                 PrimaryButton(
                   label: provider.isPaying ? 'Processing…' : 'Pay & Invest',

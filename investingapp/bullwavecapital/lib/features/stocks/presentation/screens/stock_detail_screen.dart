@@ -14,6 +14,7 @@ import '../../../../core/utils/formatters.dart';
 import '../../../../core/widgets/custom_app_bar.dart';
 import '../../../../core/widgets/loading_card.dart';
 import '../../../../core/widgets/money_text.dart';
+import '../../../../core/widgets/scroll_reveal.dart';
 import '../../../../models/stock_model.dart';
 import '../widgets/stock_detail_chart.dart';
 import '../widgets/stock_list_tile.dart';
@@ -219,15 +220,19 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: _StatsGrid(stock: stock),
+                        ScrollReveal(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: _StatsGrid(stock: stock),
+                          ),
                         ),
                         const SizedBox(height: 20),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          child: TechnicalIndicatorsPanel(
-                            indicators: indicators,
+                        ScrollReveal(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: TechnicalIndicatorsPanel(
+                              indicators: indicators,
+                            ),
                           ),
                         ),
                       ],

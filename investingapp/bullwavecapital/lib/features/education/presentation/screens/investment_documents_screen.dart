@@ -6,6 +6,7 @@ import '../../../../core/constants/routes.dart';
 import '../../../../core/theme/theme_a.dart';
 import '../../../../core/widgets/custom_app_bar.dart';
 import '../../../../core/widgets/premium_ui_kit.dart';
+import '../../../../core/widgets/scroll_reveal.dart';
 import '../../../../models/investment_doc_model.dart';
 import '../provider/education_provider.dart';
 
@@ -72,7 +73,8 @@ class _InvestmentDocumentsScreenState extends State<InvestmentDocumentsScreen> {
             child: ListView(
               padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
               children: [
-                GlassCard(
+                ScrollReveal(
+                  child: GlassCard(
                   padding: const EdgeInsets.all(18),
                   child: Row(
                     children: [
@@ -121,6 +123,7 @@ class _InvestmentDocumentsScreenState extends State<InvestmentDocumentsScreen> {
                     ],
                   ),
                 ),
+                ),
                 const SizedBox(height: 20),
                 Text(
                   'Topics',
@@ -128,7 +131,8 @@ class _InvestmentDocumentsScreenState extends State<InvestmentDocumentsScreen> {
                 ),
                 const SizedBox(height: 12),
                 if (categories.isEmpty)
-                  GlassCard(
+                  ScrollReveal(
+                    child: GlassCard(
                     padding: const EdgeInsets.all(20),
                     child: Column(
                       children: [
@@ -150,12 +154,15 @@ class _InvestmentDocumentsScreenState extends State<InvestmentDocumentsScreen> {
                         ),
                       ],
                     ),
+                  ),
                   )
                 else
                   ...categories.map(
                     (category) => Padding(
                       padding: const EdgeInsets.only(bottom: 10),
-                      child: _CategoryTile(category: category),
+                      child: ScrollReveal(
+                        child: _CategoryTile(category: category),
+                      ),
                     ),
                   ),
               ],

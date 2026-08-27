@@ -13,6 +13,7 @@ import '../../../../core/utils/bank_verification_guard.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/widgets/loading_card.dart';
 import '../../../../core/widgets/page_hero_background.dart';
+import '../../../../core/widgets/scroll_reveal.dart';
 import '../../../../core/widgets/paper_trading_disclaimer.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../../../core/widgets/robinhood_card.dart';
@@ -322,7 +323,8 @@ class WalletScreen extends StatelessWidget {
                   ),
                   Padding(
                     padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-                    child: Column(
+                    child: ScrollReveal(
+                      child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         if (wallet.bankName.isNotEmpty) ...[
@@ -471,6 +473,7 @@ class WalletScreen extends StatelessWidget {
                           }),
                         SizedBox(height: ShellLayout.contentBottomInset),
                       ],
+                    ),
                     ),
                   ),
                 ],

@@ -8,6 +8,7 @@ import '../../../../core/constants/routes.dart';
 import '../../../../core/widgets/custom_app_bar.dart';
 import '../../../../core/widgets/loading_card.dart';
 import '../../../../core/widgets/portfolio_card.dart';
+import '../../../../core/widgets/scroll_reveal.dart';
 import '../../../../models/investment_model.dart';
 import '../../data/featured_plans_catalog.dart';
 import '../../../home/presentation/provider/home_provider.dart';
@@ -76,14 +77,16 @@ class _FeaturedPlansListScreenState extends State<FeaturedPlansListScreen> {
               separatorBuilder: (_, _) => const SizedBox(height: 12),
               itemBuilder: (context, index) {
                 final plan = _plans[index];
-                return InvestmentCard(
-                  name: plan.name,
-                  minimumInvestment: plan.minimumInvestment,
-                  annualReturn: plan.annualReturnRate,
-                  monthlyReturnMin: plan.monthlyReturnMin,
-                  monthlyReturnMax: plan.monthlyReturnMax,
-                  risk: _riskFor(plan.id),
-                  onTap: () => _openPlan(context, plan),
+                return ScrollReveal(
+                  child: InvestmentCard(
+                    name: plan.name,
+                    minimumInvestment: plan.minimumInvestment,
+                    annualReturn: plan.annualReturnRate,
+                    monthlyReturnMin: plan.monthlyReturnMin,
+                    monthlyReturnMax: plan.monthlyReturnMax,
+                    risk: _riskFor(plan.id),
+                    onTap: () => _openPlan(context, plan),
+                  ),
                 );
               },
             ),
