@@ -1,3 +1,5 @@
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -21,6 +23,19 @@ class CryptoNewsScreen extends StatefulWidget {
 class _CryptoNewsScreenState extends State<CryptoNewsScreen> {
   String? _category;
 
+  static const _chips = [
+    'All',
+    'Bitcoin',
+    'Ethereum',
+    'Altcoins',
+    'DeFi',
+    'Web3',
+    'Regulation',
+    'Blockchain',
+    'Exchange News',
+    'Market Analysis',
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -29,9 +44,49 @@ class _CryptoNewsScreenState extends State<CryptoNewsScreen> {
 
   Future<void> _load({bool refresh = false}) async {
     await context.read<CryptoMarketProvider>().loadNews(
-          category: _category,
+          category: null,
           refresh: refresh,
         );
+  }
+
+  static const _blockedHosts = [
+    'pypi.org',
+    'npmjs.com',
+    'crates.io',
+  ];
+
+  static final _chipMatchers = <String, RegExp>{
+    'Bitcoin': RegExp(r'\b(bitcoin|btc)\b', caseSensitive: false),
+    'Ethereum': RegExp(r'\b(ethereum|eth|vitalik)\b', caseSensitive: false),
+    'Altcoins':
+        RegExp(r'\b(solana|sol|xrp|cardano|dogecoin|altcoin|ripple)\b', caseSensitive: false),
+    'DeFi': RegExp(r'\b(defi|uniswap|aave|yield farming)\b', caseSensitive: false),
+    'Web3': RegExp(r'\b(web3|nft|metaverse)\b', caseSensitive: false),
+    'Regulation':
+        RegExp(r'\b(sec|regulation|lawsuit|compliance|cftc)\b', caseSensitive: false),
+    'Blockchain':
+        RegExp(r'\b(blockchain|layer-2|rollup)\b', caseSensitive: false),
+    'Exchange News':
+        RegExp(r'\b(binance|coinbase|kraken|exchange)\b', caseSensitive: false),
+    'Market Analysis':
+        RegExp(r'\b(market|analysis|outlook|forecast|price)\b', caseSensitive: false),
+  };
+
+  List<CryptoNewsModel> _filtered(List<CryptoNewsModel> articles) {
+    final cleaned = articles.where((a) {
+      final blob = '${a.source} ${a.externalUrl}'.toLowerCase();
+      return !_blockedHosts.any(blob.contains);
+    }).toList();
+    final wanted = _category;
+    if (wanted == null || wanted.isEmpty) return cleaned;
+    final matcher = _chipMatchers[wanted];
+    return cleaned.where((a) {
+      if (a.category.toLowerCase() == wanted.toLowerCase()) return true;
+      if (matcher == null) return false;
+      final blob =
+          '${a.title} ${a.summary} ${a.relatedCryptocurrencies.join(' ')}';
+      return matcher.hasMatch(blob);
+    }).toList();
   }
 
   Future<void> _openArticle(String url) async {
@@ -47,7 +102,7 @@ class _CryptoNewsScreenState extends State<CryptoNewsScreen> {
       appBar: const CustomAppBar(title: 'Crypto News'),
       body: Consumer<CryptoMarketProvider>(
         builder: (context, provider, _) {
-          final categories = ['All', ...provider.newsCategories];
+          final visible = _filtered(provider.news);
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -56,17 +111,18 @@ class _CryptoNewsScreenState extends State<CryptoNewsScreen> {
                 child: ListView(
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 12),
-                  children: categories.map((cat) {
+                  children: _chips.map((cat) {
                     final selected =
                         (cat == 'All' && _category == null) || cat == _category;
                     return Padding(
                       padding: const EdgeInsets.only(right: 8),
-                      child: FilterChip(
+                      child: ChoiceChip(
                         label: Text(cat),
                         selected: selected,
                         onSelected: (_) {
-                          setState(() => _category = cat == 'All' ? null : cat);
-                          _load();
+                          setState(() {
+                            _category = cat == 'All' ? null : cat;
+                          });
                         },
                       ),
                     );
@@ -82,15 +138,18 @@ class _CryptoNewsScreenState extends State<CryptoNewsScreen> {
                     : RefreshIndicator(
                         color: AppColors.brandCyan,
                         onRefresh: () => _load(refresh: true),
-                        child: provider.news.isEmpty
+                        child: visible.isEmpty
                             ? ListView(
                                 physics: const AlwaysScrollableScrollPhysics(),
                                 children: [
                                   const SizedBox(height: 120),
                                   Center(
                                     child: Text(
-                                      'No news available. Pull to refresh.',
+                                      _category == null
+                                          ? 'No news available. Pull to refresh.'
+                                          : 'No $_category headlines right now. Try All or pull to refresh.',
                                       style: context.typeSecondary(14),
+                                      textAlign: TextAlign.center,
                                     ),
                                   ),
                                 ],
@@ -98,12 +157,13 @@ class _CryptoNewsScreenState extends State<CryptoNewsScreen> {
                             : ListView.builder(
                                 physics: const AlwaysScrollableScrollPhysics(),
                                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                                itemCount: provider.news.length,
+                                itemCount: visible.length,
                                 itemBuilder: (_, i) {
-                                  final article = provider.news[i];
+                                  final article = visible[i];
                                   return Padding(
                                     padding: const EdgeInsets.only(bottom: 14),
                                     child: _CryptoNewsCard(
+                                      key: ValueKey(article.id),
                                       article: article,
                                       onTap: () =>
                                           _openArticle(article.externalUrl),
@@ -122,7 +182,11 @@ class _CryptoNewsScreenState extends State<CryptoNewsScreen> {
 }
 
 class _CryptoNewsCard extends StatelessWidget {
-  const _CryptoNewsCard({required this.article, required this.onTap});
+  const _CryptoNewsCard({
+    super.key,
+    required this.article,
+    required this.onTap,
+  });
 
   final CryptoNewsModel article;
   final VoidCallback onTap;
@@ -151,6 +215,7 @@ class _CryptoNewsCard extends StatelessWidget {
                   width: double.infinity,
                   child: hasImage
                       ? _NewsPhoto(
+                          key: ValueKey('${article.id}-${article.imageUrl}'),
                           imageUrl: article.imageUrl,
                           category: article.category,
                         )
@@ -220,7 +285,11 @@ class _CryptoNewsCard extends StatelessWidget {
 }
 
 class _NewsPhoto extends StatefulWidget {
-  const _NewsPhoto({required this.imageUrl, required this.category});
+  const _NewsPhoto({
+    super.key,
+    required this.imageUrl,
+    required this.category,
+  });
 
   final String imageUrl;
   final String category;
@@ -230,19 +299,45 @@ class _NewsPhoto extends StatefulWidget {
 }
 
 class _NewsPhotoState extends State<_NewsPhoto> {
-  late final List<String> _candidates;
+  List<String> _candidates = const [];
   int _index = 0;
 
   @override
   void initState() {
     super.initState();
-    final original = widget.imageUrl.trim();
+    _candidates = _urlsFor(widget.imageUrl);
+  }
+
+  @override
+  void didUpdateWidget(covariant _NewsPhoto oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.imageUrl != widget.imageUrl) {
+      _index = 0;
+      _candidates = _urlsFor(widget.imageUrl);
+    }
+  }
+
+  List<String> _urlsFor(String imageUrl) {
+    final original = imageUrl.trim();
     final proxied = resolveNewsImageUrl(original);
-    _candidates = [
+    return [
+      // Phone/desktop can load CDN photos directly even before the proxy allowlist is deployed.
+      if (!kIsWeb && original.isNotEmpty) original,
       if (proxied.isNotEmpty) proxied,
-      if (original.isNotEmpty && original != proxied) original,
+      if (kIsWeb && original.isNotEmpty && original != proxied) original,
     ];
   }
+
+  static const _loading = ColoredBox(
+    color: Color(0xFF1E2329),
+    child: Center(
+      child: SizedBox(
+        width: 22,
+        height: 22,
+        child: CircularProgressIndicator(strokeWidth: 2),
+      ),
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -250,44 +345,19 @@ class _NewsPhotoState extends State<_NewsPhoto> {
       return _NewsImageFallback(category: widget.category);
     }
     final url = _candidates[_index];
-    final isProxy = url.contains('news/image-proxy');
-    return Image.network(
-      url,
-      key: ValueKey(url),
+    return CachedNetworkImage(
+      imageUrl: url,
       height: 180,
       width: double.infinity,
       fit: BoxFit.cover,
-      webHtmlElementStrategy: isProxy
-          ? WebHtmlElementStrategy.never
-          : WebHtmlElementStrategy.prefer,
-      loadingBuilder: (context, child, progress) {
-        if (progress == null) return child;
-        return const ColoredBox(
-          color: Color(0xFF1E2329),
-          child: Center(
-            child: SizedBox(
-              width: 22,
-              height: 22,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
-          ),
-        );
-      },
-      errorBuilder: (_, _, _) {
+      fadeInDuration: const Duration(milliseconds: 250),
+      placeholder: (_, _) => _loading,
+      errorWidget: (_, _, _) {
         if (_index < _candidates.length - 1) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted) setState(() => _index++);
           });
-          return const ColoredBox(
-            color: Color(0xFF1E2329),
-            child: Center(
-              child: SizedBox(
-                width: 22,
-                height: 22,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-            ),
-          );
+          return _loading;
         }
         return _NewsImageFallback(category: widget.category);
       },

@@ -19,7 +19,8 @@ class UserMarketPreference(models.Model):
     )
     indian_market_enabled = models.BooleanField(default=True)
     crypto_market_enabled = models.BooleanField(default=False)
-    # Active shell market when both are enabled: indian | crypto
+    forex_market_enabled = models.BooleanField(default=False)
+    # Active shell market: indian | crypto | forex
     active_market = models.CharField(max_length=16, default='indian')
     has_completed_selection = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)

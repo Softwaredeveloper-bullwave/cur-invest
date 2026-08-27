@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/theme/theme_a.dart';
+import '../../../forex/presentation/provider/forex_market_provider.dart';
 import '../provider/crypto_market_provider.dart';
 
 class MarketSwitcher extends StatelessWidget {
@@ -15,8 +16,11 @@ class MarketSwitcher extends StatelessWidget {
     final provider = context.watch<CryptoMarketProvider>();
 
     // Always offer both markets — switching is exclusive (one at a time).
-    final current =
-        provider.activeMarket == 'crypto' ? 'crypto' : 'indian';
+    final current = provider.isForexActive
+        ? 'forex'
+        : provider.activeMarket == 'crypto'
+            ? 'crypto'
+            : 'indian';
 
     return Container(
       padding: EdgeInsets.symmetric(
@@ -50,9 +54,17 @@ class MarketSwitcher extends StatelessWidget {
               value: 'crypto',
               child: Text('₿ Crypto Market'),
             ),
+            DropdownMenuItem(
+              value: 'forex',
+              child: Text('💱 Forex Market'),
+            ),
           ],
           onChanged: (value) {
-            if (value != null) provider.switchMarket(value);
+            if (value == null) return;
+            provider.switchMarket(value);
+            if (value == 'forex') {
+              context.read<ForexMarketProvider>().ensureLoaded();
+            }
           },
         ),
       ),

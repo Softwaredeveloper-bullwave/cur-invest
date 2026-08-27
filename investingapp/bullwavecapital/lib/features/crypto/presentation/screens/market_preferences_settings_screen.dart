@@ -38,7 +38,9 @@ class _MarketPreferencesSettingsScreenState
     if (!mounted) return;
     final pref = provider.preference;
     setState(() {
-      if (pref?.cryptoMarketEnabled == true &&
+      if (pref?.forexMarketEnabled == true || provider.activeMarket == 'forex') {
+        _selected = 'forex';
+      } else if (pref?.cryptoMarketEnabled == true &&
           pref?.indianMarketEnabled != true) {
         _selected = 'crypto';
       } else if (provider.activeMarket == 'crypto') {
@@ -56,6 +58,7 @@ class _MarketPreferencesSettingsScreenState
     final ok = await provider.savePreference(
       indianMarketEnabled: _selected == 'indian',
       cryptoMarketEnabled: _selected == 'crypto',
+      forexMarketEnabled: _selected == 'forex',
       activeMarket: _selected,
     );
     if (!mounted) return;
@@ -112,6 +115,14 @@ class _MarketPreferencesSettingsScreenState
                   accent: AppColors.brandOrange,
                   onTap: () => setState(() => _selected = 'crypto'),
                 ),
+                const SizedBox(height: 12),
+                _MarketOptionTile(
+                  title: '💱 Forex Market',
+                  subtitle: 'FX majors, crosses, USD/INR & paper trading',
+                  selected: _selected == 'forex',
+                  accent: AppColors.brandCyan,
+                  onTap: () => setState(() => _selected = 'forex'),
+                ),
                 const SizedBox(height: 24),
                 FilledButton(
                   onPressed: _saving ? null : _save,
@@ -132,7 +143,9 @@ class _MarketPreferencesSettingsScreenState
                       : Text(
                           _selected == 'crypto'
                               ? 'Save & open Crypto Market'
-                              : 'Save & open Indian Market',
+                              : _selected == 'forex'
+                                  ? 'Save & open Forex Market'
+                                  : 'Save & open Indian Market',
                         ),
                 ),
               ],

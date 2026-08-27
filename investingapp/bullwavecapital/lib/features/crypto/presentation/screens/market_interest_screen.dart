@@ -28,6 +28,7 @@ class _MarketInterestScreenState extends State<MarketInterestScreen> {
     final ok = await provider.savePreference(
       indianMarketEnabled: _selected == 'indian',
       cryptoMarketEnabled: _selected == 'crypto',
+      forexMarketEnabled: _selected == 'forex',
       activeMarket: _selected,
     );
     if (!mounted) return;
@@ -87,6 +88,15 @@ class _MarketInterestScreenState extends State<MarketInterestScreen> {
                 accent: AppColors.brandOrange,
                 onTap: () => setState(() => _selected = 'crypto'),
               ),
+              const SizedBox(height: 16),
+              _MarketCard(
+                title: '💱 Forex Market',
+                subtitle: 'EUR/USD • GBP/USD • USD/INR • FX News • Paper Trading',
+                icon: Icons.currency_exchange_rounded,
+                selected: _selected == 'forex',
+                accent: AppColors.brandCyan,
+                onTap: () => setState(() => _selected = 'forex'),
+              ),
               const SizedBox(height: 32),
               FilledButton(
                 onPressed: _saving ? null : _continue,
@@ -107,7 +117,9 @@ class _MarketInterestScreenState extends State<MarketInterestScreen> {
                     : Text(
                         _selected == 'crypto'
                             ? 'Continue to Crypto Market'
-                            : 'Continue to Indian Market',
+                            : _selected == 'forex'
+                                ? 'Continue to Forex Market'
+                                : 'Continue to Indian Market',
                       ),
               ),
             ],

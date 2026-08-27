@@ -69,30 +69,36 @@ class MarketPreferenceView(APIView):
         data['has_completed_selection'] = True
         indian = data.get('indian_market_enabled', pref.indian_market_enabled)
         crypto = data.get('crypto_market_enabled', pref.crypto_market_enabled)
+        forex = data.get('forex_market_enabled', getattr(pref, 'forex_market_enabled', False))
         if isinstance(indian, str):
             indian = indian.lower() in ('1', 'true', 'yes')
         if isinstance(crypto, str):
             crypto = crypto.lower() in ('1', 'true', 'yes')
+        if isinstance(forex, str):
+            forex = forex.lower() in ('1', 'true', 'yes')
         indian = bool(indian)
         crypto = bool(crypto)
-        # One market at a time: if both sent true, prefer active_market / crypto
+        forex = bool(forex)
         requested_active = (data.get('active_market') or '').strip().lower()
-        if indian and crypto:
-            if requested_active == 'crypto':
-                indian, crypto = False, True
-            else:
-                indian, crypto = True, False
-        data['indian_market_enabled'] = indian
-        data['crypto_market_enabled'] = crypto
-        # Always coerce active_market to the enabled market
-        if crypto and not indian:
-            data['active_market'] = 'crypto'
-        elif indian and not crypto:
-            data['active_market'] = 'indian'
-        elif requested_active in ('indian', 'crypto'):
-            data['active_market'] = requested_active
+        if not indian and not crypto and not forex:
+            data['indian_market_enabled'] = False
+            data['crypto_market_enabled'] = False
+            data['forex_market_enabled'] = False
         else:
-            data['active_market'] = 'indian'
+            if requested_active in ('indian', 'crypto', 'forex'):
+                active = requested_active
+            elif forex and not indian and not crypto:
+                active = 'forex'
+            elif crypto and not indian and not forex:
+                active = 'crypto'
+            elif indian and not crypto and not forex:
+                active = 'indian'
+            else:
+                active = 'indian'
+            data['active_market'] = active
+            data['indian_market_enabled'] = active == 'indian'
+            data['crypto_market_enabled'] = active == 'crypto'
+            data['forex_market_enabled'] = active == 'forex'
         ser = UserMarketPreferenceSerializer(pref, data=data, partial=True)
         ser.is_valid(raise_exception=True)
         ser.save()

@@ -30,6 +30,7 @@ import '../../../stocks/presentation/provider/stock_features_provider.dart';
 import '../../../stocks/presentation/provider/stock_market_provider.dart';
 import '../../../crypto/presentation/provider/crypto_market_provider.dart';
 import '../../../crypto/presentation/screens/crypto_home_screen.dart';
+import '../../../forex/presentation/screens/forex_home_screen.dart';
 import '../../../crypto/presentation/widgets/market_switcher.dart';
 import '../provider/home_provider.dart';
 import '../widgets/home_theme_a.dart';
@@ -155,6 +156,9 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Consumer<CryptoMarketProvider>(
       builder: (context, cryptoMarket, _) {
+        if (cryptoMarket.isForexActive) {
+          return const ForexHomeScreen(embedded: true);
+        }
         if (cryptoMarket.isCryptoActive) {
           return const CryptoHomeScreen(embedded: true);
         }

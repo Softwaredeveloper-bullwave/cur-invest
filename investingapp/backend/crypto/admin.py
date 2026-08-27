@@ -22,6 +22,7 @@ class UserMarketPreferenceAdmin(admin.ModelAdmin):
         'user',
         'indian_market_enabled',
         'crypto_market_enabled',
+        'forex_market_enabled',
         'active_market',
         'has_completed_selection',
         'updated_at',

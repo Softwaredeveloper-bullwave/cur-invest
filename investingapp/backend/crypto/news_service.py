@@ -76,19 +76,47 @@ def _parse_published(entry) -> datetime:
 def _category_for(title: str, summary: str) -> str:
     text = f'{title} {summary}'.lower()
     rules = (
-        ('Bitcoin', ('bitcoin', 'btc')),
-        ('Ethereum', ('ethereum', 'eth', 'vitalik')),
-        ('DeFi', ('defi', 'uniswap', 'aave', 'yield')),
-        ('Web3', ('web3', 'nft', 'metaverse')),
-        ('Regulation', ('sec', 'regulation', 'ban', 'lawsuit', 'compliance')),
-        ('Exchange News', ('binance', 'coinbase', 'exchange', 'kraken')),
-        ('Blockchain', ('blockchain', 'layer-2', 'rollup')),
-        ('Altcoins', ('solana', 'xrp', 'cardano', 'dogecoin', 'altcoin')),
+        ('Bitcoin', r'\b(bitcoin|btc)\b'),
+        ('Ethereum', r'\b(ethereum|\beth\b|vitalik)\b'),
+        ('DeFi', r'\b(defi|uniswap|aave|yield farming)\b'),
+        ('Web3', r'\b(web3|nft|metaverse)\b'),
+        ('Regulation', r'\b(sec|regulation|lawsuit|compliance|cftc)\b'),
+        ('Exchange News', r'\b(binance|coinbase|kraken|exchange)\b'),
+        ('Blockchain', r'\b(blockchain|layer-2|rollup)\b'),
+        ('Altcoins', r'\b(solana|\bsol\b|xrp|cardano|dogecoin|altcoin)\b'),
     )
-    for cat, keys in rules:
-        if any(k in text for k in keys):
+    for cat, pattern in rules:
+        if re.search(pattern, text, re.I):
             return cat
     return 'Market Analysis'
+
+
+_BLOCKED_SOURCES = (
+    'pypi.org',
+    'npmjs.com',
+    'crates.io',
+    'github.com',
+    'gitlab.com',
+    'stackoverflow.com',
+)
+
+_CRYPTO_TERMS = (
+    'bitcoin', 'btc', 'ethereum', 'eth', 'crypto', 'blockchain', 'web3',
+    'defi', 'nft', 'solana', 'xrp', 'token', 'stablecoin', 'binance',
+    'coinbase', 'altcoin', 'mining', 'wallet',
+)
+
+NEWSAPI_DOMAINS = (
+    'coindesk.com,cointelegraph.com,decrypt.co,theblock.co,'
+    'bitcoinmagazine.com,coinmarketcap.com,cryptoslate.com,blockworks.co'
+)
+
+
+def _is_crypto_article(title: str, summary: str, source: str, url: str) -> bool:
+    blob = f'{source} {url} {title} {summary}'.lower()
+    if any(blocked in blob for blocked in _BLOCKED_SOURCES):
+        return False
+    return any(term in blob for term in _CRYPTO_TERMS)
 
 
 def _related_assets(title: str, summary: str) -> list[str]:
@@ -178,41 +206,57 @@ def _entry_image(entry) -> str:
 
 
 def fetch_crypto_news(*, category: str | None = None, force: bool = False) -> list[dict]:
-    provider = (getattr(settings, 'CRYPTO_NEWS_PROVIDER', 'rss') or 'rss').lower()
-    if provider == 'newsapi' and (getattr(settings, 'CRYPTO_NEWS_API_KEY', '') or '').strip():
-        return _fetch_newsapi(category=category, force=force)
-    return _fetch_rss_news(category=category, force=force)
+    """Always load the full crypto corpus, then filter by assigned category."""
+    articles = _load_all_articles(force=force)
+    wanted = (category or '').strip().lower()
+    if wanted and wanted not in {'all', '*'}:
+        articles = [a for a in articles if (a.get('category') or '').lower() == wanted]
+    return articles
 
 
-def _fetch_newsapi(*, category: str | None = None, force: bool = False) -> list[dict]:
+def _load_all_articles(*, force: bool = False) -> list[dict]:
     cache_minutes = int(getattr(settings, 'CRYPTO_NEWS_CACHE_MINUTES', 15) or 15)
-    cache_key = f'crypto:newsapi:{category or "all"}'
+    cache_key = 'crypto:news:corpus:v3'
     if not force:
         cached = cache.get(cache_key)
         if cached is not None and any((a.get('image_url') or '').strip() for a in cached):
             return cached
 
+    by_id: dict[str, dict] = {}
+    # RSS first so CoinTelegraph/CoinDesk photos win over NewsAPI extras.
+    for row in _fetch_rss_news(force=True):
+        by_id[row['id']] = row
+
+    provider = (getattr(settings, 'CRYPTO_NEWS_PROVIDER', 'rss') or 'rss').lower()
+    if provider == 'newsapi' and (getattr(settings, 'CRYPTO_NEWS_API_KEY', '') or '').strip():
+        for row in _fetch_newsapi(force=True):
+            by_id.setdefault(row['id'], row)
+
+    articles = sorted(by_id.values(), key=lambda a: a.get('published_at') or '', reverse=True)[:80]
+    cache.set(cache_key, articles, cache_minutes * 60)
+    return articles
+
+
+def _fetch_newsapi(*, category: str | None = None, force: bool = False) -> list[dict]:
     api_key = (getattr(settings, 'CRYPTO_NEWS_API_KEY', '') or '').strip()
-    query = (category or 'cryptocurrency OR bitcoin OR ethereum').strip()
-    if category and category.lower() not in {'all', 'market analysis'}:
-        query = category
     started = timezone.now()
     try:
-        with httpx.Client(timeout=20) as client:
+        with httpx.Client(timeout=20, follow_redirects=True) as client:
             resp = client.get(
                 'https://newsapi.org/v2/everything',
                 params={
-                    'q': query,
+                    'q': 'bitcoin OR ethereum OR cryptocurrency OR blockchain OR solana',
                     'language': 'en',
                     'sortBy': 'publishedAt',
                     'pageSize': 40,
+                    'domains': NEWSAPI_DOMAINS,
                     'apiKey': api_key,
                 },
                 headers={'User-Agent': 'CapitalBullWave/1.0'},
             )
         if resp.status_code >= 400:
             logger.warning('NewsAPI failed: %s %s', resp.status_code, resp.text[:200])
-            return _fetch_rss_news(category=category, force=True)
+            return []
 
         payload = resp.json()
         articles = []
@@ -222,6 +266,9 @@ def _fetch_newsapi(*, category: str | None = None, force: bool = False) -> list[
                 continue
             link = item.get('url') or ''
             summary = _clean_html(item.get('description') or '')[:600]
+            source = ((item.get('source') or {}).get('name') or 'NewsAPI')[:120]
+            if not _is_crypto_article(title, summary, source, link):
+                continue
             cat = _category_for(title, summary)
             published_raw = item.get('publishedAt')
             try:
@@ -229,31 +276,35 @@ def _fetch_newsapi(*, category: str | None = None, force: bool = False) -> list[
             except Exception:
                 published = timezone.now()
             aid = _stable_id(link, title)
+            image = (item.get('urlToImage') or '')[:1000]
             row = {
                 'id': aid,
                 'title': title[:400],
                 'summary': summary,
-                'image_url': (item.get('urlToImage') or '')[:1000],
-                'source': ((item.get('source') or {}).get('name') or 'NewsAPI')[:120],
+                'image_url': image,
+                'source': source,
                 'published_at': published.isoformat(),
                 'category': cat,
                 'related_cryptocurrencies': _related_assets(title, summary),
                 'external_url': link[:500],
             }
             articles.append(row)
-            CryptoNewsArticle.objects.update_or_create(
-                id=aid,
-                defaults={
-                    'title': row['title'],
-                    'summary': summary,
-                    'image_url': row['image_url'],
-                    'source': row['source'],
-                    'published_at': published,
-                    'category': cat,
-                    'related_assets': row['related_cryptocurrencies'],
-                    'external_url': row['external_url'],
-                },
-            )
+            try:
+                CryptoNewsArticle.objects.update_or_create(
+                    id=aid,
+                    defaults={
+                        'title': row['title'],
+                        'summary': summary,
+                        'image_url': row['image_url'],
+                        'source': row['source'],
+                        'published_at': published,
+                        'category': cat,
+                        'related_assets': row['related_cryptocurrencies'],
+                        'external_url': row['external_url'],
+                    },
+                )
+            except Exception:
+                logger.debug('Could not persist NewsAPI row', exc_info=True)
         elapsed = int((timezone.now() - started).total_seconds() * 1000)
         record_provider_call(
             service='news',
@@ -262,7 +313,6 @@ def _fetch_newsapi(*, category: str | None = None, force: bool = False) -> list[
             response_ms=elapsed,
             provider_name='newsapi',
         )
-        cache.set(cache_key, articles, cache_minutes * 60)
         return articles
     except Exception as exc:
         record_provider_call(
@@ -273,17 +323,10 @@ def _fetch_newsapi(*, category: str | None = None, force: bool = False) -> list[
             error_message=str(exc)[:400],
             provider_name='newsapi',
         )
-        return _fetch_rss_news(category=category, force=True)
+        return []
 
 
 def _fetch_rss_news(*, category: str | None = None, force: bool = False) -> list[dict]:
-    cache_minutes = int(getattr(settings, 'CRYPTO_NEWS_CACHE_MINUTES', 15) or 15)
-    cache_key = f'crypto:news:{category or "all"}'
-    if not force:
-        cached = cache.get(cache_key)
-        if cached is not None and any((a.get('image_url') or '').strip() for a in cached):
-            return cached
-
     articles: list[dict] = []
     started = timezone.now()
     try:
@@ -306,10 +349,9 @@ def _fetch_rss_news(*, category: str | None = None, force: bool = False) -> list
                 summary = _clean_html(
                     getattr(entry, 'summary', '') or getattr(entry, 'description', '') or ''
                 )[:600]
+                if not _is_crypto_article(title, summary, source, link):
+                    continue
                 cat = _category_for(title, summary)
-                if category and category.lower() not in {cat.lower(), 'all'}:
-                    if category.lower() != cat.lower():
-                        continue
                 aid = _stable_id(link, title)
                 published = _parse_published(entry)
                 row = {
@@ -344,27 +386,29 @@ def _fetch_rss_news(*, category: str | None = None, force: bool = False) -> list
         articles.sort(key=lambda a: a['published_at'], reverse=True)
         articles = articles[:80]
         elapsed = int((timezone.now() - started).total_seconds() * 1000)
-        record_provider_call(
-            service='news',
-            endpoint='rss',
-            success=True,
-            response_ms=elapsed,
-            provider_name='rss',
-        )
-        cache.set(cache_key, articles, cache_minutes * 60)
+        try:
+            record_provider_call(
+                service='news',
+                endpoint='rss',
+                success=True,
+                response_ms=elapsed,
+                provider_name='rss',
+            )
+        except Exception:
+            pass
         return articles
     except Exception as exc:
-        record_provider_call(
-            service='news',
-            endpoint='rss',
-            success=False,
-            error_type=type(exc).__name__,
-            error_message=str(exc)[:400],
-            provider_name='rss',
-        )
-        cached = cache.get(cache_key)
-        if cached:
-            return cached
+        try:
+            record_provider_call(
+                service='news',
+                endpoint='rss',
+                success=False,
+                error_type=type(exc).__name__,
+                error_message=str(exc)[:400],
+                provider_name='rss',
+            )
+        except Exception:
+            pass
         qs = CryptoNewsArticle.objects.all()[:50]
         return [
             {

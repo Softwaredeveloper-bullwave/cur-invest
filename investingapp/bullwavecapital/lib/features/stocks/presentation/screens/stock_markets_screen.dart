@@ -17,6 +17,7 @@ import '../provider/stock_market_provider.dart';
 import '../provider/stock_portfolio_provider.dart';
 import '../../../crypto/presentation/provider/crypto_market_provider.dart';
 import '../../../crypto/presentation/screens/crypto_home_screen.dart';
+import '../../../forex/presentation/screens/forex_home_screen.dart';
 import '../widgets/markets_economic_calendar.dart';
 import '../widgets/markets_fno_indices.dart';
 import '../widgets/market_heat_map.dart';
@@ -155,6 +156,9 @@ class _StockMarketsScreenState extends State<StockMarketsScreen> {
   Widget build(BuildContext context) {
     return Consumer<CryptoMarketProvider>(
       builder: (context, cryptoMarket, _) {
+        if (cryptoMarket.isForexActive) {
+          return const ForexHomeScreen(hubMode: true);
+        }
         if (cryptoMarket.isCryptoActive) {
           return const CryptoHomeScreen(hubMode: true);
         }

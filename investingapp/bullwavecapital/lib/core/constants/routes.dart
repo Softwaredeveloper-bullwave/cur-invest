@@ -101,4 +101,16 @@ class AppRoutes {
   static const String cryptoMovers = '/crypto/movers';
 
   static String cryptoDetailPath(String assetId) => '/crypto/$assetId';
+
+  // ── Forex module ──
+  static const String forexHome = '/forex';
+  static const String forexSearch = '/forex/search';
+  static const String forexDetail = '/forex/:pairId';
+  static const String forexWatchlist = '/forex/watchlist';
+  static const String forexNews = '/forex/news';
+  static const String forexScreener = '/forex/screener';
+  static const String forexPortfolio = '/forex/portfolio';
+  static const String forexMovers = '/forex/movers';
+
+  static String forexDetailPath(String pairId) => '/forex/$pairId';
 }

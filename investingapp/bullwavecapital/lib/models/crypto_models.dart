@@ -53,16 +53,19 @@ class UserMarketPreferenceModel {
   const UserMarketPreferenceModel({
     required this.indianMarketEnabled,
     required this.cryptoMarketEnabled,
+    this.forexMarketEnabled = false,
     required this.activeMarket,
     required this.hasCompletedSelection,
   });
 
   final bool indianMarketEnabled;
   final bool cryptoMarketEnabled;
+  final bool forexMarketEnabled;
   final String activeMarket;
   final bool hasCompletedSelection;
 
   bool get isCryptoActive => activeMarket == 'crypto';
+  bool get isForexActive => activeMarket == 'forex';
 
   factory UserMarketPreferenceModel.fromJson(Map<String, dynamic> json) =>
       UserMarketPreferenceModel(
@@ -70,6 +73,8 @@ class UserMarketPreferenceModel {
             _pick(json, 'indianMarketEnabled', 'indian_market_enabled') as bool? ?? true,
         cryptoMarketEnabled:
             _pick(json, 'cryptoMarketEnabled', 'crypto_market_enabled') as bool? ?? false,
+        forexMarketEnabled:
+            _pick(json, 'forexMarketEnabled', 'forex_market_enabled') as bool? ?? false,
         activeMarket:
             (_pick(json, 'activeMarket', 'active_market') as String?) ?? 'indian',
         hasCompletedSelection:
@@ -80,6 +85,7 @@ class UserMarketPreferenceModel {
   Map<String, dynamic> toJson() => {
         'indian_market_enabled': indianMarketEnabled,
         'crypto_market_enabled': cryptoMarketEnabled,
+        'forex_market_enabled': forexMarketEnabled,
         'active_market': activeMarket,
         'has_completed_selection': hasCompletedSelection,
       };

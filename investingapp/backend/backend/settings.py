@@ -85,6 +85,11 @@ LOGGING = {
             'level': 'INFO',
             'propagate': False,
         },
+        'bullwave.forex': {
+            'handlers': ['console', 'error_database'],
+            'level': 'INFO',
+            'propagate': False,
+        },
         'bullwave.kyc': {
             'handlers': ['console', 'error_database'],
             'level': EKO_LOG_LEVEL,
@@ -122,6 +127,7 @@ INSTALLED_APPS = [
     'adminpanel.apps.AdminPanelConfig',
     'stocks.apps.StocksConfig',
     'crypto.apps.CryptoConfig',
+    'forex.apps.ForexConfig',
     'engagement',
     'education',
     'ai',
@@ -319,6 +325,21 @@ CRYPTO_NEWS_API_KEY = _ascii_env(config('CRYPTO_NEWS_API_KEY', default=''))
 CRYPTO_NEWS_CACHE_MINUTES = config('CRYPTO_NEWS_CACHE_MINUTES', default=15, cast=int)
 CRYPTO_USD_INR_RATE = config('CRYPTO_USD_INR_RATE', default='83')
 CRYPTO_TRADING_ENABLED = config('CRYPTO_TRADING_ENABLED', default=False, cast=bool)
+
+# Forex market data — Twelve Data when FOREX_API_KEY is set, else free ECB Frankfurter
+FOREX_DATA_PROVIDER = _clean_env(config('FOREX_DATA_PROVIDER', default='auto')).lower() or 'auto'
+FOREX_API_KEY = _ascii_env(config('FOREX_API_KEY', default=''))
+FOREX_API_BASE_URL = _clean_env(
+    config('FOREX_API_BASE_URL', default='https://api.twelvedata.com'),
+    strip_trailing_slash=True,
+)
+FOREX_API_TIMEOUT = config('FOREX_API_TIMEOUT', default=20, cast=int)
+FOREX_MARKET_CACHE_SECONDS = config('FOREX_MARKET_CACHE_SECONDS', default=60, cast=int)
+FOREX_NEWS_PROVIDER = _clean_env(config('FOREX_NEWS_PROVIDER', default='rss')).lower() or 'rss'
+FOREX_NEWS_API_KEY = _ascii_env(config('FOREX_NEWS_API_KEY', default=''))
+FOREX_NEWS_CACHE_MINUTES = config('FOREX_NEWS_CACHE_MINUTES', default=15, cast=int)
+FOREX_USD_INR_RATE = config('FOREX_USD_INR_RATE', default='83')
+FOREX_TRADING_ENABLED = config('FOREX_TRADING_ENABLED', default=False, cast=bool)
 
 # TradingView — widget embed works without a key; set these when using Charting Library + UDF
 TRADINGVIEW_API_KEY = config('TRADINGVIEW_API_KEY', default='')

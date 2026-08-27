@@ -27,6 +27,7 @@ ALLOWED_IMAGE_HOST_SUFFIXES = (
     'bloomberg.com',
     # Crypto / global news CDNs
     'ctmedia.io',
+    'sanity.io',
     'cointelegraph.com',
     'coindesk.com',
     'bitcoinmagazine.com',
@@ -34,6 +35,8 @@ ALLOWED_IMAGE_HOST_SUFFIXES = (
     'theblock.co',
     'blockworks.co',
     'cryptonews.com',
+    'cryptoslate.com',
+    'coinmarketcap.com',
     'newsapi.org',
     'cloudfront.net',
     'googleusercontent.com',
@@ -45,6 +48,13 @@ ALLOWED_IMAGE_HOST_SUFFIXES = (
     'cnbcfm.com',
     'vox-cdn.com',
     'twimg.com',
+    'bbc.co.uk',
+    'guim.co.uk',
+    'medium.com',
+    'ytimg.com',
+    'fxstreet.com',
+    'forexlive.com',
+    'dailyfx.com',
 )
 
 

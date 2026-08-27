@@ -67,6 +67,7 @@ class CryptoMarketProvider extends ChangeNotifier {
 
   String get activeMarket => _activeMarket;
   bool get isCryptoActive => _activeMarket == 'crypto';
+  bool get isForexActive => _activeMarket == 'forex';
   bool get isIndianActive => _activeMarket == 'indian';
   UserMarketPreferenceModel? get preference => _preference;
   CryptoOverviewModel? get overview => _overview;
@@ -125,29 +126,41 @@ class CryptoMarketProvider extends ChangeNotifier {
     }
   }
 
-  /// One market at a time — exclusive indian XOR crypto.
+  /// One market at a time — exclusive indian / crypto / forex.
   Future<bool> savePreference({
     required bool indianMarketEnabled,
     required bool cryptoMarketEnabled,
+    bool forexMarketEnabled = false,
     String? activeMarket,
   }) async {
-    // Enforce exclusive selection on the client.
     var indian = indianMarketEnabled;
     var crypto = cryptoMarketEnabled;
+    var forex = forexMarketEnabled;
     var active = (activeMarket ?? _activeMarket).trim().toLowerCase();
-    if (indian && crypto) {
-      if (active == 'crypto') {
-        indian = false;
-        crypto = true;
-      } else {
-        indian = true;
-        crypto = false;
-        active = 'indian';
-      }
-    } else if (crypto && !indian) {
-      active = 'crypto';
-    } else if (indian && !crypto) {
+    if (active != 'indian' && active != 'crypto' && active != 'forex') {
       active = 'indian';
+    }
+    if (forex && active == 'forex') {
+      indian = false;
+      crypto = false;
+      forex = true;
+    } else if (crypto && active == 'crypto') {
+      indian = false;
+      crypto = true;
+      forex = false;
+    } else if (indian) {
+      indian = true;
+      crypto = false;
+      forex = false;
+      active = 'indian';
+    } else if (crypto) {
+      active = 'crypto';
+      indian = false;
+      forex = false;
+    } else if (forex) {
+      active = 'forex';
+      indian = false;
+      crypto = false;
     } else {
       _error = 'Select a market to continue.';
       notifyListeners();
@@ -161,6 +174,7 @@ class CryptoMarketProvider extends ChangeNotifier {
       _preference = await _api.saveMarketPreference(
         indianMarketEnabled: indian,
         cryptoMarketEnabled: crypto,
+        forexMarketEnabled: forex,
         activeMarket: active,
       );
       _activeMarket = _preference!.activeMarket;
@@ -171,11 +185,11 @@ class CryptoMarketProvider extends ChangeNotifier {
       }
       return true;
     } on ApiException catch (e) {
-      // Prefer local preference so UI still works before AWS crypto deploy.
       if (e.statusCode == 404 || e.statusCode == 502 || e.statusCode == 503) {
         _preference = UserMarketPreferenceModel(
           indianMarketEnabled: indian,
           cryptoMarketEnabled: crypto,
+          forexMarketEnabled: forex,
           activeMarket: active,
           hasCompletedSelection: true,
         );
@@ -201,17 +215,13 @@ class CryptoMarketProvider extends ChangeNotifier {
 
   Future<void> switchMarket(String market) async {
     final next = market.trim().toLowerCase();
-    if (next != 'indian' && next != 'crypto') return;
-    if (next == _activeMarket &&
-        ((_preference?.indianMarketEnabled ?? false) == (next == 'indian')) &&
-        ((_preference?.cryptoMarketEnabled ?? false) == (next == 'crypto'))) {
-      return;
-    }
+    if (next != 'indian' && next != 'crypto' && next != 'forex') return;
+    if (next == _activeMarket) return;
 
-    // Switching markets is exclusive: enable only the selected one.
     final ok = await savePreference(
       indianMarketEnabled: next == 'indian',
       cryptoMarketEnabled: next == 'crypto',
+      forexMarketEnabled: next == 'forex',
       activeMarket: next,
     );
     if (!ok) return;

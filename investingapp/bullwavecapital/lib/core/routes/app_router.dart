@@ -151,6 +151,14 @@ import '../../features/crypto/presentation/screens/crypto_screener_screen.dart';
 import '../../features/crypto/presentation/screens/crypto_portfolio_screen.dart';
 import '../../features/crypto/presentation/screens/crypto_movers_screen.dart';
 import '../../features/crypto/presentation/screens/market_preferences_settings_screen.dart';
+import '../../features/forex/presentation/screens/forex_home_screen.dart';
+import '../../features/forex/presentation/screens/forex_search_screen.dart';
+import '../../features/forex/presentation/screens/forex_detail_screen.dart';
+import '../../features/forex/presentation/screens/forex_watchlist_screen.dart';
+import '../../features/forex/presentation/screens/forex_news_screen.dart';
+import '../../features/forex/presentation/screens/forex_screener_screen.dart';
+import '../../features/forex/presentation/screens/forex_portfolio_screen.dart';
+import '../../features/forex/presentation/screens/forex_movers_screen.dart';
 
 class AppRouter {
   AppRouter._();
@@ -1019,6 +1027,49 @@ class AppRouter {
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => CryptoDetailScreen(
           assetId: state.pathParameters['assetId'] ?? '',
+        ),
+      ),
+
+      GoRoute(
+        path: AppRoutes.forexHome,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const ForexHomeScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.forexSearch,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const ForexSearchScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.forexWatchlist,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const ForexWatchlistScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.forexNews,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const ForexNewsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.forexScreener,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const ForexScreenerScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.forexPortfolio,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const ForexPortfolioScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.forexMovers,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const ForexMoversScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.forexDetail,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => ForexDetailScreen(
+          pairId: state.pathParameters['pairId'] ?? '',
         ),
       ),
     ],

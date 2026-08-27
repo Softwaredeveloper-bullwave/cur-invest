@@ -15,6 +15,7 @@ class UserMarketPreferenceSerializer(serializers.ModelSerializer):
         fields = (
             'indian_market_enabled',
             'crypto_market_enabled',
+            'forex_market_enabled',
             'active_market',
             'has_completed_selection',
             'created_at',
@@ -31,27 +32,27 @@ class UserMarketPreferenceSerializer(serializers.ModelSerializer):
             'crypto_market_enabled',
             getattr(self.instance, 'crypto_market_enabled', False) if self.instance else False,
         )
-        if not indian and not crypto:
+        forex = attrs.get(
+            'forex_market_enabled',
+            getattr(self.instance, 'forex_market_enabled', False) if self.instance else False,
+        )
+        if not indian and not crypto and not forex:
             raise serializers.ValidationError('Select at least one market.')
-        # Exclusive markets: keep one only
-        if indian and crypto:
-            active = (attrs.get('active_market') or 'indian').strip().lower()
-            if active == 'crypto':
-                attrs['indian_market_enabled'] = False
-                attrs['crypto_market_enabled'] = True
-                attrs['active_market'] = 'crypto'
-            else:
-                attrs['indian_market_enabled'] = True
-                attrs['crypto_market_enabled'] = False
-                attrs['active_market'] = 'indian'
-            return attrs
-        active = attrs.get('active_market')
-        if active and active not in ('indian', 'crypto'):
-            raise serializers.ValidationError({'active_market': 'Must be indian or crypto.'})
-        if crypto and not indian:
-            attrs['active_market'] = 'crypto'
-        elif indian and not crypto:
-            attrs['active_market'] = 'indian'
+        active = (
+            attrs.get('active_market')
+            or (getattr(self.instance, 'active_market', 'indian') if self.instance else 'indian')
+            or 'indian'
+        )
+        active = str(active).strip().lower()
+        if active not in ('indian', 'crypto', 'forex'):
+            raise serializers.ValidationError({'active_market': 'Must be indian, crypto, or forex.'})
+        enabled = [name for name, flag in (('indian', indian), ('crypto', crypto), ('forex', forex)) if flag]
+        if len(enabled) == 1:
+            active = enabled[0]
+        attrs['active_market'] = active
+        attrs['indian_market_enabled'] = active == 'indian'
+        attrs['crypto_market_enabled'] = active == 'crypto'
+        attrs['forex_market_enabled'] = active == 'forex'
         return attrs
 
 

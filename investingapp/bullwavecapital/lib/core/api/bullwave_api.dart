@@ -24,6 +24,7 @@ import '../../models/bank_lookup_model.dart';
 import '../../models/user_model.dart';
 import '../../models/wallet_model.dart';
 import '../../models/crypto_models.dart';
+import '../../models/forex_models.dart';
 import 'package:flutter/foundation.dart';
 
 import 'api_client.dart';
@@ -1534,6 +1535,7 @@ class BullwaveApi {
   Future<UserMarketPreferenceModel> saveMarketPreference({
     required bool indianMarketEnabled,
     required bool cryptoMarketEnabled,
+    bool forexMarketEnabled = false,
     String? activeMarket,
   }) async {
     final data =
@@ -1542,6 +1544,7 @@ class BullwaveApi {
               body: {
                 'indian_market_enabled': indianMarketEnabled,
                 'crypto_market_enabled': cryptoMarketEnabled,
+                'forex_market_enabled': forexMarketEnabled,
                 if (activeMarket != null) 'active_market': activeMarket,
               },
             )
@@ -1740,5 +1743,102 @@ class BullwaveApi {
             )
             as Map<String, dynamic>;
     return CryptoNotificationPreferenceModel.fromJson(data);
+  }
+
+  // ── Forex markets ──
+
+  Future<ForexOverviewModel> getForexOverview() async {
+    final data = await _client.get('/forex/overview/') as Map<String, dynamic>;
+    return ForexOverviewModel.fromJson(data);
+  }
+
+  Future<List<ForexPairModel>> getForexPairs() async {
+    final data = await _client.get('/forex/pairs/') as Map<String, dynamic>;
+    return parseForexPairList(data['results']);
+  }
+
+  Future<ForexPairModel> getForexPair(String pairId) async {
+    final data = await _client.get('/forex/pairs/$pairId/') as Map<String, dynamic>;
+    return ForexPairModel.fromJson(data);
+  }
+
+  Future<ForexChartModel> getForexChart(String pairId, {String period = '1D'}) async {
+    final data = await _client.get(
+          '/forex/pairs/$pairId/chart/',
+          query: {'period': period},
+        )
+        as Map<String, dynamic>;
+    return ForexChartModel.fromJson(data);
+  }
+
+  Future<List<ForexPairModel>> searchForex(String query) async {
+    final data = await _client.get('/forex/search/', query: {'q': query})
+        as Map<String, dynamic>;
+    return parseForexPairList(data['results']);
+  }
+
+  Future<List<ForexPairModel>> getForexMovers({String type = 'gainers', int limit = 20}) async {
+    final data = await _client.get(
+          '/forex/movers/',
+          query: {'type': type, 'limit': '$limit'},
+        )
+        as Map<String, dynamic>;
+    return parseForexPairList(data['results']);
+  }
+
+  Future<List<ForexPairModel>> getForexScreener({String? category}) async {
+    final data = await _client.get(
+          '/forex/screener/',
+          query: {if (category != null && category.isNotEmpty) 'category': category},
+        )
+        as Map<String, dynamic>;
+    return parseForexPairList(data['results']);
+  }
+
+  Future<List<ForexWatchlistItemModel>> getForexWatchlist() async {
+    final data = await _client.get('/forex/watchlist/') as Map<String, dynamic>;
+    return (data['results'] as List<dynamic>? ?? [])
+        .whereType<Map<String, dynamic>>()
+        .map(ForexWatchlistItemModel.fromJson)
+        .toList();
+  }
+
+  Future<ForexWatchlistItemModel> addForexWatchlist(String pairId) async {
+    final data = await _client.post('/forex/watchlist/', body: {'pair_id': pairId})
+        as Map<String, dynamic>;
+    return ForexWatchlistItemModel.fromJson(data);
+  }
+
+  Future<void> removeForexWatchlist(String itemId) async {
+    await _client.delete('/forex/watchlist/$itemId/');
+  }
+
+  Future<ForexNewsResponse> getForexNews({String? category, bool refresh = false}) async {
+    final data = await _client.get(
+          '/forex/news/',
+          query: {
+            if (category != null && category.isNotEmpty) 'category': category,
+            if (refresh) 'refresh': '1',
+          },
+        )
+        as Map<String, dynamic>;
+    return ForexNewsResponse.fromJson(data);
+  }
+
+  Future<ForexPortfolioModel> getForexPortfolio() async {
+    final data = await _client.get('/forex/portfolio/') as Map<String, dynamic>;
+    return ForexPortfolioModel.fromJson(data);
+  }
+
+  Future<Map<String, dynamic>> placeForexPaperOrder({
+    required String pairId,
+    required String side,
+    required double quantity,
+  }) async {
+    return await _client.post(
+          '/forex/paper-orders/',
+          body: {'pair_id': pairId, 'side': side, 'quantity': quantity},
+        )
+        as Map<String, dynamic>;
   }
 }
