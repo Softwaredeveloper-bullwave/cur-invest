@@ -428,7 +428,7 @@ class _AnalysisTab extends StatelessWidget {
               ),
               const SizedBox(height: 6),
               Text(
-                '• Tap CE/PE LTP in Option Chain to place paper orders',
+                '• Tap CE/PE LTP in Option Chain to open chart and place paper orders',
                 style: ThemeAType.body(color: p.textGrey, size: 13),
               ),
               const SizedBox(height: 6),

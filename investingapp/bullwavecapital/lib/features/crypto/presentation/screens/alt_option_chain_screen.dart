@@ -314,7 +314,7 @@ class _AltOptionChainScreenState extends State<AltOptionChainScreen> {
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: Text(
-                          'Tap CE or PE price to buy or sell with practice funds',
+                          'Tap CE or PE to open chart and trade with practice funds',
                           style: TextStyle(
                             color: colors.textMuted,
                             fontSize: 11,

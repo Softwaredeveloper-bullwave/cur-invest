@@ -14,6 +14,7 @@ import '../../../../models/stock_model.dart';
 import '../../../wallet/presentation/provider/wallet_provider.dart';
 import '../provider/option_trading_provider.dart';
 import '../utils/option_trading_flow.dart';
+import 'option_contract_chart.dart';
 import 'option_order_success_sheet.dart';
 import 'scalper_controls.dart';
 
@@ -250,7 +251,7 @@ class _OptionTradingPadState extends State<OptionTradingPad> {
         final title = optionContractTitle(contract);
 
         return Container(
-          height: screenH * 0.88,
+          height: screenH * 0.92,
           margin: const EdgeInsets.only(top: 8),
           decoration: BoxDecoration(
             color: colors.surface,
@@ -301,6 +302,17 @@ class _OptionTradingPadState extends State<OptionTradingPad> {
                     const SizedBox(width: 48),
                   ],
                 ),
+              ),
+              OptionContractChart(
+                key: ValueKey(
+                  '${widget.chainContext.assetClass}:'
+                  '${contract.tradeUnderlying}:'
+                  '${contract.type}:${contract.strike}:'
+                  '${contract.expiry.toIso8601String()}',
+                ),
+                contract: contract,
+                chainContext: widget.chainContext,
+                height: screenH < 720 ? 168 : 200,
               ),
               Padding(
                 padding: const EdgeInsets.symmetric(

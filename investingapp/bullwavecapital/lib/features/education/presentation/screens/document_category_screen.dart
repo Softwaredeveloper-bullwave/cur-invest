@@ -8,8 +8,8 @@ import '../../../../core/widgets/custom_app_bar.dart';
 import '../../../../core/widgets/premium_ui_kit.dart';
 import '../../../../core/widgets/scroll_reveal.dart';
 import '../../../../models/investment_doc_model.dart';
+import '../../data/education_ui.dart';
 import '../provider/education_provider.dart';
-import '../data/education_ui.dart';
 
 class DocumentCategoryScreen extends StatefulWidget {
   final String categoryId;
