@@ -132,10 +132,18 @@ def _quote_for_commodity(commodity_id: str, meta: dict) -> dict:
 
 
 def get_commodity_quotes() -> list[dict]:
+    from django.db import connections
+
+    def _fetch(cid, meta):
+        try:
+            return _quote_for_commodity(cid, meta)
+        finally:
+            connections.close_all()
+
     rows = []
     with ThreadPoolExecutor(max_workers=4) as pool:
         futures = {
-            pool.submit(_quote_for_commodity, cid, meta): cid
+            pool.submit(_fetch, cid, meta): cid
             for cid, meta in COMMODITY_CATALOG.items()
         }
         for fut in as_completed(futures):

@@ -9,11 +9,15 @@ import '../../../../core/widgets/scale_tap.dart';
 import 'markets_shared.dart';
 
 class MarketsLearningHub extends StatelessWidget {
-  const MarketsLearningHub({super.key});
+  const MarketsLearningHub({super.key, this.market = 'indian'});
+
+  final String market;
 
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
+    final isCrypto = market == 'crypto';
+    final isForex = market == 'forex';
     final items = [
       _LearningItem(
         label: 'Investment Journal',
@@ -24,17 +28,25 @@ class MarketsLearningHub extends StatelessWidget {
       ),
       _LearningItem(
         label: 'Research Vault',
-        subtitle: 'Guides, docs & quizzes',
+        subtitle: isCrypto
+            ? 'Crypto guides, docs & quizzes'
+            : isForex
+            ? 'Forex guides, docs & quizzes'
+            : 'Guides, docs & quizzes',
         icon: Icons.folder_special_rounded,
         gradient: const [Color(0xFFF59E0B), Color(0xFFFBBF24)],
-        onTap: () => context.push(AppRoutes.investmentDocuments),
+        onTap: () => context.push(AppRoutes.documentsForMarket(market)),
       ),
       _LearningItem(
         label: 'Academy',
-        subtitle: 'Structured learning paths',
+        subtitle: isCrypto
+            ? 'Wallets, cycles & paper trading'
+            : isForex
+            ? 'Pairs, pips & risk'
+            : 'Structured learning paths',
         icon: Icons.school_rounded,
         gradient: const [Color(0xFF3B82F6), Color(0xFF22D3EE)],
-        onTap: () => context.push(AppRoutes.documentCategoryPath('beginner')),
+        onTap: () => context.push(AppRoutes.academyBeginnerPath(market)),
       ),
       _LearningItem(
         label: 'Calculator',
@@ -48,9 +60,13 @@ class MarketsLearningHub extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const MarketsSectionHeader(
+        MarketsSectionHeader(
           title: 'Learning',
-          subtitle: 'Build conviction with tools & research',
+          subtitle: isCrypto
+              ? 'Build conviction for digital assets'
+              : isForex
+              ? 'Build conviction for currency markets'
+              : 'Build conviction with tools & research',
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),

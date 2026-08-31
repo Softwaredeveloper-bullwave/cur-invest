@@ -9,7 +9,12 @@ from typing import Any, Optional
 from django.core.cache import cache
 from django.db import transaction
 from django.db.models import F
+from django.db.utils import InterfaceError, OperationalError
 from django.utils import timezone
+
+from .db_health import is_database_outage_text
+
+_ERROR_REPORTING_SKIP_KEY = 'error-reporting-db-skip'
 
 
 SENSITIVE_KEYS = {
@@ -102,6 +107,11 @@ def record_error_event(
     """Insert or increment an error without ever raising into application code."""
     from adminpanel.models import ApplicationErrorEvent
 
+    if cache.get(_ERROR_REPORTING_SKIP_KEY):
+        return None
+    if is_database_outage_text(message, exception_type, context):
+        return None
+
     clean_message = sanitize_text(message)
     clean_location = sanitize_text(str(location).split('?')[0], 300)
     clean_exception = sanitize_text(exception_type, 160)
@@ -147,6 +157,10 @@ def record_error_event(
                 )
                 row.refresh_from_db()
             return row
+    except (OperationalError, InterfaceError):
+        # Writing the error log must not consume the last RDS slots.
+        cache.set(_ERROR_REPORTING_SKIP_KEY, True, 90)
+        return None
     except Exception:
         # Error reporting must never break the request it observes.
         return None

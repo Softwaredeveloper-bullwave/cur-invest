@@ -129,9 +129,11 @@ class ApiClient {
       return 'This market API is not available on the live server yet. '
           'Deploy the latest backend and run migrate, or the app will use a live fallback.';
     }
+    if (statusCode == 503) {
+      return 'Login is temporarily unavailable. Please try again in a moment.';
+    }
     if (statusCode >= 500) {
-      return 'Server error at ${ApiConfig.baseUrl}. The API responded but failed — '
-          'check GET /health/ and backend logs on the server.';
+      return 'Login is temporarily unavailable. Please try again in a moment.';
     }
     return 'Unexpected server response. Check backend logs.';
   }

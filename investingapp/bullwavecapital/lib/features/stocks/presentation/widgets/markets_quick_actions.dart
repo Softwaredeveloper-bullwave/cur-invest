@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/config/paper_only_mode.dart';
-import '../../../../core/navigation/shell_navigation.dart';
 import '../../../../core/constants/assets.dart';
 import '../../../../core/constants/routes.dart';
+import '../../../../core/constants/shell_layout.dart';
+import '../../../../core/navigation/shell_navigation.dart';
 import '../../../../core/theme/theme_a.dart';
 import '../../../../core/widgets/modern_icon_badge.dart';
 import '../../../../core/widgets/premium_ui_kit.dart';
@@ -119,24 +120,29 @@ void showMarketsMoreSheet(
   final p = context.palette;
   showModalBottomSheet<void>(
     context: context,
+    useRootNavigator: true,
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
     builder: (ctx) {
-      return Container(
-        margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-        decoration: BoxDecoration(
-          color: p.card,
-          borderRadius: BorderRadius.circular(28),
-          border: Border.all(color: p.borderLight),
-        ),
-        child: SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+      final media = MediaQuery.of(ctx);
+      final maxHeight = media.size.height * 0.78;
+      final bottomClearance =
+          ShellLayout.bottomNavHeight + media.padding.bottom + 24;
+      return Padding(
+        padding: EdgeInsets.fromLTRB(12, 0, 12, 12 + bottomClearance),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: maxHeight),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: p.card,
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(color: p.borderLight),
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                const SizedBox(height: 12),
                 Center(
                   child: Container(
                     width: 40,
@@ -147,23 +153,37 @@ void showMarketsMoreSheet(
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
-                Text(
-                  'More tools',
-                  style: ThemeAType.sectionTitle(color: p.textDark),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                  child: Text(
+                    'More tools',
+                    style: ThemeAType.sectionTitle(color: p.textDark),
+                  ),
                 ),
-                const SizedBox(height: 16),
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: overflowItems
-                      .map(
-                        (item) => SizedBox(
-                          width: (MediaQuery.sizeOf(ctx).width - 64) / 4,
-                          child: PremiumServiceTile(item: item, iconSize: 48),
-                        ),
-                      )
-                      .toList(),
+                Flexible(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final tileWidth = (constraints.maxWidth - 36) / 4;
+                        return Wrap(
+                          spacing: 12,
+                          runSpacing: 12,
+                          children: overflowItems
+                              .map(
+                                (item) => SizedBox(
+                                  width: tileWidth,
+                                  child: PremiumServiceTile(
+                                    item: item,
+                                    iconSize: 48,
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                        );
+                      },
+                    ),
+                  ),
                 ),
               ],
             ),

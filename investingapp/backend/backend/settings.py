@@ -68,7 +68,7 @@ LOGGING = {
             'propagate': False,
         },
         'bullwave': {
-            'handlers': ['error_database'],
+            'handlers': ['console', 'error_database'],
             'level': 'ERROR',
             'propagate': False,
         },
@@ -169,7 +169,7 @@ _db_ssl_root_cert = _clean_env(config('DB_SSL_ROOT_CERT', default=''))
 if _db_ssl_root_cert and not Path(_db_ssl_root_cert).is_absolute():
     _db_ssl_root_cert = str((BASE_DIR / _db_ssl_root_cert).resolve())
 
-_db_options: dict = {}
+_db_options: dict = {'connect_timeout': 8}
 if _db_ssl_mode:
     _db_options['sslmode'] = _db_ssl_mode
 if _db_ssl_root_cert:
@@ -193,7 +193,9 @@ else:
             'PASSWORD': config('DB_PASSWORD', default='postgres'),
             'HOST': config('DB_HOST', default='localhost'),
             'PORT': config('DB_PORT', default='5432'),
-            **({'OPTIONS': _db_options} if _db_options else {}),
+            'CONN_MAX_AGE': config('DB_CONN_MAX_AGE', default=0, cast=int),
+            'CONN_HEALTH_CHECKS': True,
+            'OPTIONS': _db_options,
         }
     }
 
@@ -227,6 +229,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
     'DATETIME_FORMAT': '%Y-%m-%dT%H:%M:%S.%fZ',
+    'EXCEPTION_HANDLER': 'core.api_exceptions.api_exception_handler',
 }
 
 SIMPLE_JWT = {

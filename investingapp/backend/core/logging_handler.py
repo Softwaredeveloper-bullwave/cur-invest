@@ -2,17 +2,25 @@
 
 import logging
 
+from .db_health import is_database_outage_text
 from .error_reporting import record_error_event
 
 
 class DatabaseErrorHandler(logging.Handler):
     def emit(self, record):
         try:
+            formatted = ''
+            try:
+                formatted = self.format(record)
+            except Exception:
+                formatted = record.getMessage()
+            if is_database_outage_text(record.getMessage(), formatted):
+                return
             exception_type = ''
             context = {}
             if record.exc_info:
                 exception_type = record.exc_info[0].__name__
-                context['traceback'] = self.format(record)
+                context['traceback'] = formatted or self.format(record)
             request = getattr(record, 'request', None)
             record_error_event(
                 source='backend',

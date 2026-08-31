@@ -1,15 +1,30 @@
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
+from django.db.utils import OperationalError
 
 from education.models import EducationArticle, EducationCategory, EducationQuiz, EducationQuizQuestion
 from education.seed_data import CATALOG
+from education.seed_alt_markets import CRYPTO_CATALOG, FOREX_CATALOG
+
+_RDS_BUSY = (
+    'RDS has no free connections. Stop the API first, wait for leftover backends, then seed:\n'
+    '  bash ~/cur-invest/investingapp/backend/deploy/free_rds_slots.sh\n'
+    '  python manage.py seed_education\n'
+    '  sudo systemctl start bullwave'
+)
 
 
 class Command(BaseCommand):
     help = 'Seed or refresh investment education catalog (Documents + Quizzes)'
 
     def handle(self, *args, **options):
+        try:
+            self._seed()
+        except OperationalError as exc:
+            raise CommandError(f'{_RDS_BUSY}\n\n({exc})') from exc
+
+    def _seed(self):
         created_cats = 0
-        for entry in CATALOG:
+        for entry in [*CATALOG, *CRYPTO_CATALOG, *FOREX_CATALOG]:
             category, created = EducationCategory.objects.update_or_create(
                 slug=entry['slug'],
                 defaults={

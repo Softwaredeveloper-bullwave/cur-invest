@@ -147,6 +147,10 @@ def refresh_stocks(symbols, include_fundamentals=False):
             except FinnhubError as exc:
                 logger.debug('Skip %s: %s', sym, exc)
                 return None
+            finally:
+                from django.db import connections
+
+                connections.close_all()
 
         if not target_symbols:
             return fetched
@@ -468,6 +472,8 @@ def schedule_background_refresh():
         return
 
     def _task():
+        from django.db import connections
+
         cache.set(REFRESH_LOCK_KEY, True, 60)
         try:
             _full_market_refresh()
@@ -475,6 +481,7 @@ def schedule_background_refresh():
             logger.warning('Background market refresh failed: %s', exc)
         finally:
             cache.delete(REFRESH_LOCK_KEY)
+            connections.close_all()
 
     threading.Thread(target=_task, daemon=True).start()
 
@@ -501,10 +508,14 @@ def get_market_snapshot(fast=False, force_refresh=False):
         result_holder = {}
 
         def _worker():
+            from django.db import connections
+
             try:
                 result_holder['snapshot'] = _full_market_refresh()
             except Exception as exc:
                 result_holder['error'] = exc
+            finally:
+                connections.close_all()
 
         thread = threading.Thread(target=_worker, daemon=True)
         thread.start()

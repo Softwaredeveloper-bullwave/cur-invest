@@ -2,11 +2,11 @@
 class ShellLayout {
   ShellLayout._();
 
-  /// Bottom nav total height + safe padding (sync with AppBottomNavigation.totalHeight).
+  /// Bottom nav pill + under-bar gap (sync with AppBottomNavigation barHeight + 8).
   static const double bottomNavHeight = 72;
 
   /// Gap between bottom nav top edge and FAB bottom edge.
-  static const double fabAboveNavGap = 16;
+  static const double fabAboveNavGap = 28;
 
   /// FAB tap target diameter.
   static const double fabSize = 56;

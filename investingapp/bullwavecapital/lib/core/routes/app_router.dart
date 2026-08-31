@@ -887,7 +887,9 @@ class AppRouter {
 
         parentNavigatorKey: _rootNavigatorKey,
 
-        builder: (context, state) => const InvestmentDocumentsScreen(),
+        builder: (context, state) => InvestmentDocumentsScreen(
+          market: state.uri.queryParameters['market'] ?? 'indian',
+        ),
       ),
 
       GoRoute(

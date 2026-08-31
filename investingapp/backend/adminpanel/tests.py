@@ -167,6 +167,31 @@ class ApplicationErrorCenterTests(APITestCase):
         call_command('purge_error_events', days=90)
         self.assertFalse(ApplicationErrorEvent.objects.filter(pk=row.pk).exists())
 
+    def test_rds_slot_errors_are_not_written_to_the_error_table(self):
+        row = record_error_event(
+            source='backend',
+            message=(
+                'connection to server at "database-2.example.rds.amazonaws.com" '
+                'failed: FATAL: remaining connection slots are reserved for '
+                'roles with privileges of the "rds_reserved" role'
+            ),
+            exception_type='OperationalError',
+            location='/api/v1/auth/send-otp/',
+        )
+        self.assertIsNone(row)
+        self.assertEqual(ApplicationErrorEvent.objects.count(), 0)
+
+    def test_503_responses_are_not_persisted_as_application_errors(self):
+        from django.http import HttpResponse
+        from django.test import RequestFactory
+
+        from core.middleware import RequestLogMiddleware
+
+        middleware = RequestLogMiddleware(lambda request: HttpResponse(status=503))
+        request = RequestFactory().post('/api/v1/auth/send-otp/')
+        middleware(request)
+        self.assertEqual(ApplicationErrorEvent.objects.count(), 0)
+
 
 @override_settings(ADMIN_PANEL_DEV_NO_AUTH=False)
 class AdminBroadcastTests(APITestCase):

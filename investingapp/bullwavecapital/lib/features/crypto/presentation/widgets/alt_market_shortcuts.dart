@@ -153,12 +153,21 @@ void showAltMarketAllSheet(BuildContext context, AltMarketKind kind) {
         },
       ),
       ExploreFeatureItem(
+        icon: Icons.folder_special_rounded,
+        label: 'Vault',
+        gradient: const [Color(0xFFF59E0B), Color(0xFFFBBF24)],
+        onTap: () {
+          Navigator.pop(context);
+          context.push(AppRoutes.documentsForMarket(kind.name));
+        },
+      ),
+      ExploreFeatureItem(
         icon: Icons.school_rounded,
         label: 'Academy',
         gradient: const [Color(0xFF3B82F6), Color(0xFF22D3EE)],
         onTap: () {
           Navigator.pop(context);
-          context.push(AppRoutes.documentCategoryPath('beginner'));
+          context.push(AppRoutes.academyBeginnerPath(kind.name));
         },
       ),
       ExploreFeatureItem(

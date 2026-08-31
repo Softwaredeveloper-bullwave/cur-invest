@@ -41,40 +41,37 @@ class _AiAssistantFabState extends State<AiAssistantFab>
       return const SizedBox.shrink();
     }
 
-    final safeBottom = MediaQuery.viewPaddingOf(context).bottom;
+    // Match AppBottomNavigation: pill + 8px lift + home-indicator inset.
+    final navInset = MediaQuery.paddingOf(context).bottom;
     const fabSize = 56.0;
     final radius = fabSize * 0.28;
 
     return Positioned(
       right: widget.right,
-      bottom: widget.bottom + safeBottom,
+      bottom: widget.bottom + navInset,
+      width: fabSize,
+      height: fabSize,
       child: AnimatedBuilder(
         animation: _pulse,
         builder: (context, child) {
           final t = _pulse.value;
           return Transform.translate(
-            offset: Offset(0, (t - 0.5) * 5),
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                Container(
-                  width: 72 + t * 10,
-                  height: 72 + t * 10,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(radius * 1.2),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(
-                          0xFF38BDF8,
-                        ).withValues(alpha: 0.15 + t * 0.12),
-                        blurRadius: 20 + t * 8,
-                        spreadRadius: 1,
-                      ),
-                    ],
+            offset: Offset(0, (t - 0.5) * 2),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(radius),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(
+                      0xFF38BDF8,
+                    ).withValues(alpha: 0.18 + t * 0.08),
+                    blurRadius: 12,
+                    spreadRadius: 0,
+                    offset: const Offset(0, 4),
                   ),
-                ),
-                child!,
-              ],
+                ],
+              ),
+              child: child,
             ),
           );
         },

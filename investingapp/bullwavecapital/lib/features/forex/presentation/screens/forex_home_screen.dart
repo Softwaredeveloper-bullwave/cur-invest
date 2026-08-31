@@ -14,6 +14,7 @@ import '../../../../core/widgets/scroll_reveal.dart';
 import '../../../authentication/presentation/provider/auth_provider.dart';
 import '../../../crypto/presentation/widgets/alt_market_shortcuts.dart';
 import '../../../crypto/presentation/widgets/market_switcher.dart';
+import '../../../stocks/presentation/widgets/markets_learning_hub.dart';
 import '../../../stocks/presentation/widgets/markets_news_section.dart';
 import '../provider/forex_market_provider.dart';
 import '../widgets/forex_pair_tile.dart';
@@ -148,6 +149,11 @@ class _ForexHomeScreenState extends State<ForexHomeScreen> {
                   ),
                 ),
                 const SliverToBoxAdapter(child: SizedBox(height: 8)),
+                const SliverToBoxAdapter(
+                  child: ScrollReveal(
+                    child: MarketsLearningHub(market: 'forex'),
+                  ),
+                ),
                 SliverToBoxAdapter(
                   child: ScrollReveal(
                     child: MarketsNewsSection(
@@ -168,7 +174,7 @@ class _ForexHomeScreenState extends State<ForexHomeScreen> {
                     ),
                   ),
                 ),
-                const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                const SliverToBoxAdapter(child: AltMarketBottomSpacer()),
               ],
             ),
           ),

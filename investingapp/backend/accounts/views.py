@@ -5,7 +5,7 @@ import random
 from datetime import timedelta
 
 from django.conf import settings
-from django.db import DatabaseError
+from django.db import DatabaseError, close_old_connections
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.parsers import FormParser, MultiPartParser
@@ -14,6 +14,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from core.db_health import database_unavailable_response
 from core.integrations.bank_service import BankValidationError, validate_account_number, validate_ifsc
 from core.integrations.cashfree_service import CashfreeError, is_configured as cashfree_configured
 from core.integrations.cashfree_bypass import verify_bank_with_bypass, verify_pan_with_bypass
@@ -68,17 +69,9 @@ logger = logging.getLogger('bullwave.accounts')
 
 DEV_AUTH_PHONE = '9999999999'
 
-_DB_UNAVAILABLE_DETAIL = (
-    'Database connection failed. On the server, set DB_HOST, DB_USER, DB_PASSWORD, and DB_NAME '
-    'in investingapp/backend/.env, then run migrate and restart gunicorn.'
-)
-
 
 def _database_unavailable_response():
-    return Response(
-        {'detail': _DB_UNAVAILABLE_DETAIL, 'code': 'database_unavailable'},
-        status=503,
-    )
+    return database_unavailable_response()
 
 
 def _issue_auth_tokens(user, request, *, created=False):
@@ -150,13 +143,13 @@ class SendOTPView(APIView):
         return {'isRegistered': User.objects.filter(phone=phone).exists()}
 
     def post(self, request):
+        close_old_connections()
         phone = normalize_phone(request.data.get('phone', ''))
         if not phone:
             return Response({'detail': 'Enter a valid 10-digit phone number.'}, status=400)
 
-        registration_hint = self._registration_hint(phone)
-
         try:
+            registration_hint = self._registration_hint(phone)
             if not settings.SMS_OTP_ENABLED:
                 otp = self._issue_local_otp(phone)
                 logger.info('[BullWave OTP] Phone: %s | OTP: %s | SMS disabled (dev mode)', phone, otp)
@@ -321,6 +314,7 @@ class VerifyOTPView(APIView):
         return True
 
     def post(self, request):
+        close_old_connections()
         phone = normalize_phone(request.data.get('phone', ''))
         otp = normalize_otp(request.data.get('otp', ''))
 

@@ -17,6 +17,7 @@ import '../provider/crypto_market_provider.dart';
 import '../widgets/alt_market_shortcuts.dart';
 import '../widgets/crypto_coin_tile.dart';
 import '../widgets/market_switcher.dart';
+import '../../../stocks/presentation/widgets/markets_learning_hub.dart';
 import '../../../stocks/presentation/widgets/markets_news_section.dart';
 
 class CryptoHomeScreen extends StatefulWidget {
@@ -161,6 +162,11 @@ class _CryptoHomeScreenState extends State<CryptoHomeScreen> {
                   ),
                 ),
                 const SliverToBoxAdapter(child: SizedBox(height: 8)),
+                const SliverToBoxAdapter(
+                  child: ScrollReveal(
+                    child: MarketsLearningHub(market: 'crypto'),
+                  ),
+                ),
                 SliverToBoxAdapter(
                   child: ScrollReveal(
                     child: MarketsNewsSection(
@@ -181,7 +187,7 @@ class _CryptoHomeScreenState extends State<CryptoHomeScreen> {
                     ),
                   ),
                 ),
-                const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                const SliverToBoxAdapter(child: AltMarketBottomSpacer()),
               ],
             ),
           ),

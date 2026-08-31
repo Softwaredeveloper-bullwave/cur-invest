@@ -11,7 +11,9 @@ import '../../../../models/investment_doc_model.dart';
 import '../provider/education_provider.dart';
 
 class InvestmentDocumentsScreen extends StatefulWidget {
-  const InvestmentDocumentsScreen({super.key});
+  const InvestmentDocumentsScreen({super.key, this.market = 'indian'});
+
+  final String market;
 
   @override
   State<InvestmentDocumentsScreen> createState() =>
@@ -33,7 +35,13 @@ class _InvestmentDocumentsScreenState extends State<InvestmentDocumentsScreen> {
 
     return Scaffold(
       backgroundColor: Colors.transparent,
-      appBar: const CustomAppBar(title: 'Research Vault'),
+      appBar: CustomAppBar(
+        title: switch (widget.market) {
+          'crypto' => 'Crypto Vault',
+          'forex' => 'Forex Vault',
+          _ => 'Research Vault',
+        },
+      ),
       body: Consumer<EducationProvider>(
         builder: (context, education, _) {
           if (education.isLoading && !education.hasLoaded) {
@@ -63,10 +71,25 @@ class _InvestmentDocumentsScreenState extends State<InvestmentDocumentsScreen> {
             );
           }
 
-          final categories = education.categories;
+          final categories = education.categories
+              .where((c) => _matchesMarket(c.id, widget.market))
+              .toList();
           final updatedLabel = education.updatedAt != null
               ? 'Updated ${_formatDate(education.updatedAt!)}'
               : null;
+          final intro = switch (widget.market) {
+            'crypto' =>
+              'Curated guides for crypto markets — start with Beginner, then explore tokenomics, charts, and risk at your pace.',
+            'forex' =>
+              'Curated guides for forex markets — start with Beginner, then explore pairs, macro, and risk at your pace.',
+            _ =>
+              'Curated guides for Indian markets — start with Beginner, then explore topics at your pace.',
+          };
+          final title = switch (widget.market) {
+            'crypto' => 'Learn crypto',
+            'forex' => 'Learn forex',
+            _ => 'Learn to invest',
+          };
 
           return RefreshIndicator(
             onRefresh: education.refresh,
@@ -96,12 +119,12 @@ class _InvestmentDocumentsScreenState extends State<InvestmentDocumentsScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Learn to invest',
+                              title,
                               style: ThemeAType.cardTitle(color: p.textDark),
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'Curated guides for Indian markets — start with Beginner, then explore topics at your pace.',
+                              intro,
                               style: ThemeAType.body(
                                 color: p.textGrey,
                                 size: 13,
@@ -192,6 +215,14 @@ class _InvestmentDocumentsScreenState extends State<InvestmentDocumentsScreen> {
   }
 }
 
+bool _matchesMarket(String slug, String market) {
+  final isCrypto = slug.startsWith('crypto-');
+  final isForex = slug.startsWith('forex-');
+  if (market == 'crypto') return isCrypto;
+  if (market == 'forex') return isForex;
+  return !isCrypto && !isForex;
+}
+
 class _CategoryTile extends StatelessWidget {
   final InvestmentDocCategory category;
 
@@ -200,7 +231,7 @@ class _CategoryTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    final countLabel = category.id == 'quizzes'
+    final countLabel = category.id.endsWith('quizzes') || category.id == 'quizzes'
         ? '${category.quizzes.length} quiz${category.quizzes.length == 1 ? '' : 'zes'}'
         : '${category.articles.length} article${category.articles.length == 1 ? '' : 's'}';
 

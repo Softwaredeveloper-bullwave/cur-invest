@@ -88,6 +88,24 @@ class AppRoutes {
 
   static String documentQuizPath(String quizId) => '/documents/quiz/$quizId';
 
+  static String documentsForMarket(String market) {
+    if (market == 'crypto' || market == 'forex') {
+      return '$investmentDocuments?market=$market';
+    }
+    return investmentDocuments;
+  }
+
+  static String academyBeginnerPath(String market) {
+    switch (market) {
+      case 'crypto':
+        return documentCategoryPath('crypto-beginner');
+      case 'forex':
+        return documentCategoryPath('forex-beginner');
+      default:
+        return documentCategoryPath('beginner');
+    }
+  }
+
   // ── Crypto module ──
   static const String marketInterest = '/market-interest';
   static const String marketPreferences = '/market-preferences';

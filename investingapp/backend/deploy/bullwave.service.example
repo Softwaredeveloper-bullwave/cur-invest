@@ -21,15 +21,19 @@ Environment="PATH=/home/ubuntu/cur-invest/investingapp/backend/venv/bin"
 Environment="TMPDIR=/home/ubuntu/cur-invest/investingapp/backend/run/tmp"
 ExecStartPre=/bin/mkdir -p /home/ubuntu/cur-invest/investingapp/backend/run/tmp
 ExecStart=/home/ubuntu/cur-invest/investingapp/backend/venv/bin/gunicorn \
-  --workers 3 \
+  --workers 2 \
+  --max-requests 200 \
+  --max-requests-jitter 40 \
   --bind 127.0.0.1:8000 \
   --timeout 120 \
   --worker-tmp-dir /home/ubuntu/cur-invest/investingapp/backend/run/tmp \
-  --access-logfile - \
   --error-logfile - \
+  --log-level warning \
   backend.wsgi:application
 Restart=always
 RestartSec=5
+TimeoutStopSec=20
+KillMode=mixed
 StandardOutput=journal
 StandardError=journal
 

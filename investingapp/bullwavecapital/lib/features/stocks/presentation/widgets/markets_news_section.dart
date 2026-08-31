@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/routes.dart';
+import '../../../../core/constants/shell_layout.dart';
 import '../../../../core/theme/theme_a.dart';
 import '../../../../core/utils/news_image_url.dart';
 import '../../../../core/widgets/premium_ui_kit.dart';
@@ -106,7 +107,12 @@ class MarketsNewsSection extends StatelessWidget {
         SizedBox(
           height: 188,
           child: ListView.separated(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding: const EdgeInsets.fromLTRB(
+              20,
+              0,
+              ShellLayout.fabActionClearance,
+              0,
+            ),
             scrollDirection: Axis.horizontal,
             itemCount: items.length,
             separatorBuilder: (_, _) => const SizedBox(width: 12),
