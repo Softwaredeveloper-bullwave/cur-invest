@@ -187,6 +187,7 @@ class SipPlanModel {
 
 class OptionContractModel {
   final String symbol;
+  final String underlyingId;
   final double strike;
   final String type;
   final double ltp;
@@ -197,6 +198,7 @@ class OptionContractModel {
 
   const OptionContractModel({
     required this.symbol,
+    this.underlyingId = '',
     required this.strike,
     required this.type,
     required this.ltp,
@@ -205,6 +207,9 @@ class OptionContractModel {
     required this.volume,
     required this.expiry,
   });
+
+  String get tradeUnderlying =>
+      underlyingId.trim().isNotEmpty ? underlyingId : symbol;
 }
 
 class PaperTradeModel {

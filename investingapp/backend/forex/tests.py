@@ -94,3 +94,15 @@ class ForexApiTests(APITestCase):
         self.assertEqual(rows[0]['id'], 'eurusd')
         twelve.get_pairs.assert_called()
         frank.get_pairs.assert_called()
+
+    @patch('forex.option_chain._spot', return_value=(1.16, 'test'))
+    def test_eurusd_option_chain(self, _spot):
+        resp = self.client.get('/api/v1/forex/pairs/eurusd/options/')
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.data['assetClass'], 'forex')
+        self.assertTrue(resp.data['contracts'])
+        self.assertEqual(resp.data['contracts'][0]['underlyingId'], 'eurusd')
+
+    def test_unknown_pair_options_404(self):
+        resp = self.client.get('/api/v1/forex/pairs/usdchf/options/')
+        self.assertEqual(resp.status_code, 404)

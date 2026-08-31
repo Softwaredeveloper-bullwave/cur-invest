@@ -100,6 +100,7 @@ class _CryptoHomeScreenState extends State<CryptoHomeScreen> {
                           value: portfolio?.totalPortfolioValue ?? 0,
                           pnl: portfolio?.profitLoss ?? 0,
                           pnlPct: portfolio?.profitLossPercent ?? 0,
+                          usdInrRate: portfolio?.usdInrRate ?? 83.5,
                         ),
                         if (overview != null) ...[
                           const SizedBox(height: 16),
@@ -230,11 +231,13 @@ class _PortfolioCard extends StatelessWidget {
     required this.value,
     required this.pnl,
     required this.pnlPct,
+    required this.usdInrRate,
   });
 
   final double value;
   final double pnl;
   final double pnlPct;
+  final double usdInrRate;
 
   @override
   Widget build(BuildContext context) {
@@ -250,12 +253,22 @@ class _PortfolioCard extends StatelessWidget {
           Text('Portfolio value', style: context.typeLabel(12, p.heroCardMuted)),
           const SizedBox(height: 6),
           Text(
-            CurrencyFormatter.formatCompact(value),
+            CurrencyFormatter.formatLedger(
+              value,
+              market: 'crypto',
+              usdInr: usdInrRate,
+              compact: true,
+            ),
             style: context.typeHeading.copyWith(fontSize: 26, color: p.heroCardFg),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'USD · converted from paper INR',
+            style: context.typeLabel(11, p.heroCardMuted),
           ),
           const SizedBox(height: 8),
           Text(
-            '${IndexFormatter.formatPercent(pnlPct)} · ${CurrencyFormatter.formatDecimal(pnl.abs())} ${positive ? 'gain' : 'loss'}',
+            '${IndexFormatter.formatPercent(pnlPct)} · ${CurrencyFormatter.formatLedger(pnl.abs(), market: 'crypto', usdInr: usdInrRate, decimals: true)} ${positive ? 'gain' : 'loss'}',
             style: context.typeLabel(13, positive ? p.positive : p.negative),
           ),
         ],

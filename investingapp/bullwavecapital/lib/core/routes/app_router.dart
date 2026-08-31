@@ -150,7 +150,9 @@ import '../../features/crypto/presentation/screens/crypto_news_screen.dart';
 import '../../features/crypto/presentation/screens/crypto_screener_screen.dart';
 import '../../features/crypto/presentation/screens/crypto_portfolio_screen.dart';
 import '../../features/crypto/presentation/screens/crypto_movers_screen.dart';
+import '../../features/crypto/presentation/screens/alt_option_chain_screen.dart';
 import '../../features/crypto/presentation/screens/market_preferences_settings_screen.dart';
+import '../../features/crypto/presentation/widgets/alt_market_shortcuts.dart';
 import '../../features/forex/presentation/screens/forex_home_screen.dart';
 import '../../features/forex/presentation/screens/forex_search_screen.dart';
 import '../../features/forex/presentation/screens/forex_detail_screen.dart';
@@ -879,7 +881,9 @@ class AppRouter {
 
         parentNavigatorKey: _rootNavigatorKey,
 
-        builder: (context, state) => const InvestmentCalculatorScreen(),
+        builder: (context, state) => InvestmentCalculatorScreen(
+          market: state.uri.queryParameters['market'] ?? 'indian',
+        ),
       ),
 
       GoRoute(
@@ -1022,6 +1026,15 @@ class AppRouter {
         builder: (context, state) => const CryptoMoversScreen(),
       ),
 
+      GoRoute(
+        path: AppRoutes.cryptoOptions,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => AltOptionChainScreen(
+          kind: AltMarketKind.crypto,
+          underlyingId: state.uri.queryParameters['assetId'] ?? 'bitcoin',
+        ),
+      ),
+
       // Keep parameterized detail AFTER static /crypto/... paths so
       // /crypto/movers is not treated as an asset named "movers".
       GoRoute(
@@ -1066,6 +1079,14 @@ class AppRouter {
         path: AppRoutes.forexMovers,
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const ForexMoversScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.forexOptions,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => AltOptionChainScreen(
+          kind: AltMarketKind.forex,
+          underlyingId: state.uri.queryParameters['pairId'] ?? 'eurusd',
+        ),
       ),
       GoRoute(
         path: AppRoutes.forexDetail,

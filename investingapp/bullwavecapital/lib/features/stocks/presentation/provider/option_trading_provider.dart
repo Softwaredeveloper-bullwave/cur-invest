@@ -40,7 +40,7 @@ class OptionTradingProvider extends ChangeNotifier {
       if (h.underlying == underlying.toUpperCase() &&
           h.assetClass == assetClass &&
           h.optionType == optionType.toUpperCase() &&
-          h.strike == strike &&
+          (h.strike - strike).abs() < 0.0001 &&
           h.expiry.toIso8601String().substring(0, 10) == expiryKey) {
         return h.quantity;
       }

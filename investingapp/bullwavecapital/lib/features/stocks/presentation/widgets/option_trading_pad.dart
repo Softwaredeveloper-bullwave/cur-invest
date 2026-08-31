@@ -75,14 +75,17 @@ class _OptionTradingPadState extends State<OptionTradingPad> {
     return parsed == null || parsed < 1 ? 1 : parsed;
   }
 
+  String get _underlying => widget.contract.tradeUnderlying;
+
   int _lotSize() =>
-      optionLotSize(widget.contract.symbol, widget.chainContext.assetClass);
+      optionLotSize(_underlying, widget.chainContext.assetClass);
 
   double _orderInrEstimate(int lots) {
     final lot = _lotSize();
     final premium = widget.contract.ltp;
     final total = premium * lots * lot;
-    if (widget.chainContext.assetClass == 'commodity') {
+    const usdSettled = {'commodity', 'crypto', 'forex'};
+    if (usdSettled.contains(widget.chainContext.assetClass)) {
       return total * 83.5;
     }
     return total;
@@ -98,7 +101,7 @@ class _OptionTradingPadState extends State<OptionTradingPad> {
     if (_isPlacing) return;
     final trading = context.read<OptionTradingProvider>();
     final available = trading.holdingLots(
-      underlying: widget.contract.symbol,
+      underlying: _underlying,
       strike: widget.contract.strike,
       optionType: widget.contract.type,
       expiry: widget.contract.expiry,
@@ -126,7 +129,7 @@ class _OptionTradingPadState extends State<OptionTradingPad> {
     setState(() => _isPlacing = true);
     if (_scalper.enabled) {
       final order = await trading.placeScalperOrder(
-        underlying: widget.contract.symbol,
+        underlying: _underlying,
         strike: widget.contract.strike,
         optionType: widget.contract.type,
         expiry: widget.contract.expiry,
@@ -162,7 +165,7 @@ class _OptionTradingPadState extends State<OptionTradingPad> {
       return;
     }
     final trade = await trading.placeOrder(
-      underlying: widget.contract.symbol,
+      underlying: _underlying,
       strike: widget.contract.strike,
       optionType: widget.contract.type,
       expiry: widget.contract.expiry,
@@ -194,7 +197,7 @@ class _OptionTradingPadState extends State<OptionTradingPad> {
     setState(() => _isPlacing = true);
     final trading = context.read<OptionTradingProvider>();
     final order = await trading.placeScalperOrder(
-      underlying: widget.contract.symbol,
+      underlying: _underlying,
       strike: widget.contract.strike,
       optionType: widget.contract.type,
       expiry: widget.contract.expiry,
@@ -236,7 +239,7 @@ class _OptionTradingPadState extends State<OptionTradingPad> {
     return Consumer2<OptionTradingProvider, WalletProvider>(
       builder: (context, trading, wallet, _) {
         final available = trading.holdingLots(
-          underlying: contract.symbol,
+          underlying: _underlying,
           strike: contract.strike,
           optionType: contract.type,
           expiry: contract.expiry,

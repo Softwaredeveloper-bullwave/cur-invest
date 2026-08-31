@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from django.conf import settings
+from django.core.cache import cache
 from django.db import connection
 from rest_framework.response import Response
 
@@ -39,8 +40,14 @@ def database_unavailable_response() -> Response:
     )
 
 
-def database_status() -> dict:
+def database_status(*, use_cache: bool = True) -> dict:
     """Return whether Django can connect to the configured database."""
+    cache_key = 'db-health-status'
+    if use_cache:
+        cached = cache.get(cache_key)
+        if isinstance(cached, dict):
+            return cached
+
     host = getattr(settings, 'DATABASES', {}).get('default', {}).get('HOST', '')
     name = getattr(settings, 'DATABASES', {}).get('default', {}).get('NAME', '')
     user = getattr(settings, 'DATABASES', {}).get('default', {}).get('USER', '')
@@ -48,7 +55,7 @@ def database_status() -> dict:
         connection.ensure_connection()
         with connection.cursor() as cursor:
             cursor.execute('SELECT 1')
-        return {
+        result = {
             'engine': 'postgresql',
             'host': host or 'localhost',
             'name': name,
@@ -56,13 +63,15 @@ def database_status() -> dict:
             'reachable': True,
             'message': 'ok',
         }
+        cache.set(cache_key, result, 15)
+        return result
     except Exception as exc:
         try:
             connection.close()
         except Exception:
             pass
         message = str(exc).split('\n')[0].strip()[:220]
-        return {
+        result = {
             'engine': 'postgresql',
             'host': host or 'localhost',
             'name': name,
@@ -70,3 +79,5 @@ def database_status() -> dict:
             'reachable': False,
             'message': message,
         }
+        cache.set(cache_key, result, 15)
+        return result

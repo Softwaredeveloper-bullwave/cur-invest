@@ -64,6 +64,12 @@ class AltMarketShortcuts extends StatelessWidget {
               onTap: () => context.go(AppRoutes.wallet),
             ),
             ShellHighlightAction(
+              icon: Icons.candlestick_chart_rounded,
+              label: 'F&O',
+              color: AppColors.brandPurple,
+              onTap: () => context.push(_optionsRoute(kind)),
+            ),
+            ShellHighlightAction(
               icon: Icons.apps_rounded,
               label: 'All',
               color: AppColors.brandPrimary,
@@ -114,6 +120,15 @@ void showAltMarketAllSheet(BuildContext context, AltMarketKind kind) {
         onTap: () {
           Navigator.pop(context);
           context.push(_screenerRoute(kind));
+        },
+      ),
+      ExploreFeatureItem(
+        icon: Icons.candlestick_chart_rounded,
+        label: 'F&O',
+        gradient: const [Color(0xFF7C3AED), Color(0xFFA855F7)],
+        onTap: () {
+          Navigator.pop(context);
+          context.push(_optionsRoute(kind));
         },
       ),
       ExploreFeatureItem(
@@ -176,7 +191,7 @@ void showAltMarketAllSheet(BuildContext context, AltMarketKind kind) {
         gradient: const [Color(0xFF7C3AED), Color(0xFFA855F7)],
         onTap: () {
           Navigator.pop(context);
-          context.push(AppRoutes.investmentCalculator);
+          context.push(AppRoutes.calculatorForMarket(kind.name));
         },
       ),
     ],
@@ -266,3 +281,7 @@ String _moversRoute(AltMarketKind kind) =>
 
 String _searchRoute(AltMarketKind kind) =>
     kind == AltMarketKind.crypto ? AppRoutes.cryptoSearch : AppRoutes.forexSearch;
+
+String _optionsRoute(AltMarketKind kind) => kind == AltMarketKind.crypto
+    ? AppRoutes.cryptoOptionsPath()
+    : AppRoutes.forexOptionsPath();

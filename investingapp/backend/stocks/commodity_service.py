@@ -141,7 +141,7 @@ def get_commodity_quotes() -> list[dict]:
             connections.close_all()
 
     rows = []
-    with ThreadPoolExecutor(max_workers=4) as pool:
+    with ThreadPoolExecutor(max_workers=2) as pool:
         futures = {
             pool.submit(_fetch, cid, meta): cid
             for cid, meta in COMMODITY_CATALOG.items()

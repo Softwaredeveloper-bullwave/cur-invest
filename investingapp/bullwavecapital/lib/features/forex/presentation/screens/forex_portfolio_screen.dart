@@ -78,6 +78,7 @@ class _ForexPortfolioScreenState extends State<ForexPortfolioScreen> {
                           0,
                       pnlPct: portfolio?.profitLossPercent ?? 0,
                       positive: portfolio?.isPositive ?? true,
+                      usdInrRate: portfolio?.usdInrRate ?? 83.5,
                     ),
                     const SizedBox(height: 18),
                     const ScrollReveal(
@@ -124,7 +125,7 @@ class _ForexPortfolioScreenState extends State<ForexPortfolioScreen> {
                                           if (h.name.isNotEmpty)
                                             Text(h.name, style: context.typeSecondary(13)),
                                           Text(
-                                            'Qty ${h.quantity} @ ${CurrencyFormatter.formatDecimal(h.avgPrice)}',
+                                            'Qty ${h.quantity} @ ${IndexFormatter.format(h.avgPrice)}',
                                             style: context.typeMuted(12),
                                           ),
                                         ],
@@ -134,11 +135,21 @@ class _ForexPortfolioScreenState extends State<ForexPortfolioScreen> {
                                       crossAxisAlignment: CrossAxisAlignment.end,
                                       children: [
                                         Text(
-                                          CurrencyFormatter.formatCompact(h.currentValue),
+                                          CurrencyFormatter.formatLedger(
+                                            h.currentValue,
+                                            market: 'forex',
+                                            usdInr: portfolio?.usdInrRate,
+                                            compact: true,
+                                          ),
                                           style: context.typeCardTitle(14),
                                         ),
                                         Text(
-                                          CurrencyFormatter.formatDecimal(h.profitLoss),
+                                          CurrencyFormatter.formatLedger(
+                                            h.profitLoss,
+                                            market: 'forex',
+                                            usdInr: portfolio?.usdInrRate,
+                                            decimals: true,
+                                          ),
                                           style: context.typeLabel(
                                             12,
                                             h.profitLoss >= 0 ? p.positive : p.negative,
@@ -179,6 +190,7 @@ class _SummaryCard extends StatelessWidget {
     required this.value,
     required this.pnlPct,
     required this.positive,
+    required this.usdInrRate,
   });
 
   final double wallet;
@@ -186,6 +198,7 @@ class _SummaryCard extends StatelessWidget {
   final double value;
   final double pnlPct;
   final bool positive;
+  final double usdInrRate;
 
   @override
   Widget build(BuildContext context) {
@@ -200,12 +213,22 @@ class _SummaryCard extends StatelessWidget {
           Text('Paper wallet', style: context.typeLabel(12, p.heroCardMuted)),
           const SizedBox(height: 6),
           Text(
-            CurrencyFormatter.formatCompact(value),
+            CurrencyFormatter.formatLedger(
+              value,
+              market: 'forex',
+              usdInr: usdInrRate,
+              compact: true,
+            ),
             style: context.typeHeading.copyWith(fontSize: 28, color: p.heroCardFg),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'USD · converted from paper INR',
+            style: context.typeLabel(11, p.heroCardMuted),
           ),
           const SizedBox(height: 8),
           Text(
-            'Cash ${CurrencyFormatter.formatCompact(wallet)} · Invested ${CurrencyFormatter.formatCompact(invested)}',
+            'Cash ${CurrencyFormatter.formatLedger(wallet, market: 'forex', usdInr: usdInrRate, compact: true)} · Invested ${CurrencyFormatter.formatLedger(invested, market: 'forex', usdInr: usdInrRate, compact: true)}',
             style: context.typeLabel(13, p.heroCardMuted),
           ),
           const SizedBox(height: 4),

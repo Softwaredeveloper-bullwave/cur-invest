@@ -95,6 +95,13 @@ class AppRoutes {
     return investmentDocuments;
   }
 
+  static String calculatorForMarket(String market) {
+    if (market == 'crypto' || market == 'forex') {
+      return '$investmentCalculator?market=$market';
+    }
+    return investmentCalculator;
+  }
+
   static String academyBeginnerPath(String market) {
     switch (market) {
       case 'crypto':
@@ -117,8 +124,12 @@ class AppRoutes {
   static const String cryptoScreener = '/crypto/screener';
   static const String cryptoPortfolio = '/crypto/portfolio';
   static const String cryptoMovers = '/crypto/movers';
+  static const String cryptoOptions = '/crypto-options';
 
   static String cryptoDetailPath(String assetId) => '/crypto/$assetId';
+
+  static String cryptoOptionsPath([String assetId = 'bitcoin']) =>
+      '$cryptoOptions?assetId=$assetId';
 
   // ── Forex module ──
   static const String forexHome = '/forex';
@@ -129,6 +140,10 @@ class AppRoutes {
   static const String forexScreener = '/forex/screener';
   static const String forexPortfolio = '/forex/portfolio';
   static const String forexMovers = '/forex/movers';
+  static const String forexOptions = '/forex-options';
 
   static String forexDetailPath(String pairId) => '/forex/$pairId';
+
+  static String forexOptionsPath([String pairId = 'eurusd']) =>
+      '$forexOptions?pairId=$pairId';
 }

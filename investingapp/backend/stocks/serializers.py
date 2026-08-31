@@ -200,14 +200,14 @@ class CommodityOrderSerializer(CamelCaseSerializer):
 
 class OptionOrderSerializer(CamelCaseSerializer):
     underlying = serializers.CharField()
-    strike = serializers.DecimalField(max_digits=12, decimal_places=4)
+    strike = serializers.DecimalField(max_digits=16, decimal_places=6)
     option_type = serializers.CharField()
     expiry = serializers.DateField()
     side = serializers.ChoiceField(choices=['BUY', 'SELL'])
     quantity = serializers.IntegerField(min_value=1)
-    premium = serializers.DecimalField(max_digits=12, decimal_places=4)
+    premium = serializers.DecimalField(max_digits=16, decimal_places=6)
     asset_class = serializers.ChoiceField(
-        choices=['equity_fno', 'commodity'],
+        choices=['equity_fno', 'commodity', 'crypto', 'forex'],
         default='equity_fno',
         required=False,
     )
@@ -221,7 +221,7 @@ class ScalperOrderSerializer(CamelCaseSerializer):
     symbol = serializers.CharField(required=False, allow_blank=True)
     underlying = serializers.CharField(required=False, allow_blank=True)
     asset_class = serializers.ChoiceField(
-        choices=['equity_fno', 'commodity'],
+        choices=['equity_fno', 'commodity', 'crypto', 'forex'],
         default='equity_fno',
         required=False,
     )

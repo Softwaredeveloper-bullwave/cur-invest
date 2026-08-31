@@ -439,6 +439,8 @@ SipPlanModel parseSipPlan(Map<String, dynamic> json) => SipPlanModel(
 OptionContractModel parseOptionContract(Map<String, dynamic> json) =>
     OptionContractModel(
       symbol: json['symbol'] as String? ?? '',
+      underlyingId:
+          (json['underlyingId'] ?? json['underlying_id']) as String? ?? '',
       strike: _num(json['strike']),
       type: json['type'] as String? ?? '',
       ltp: _num(json['ltp']),

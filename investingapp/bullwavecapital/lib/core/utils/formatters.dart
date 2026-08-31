@@ -3,6 +3,8 @@ import 'package:intl/intl.dart';
 class CurrencyFormatter {
   CurrencyFormatter._();
 
+  static const double usdInrFallback = 83.5;
+
   static final NumberFormat _inr = NumberFormat.currency(
     locale: 'en_IN',
     symbol: '₹',
@@ -15,9 +17,39 @@ class CurrencyFormatter {
     decimalDigits: 2,
   );
 
+  static final NumberFormat _usd = NumberFormat.currency(
+    locale: 'en_US',
+    symbol: '\$',
+    decimalDigits: 2,
+  );
+
+  static bool marketUsesUsd(String? market) {
+    final value = (market ?? '').trim().toLowerCase();
+    return value == 'crypto' || value == 'forex';
+  }
+
+  static double toUsd(double inrAmount, [double? usdInr]) {
+    final rate = (usdInr != null && usdInr > 0) ? usdInr : usdInrFallback;
+    return inrAmount / rate;
+  }
+
   static String format(double amount) => _inr.format(amount);
 
   static String formatDecimal(double amount) => _inrDecimal.format(amount);
+
+  static String formatUsd(double amount) => _usd.format(amount);
+
+  static String formatUsdCompact(double amount) {
+    final sign = amount < 0 ? '-' : '';
+    final abs = amount.abs();
+    if (abs >= 1000000) {
+      return '$sign\$${(abs / 1000000).toStringAsFixed(2)}M';
+    }
+    if (abs >= 10000) {
+      return '$sign\$${(abs / 1000).toStringAsFixed(2)}K';
+    }
+    return formatUsd(amount);
+  }
 
   static String formatCompact(double amount) {
     if (amount >= 10000000) {
@@ -26,6 +58,25 @@ class CurrencyFormatter {
       return '₹${(amount / 100000).toStringAsFixed(2)} L';
     }
     return format(amount);
+  }
+
+  /// Paper ledgers are stored in INR. Indian markets stay in ₹;
+  /// crypto and forex convert to USD for display.
+  static String formatLedger(
+    double inrAmount, {
+    String? market,
+    double? usdInr,
+    bool compact = false,
+    bool decimals = false,
+  }) {
+    if (!marketUsesUsd(market)) {
+      if (compact) return formatCompact(inrAmount);
+      if (decimals) return formatDecimal(inrAmount);
+      return format(inrAmount);
+    }
+    final usd = toUsd(inrAmount, usdInr);
+    if (compact) return formatUsdCompact(usd);
+    return formatUsd(usd);
   }
 }
 

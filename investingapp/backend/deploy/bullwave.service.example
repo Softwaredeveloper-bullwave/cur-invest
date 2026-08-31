@@ -6,6 +6,9 @@
 #   sudo systemctl status bullwave
 #   curl -s http://127.0.0.1:8000/health/
 #
+# RDS: keep workers at 1 on db.t3.micro (~87 connections). After you
+# upgrade the instance to db.t3.small or larger, you may set workers to 2.
+#
 # Adjust paths if your clone lives elsewhere (e.g. /var/www/bullwave).
 
 [Unit]
@@ -17,15 +20,16 @@ User=ubuntu
 Group=ubuntu
 WorkingDirectory=/home/ubuntu/cur-invest/investingapp/backend
 Environment="PATH=/home/ubuntu/cur-invest/investingapp/backend/venv/bin"
+Environment="DB_CONN_MAX_AGE=0"
 # gunicorn needs a writable temp dir — EC2 /tmp is sometimes missing or full
 Environment="TMPDIR=/home/ubuntu/cur-invest/investingapp/backend/run/tmp"
 ExecStartPre=/bin/mkdir -p /home/ubuntu/cur-invest/investingapp/backend/run/tmp
 ExecStart=/home/ubuntu/cur-invest/investingapp/backend/venv/bin/gunicorn \
-  --workers 2 \
-  --max-requests 200 \
-  --max-requests-jitter 40 \
+  --workers 1 \
+  --max-requests 100 \
+  --max-requests-jitter 20 \
   --bind 127.0.0.1:8000 \
-  --timeout 120 \
+  --timeout 60 \
   --worker-tmp-dir /home/ubuntu/cur-invest/investingapp/backend/run/tmp \
   --error-logfile - \
   --log-level warning \
@@ -39,3 +43,4 @@ StandardError=journal
 
 [Install]
 WantedBy=multi-user.target
+

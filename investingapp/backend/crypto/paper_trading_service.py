@@ -36,23 +36,11 @@ def get_or_create_wallet(user) -> CryptoPracticeWallet:
 
 
 def _inr_price(asset_id: str) -> Decimal:
-    """Fetch USD price and convert roughly to INR using a cached FX or 83 fallback."""
-    from django.core.cache import cache
-
+    """Fetch USD price and convert to INR using the live USD/INR rate."""
     svc = CryptoService()
     quote = svc.get_price(asset_id, vs_currency='usd')
     usd = quote.get('current_price') or Decimal('0')
-    fx = cache.get('crypto:usd_inr')
-    if fx is None:
-        try:
-            # CoinGecko simple price for tether in INR as FX proxy is heavy; use static env-friendly default
-            from django.conf import settings
-
-            fx = Decimal(str(getattr(settings, 'CRYPTO_USD_INR_RATE', '83') or '83'))
-            cache.set('crypto:usd_inr', fx, 3600)
-        except Exception:
-            fx = Decimal('83')
-    return (Decimal(str(usd)) * Decimal(str(fx))).quantize(Decimal('0.01'))
+    return (Decimal(str(usd)) * _cached_usd_inr()).quantize(Decimal('0.01'))
 
 
 @transaction.atomic
@@ -197,6 +185,20 @@ def portfolio_summary(user) -> dict:
         'total_portfolio_value': str(current + wallet.balance),
         'profit_loss': str(total_pnl),
         'profit_loss_percent': str(total_pct.quantize(Decimal('0.01'))),
+        'usd_inr_rate': str(_cached_usd_inr()),
+        'display_currency': 'USD',
         'holdings': items,
         'allocation': allocation,
     }
+
+
+def _cached_usd_inr() -> Decimal:
+    from django.core.cache import cache
+
+    from core.fx import usd_inr_rate
+
+    fx = cache.get('crypto:usd_inr')
+    if fx is None:
+        fx = usd_inr_rate()
+        cache.set('crypto:usd_inr', fx, 3600)
+    return Decimal(str(fx))

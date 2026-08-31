@@ -31,6 +31,10 @@ class AppAccessPolicy {
     AppRoutes.notifications,
     AppRoutes.settings,
     AppRoutes.support,
+    AppRoutes.cryptoHome,
+    AppRoutes.forexHome,
+    AppRoutes.cryptoOptions,
+    AppRoutes.forexOptions,
   };
 
   static bool isBrowsePath(String path) {
@@ -40,6 +44,10 @@ class AppAccessPolicy {
     if (path.startsWith(AppRoutes.stockDetail)) return true;
     if (path.startsWith(AppRoutes.commodityDetail)) return true;
     if (path.startsWith(AppRoutes.copyTrading)) return true;
+    if (path.startsWith(AppRoutes.cryptoHome)) return true;
+    if (path.startsWith(AppRoutes.forexHome)) return true;
+    if (path.startsWith(AppRoutes.cryptoOptions)) return true;
+    if (path.startsWith(AppRoutes.forexOptions)) return true;
     return false;
   }
 

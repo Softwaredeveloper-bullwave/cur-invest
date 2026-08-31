@@ -15,11 +15,13 @@ class OptionChainContext {
   final String assetClass;
   final String currencySymbol;
   final bool requiresFno;
+  final bool requiresBank;
 
   const OptionChainContext({
     required this.assetClass,
     this.currencySymbol = '₹',
     this.requiresFno = false,
+    this.requiresBank = true,
   });
 
   static const commodity = OptionChainContext(
@@ -33,6 +35,20 @@ class OptionChainContext {
     currencySymbol: '₹',
     requiresFno: true,
   );
+
+  static const crypto = OptionChainContext(
+    assetClass: 'crypto',
+    currencySymbol: '\$',
+    requiresFno: false,
+    requiresBank: false,
+  );
+
+  static const forex = OptionChainContext(
+    assetClass: 'forex',
+    currencySymbol: '\$',
+    requiresFno: false,
+    requiresBank: false,
+  );
 }
 
 Future<void> openOptionContractTradingPad(
@@ -42,7 +58,7 @@ Future<void> openOptionContractTradingPad(
   String initialSide = 'BUY',
   bool paperMode = false,
 }) async {
-  if (!await ensureBankVerified(context)) return;
+  if (chainContext.requiresBank && !await ensureBankVerified(context)) return;
   if (!context.mounted) return;
 
   if (chainContext.requiresFno && !paperMode) {
@@ -78,7 +94,9 @@ String optionContractTitle(
   final name = underlyingName ?? contract.symbol;
   final strike = contract.strike == contract.strike.roundToDouble()
       ? contract.strike.toStringAsFixed(0)
-      : contract.strike.toStringAsFixed(2);
+      : contract.strike >= 10
+          ? contract.strike.toStringAsFixed(2)
+          : contract.strike.toStringAsFixed(4);
   return '$name $strike ${contract.type}';
 }
 
@@ -86,7 +104,11 @@ String optionExpiryLabel(DateTime expiry) =>
     DateFormatter.expiryLabel(expiry.toIso8601String().substring(0, 10));
 
 int optionLotSize(String underlying, String assetClass) {
-  if (assetClass == 'commodity') return 1;
+  if (assetClass == 'commodity' ||
+      assetClass == 'crypto' ||
+      assetClass == 'forex') {
+    return 1;
+  }
   switch (underlying.toUpperCase()) {
     case 'NIFTY':
     case 'FINNIFTY':

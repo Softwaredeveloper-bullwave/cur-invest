@@ -747,11 +747,64 @@ class BullwaveApi {
             as Map<String, dynamic>;
     return OptionChainResponse(
       symbol: data['symbol'] as String? ?? commodityId,
-      underlyingValue: _parseDouble(data['underlyingValue']),
-      expiryDates: (data['expiryDates'] as List<dynamic>? ?? [])
-          .map((e) => e.toString())
-          .toList(),
-      selectedExpiry: data['selectedExpiry'] as String? ?? '',
+      underlyingValue: _parseDouble(
+        data['underlyingValue'] ?? data['underlying_value'],
+      ),
+      expiryDates:
+          ((data['expiryDates'] ?? data['expiry_dates']) as List<dynamic>? ??
+                  [])
+              .map((e) => e.toString())
+              .toList(),
+      selectedExpiry:
+          (data['selectedExpiry'] ?? data['selected_expiry']) as String? ?? '',
+      contracts: parseList(data['contracts'], parseOptionContract),
+    );
+  }
+
+  Future<OptionChainResponse> getCryptoOptionChain(
+    String assetId, {
+    String? expiry,
+  }) async {
+    final data =
+        await _client.get(
+              '/crypto/assets/$assetId/options/',
+              query: {'expiry': ?expiry},
+              timeout: const Duration(seconds: 45),
+            )
+            as Map<String, dynamic>;
+    return _parseAltOptionChain(data, assetId);
+  }
+
+  Future<OptionChainResponse> getForexOptionChain(
+    String pairId, {
+    String? expiry,
+  }) async {
+    final data =
+        await _client.get(
+              '/forex/pairs/$pairId/options/',
+              query: {'expiry': ?expiry},
+              timeout: const Duration(seconds: 45),
+            )
+            as Map<String, dynamic>;
+    return _parseAltOptionChain(data, pairId);
+  }
+
+  OptionChainResponse _parseAltOptionChain(
+    Map<String, dynamic> data,
+    String fallbackSymbol,
+  ) {
+    return OptionChainResponse(
+      symbol: data['symbol'] as String? ?? fallbackSymbol,
+      underlyingValue: _parseDouble(
+        data['underlyingValue'] ?? data['underlying_value'],
+      ),
+      expiryDates:
+          ((data['expiryDates'] ?? data['expiry_dates']) as List<dynamic>? ??
+                  [])
+              .map((e) => e.toString())
+              .toList(),
+      selectedExpiry:
+          (data['selectedExpiry'] ?? data['selected_expiry']) as String? ?? '',
       contracts: parseList(data['contracts'], parseOptionContract),
     );
   }

@@ -242,6 +242,8 @@ class ForexPortfolioModel {
     this.totalPortfolioValue = 0,
     this.profitLoss = 0,
     this.profitLossPercent = 0,
+    this.usdInrRate = 83.5,
+    this.displayCurrency = 'USD',
     this.holdings = const [],
   });
 
@@ -252,6 +254,8 @@ class ForexPortfolioModel {
   final double totalPortfolioValue;
   final double profitLoss;
   final double profitLossPercent;
+  final double usdInrRate;
+  final String displayCurrency;
   final List<ForexHoldingModel> holdings;
 
   bool get isPositive => profitLoss >= 0;
@@ -264,6 +268,11 @@ class ForexPortfolioModel {
         totalPortfolioValue: _num(_pick(json, 'totalPortfolioValue', 'total_portfolio_value')),
         profitLoss: _num(_pick(json, 'profitLoss', 'profit_loss')),
         profitLossPercent: _num(_pick(json, 'profitLossPercent', 'profit_loss_percent')),
+        usdInrRate: _num(_pick(json, 'usdInrRate', 'usd_inr_rate')) > 0
+            ? _num(_pick(json, 'usdInrRate', 'usd_inr_rate'))
+            : 83.5,
+        displayCurrency:
+            (_pick(json, 'displayCurrency', 'display_currency') as String?) ?? 'USD',
         holdings: (json['holdings'] as List<dynamic>? ?? [])
             .whereType<Map>()
             .map((e) => ForexHoldingModel.fromJson(Map<String, dynamic>.from(e)))

@@ -9,6 +9,8 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from core.utils import camelize
+
 from .health import health_summary
 from .models import ForexNotificationPreference, ForexPair, ForexTransaction, ForexWatchlistItem
 from .news_service import CATEGORIES, fetch_forex_news
@@ -247,6 +249,8 @@ class ForexPortfolioView(APIView):
                     'total_portfolio_value': '100000.00',
                     'profit_loss': '0',
                     'profit_loss_percent': '0',
+                    'usd_inr_rate': '83.50',
+                    'display_currency': 'USD',
                     'holdings': [],
                     'allocation': [],
                 }
@@ -310,3 +314,17 @@ class ForexLiveTradingStatusView(APIView):
             return Response({'enabled': True, 'mode': 'live'})
         except ForexTradingDisabled as exc:
             return Response({'enabled': False, 'mode': 'paper_and_market_data', 'detail': str(exc)})
+
+
+class ForexOptionChainView(APIView):
+    """Paper CE/PE book for major FX pairs — virtual funds only."""
+
+    def get(self, request, pair_id=None):
+        from .option_chain import catalog_rows, get_forex_option_chain
+
+        pid = (pair_id or request.query_params.get('underlying') or 'eurusd').strip()
+        expiry = request.query_params.get('expiry')
+        chain = get_forex_option_chain(pid, expiry=expiry)
+        if not chain:
+            return Response({'detail': 'No option chain for this pair.'}, status=404)
+        return Response(camelize(_jsonable({**chain, 'underlyings': catalog_rows()})))

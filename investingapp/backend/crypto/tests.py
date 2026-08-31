@@ -133,3 +133,30 @@ class CryptoTradingStatusApiTests(TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertFalse(resp.data['enabled'])
         self.assertEqual(resp.data['mode'], 'paper_and_market_data')
+
+
+class CryptoOptionChainApiTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(phone='9666666666', name='Options User')
+        self.client = APIClient()
+        self.client.force_authenticate(user=self.user)
+
+    @patch('crypto.option_chain._spot', return_value=(97000.0, 'test'))
+    def test_bitcoin_chain_returns_ce_pe(self, _spot):
+        resp = self.client.get('/api/v1/crypto/assets/bitcoin/options/')
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.data['assetClass'], 'crypto')
+        self.assertTrue(resp.data['contracts'])
+        self.assertEqual(resp.data['contracts'][0]['underlyingId'], 'bitcoin')
+        types = {row['type'] for row in resp.data['contracts']}
+        self.assertEqual(types, {'CE', 'PE'})
+
+    @patch('crypto.option_chain._spot', return_value=(97000.0, 'test'))
+    def test_btc_alias_resolves(self, _spot):
+        resp = self.client.get('/api/v1/crypto/assets/btc/options/')
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.data['underlyingId'], 'bitcoin')
+
+    def test_unknown_asset_404(self):
+        resp = self.client.get('/api/v1/crypto/assets/cardano/options/')
+        self.assertEqual(resp.status_code, 404)

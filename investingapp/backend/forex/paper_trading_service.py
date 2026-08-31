@@ -4,9 +4,10 @@ from __future__ import annotations
 
 from decimal import Decimal, ROUND_DOWN
 
-from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
+
+from core.fx import usd_inr_rate
 
 from .models import ForexHolding, ForexPair, ForexPracticeWallet, ForexTransaction
 from .pairs import normalize_pair_id
@@ -33,14 +34,11 @@ def get_or_create_wallet(user) -> ForexPracticeWallet:
 
 
 def _inr_notional(pair: ForexPair, price: Decimal, qty: Decimal) -> Decimal:
-    usd_inr = Decimal(str(getattr(settings, 'FOREX_USD_INR_RATE', '83') or '83'))
     quote = (pair.quote_currency or 'USD').upper()
     if quote == 'INR':
         fx = Decimal('1')
-    elif quote == 'USD':
-        fx = usd_inr
     else:
-        fx = usd_inr
+        fx = usd_inr_rate()
     return (price * qty * fx).quantize(Decimal('0.01'), rounding=ROUND_DOWN)
 
 
@@ -164,6 +162,8 @@ def portfolio_summary(user) -> dict:
         'total_portfolio_value': str(wallet.balance + current),
         'profit_loss': str(pnl),
         'profit_loss_percent': str(pct.quantize(Decimal('0.01'))),
+        'usd_inr_rate': str(usd_inr_rate()),
+        'display_currency': 'USD',
         'holdings': rows,
         'allocation': [],
     }

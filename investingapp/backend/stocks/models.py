@@ -244,6 +244,8 @@ class OptionHolding(models.Model):
     class AssetClass(models.TextChoices):
         EQUITY_FNO = 'equity_fno', 'Equity F&O'
         COMMODITY = 'commodity', 'Commodity'
+        CRYPTO = 'crypto', 'Crypto'
+        FOREX = 'forex', 'Forex'
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='option_holdings'
@@ -272,6 +274,8 @@ class OptionTrade(models.Model):
     class AssetClass(models.TextChoices):
         EQUITY_FNO = 'equity_fno', 'Equity F&O'
         COMMODITY = 'commodity', 'Commodity'
+        CRYPTO = 'crypto', 'Crypto'
+        FOREX = 'forex', 'Forex'
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(

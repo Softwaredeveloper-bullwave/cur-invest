@@ -41,7 +41,9 @@ class OptionChainTable extends StatelessWidget {
   final List<OptionContractModel> contracts;
   final double spot;
   final int strikeDecimals;
+  final int ltpDecimals;
   final String currencySymbol;
+  final double? atmHalfWidth;
   final void Function(OptionContractModel contract)? onContractTap;
 
   const OptionChainTable({
@@ -49,7 +51,9 @@ class OptionChainTable extends StatelessWidget {
     required this.contracts,
     required this.spot,
     this.strikeDecimals = 0,
+    this.ltpDecimals = 2,
     this.currencySymbol = '',
+    this.atmHalfWidth,
     this.onContractTap,
   });
 
@@ -78,7 +82,8 @@ class OptionChainTable extends StatelessWidget {
             itemCount: rows.length,
             itemBuilder: (context, i) {
               final row = rows[i];
-              final isAtm = (row.strike - spot).abs() <= step / 2;
+              final isAtm =
+                  (row.strike - spot).abs() <= (atmHalfWidth ?? step / 2);
               return _StrikeRow(
                 row: row,
                 spot: spot,
@@ -87,6 +92,7 @@ class OptionChainTable extends StatelessWidget {
                 maxPutOi: maxPutOi,
                 colors: colors,
                 strikeDecimals: strikeDecimals,
+                ltpDecimals: ltpDecimals,
                 currencySymbol: currencySymbol,
                 onContractTap: onContractTap,
               );
@@ -224,6 +230,7 @@ class _StrikeRow extends StatelessWidget {
   final int maxPutOi;
   final AppThemeExtension colors;
   final int strikeDecimals;
+  final int ltpDecimals;
   final String currencySymbol;
   final void Function(OptionContractModel contract)? onContractTap;
 
@@ -235,6 +242,7 @@ class _StrikeRow extends StatelessWidget {
     required this.maxPutOi,
     required this.colors,
     this.strikeDecimals = 0,
+    this.ltpDecimals = 2,
     this.currencySymbol = '',
     this.onContractTap,
   });
@@ -273,6 +281,7 @@ class _StrikeRow extends StatelessWidget {
             isCall: true,
             colors: colors,
             currencySymbol: currencySymbol,
+            ltpDecimals: ltpDecimals,
             onTap: call != null && onContractTap != null
                 ? () => onContractTap!(call)
                 : null,
@@ -307,6 +316,7 @@ class _StrikeRow extends StatelessWidget {
             isCall: false,
             colors: colors,
             currencySymbol: currencySymbol,
+            ltpDecimals: ltpDecimals,
             onTap: put != null && onContractTap != null
                 ? () => onContractTap!(put)
                 : null,
@@ -328,6 +338,7 @@ class _LtpCell extends StatelessWidget {
   final bool isCall;
   final AppThemeExtension colors;
   final String currencySymbol;
+  final int ltpDecimals;
   final VoidCallback? onTap;
 
   const _LtpCell({
@@ -335,6 +346,7 @@ class _LtpCell extends StatelessWidget {
     required this.isCall,
     required this.colors,
     this.currencySymbol = '',
+    this.ltpDecimals = 2,
     this.onTap,
   });
 
@@ -355,7 +367,7 @@ class _LtpCell extends StatelessWidget {
           : CrossAxisAlignment.start,
       children: [
         Text(
-          '$currencySymbol${c.ltp.toStringAsFixed(2)}',
+          '$currencySymbol${c.ltp.toStringAsFixed(ltpDecimals)}',
           style: TextStyle(
             fontWeight: FontWeight.w800,
             fontSize: 13,
@@ -363,7 +375,7 @@ class _LtpCell extends StatelessWidget {
           ),
         ),
         Text(
-          '${c.change >= 0 ? '+' : ''}${c.change.toStringAsFixed(2)}',
+          '${c.change >= 0 ? '+' : ''}${c.change.toStringAsFixed(ltpDecimals)}',
           style: TextStyle(
             fontSize: 10,
             color: changeColor,

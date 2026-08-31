@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/api/api_exception.dart';
 import '../../../../core/api/bullwave_api.dart';
 import '../../../../core/charts/lightweight_chart.dart';
+import '../../../../core/constants/routes.dart';
 import '../../../../core/theme/theme_a.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/widgets/custom_app_bar.dart';
@@ -200,6 +202,19 @@ class _ForexDetailScreenState extends State<ForexDetailScreen> {
                           )
                           .toList(),
                     ),
+                    if (_hasOptions) ...[
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () => context.push(
+                            AppRoutes.forexOptionsPath(_normalizedPairId),
+                          ),
+                          icon: const Icon(Icons.candlestick_chart_rounded),
+                          label: const Text('Option chain · Paper F&O'),
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 20),
                     Row(
                       children: [
@@ -223,5 +238,18 @@ class _ForexDetailScreenState extends State<ForexDetailScreen> {
                   ],
                 ),
     );
+  }
+
+  String get _normalizedPairId => widget.pairId
+      .trim()
+      .toLowerCase()
+      .replaceAll('/', '')
+      .replaceAll('-', '')
+      .replaceAll('_', '');
+
+  bool get _hasOptions {
+    const listed = {'eurusd', 'gbpusd', 'usdjpy', 'usdinr', 'audusd'};
+    return listed.contains(_normalizedPairId) ||
+        listed.contains((_pair?.id ?? '').toLowerCase());
   }
 }

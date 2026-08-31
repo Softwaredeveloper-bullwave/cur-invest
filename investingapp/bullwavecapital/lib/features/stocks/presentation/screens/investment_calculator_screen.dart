@@ -9,7 +9,9 @@ import '../../../../core/widgets/custom_app_bar.dart';
 import '../../../../core/widgets/premium_ui_kit.dart';
 
 class InvestmentCalculatorScreen extends StatefulWidget {
-  const InvestmentCalculatorScreen({super.key});
+  const InvestmentCalculatorScreen({super.key, this.market = 'indian'});
+
+  final String market;
 
   @override
   State<InvestmentCalculatorScreen> createState() =>
@@ -18,9 +20,17 @@ class InvestmentCalculatorScreen extends StatefulWidget {
 
 class _InvestmentCalculatorScreenState
     extends State<InvestmentCalculatorScreen> {
-  double _monthly = 5000;
+  late double _monthly;
   double _rate = 12;
   int _years = 10;
+
+  bool get _usd => CurrencyFormatter.marketUsesUsd(widget.market);
+
+  @override
+  void initState() {
+    super.initState();
+    _monthly = _usd ? 100 : 5000;
+  }
 
   double get _invested => _monthly * 12 * _years;
 
@@ -33,13 +43,30 @@ class _InvestmentCalculatorScreenState
 
   double get _gains => _futureValue - _invested;
 
+  String _money(double amount, {bool compact = false}) {
+    if (_usd) {
+      return compact
+          ? CurrencyFormatter.formatUsdCompact(amount)
+          : CurrencyFormatter.formatUsd(amount);
+    }
+    return compact
+        ? CurrencyFormatter.formatCompact(amount)
+        : CurrencyFormatter.format(amount);
+  }
+
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
+    final title = _usd ? 'SIP / DCA Calculator' : 'SIP Calculator';
+    final subtitle = _usd
+        ? (widget.market == 'forex'
+            ? 'Plan a monthly USD contribution for forex — values are not in rupees.'
+            : 'Plan a monthly USD buy (DCA) for crypto — values are not in rupees.')
+        : 'Estimate wealth from monthly SIP — for planning only.';
 
     return Scaffold(
       backgroundColor: Colors.transparent,
-      appBar: const CustomAppBar(title: 'Investment Calculator'),
+      appBar: CustomAppBar(title: _usd ? 'USD Calculator' : 'Investment Calculator'),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
         children: [
@@ -50,22 +77,22 @@ class _InvestmentCalculatorScreenState
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'SIP Calculator',
+                  title,
                   style: ThemeAType.sectionTitle(color: p.textDark, size: 20),
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Estimate wealth from monthly SIP — for planning only.',
+                  subtitle,
                   style: ThemeAType.body(color: p.textGrey, size: 13),
                 ),
                 const SizedBox(height: 24),
                 _SliderField(
-                  label: 'Monthly investment',
+                  label: _usd ? 'Monthly amount (USD)' : 'Monthly investment',
                   value: _monthly,
-                  min: 500,
-                  max: 100000,
-                  divisions: 40,
-                  display: CurrencyFormatter.formatCompact(_monthly),
+                  min: _usd ? 10 : 500,
+                  max: _usd ? 2000 : 100000,
+                  divisions: _usd ? 199 : 40,
+                  display: _money(_monthly, compact: !_usd),
                   onChanged: (v) => setState(() => _monthly = v),
                 ),
                 _SliderField(
@@ -102,21 +129,26 @@ class _InvestmentCalculatorScreenState
                   'Projected outcome',
                   style: ThemeAType.sectionTitle(color: p.textDark, size: 18),
                 ),
+                const SizedBox(height: 6),
+                Text(
+                  _usd ? 'Shown in US dollars' : 'Shown in Indian rupees',
+                  style: ThemeAType.body(color: p.textGrey, size: 12),
+                ),
                 const SizedBox(height: 16),
                 _ResultRow(
                   label: 'Total invested',
-                  value: CurrencyFormatter.format(_invested),
+                  value: _money(_invested),
                 ),
                 const SizedBox(height: 10),
                 _ResultRow(
                   label: 'Est. returns',
-                  value: CurrencyFormatter.format(_gains),
+                  value: _money(_gains),
                   highlight: true,
                 ),
                 const SizedBox(height: 10),
                 _ResultRow(
                   label: 'Future value',
-                  value: CurrencyFormatter.format(_futureValue),
+                  value: _money(_futureValue),
                   isLarge: true,
                 ),
               ],

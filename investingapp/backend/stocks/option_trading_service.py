@@ -38,8 +38,15 @@ def _round2(value) -> float:
     return round(float(value), 2)
 
 
+USD_SETTLED_CLASSES = {
+    OptionHolding.AssetClass.COMMODITY,
+    OptionHolding.AssetClass.CRYPTO,
+    OptionHolding.AssetClass.FOREX,
+}
+
+
 def _lot_size(underlying: str, asset_class: str) -> int:
-    if asset_class == OptionHolding.AssetClass.COMMODITY:
+    if asset_class in USD_SETTLED_CLASSES:
         return 1
     return LOT_SIZES.get(underlying.upper(), 1)
 
@@ -60,7 +67,7 @@ def _order_amount_inr(
     total = premium * quantity * lot_size
     if option_type.upper() == 'FU':
         total = total * FUTURES_MARGIN_PCT
-    if asset_class == OptionHolding.AssetClass.COMMODITY:
+    if asset_class in USD_SETTLED_CLASSES:
         return _inr_from_usd(total, rate)
     return total.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
@@ -182,6 +189,20 @@ def place_option_order(
             raise OptionTradingError('Commodity not found.')
         if option_type == 'FU':
             raise OptionTradingError('Index futures are only available for equity F&O.')
+    elif asset_class == OptionHolding.AssetClass.CRYPTO:
+        from crypto.option_chain import is_option_underlying
+
+        if not is_option_underlying(underlying):
+            raise OptionTradingError('Crypto options are only listed for major coins.')
+        if option_type == 'FU':
+            raise OptionTradingError('Futures are not listed on this paper crypto book.')
+    elif asset_class == OptionHolding.AssetClass.FOREX:
+        from forex.option_chain import is_option_underlying
+
+        if not is_option_underlying(underlying):
+            raise OptionTradingError('Forex options are only listed for major pairs.')
+        if option_type == 'FU':
+            raise OptionTradingError('Futures are not listed on this paper forex book.')
     elif asset_class != OptionHolding.AssetClass.EQUITY_FNO:
         raise OptionTradingError('Invalid asset class.')
 
@@ -197,7 +218,7 @@ def place_option_order(
         # One futures book per underlying+expiry (spot stored as avg_premium).
         strike = Decimal('0')
     lot_size = _lot_size(underlying, asset_class)
-    rate = get_usd_inr_rate() if asset_class == OptionHolding.AssetClass.COMMODITY else Decimal('1')
+    rate = get_usd_inr_rate() if asset_class in USD_SETTLED_CLASSES else Decimal('1')
     order_inr = _order_amount_inr(
         premium=premium,
         quantity=quantity,

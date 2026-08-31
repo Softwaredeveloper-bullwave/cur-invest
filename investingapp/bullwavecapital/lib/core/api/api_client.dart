@@ -105,7 +105,10 @@ class ApiClient {
   void _report(Object error, StackTrace stack, String path, {int? statusCode}) {
     if (statusCode == 401 ||
         statusCode == 403 ||
-        path.contains('/client-errors/'))
+        statusCode == 503 ||
+        path.contains('/client-errors/') ||
+        path.contains('/auth/send-otp') ||
+        path.contains('/health'))
       return;
     unawaited(
       AppErrorReporter.instance.report(
@@ -130,10 +133,13 @@ class ApiClient {
           'Deploy the latest backend and run migrate, or the app will use a live fallback.';
     }
     if (statusCode == 503) {
-      return 'Login is temporarily unavailable. Please try again in a moment.';
+      if (body is Map && body['code'] == 'database_unavailable') {
+        return 'Login is temporarily unavailable. Please try again in a moment.';
+      }
+      return 'Service is busy. Please try again in a moment.';
     }
     if (statusCode >= 500) {
-      return 'Login is temporarily unavailable. Please try again in a moment.';
+      return 'Server error. Please try again in a moment.';
     }
     return 'Unexpected server response. Check backend logs.';
   }

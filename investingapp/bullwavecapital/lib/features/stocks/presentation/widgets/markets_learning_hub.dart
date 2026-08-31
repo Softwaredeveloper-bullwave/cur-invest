@@ -50,10 +50,14 @@ class MarketsLearningHub extends StatelessWidget {
       ),
       _LearningItem(
         label: 'Calculator',
-        subtitle: 'SIP & returns planner',
+        subtitle: isCrypto
+            ? 'DCA in USD'
+            : isForex
+            ? 'USD contribution plan'
+            : 'SIP & returns planner',
         icon: Icons.calculate_rounded,
         gradient: const [Color(0xFF6366F1), Color(0xFF818CF8)],
-        onTap: () => context.push(AppRoutes.investmentCalculator),
+        onTap: () => context.push(AppRoutes.calculatorForMarket(market)),
       ),
     ];
 

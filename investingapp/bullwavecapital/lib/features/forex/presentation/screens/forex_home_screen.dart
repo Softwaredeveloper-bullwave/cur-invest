@@ -91,6 +91,7 @@ class _ForexHomeScreenState extends State<ForexHomeScreen> {
                           value: portfolio?.totalPortfolioValue ?? 0,
                           pnl: portfolio?.profitLoss ?? 0,
                           pnlPct: portfolio?.profitLossPercent ?? 0,
+                          usdInrRate: portfolio?.usdInrRate ?? 83.5,
                         ),
                         const SizedBox(height: 16),
                         const ScrollReveal(
@@ -213,11 +214,12 @@ class _PaperBanner extends StatelessWidget {
 }
 
 class _PortfolioCard extends StatelessWidget {
-  const _PortfolioCard({required this.value, required this.pnl, required this.pnlPct});
+  const _PortfolioCard({required this.value, required this.pnl, required this.pnlPct, required this.usdInrRate});
 
   final double value;
   final double pnl;
   final double pnlPct;
+  final double usdInrRate;
 
   @override
   Widget build(BuildContext context) {
@@ -232,10 +234,23 @@ class _PortfolioCard extends StatelessWidget {
         children: [
           Text('Paper portfolio', style: context.typeLabel(12, p.heroCardMuted)),
           const SizedBox(height: 6),
-          Text(CurrencyFormatter.formatCompact(value), style: context.typeHeading.copyWith(color: p.heroCardFg)),
+          Text(
+            CurrencyFormatter.formatLedger(
+              value,
+              market: 'forex',
+              usdInr: usdInrRate,
+              compact: true,
+            ),
+            style: context.typeHeading.copyWith(color: p.heroCardFg),
+          ),
           const SizedBox(height: 4),
           Text(
-            '${positive ? '+' : ''}${CurrencyFormatter.formatCompact(pnl)} (${IndexFormatter.formatPercent(pnlPct)})',
+            'USD · converted from paper INR',
+            style: context.typeLabel(11, p.heroCardMuted),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '${positive ? '+' : ''}${CurrencyFormatter.formatLedger(pnl, market: 'forex', usdInr: usdInrRate, compact: true)} (${IndexFormatter.formatPercent(pnlPct)})',
             style: context.typeLabel(13, positive ? p.positive : p.negative),
           ),
         ],

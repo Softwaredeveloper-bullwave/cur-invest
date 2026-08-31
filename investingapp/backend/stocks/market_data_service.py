@@ -155,7 +155,7 @@ def refresh_stocks(symbols, include_fundamentals=False):
         if not target_symbols:
             return fetched
 
-        workers = min(8, max(2, len(target_symbols)))
+        workers = min(2, max(1, len(target_symbols)))
         with ThreadPoolExecutor(max_workers=workers) as pool:
             futures = [pool.submit(_fetch, sym) for sym in target_symbols]
             for fut in as_completed(futures):

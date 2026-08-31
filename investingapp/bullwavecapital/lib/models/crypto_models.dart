@@ -392,6 +392,8 @@ class CryptoPortfolioModel {
     this.totalPortfolioValue = 0,
     this.profitLoss = 0,
     this.profitLossPercent = 0,
+    this.usdInrRate = 83.5,
+    this.displayCurrency = 'USD',
     this.holdings = const [],
     this.allocation = const [],
   });
@@ -403,6 +405,8 @@ class CryptoPortfolioModel {
   final double totalPortfolioValue;
   final double profitLoss;
   final double profitLossPercent;
+  final double usdInrRate;
+  final String displayCurrency;
   final List<CryptoHoldingModel> holdings;
   final List<CryptoAllocationItem> allocation;
 
@@ -422,6 +426,12 @@ class CryptoPortfolioModel {
         profitLossPercent: _num(
           _pick(json, 'profitLossPercent', 'profit_loss_percent'),
         ),
+        usdInrRate: _num(_pick(json, 'usdInrRate', 'usd_inr_rate')) > 0
+            ? _num(_pick(json, 'usdInrRate', 'usd_inr_rate'))
+            : 83.5,
+        displayCurrency:
+            (_pick(json, 'displayCurrency', 'display_currency') as String?) ??
+            'USD',
         holdings: (json['holdings'] as List<dynamic>? ?? [])
             .whereType<Map<String, dynamic>>()
             .map(CryptoHoldingModel.fromJson)

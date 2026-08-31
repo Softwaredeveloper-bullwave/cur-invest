@@ -119,7 +119,7 @@ class _CryptoPortfolioScreenState extends State<CryptoPortfolioScreen> {
                                           Text(h.symbol, style: context.typeCardTitle(15)),
                                           Text(h.name, style: context.typeSecondary(13)),
                                           Text(
-                                            '${h.quantity.toStringAsFixed(4)} @ ${CurrencyFormatter.formatDecimal(h.avgPrice)}',
+                                            '${h.quantity.toStringAsFixed(4)} @ ${CurrencyFormatter.formatLedger(h.avgPrice, market: 'crypto', usdInr: portfolio?.usdInrRate, decimals: true)}',
                                             style: context.typeMuted(12),
                                           ),
                                         ],
@@ -129,7 +129,12 @@ class _CryptoPortfolioScreenState extends State<CryptoPortfolioScreen> {
                                       crossAxisAlignment: CrossAxisAlignment.end,
                                       children: [
                                         Text(
-                                          CurrencyFormatter.formatDecimal(h.currentValue),
+                                          CurrencyFormatter.formatLedger(
+                                            h.currentValue,
+                                            market: 'crypto',
+                                            usdInr: portfolio?.usdInrRate,
+                                            decimals: true,
+                                          ),
                                           style: context.typeCardTitle(14),
                                         ),
                                         Text(
@@ -186,12 +191,22 @@ class _SummaryCard extends StatelessWidget {
         children: [
           Text('Total value', style: context.typeLabel(12, p.heroCardMuted)),
           Text(
-            CurrencyFormatter.formatCompact(portfolio.totalPortfolioValue),
+            CurrencyFormatter.formatLedger(
+              portfolio.totalPortfolioValue,
+              market: 'crypto',
+              usdInr: portfolio.usdInrRate,
+              compact: true,
+            ),
             style: context.typeHeading.copyWith(fontSize: 26, color: p.heroCardFg),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'USD · converted from paper INR',
+            style: context.typeLabel(11, p.heroCardMuted),
           ),
           const SizedBox(height: 8),
           Text(
-            'Cash ${CurrencyFormatter.formatDecimal(portfolio.walletBalance)} · P&L ${IndexFormatter.formatPercent(portfolio.profitLossPercent)}',
+            'Cash ${CurrencyFormatter.formatLedger(portfolio.walletBalance, market: 'crypto', usdInr: portfolio.usdInrRate, decimals: true)} · P&L ${IndexFormatter.formatPercent(portfolio.profitLossPercent)}',
             style: context.typeLabel(13, p.heroCardMuted),
           ),
         ],

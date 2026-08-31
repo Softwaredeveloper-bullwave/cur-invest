@@ -33,6 +33,8 @@ from .serializers import (
     CryptoWatchlistItemSerializer,
     UserMarketPreferenceSerializer,
 )
+from core.utils import camelize
+
 from .services import CryptoService
 from .trading_provider import CryptoTradingDisabled, get_trading_provider
 
@@ -393,6 +395,20 @@ class CryptoLiveTradingStatusView(APIView):
                 }
             )
         return Response({'enabled': enabled, 'mode': 'live'})
+
+
+class CryptoOptionChainView(APIView):
+    """Paper CE/PE book for major coins — virtual funds only."""
+
+    def get(self, request, asset_id=None):
+        from .option_chain import catalog_rows, get_crypto_option_chain
+
+        aid = (asset_id or request.query_params.get('underlying') or 'bitcoin').strip()
+        expiry = request.query_params.get('expiry')
+        chain = get_crypto_option_chain(aid, expiry=expiry)
+        if not chain:
+            return Response({'detail': 'No option chain for this asset.'}, status=404)
+        return Response(camelize(_jsonable({**chain, 'underlyings': catalog_rows()})))
 
 
 def _jsonable(obj):
