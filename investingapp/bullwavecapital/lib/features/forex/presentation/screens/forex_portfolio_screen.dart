@@ -7,6 +7,7 @@ import '../../../../core/theme/colors.dart';
 import '../../../../core/theme/theme_a.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/widgets/custom_app_bar.dart';
+import '../../../../core/widgets/dual_pnl_label.dart';
 import '../../../../core/widgets/icon_badge.dart';
 import '../../../../core/widgets/page_hero_background.dart';
 import '../../../../core/widgets/paper_trading_disclaimer.dart';
@@ -76,8 +77,8 @@ class _ForexPortfolioScreenState extends State<ForexPortfolioScreen> {
                       value: portfolio?.totalPortfolioValue ??
                           portfolio?.walletBalance ??
                           0,
+                      pnl: portfolio?.profitLoss ?? 0,
                       pnlPct: portfolio?.profitLossPercent ?? 0,
-                      positive: portfolio?.isPositive ?? true,
                       usdInrRate: portfolio?.usdInrRate ?? 83.5,
                     ),
                     const SizedBox(height: 18),
@@ -143,17 +144,11 @@ class _ForexPortfolioScreenState extends State<ForexPortfolioScreen> {
                                           ),
                                           style: context.typeCardTitle(14),
                                         ),
-                                        Text(
-                                          CurrencyFormatter.formatLedger(
-                                            h.profitLoss,
-                                            market: 'forex',
-                                            usdInr: portfolio?.usdInrRate,
-                                            decimals: true,
-                                          ),
-                                          style: context.typeLabel(
-                                            12,
-                                            h.profitLoss >= 0 ? p.positive : p.negative,
-                                          ),
+                                        DualPnlLabel(
+                                          pnlInr: h.profitLoss,
+                                          usdInr: portfolio?.usdInrRate,
+                                          showUsd: true,
+                                          compact: true,
                                         ),
                                       ],
                                     ),
@@ -188,16 +183,16 @@ class _SummaryCard extends StatelessWidget {
     required this.wallet,
     required this.invested,
     required this.value,
+    required this.pnl,
     required this.pnlPct,
-    required this.positive,
     required this.usdInrRate,
   });
 
   final double wallet;
   final double invested;
   final double value;
+  final double pnl;
   final double pnlPct;
-  final bool positive;
   final double usdInrRate;
 
   @override
@@ -231,10 +226,13 @@ class _SummaryCard extends StatelessWidget {
             'Cash ${CurrencyFormatter.formatLedger(wallet, market: 'forex', usdInr: usdInrRate, compact: true)} · Invested ${CurrencyFormatter.formatLedger(invested, market: 'forex', usdInr: usdInrRate, compact: true)}',
             style: context.typeLabel(13, p.heroCardMuted),
           ),
-          const SizedBox(height: 4),
-          Text(
-            'P&L ${IndexFormatter.formatPercent(pnlPct)}',
-            style: context.typeLabel(13, positive ? p.positive : p.negative),
+          const SizedBox(height: 8),
+          DualPnlLabel(
+            pnlInr: pnl,
+            percent: pnlPct,
+            usdInr: usdInrRate,
+            showUsd: true,
+            alignEnd: false,
           ),
         ],
       ),

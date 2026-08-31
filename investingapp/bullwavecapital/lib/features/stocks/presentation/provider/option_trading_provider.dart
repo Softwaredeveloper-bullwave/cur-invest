@@ -15,14 +15,25 @@ class OptionTradingProvider extends ChangeNotifier {
   bool get loadingHoldings => _loadingHoldings;
   String? get tradeError => _tradeError;
 
+  List<OptionHoldingModel> holdingsFor(String assetClass) =>
+      _holdings.where((h) => h.assetClass == assetClass).toList();
+
   Future<void> loadHoldings({String? assetClass}) async {
     _loadingHoldings = true;
     notifyListeners();
     try {
-      _holdings = await _api.getOptionHoldings(assetClass: assetClass);
+      final list = await _api.getOptionHoldings(assetClass: assetClass);
+      if (assetClass == null || assetClass.isEmpty) {
+        _holdings = list;
+      } else {
+        _holdings = [
+          ..._holdings.where((h) => h.assetClass != assetClass),
+          ...list,
+        ];
+      }
       _tradeError = null;
     } catch (_) {
-      _holdings = [];
+      // Keep last known book so home trades do not vanish on a blip.
     }
     _loadingHoldings = false;
     notifyListeners();

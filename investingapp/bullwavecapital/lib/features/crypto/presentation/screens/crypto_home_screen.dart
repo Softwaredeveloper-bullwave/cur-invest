@@ -6,6 +6,7 @@ import '../../../../core/constants/routes.dart';
 import '../../../../core/theme/colors.dart';
 import '../../../../core/theme/theme_a.dart';
 import '../../../../core/utils/formatters.dart';
+import '../../../../core/widgets/dual_pnl_label.dart';
 import '../../../../core/widgets/icon_badge.dart';
 import '../../../../core/widgets/loading_card.dart';
 import '../../../../core/widgets/page_hero_background.dart';
@@ -17,6 +18,8 @@ import '../provider/crypto_market_provider.dart';
 import '../widgets/alt_market_shortcuts.dart';
 import '../widgets/crypto_coin_tile.dart';
 import '../widgets/market_switcher.dart';
+import '../../../home/presentation/widgets/home_open_trades.dart';
+import '../../../stocks/presentation/provider/option_trading_provider.dart';
 import '../../../stocks/presentation/widgets/markets_learning_hub.dart';
 import '../../../stocks/presentation/widgets/markets_news_section.dart';
 
@@ -63,7 +66,11 @@ class _CryptoHomeScreenState extends State<CryptoHomeScreen> {
         return SafeArea(
           child: RefreshIndicator(
             color: AppColors.brandCyan,
-            onRefresh: provider.refreshAll,
+            onRefresh: () async {
+              final options = context.read<OptionTradingProvider>();
+              await provider.refreshAll();
+              await options.loadHoldings(assetClass: 'crypto');
+            },
             child: CustomScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
@@ -112,6 +119,11 @@ class _CryptoHomeScreenState extends State<CryptoHomeScreen> {
                         ),
                       ],
                     ),
+                  ),
+                ),
+                const SliverToBoxAdapter(
+                  child: HomeOpenTradesSection(
+                    market: HomeOpenTradesMarket.crypto,
                   ),
                 ),
                 if (overview != null && overview.trending.isNotEmpty)
@@ -242,7 +254,6 @@ class _PortfolioCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    final positive = pnl >= 0;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
@@ -267,9 +278,12 @@ class _PortfolioCard extends StatelessWidget {
             style: context.typeLabel(11, p.heroCardMuted),
           ),
           const SizedBox(height: 8),
-          Text(
-            '${IndexFormatter.formatPercent(pnlPct)} · ${CurrencyFormatter.formatLedger(pnl.abs(), market: 'crypto', usdInr: usdInrRate, decimals: true)} ${positive ? 'gain' : 'loss'}',
-            style: context.typeLabel(13, positive ? p.positive : p.negative),
+          DualPnlLabel(
+            pnlInr: pnl,
+            percent: pnlPct,
+            usdInr: usdInrRate,
+            showUsd: true,
+            alignEnd: false,
           ),
         ],
       ),

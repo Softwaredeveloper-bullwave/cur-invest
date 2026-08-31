@@ -147,6 +147,32 @@ class ForexMarketProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<Map<String, dynamic>?> placePaperOrder({
+    required String pairId,
+    required String side,
+    required double quantity,
+  }) async {
+    try {
+      final result = await _api.placeForexPaperOrder(
+        pairId: pairId,
+        side: side,
+        quantity: quantity,
+      );
+      await loadPortfolio();
+      _error = null;
+      notifyListeners();
+      return result;
+    } on ApiException catch (e) {
+      _error = _msg(e);
+      notifyListeners();
+      return null;
+    } catch (_) {
+      _error = 'Market data is temporarily unavailable. Please try again.';
+      notifyListeners();
+      return null;
+    }
+  }
+
   Future<void> toggleWatchlist(String pairId) async {
     final existing = watchlistItemFor(pairId);
     try {

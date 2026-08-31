@@ -43,9 +43,12 @@ import '../widgets/home_pending_actions.dart';
 import '../widgets/home_quick_actions.dart';
 import '../widgets/home_recent_activity.dart';
 import '../widgets/home_search_bar.dart';
+import '../widgets/home_open_trades.dart';
 import '../widgets/home_trending_strip.dart';
 import '../widgets/market_overview.dart';
 import '../widgets/news_banner.dart';
+import '../../../stocks/presentation/provider/option_trading_provider.dart';
+import '../../../stocks/presentation/provider/stock_portfolio_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -75,6 +78,8 @@ class _HomeScreenState extends State<HomeScreen> {
       features.prefetchHomeIndexExpiries(),
       context.read<StockMarketProvider>().ensureLoaded(),
       context.read<CryptoMarketProvider>().ensurePreferenceLoaded(),
+      context.read<StockPortfolioProvider>().ensureLoaded(),
+      context.read<OptionTradingProvider>().loadHoldings(assetClass: 'equity_fno'),
       context.read<KycFlowProvider>().loadStatus(),
       if (!PaperOnlyMode.enabled)
         context.read<FnoFlowProvider>().ensureLoaded(),
@@ -261,6 +266,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         ],
                       ),
                     ),
+                  ),
+                  const HomeOpenTradesSection(
+                    market: HomeOpenTradesMarket.indian,
                   ),
                   if (provider.error != null)
                     Padding(

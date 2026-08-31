@@ -7,6 +7,7 @@ import '../../../../core/theme/colors.dart';
 import '../../../../core/theme/theme_a.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/widgets/custom_app_bar.dart';
+import '../../../../core/widgets/dual_pnl_label.dart';
 import '../../../../core/widgets/icon_badge.dart';
 import '../../../../core/widgets/loading_card.dart';
 import '../../../../core/widgets/page_hero_background.dart';
@@ -137,14 +138,12 @@ class _CryptoPortfolioScreenState extends State<CryptoPortfolioScreen> {
                                           ),
                                           style: context.typeCardTitle(14),
                                         ),
-                                        Text(
-                                          IndexFormatter.formatPercent(h.unrealizedPnlPercent),
-                                          style: context.typeLabel(
-                                            12,
-                                            h.isPositive
-                                                ? context.palette.positive
-                                                : context.palette.negative,
-                                          ),
+                                        DualPnlLabel(
+                                          pnlInr: h.unrealizedPnl,
+                                          percent: h.unrealizedPnlPercent,
+                                          usdInr: portfolio?.usdInrRate,
+                                          showUsd: true,
+                                          compact: true,
                                         ),
                                       ],
                                     ),
@@ -205,8 +204,16 @@ class _SummaryCard extends StatelessWidget {
             style: context.typeLabel(11, p.heroCardMuted),
           ),
           const SizedBox(height: 8),
+          DualPnlLabel(
+            pnlInr: portfolio.profitLoss,
+            percent: portfolio.profitLossPercent,
+            usdInr: portfolio.usdInrRate,
+            showUsd: true,
+            alignEnd: false,
+          ),
+          const SizedBox(height: 8),
           Text(
-            'Cash ${CurrencyFormatter.formatLedger(portfolio.walletBalance, market: 'crypto', usdInr: portfolio.usdInrRate, decimals: true)} · P&L ${IndexFormatter.formatPercent(portfolio.profitLossPercent)}',
+            'Cash ${CurrencyFormatter.formatLedger(portfolio.walletBalance, market: 'crypto', usdInr: portfolio.usdInrRate, decimals: true)}',
             style: context.typeLabel(13, p.heroCardMuted),
           ),
         ],

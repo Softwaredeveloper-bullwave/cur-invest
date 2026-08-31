@@ -78,6 +78,25 @@ class CurrencyFormatter {
     if (compact) return formatUsdCompact(usd);
     return formatUsd(usd);
   }
+
+  static String formatSignedInr(double amount, {bool decimals = true}) {
+    final sign = amount >= 0 ? '+' : '-';
+    final abs = amount.abs();
+    return '$sign${decimals ? formatDecimal(abs) : format(abs)}';
+  }
+
+  static String formatSignedUsd(double inrAmount, [double? usdInr]) {
+    final usd = toUsd(inrAmount, usdInr);
+    final sign = usd >= 0 ? '+' : '-';
+    return '$sign${formatUsd(usd.abs())}';
+  }
+
+  /// Crypto / forex P&L: USD on the first line, INR on the second.
+  static String formatDualPnlUsd(double inrAmount, [double? usdInr]) =>
+      formatSignedUsd(inrAmount, usdInr);
+
+  static String formatDualPnlInr(double inrAmount) =>
+      formatSignedInr(inrAmount);
 }
 
 class IndexFormatter {
