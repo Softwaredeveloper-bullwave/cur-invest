@@ -9,6 +9,7 @@ import '../../../../core/widgets/premium_ui_kit.dart';
 import '../../../../core/widgets/scroll_reveal.dart';
 import '../../../../models/investment_doc_model.dart';
 import '../provider/education_provider.dart';
+import '../data/education_ui.dart';
 
 class DocumentCategoryScreen extends StatefulWidget {
   final String categoryId;
@@ -90,7 +91,7 @@ class _DocumentCategoryScreenState extends State<DocumentCategoryScreen> {
       );
     }
 
-    final isQuizCategory = category.id == 'quizzes';
+    final isQuizCategory = isEducationQuizCategory(category.id);
     final items = isQuizCategory
         ? category.quizzes.length
         : category.articles.length;

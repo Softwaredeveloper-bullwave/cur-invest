@@ -9,6 +9,7 @@ import '../../../../core/widgets/premium_ui_kit.dart';
 import '../../../../core/widgets/scroll_reveal.dart';
 import '../../../../models/investment_doc_model.dart';
 import '../provider/education_provider.dart';
+import '../data/education_ui.dart';
 
 class InvestmentDocumentsScreen extends StatefulWidget {
   const InvestmentDocumentsScreen({super.key, this.market = 'indian'});
@@ -231,7 +232,7 @@ class _CategoryTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    final countLabel = category.id.endsWith('quizzes') || category.id == 'quizzes'
+    final countLabel = isEducationQuizCategory(category.id)
         ? '${category.quizzes.length} quiz${category.quizzes.length == 1 ? '' : 'zes'}'
         : '${category.articles.length} article${category.articles.length == 1 ? '' : 's'}';
 

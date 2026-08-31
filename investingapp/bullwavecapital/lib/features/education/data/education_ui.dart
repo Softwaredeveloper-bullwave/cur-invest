@@ -43,6 +43,11 @@ class EducationUi {
   }
 }
 
+bool isEducationQuizCategory(String id) {
+  final slug = id.trim().toLowerCase();
+  return slug == 'quizzes' || slug.endsWith('-quizzes') || slug.contains('quiz');
+}
+
 /// Starter note templates for beginners.
 class BeginnerNoteTemplates {
   BeginnerNoteTemplates._();

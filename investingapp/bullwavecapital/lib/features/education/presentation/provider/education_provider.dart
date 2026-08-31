@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../../../core/api/api_exception.dart';
 import '../../../../core/api/bullwave_api.dart';
 import '../../../../models/investment_doc_model.dart';
+import '../../data/education_fallback.dart';
+import '../../data/education_ui.dart';
 
 class EducationProvider extends ChangeNotifier {
   final _api = BullwaveApi.instance;
@@ -53,6 +55,7 @@ class EducationProvider extends ChangeNotifier {
       if (_categories.isEmpty) _hasLoaded = true;
     }
 
+    _ensureFallbackQuizzes();
     _isLoading = false;
     notifyListeners();
   }
@@ -96,11 +99,20 @@ class EducationProvider extends ChangeNotifier {
 
     try {
       final category = await _api.getEducationCategory(slug);
-      _mergeCategory(category);
+      var resolved = category;
+      if (isEducationQuizCategory(slug) && category.quizzes.isEmpty) {
+        resolved = _fallbackQuizCategory(slug) ?? category;
+      }
+      _mergeCategory(resolved);
       notifyListeners();
-      return category;
+      return resolved;
     } catch (_) {
-      return cached;
+      final fallback = cached ?? _fallbackQuizCategory(slug);
+      if (fallback != null) {
+        _mergeCategory(fallback);
+        notifyListeners();
+      }
+      return fallback;
     }
   }
 
@@ -137,7 +149,7 @@ class EducationProvider extends ChangeNotifier {
       notifyListeners();
       return quiz;
     } catch (_) {
-      return cached;
+      return _fallbackQuiz(quizSlug) ?? cached;
     }
   }
 
@@ -206,5 +218,41 @@ class EducationProvider extends ChangeNotifier {
         return;
       }
     }
+  }
+
+  void _ensureFallbackQuizzes() {
+    for (final fallback in EducationFallback.quizCategories) {
+      final idx = _categories.indexWhere((c) => c.id == fallback.id);
+      if (idx < 0) {
+        _categories = [..._categories, fallback];
+      } else if (_categories[idx].quizzes.isEmpty) {
+        final existing = _categories[idx];
+        _categories[idx] = InvestmentDocCategory(
+          id: existing.id,
+          title: existing.title,
+          subtitle: existing.subtitle,
+          iconName: existing.iconName,
+          accentHex: existing.accentHex,
+          articles: existing.articles,
+          quizzes: fallback.quizzes,
+        );
+      }
+    }
+  }
+
+  InvestmentDocCategory? _fallbackQuizCategory(String slug) {
+    for (final category in EducationFallback.quizCategories) {
+      if (category.id == slug) return category;
+    }
+    return null;
+  }
+
+  InvestmentDocQuiz? _fallbackQuiz(String quizId) {
+    for (final category in EducationFallback.quizCategories) {
+      for (final quiz in category.quizzes) {
+        if (quiz.id == quizId) return quiz;
+      }
+    }
+    return null;
   }
 }
