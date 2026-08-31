@@ -687,16 +687,8 @@ InvestmentDocArticle parseEducationArticle(Map<String, dynamic> json) =>
 QuizAttemptResult parseQuizAttemptResult(Map<String, dynamic> json) =>
     QuizAttemptResult.fromJson(json);
 
-TraderNoteModel parseTraderNote(Map<String, dynamic> json) => TraderNoteModel(
-  id: json['id']?.toString() ?? '',
-  title: json['title'] as String? ?? '',
-  body: json['body'] as String? ?? '',
-  symbol: (json['symbol'] as String? ?? '').toUpperCase(),
-  category: json['category'] as String? ?? 'general',
-  isPinned: json['isPinned'] as bool? ?? false,
-  createdAt: _date(json['createdAt']),
-  updatedAt: _date(json['updatedAt']),
-);
+TraderNoteModel parseTraderNote(Map<String, dynamic> json) =>
+    TraderNoteModel.fromJson(json);
 
 CopyTraderTradeModel parseCopyTraderTrade(Map<String, dynamic> json) =>
     CopyTraderTradeModel(

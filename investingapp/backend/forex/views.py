@@ -319,6 +319,8 @@ class ForexLiveTradingStatusView(APIView):
 class ForexOptionChainView(APIView):
     """Paper CE/PE book for major FX pairs — virtual funds only."""
 
+    permission_classes = [AllowAny]
+
     def get(self, request, pair_id=None):
         from .option_chain import catalog_rows, get_forex_option_chain
 

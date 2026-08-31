@@ -6,6 +6,7 @@ from decimal import Decimal, InvalidOperation
 
 from django.shortcuts import get_object_or_404
 from rest_framework import status
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -399,6 +400,8 @@ class CryptoLiveTradingStatusView(APIView):
 
 class CryptoOptionChainView(APIView):
     """Paper CE/PE book for major coins — virtual funds only."""
+
+    permission_classes = [AllowAny]
 
     def get(self, request, asset_id=None):
         from .option_chain import catalog_rows, get_crypto_option_chain

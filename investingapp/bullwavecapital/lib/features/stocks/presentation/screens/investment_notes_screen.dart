@@ -47,14 +47,11 @@ class _InvestmentNotesScreenState extends State<InvestmentNotesScreen> {
   }
 
   Future<void> _openEditor({TraderNoteModel? note}) async {
-    final saved = await NoteEditorSheet.show(
+    await NoteEditorSheet.show(
       context,
       note: note,
       defaultCategory: _activeFilter ?? note?.category ?? 'general',
     );
-    if (saved == true && mounted) {
-      await context.read<NotesProvider>().refresh();
-    }
   }
 
   @override
@@ -108,6 +105,15 @@ class _InvestmentNotesScreenState extends State<InvestmentNotesScreen> {
                   PremiumAlertBanner(
                     message: notes.error!,
                     type: PremiumAlertType.warning,
+                    actionLabel: 'Retry',
+                    onAction: notes.refresh,
+                  ),
+                ] else if (notes.isOffline) ...[
+                  const SizedBox(height: 12),
+                  PremiumAlertBanner(
+                    message:
+                        'Showing notes saved on this device. Sync when the server is back.',
+                    type: PremiumAlertType.info,
                     actionLabel: 'Retry',
                     onAction: notes.refresh,
                   ),

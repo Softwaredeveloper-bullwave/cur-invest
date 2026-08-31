@@ -88,10 +88,15 @@ class _NoteEditorSheetState extends State<NoteEditorSheet> {
     setState(() => _isSaving = false);
 
     if (saved != null) {
+      final offline = context.read<NotesProvider>().isOffline;
       Navigator.pop(context, true);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(_isEditing ? 'Note updated' : 'Note saved'),
+          content: Text(
+            offline
+                ? 'Note saved on this device'
+                : (_isEditing ? 'Note updated' : 'Note saved'),
+          ),
           behavior: SnackBarBehavior.floating,
         ),
       );

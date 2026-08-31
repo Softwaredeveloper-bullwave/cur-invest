@@ -924,7 +924,14 @@ class BullwaveApi {
     }
     if (pinnedOnly) query['pinned'] = 'true';
     final path = query.isEmpty ? '/notes/' : '/notes/?${_encodeQuery(query)}';
-    return parseList(await _client.get(path), parseTraderNote);
+    final raw = await _client.get(path);
+    if (raw is Map<String, dynamic>) {
+      return parseList(
+        raw['results'] ?? raw['notes'] ?? raw['data'],
+        parseTraderNote,
+      );
+    }
+    return parseList(raw, parseTraderNote);
   }
 
   Future<TraderNoteModel> createTraderNote({
