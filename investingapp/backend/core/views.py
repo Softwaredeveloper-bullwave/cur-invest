@@ -74,4 +74,4 @@ class ClientErrorReportView(APIView):
         if row is None:
             return Response({'detail': 'Report could not be stored.'}, status=503)
         return Response({'accepted': True, 'id': str(row.id)}, status=202)
-# CI/CD pipeline test 4 - HOME env fix - safe to remove
+# CI/CD pipeline test 5 - dash source fix - safe to remove
