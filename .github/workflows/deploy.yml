@@ -32,6 +32,7 @@ jobs:
             --comment "Deploy backend from GitHub Actions" \
             --parameters 'commands=[
               "set -e",
+              "export HOME=/root",
               "cd /home/ubuntu/cur-invest/investingapp/backend",
               "git config --global --add safe.directory /home/ubuntu/cur-invest",
               "git pull origin main",
