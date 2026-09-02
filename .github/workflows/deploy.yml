@@ -33,6 +33,7 @@ jobs:
             --parameters 'commands=[
               "set -e",
               "cd /home/ubuntu/cur-invest/investingapp/backend",
+              "git config --global --add safe.directory /home/ubuntu/cur-invest",
               "git pull origin main",
               "source venv/bin/activate",
               "pip install -r requirements.txt",
