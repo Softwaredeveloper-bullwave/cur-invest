@@ -17,15 +17,21 @@ class HealthView(APIView):
         db = database_status()
         integrations['database'] = db
         all_critical = integrations['market_data']['configured'] and db['reachable']
-        return Response(
-            {
-                'status': 'ok' if all_critical else 'degraded',
-                'service': 'Capital BullWave API',
-                'version': 'v1',
-                'integrations': integrations,
-            }
-        )
+        status = 'ok' if all_critical else 'degraded'
 
+        remote_addr = request.META.get('REMOTE_ADDR')
+        forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        is_internal = remote_addr in ('127.0.0.1', '::1') and not forwarded_for
+
+        payload = {
+            'status': status,
+            'service': 'Capital BullWave API',
+            'version': 'v1',
+        }
+        if is_internal:
+            payload['integrations'] = integrations
+
+        return Response(payload)
 
 class ClientErrorReportView(APIView):
     """Rate-limited ingestion for already-sanitized mobile error reports."""
