@@ -53,8 +53,12 @@ ALLOWED_IMAGE_HOST_SUFFIXES = (
     'medium.com',
     'ytimg.com',
     'fxstreet.com',
+    'fxsstatic.com',
     'forexlive.com',
+    'investinglive.com',
+    'investing.com',
     'dailyfx.com',
+    'marketaux.com',
 )
 
 

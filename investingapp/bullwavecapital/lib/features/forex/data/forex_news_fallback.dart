@@ -52,6 +52,11 @@ class ForexNewsFallback {
           if (image.isEmpty) {
             image = (raw['thumbnail'] ?? '').toString();
           }
+          if (image.isEmpty) {
+            image = _firstImage(
+              '${raw['content'] ?? ''} ${raw['description'] ?? ''}',
+            );
+          }
           byId[id] = ForexNewsModel(
             id: id,
             title: title,
@@ -69,6 +74,17 @@ class ForexNewsFallback {
     final articles = byId.values.toList()
       ..sort((a, b) => b.publishedAt.compareTo(a.publishedAt));
     return articles.take(40).toList();
+  }
+
+  static String _firstImage(String html) {
+    final match = RegExp(
+      r'''<img[^>]+src=["']([^"']+)["']''',
+      caseSensitive: false,
+    ).firstMatch(html);
+    final url = (match?.group(1) ?? '').trim();
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    if (url.startsWith('//')) return 'https:$url';
+    return '';
   }
 
   static String _clean(String value) {
