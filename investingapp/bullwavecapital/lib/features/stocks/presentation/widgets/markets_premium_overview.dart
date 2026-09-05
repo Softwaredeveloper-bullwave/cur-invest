@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../models/market_index_model.dart';
 import '../../../../core/theme/theme_a.dart';
+import '../../../../core/widgets/live_tick_price.dart';
 import '../../../../core/widgets/premium_ui_kit.dart';
 import 'markets_shared.dart';
 
@@ -203,9 +204,11 @@ class _OverviewTile extends StatelessWidget {
             maxLines: 1,
           ),
           const Spacer(),
-          Text(
-            valueText,
+          LiveTickPrice(
+            value: item.value,
+            text: valueText,
             style: ThemeAType.cardTitle(color: p.textDark, size: 15),
+            textAlign: TextAlign.start,
           ),
           const SizedBox(height: 4),
           Row(

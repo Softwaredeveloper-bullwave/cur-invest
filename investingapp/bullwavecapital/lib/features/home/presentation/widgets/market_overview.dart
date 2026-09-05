@@ -4,6 +4,7 @@ import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import '../../../../core/constants/fno_index_catalog.dart';
 import '../../../../core/widgets/expiry_highlight.dart';
 import '../../../../core/utils/formatters.dart';
+import '../../../../core/widgets/live_tick_price.dart';
 import '../../../../models/market_index_model.dart';
 import 'home_theme_a.dart';
 
@@ -54,20 +55,7 @@ class MarketOverview extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Container(
-                  width: 6,
-                  height: 6,
-                  decoration: BoxDecoration(
-                    color: p.positive,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: p.positive.withValues(alpha: 0.5),
-                        blurRadius: 6,
-                      ),
-                    ],
-                  ),
-                ),
+                const LivePulseDot(size: 6),
                 const SizedBox(width: 6),
                 Text(
                   'Indices updating live',
@@ -94,7 +82,8 @@ class MarketOverview extends StatelessWidget {
                     height: 112,
                     child: _MarketLiveCard(
                       label: item.shortName,
-                      value: IndexFormatter.format(item.value),
+                      value: item.value,
+                      valueText: IndexFormatter.format(item.value),
                       change: IndexFormatter.formatPercent(item.changePercent),
                       isPositive: item.isPositive,
                       expiryIso: expiryIso,
@@ -111,7 +100,8 @@ class MarketOverview extends StatelessWidget {
 
 class _MarketLiveCard extends StatelessWidget {
   final String label;
-  final String value;
+  final double value;
+  final String valueText;
   final String change;
   final bool isPositive;
   final String? expiryIso;
@@ -119,6 +109,7 @@ class _MarketLiveCard extends StatelessWidget {
   const _MarketLiveCard({
     required this.label,
     required this.value,
+    required this.valueText,
     required this.change,
     required this.isPositive,
     this.expiryIso,
@@ -192,10 +183,11 @@ class _MarketLiveCard extends StatelessWidget {
                   FittedBox(
                     fit: BoxFit.scaleDown,
                     alignment: Alignment.centerLeft,
-                    child: Text(
-                      value,
+                    child: LiveTickPrice(
+                      value: value,
+                      text: valueText,
                       style: context.typePrice(17),
-                      maxLines: 1,
+                      textAlign: TextAlign.start,
                     ),
                   ),
                   const SizedBox(height: 2),

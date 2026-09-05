@@ -35,11 +35,21 @@ class HomeOpenTradesSection extends StatefulWidget {
 
 class _HomeOpenTradesSectionState extends State<HomeOpenTradesSection> {
   String? _exitingId;
+  Timer? _liveTimer;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _refresh());
+    _liveTimer = Timer.periodic(const Duration(seconds: 15), (_) {
+      unawaited(_refresh());
+    });
+  }
+
+  @override
+  void dispose() {
+    _liveTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _refresh() async {
@@ -47,7 +57,11 @@ class _HomeOpenTradesSectionState extends State<HomeOpenTradesSection> {
     final options = context.read<OptionTradingProvider>();
     switch (widget.market) {
       case HomeOpenTradesMarket.indian:
-        unawaited(context.read<StockPortfolioProvider>().ensureLoaded());
+        unawaited(
+          context.read<StockPortfolioProvider>().ensureLoaded(
+            refreshQuotes: true,
+          ),
+        );
         unawaited(options.loadHoldings(assetClass: 'equity_fno'));
       case HomeOpenTradesMarket.crypto:
         unawaited(context.read<CryptoMarketProvider>().refreshPortfolio());

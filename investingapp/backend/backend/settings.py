@@ -135,8 +135,8 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'core.middleware.RequestLogMiddleware',
     'corsheaders.middleware.CorsMiddleware',
+    'core.middleware.RequestLogMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -238,12 +238,30 @@ SIMPLE_JWT = {
     'ROTATE_REFRESH_TOKENS': True,
 }
 
-CORS_ALLOW_ALL_ORIGINS = DEBUG
+# Flutter Chrome/web uses a random localhost port; production DEBUG=False
+# previously omitted those origins, so the browser blocked login as ClientException.
+CORS_ALLOW_ALL_ORIGINS = config('CORS_ALLOW_ALL_ORIGINS', default=DEBUG, cast=bool)
 CORS_ALLOWED_ORIGINS = config(
     'CORS_ALLOWED_ORIGINS',
-    default='http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173',
+    default=(
+        'http://localhost:3000,http://127.0.0.1:3000,'
+        'http://localhost:5173,http://127.0.0.1:5173,'
+        'http://localhost:8080,http://127.0.0.1:8080,'
+        'https://app.capitalbullwave.com,https://www.capitalbullwave.com,'
+        'https://capitalbullwave.com'
+    ),
     cast=lambda v: [origin.strip() for origin in v.split(',') if origin.strip()],
 )
+CORS_ALLOWED_ORIGIN_REGEXES = config(
+    'CORS_ALLOWED_ORIGIN_REGEXES',
+    default=(
+        r'^https?://localhost:\d+$,'
+        r'^https?://127\.0\.0\.1:\d+$,'
+        r'^https?://\[::1\]:\d+$'
+    ),
+    cast=lambda v: [origin.strip() for origin in v.split(',') if origin.strip()],
+)
+CORS_ALLOW_CREDENTIALS = False
 
 CACHES = {
     'default': {

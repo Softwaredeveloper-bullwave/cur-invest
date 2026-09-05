@@ -12,8 +12,8 @@ import '../provider/stock_portfolio_provider.dart';
 import '../utils/stock_trading_flow.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/widgets/custom_app_bar.dart';
+import '../../../../core/widgets/live_tick_price.dart';
 import '../../../../core/widgets/loading_card.dart';
-import '../../../../core/widgets/money_text.dart';
 import '../../../../core/widgets/scroll_reveal.dart';
 import '../../../../models/stock_model.dart';
 import '../widgets/stock_detail_chart.dart';
@@ -317,9 +317,16 @@ class _PriceHero extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Expanded(
-                child: MoneyText(
-                  amount: IndexFormatter.format(stock.ltp),
-                  fontSize: 36,
+                child: LiveTickPrice(
+                  value: stock.ltp,
+                  text: IndexFormatter.format(stock.ltp),
+                  style: TextStyle(
+                    fontSize: 36,
+                    fontWeight: FontWeight.w800,
+                    color: colors.textPrimary,
+                  ),
+                  textAlign: TextAlign.start,
+                  maxLines: 1,
                 ),
               ),
               const LivePriceBadge(),

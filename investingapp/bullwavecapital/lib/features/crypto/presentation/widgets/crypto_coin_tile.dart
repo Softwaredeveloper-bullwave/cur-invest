@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import '../../../../core/constants/routes.dart';
 import '../../../../core/theme/theme_a.dart';
 import '../../../../core/utils/formatters.dart';
+import '../../../../core/widgets/live_tick_price.dart';
 import '../../../../models/crypto_models.dart';
-import 'crypto_mini_chart.dart';
+import '../provider/crypto_market_provider.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
 class CryptoCoinTile extends StatelessWidget {
   const CryptoCoinTile({
@@ -25,6 +27,8 @@ class CryptoCoinTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.palette;
     final changeColor = asset.isPositive ? p.positive : p.negative;
+    final tape = context.watch<CryptoMarketProvider>().tickTape.of(asset.id);
+    final spark = tape.length >= 2 ? tape : asset.sparkline;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
@@ -55,9 +59,9 @@ class CryptoCoinTile extends StatelessWidget {
                     ],
                   ),
                 ),
-                if (showSparkline && asset.sparkline.isNotEmpty) ...[
-                  CryptoMiniChart(
-                    values: asset.sparkline,
+                if (showSparkline && spark.length >= 2) ...[
+                  LiveSparkline(
+                    values: spark,
                     positive: asset.isPositive,
                     width: 56,
                     height: 28,
@@ -67,8 +71,9 @@ class CryptoCoinTile extends StatelessWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text(
-                      _formatUsd(asset.currentPrice),
+                    LiveTickPrice(
+                      value: asset.currentPrice,
+                      text: _formatUsd(asset.currentPrice),
                       style: context.typeCardTitle(14),
                     ),
                     const SizedBox(height: 4),

@@ -4,13 +4,23 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/api/api_exception.dart';
 import '../../../../core/api/bullwave_api.dart';
+import '../../../../core/widgets/live_tick_price.dart';
 import '../../../../models/forex_models.dart';
 import '../../data/forex_live_fallback.dart';
 
 class ForexMarketProvider extends ChangeNotifier {
-  ForexMarketProvider();
+  ForexMarketProvider() {
+    _refreshTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+      if (_initialized && !_liveBusy) {
+        unawaited(refreshLiveQuotes());
+      }
+    });
+  }
 
   final _api = BullwaveApi.instance;
+  Timer? _refreshTimer;
+  final TickTape tickTape = TickTape();
+  bool _liveBusy = false;
 
   ForexOverviewModel? _overview;
   List<ForexPairModel> _pairs = [];
@@ -65,6 +75,9 @@ class ForexMarketProvider extends ChangeNotifier {
       }, onError: (e) => overviewErr = e),
       _try(() async {
         _pairs = await _api.getForexPairs();
+        for (final p in _pairs) {
+          tickTape.record(p.id, p.currentPrice);
+        }
       }, onError: (e) => pairsErr = e),
       _try(() async {
         _watchlist = await _api.getForexWatchlist();
@@ -92,6 +105,39 @@ class ForexMarketProvider extends ChangeNotifier {
     }
     _isLoading = false;
     notifyListeners();
+  }
+
+  Future<void> refreshLiveQuotes() async {
+    if (_liveBusy) return;
+    _liveBusy = true;
+    try {
+      await Future.wait([
+        _try(() async {
+          _overview = await _api.getForexOverview();
+          for (final p in _overview?.trending ?? const []) {
+            tickTape.record(p.id, p.currentPrice);
+          }
+        }),
+        _try(() async {
+          _pairs = await _api.getForexPairs();
+          for (final p in _pairs) {
+            tickTape.record(p.id, p.currentPrice);
+          }
+        }),
+        _try(() async {
+          _portfolio = await _api.getForexPortfolio();
+        }),
+      ]);
+    } finally {
+      _liveBusy = false;
+      notifyListeners();
+    }
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> search(String query) async {

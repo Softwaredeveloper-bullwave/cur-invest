@@ -6,6 +6,17 @@ from rest_framework.test import APIRequestFactory
 
 from .views import SendOTPView
 
+_FLUTTER_WEB_CORS = dict(
+    DEBUG=False,
+    CORS_ALLOW_ALL_ORIGINS=False,
+    CORS_ALLOWED_ORIGINS=['https://app.capitalbullwave.com'],
+    CORS_ALLOWED_ORIGIN_REGEXES=[
+        r'^https?://localhost:\d+$',
+        r'^https?://127\.0\.0\.1:\d+$',
+        r'^https?://\[::1\]:\d+$',
+    ],
+)
+
 
 class DisabledSmsOtpTests(SimpleTestCase):
     @override_settings(SMS_OTP_ENABLED=False, DEBUG=True)
@@ -45,4 +56,26 @@ class DisabledSmsOtpTests(SimpleTestCase):
         self.assertEqual(response.status_code, 503)
         self.assertEqual(response.data['code'], 'database_unavailable')
         self.assertIn('try again', response.data['detail'].lower())
+
+
+@override_settings(**_FLUTTER_WEB_CORS)
+class FlutterWebCorsTests(SimpleTestCase):
+    def test_localhost_preflight_allows_flutter_chrome_origin(self):
+        response = self.client.options(
+            '/api/v1/auth/send-otp/',
+            HTTP_ORIGIN='http://localhost:55221',
+            HTTP_ACCESS_CONTROL_REQUEST_METHOD='POST',
+            HTTP_ACCESS_CONTROL_REQUEST_HEADERS='content-type',
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Access-Control-Allow-Origin'], 'http://localhost:55221')
+
+    def test_unknown_origin_is_not_reflected(self):
+        response = self.client.options(
+            '/api/v1/auth/send-otp/',
+            HTTP_ORIGIN='https://evil.example',
+            HTTP_ACCESS_CONTROL_REQUEST_METHOD='POST',
+            HTTP_ACCESS_CONTROL_REQUEST_HEADERS='content-type',
+        )
+        self.assertNotEqual(response.get('Access-Control-Allow-Origin'), 'https://evil.example')
 

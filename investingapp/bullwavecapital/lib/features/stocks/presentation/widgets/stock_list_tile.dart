@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../../../core/constants/routes.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/theme/theme_a.dart';
+import '../../../../core/widgets/live_tick_price.dart';
 import '../../../../models/stock_model.dart';
 import '../provider/stock_market_provider.dart';
 
@@ -86,6 +87,21 @@ class StockListTile extends StatelessWidget {
                     ],
                   ),
                 ),
+                Builder(
+                  builder: (context) {
+                    final tape = market.tickTape.of(stock.symbol);
+                    if (tape.length < 2) return const SizedBox.shrink();
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 10),
+                      child: LiveSparkline(
+                        values: tape,
+                        positive: stock.isPositive,
+                        width: 48,
+                        height: 26,
+                      ),
+                    );
+                  },
+                ),
                 Flexible(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
@@ -93,8 +109,9 @@ class StockListTile extends StatelessWidget {
                       FittedBox(
                         fit: BoxFit.scaleDown,
                         alignment: Alignment.centerRight,
-                        child: Text(
-                          IndexFormatter.format(stock.ltp),
+                        child: LiveTickPrice(
+                          value: stock.ltp,
+                          text: IndexFormatter.format(stock.ltp),
                           style: context.typePrice(15),
                         ),
                       ),
@@ -161,22 +178,7 @@ class LivePriceBadge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 6,
-            height: 6,
-            decoration: BoxDecoration(
-              color: liveColor,
-              shape: BoxShape.circle,
-              boxShadow: p.isDark
-                  ? [
-                      BoxShadow(
-                        color: liveColor.withValues(alpha: 0.65),
-                        blurRadius: 6,
-                      ),
-                    ]
-                  : null,
-            ),
-          ),
+          const LivePulseDot(size: 6),
           const SizedBox(width: 6),
           Text('Live', style: ThemeAType.label(size: 11, color: liveColor)),
         ],

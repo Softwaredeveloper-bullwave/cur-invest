@@ -4,7 +4,10 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/routes.dart';
 import '../../../../core/theme/theme_a.dart';
 import '../../../../core/utils/formatters.dart';
+import '../../../../core/widgets/live_tick_price.dart';
 import '../../../../models/forex_models.dart';
+import '../provider/forex_market_provider.dart';
+import 'package:provider/provider.dart';
 
 class ForexPairTile extends StatelessWidget {
   const ForexPairTile({super.key, required this.pair, this.onTap});
@@ -16,6 +19,7 @@ class ForexPairTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.palette;
     final changeColor = pair.isPositive ? p.positive : p.negative;
+    final tape = context.watch<ForexMarketProvider>().tickTape.of(pair.id);
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
       child: Material(
@@ -60,10 +64,23 @@ class ForexPairTile extends StatelessWidget {
                     ],
                   ),
                 ),
+                if (tape.length >= 2) ...[
+                  LiveSparkline(
+                    values: tape,
+                    positive: pair.isPositive,
+                    width: 56,
+                    height: 28,
+                  ),
+                  const SizedBox(width: 12),
+                ],
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text(_formatPx(pair.currentPrice), style: context.typeCardTitle(14)),
+                    LiveTickPrice(
+                      value: pair.currentPrice,
+                      text: _formatPx(pair.currentPrice),
+                      style: context.typeCardTitle(14),
+                    ),
                     const SizedBox(height: 4),
                     Text(
                       IndexFormatter.formatPercent(pair.change24hPct),

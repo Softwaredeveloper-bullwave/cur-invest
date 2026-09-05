@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/routes.dart';
 import '../../../../core/constants/shell_layout.dart';
 import '../../../../core/utils/formatters.dart';
+import '../../../../core/widgets/live_tick_price.dart';
 import '../../../../core/widgets/scale_tap.dart';
 import '../../../../models/stock_model.dart';
 import 'home_theme_a.dart';
@@ -157,11 +158,10 @@ class _TrendingStockChip extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  IndexFormatter.formatPercent(stock.changePercent),
+                LiveTickPrice(
+                  value: stock.changePercent,
+                  text: IndexFormatter.formatPercent(stock.changePercent),
                   style: context.typeLabel(11, changeColor),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
@@ -244,8 +244,9 @@ class _TrendingStockRow extends StatelessWidget {
                     FittedBox(
                       fit: BoxFit.scaleDown,
                       alignment: Alignment.centerRight,
-                      child: Text(
-                        IndexFormatter.format(stock.ltp),
+                      child: LiveTickPrice(
+                        value: stock.ltp,
+                        text: IndexFormatter.format(stock.ltp),
                         style: context.typePrice(15),
                       ),
                     ),

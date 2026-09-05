@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/api/api_exception.dart';
 import '../../../../core/api/bullwave_api.dart';
 import '../../../../core/api/token_storage.dart';
+import '../../../../core/widgets/live_tick_price.dart';
 import '../../../../models/crypto_models.dart';
 
 /// Local cache for active market selection (offline UX).
@@ -42,9 +43,18 @@ class CryptoMarketPreferenceCache {
 }
 
 class CryptoMarketProvider extends ChangeNotifier {
-  CryptoMarketProvider();
+  CryptoMarketProvider() {
+    _refreshTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+      if (_initialized && isCryptoActive && !_liveBusy) {
+        unawaited(refreshLiveQuotes());
+      }
+    });
+  }
 
   final _api = BullwaveApi.instance;
+  Timer? _refreshTimer;
+  final TickTape tickTape = TickTape();
+  bool _liveBusy = false;
 
   UserMarketPreferenceModel? _preference;
   CryptoOverviewModel? _overview;
@@ -89,6 +99,32 @@ class CryptoMarketProvider extends ChangeNotifier {
 
   bool isInWatchlist(String assetId) =>
       _watchlist.any((w) => w.assetId == assetId);
+
+  CryptoAssetModel? findAsset(String raw) {
+    final needle = raw.trim().toLowerCase();
+    if (needle.isEmpty) return null;
+    bool match(CryptoAssetModel a) =>
+        a.id.toLowerCase() == needle || a.symbol.toLowerCase() == needle;
+
+    for (final a in _assets) {
+      if (match(a)) return a;
+    }
+    for (final a in _overview?.trending ?? const <CryptoAssetModel>[]) {
+      if (match(a)) return a;
+    }
+    for (final a in _searchResults) {
+      if (match(a)) return a;
+    }
+    for (final a in _screener?.results ?? const <CryptoAssetModel>[]) {
+      if (match(a)) return a;
+    }
+    for (final list in _moversCache.values) {
+      for (final a in list) {
+        if (match(a)) return a;
+      }
+    }
+    return null;
+  }
 
   CryptoWatchlistItemModel? watchlistItemFor(String assetId) {
     try {
@@ -304,10 +340,20 @@ class CryptoMarketProvider extends ChangeNotifier {
 
   Future<void> _loadOverview() async {
     _overview = await _api.getCryptoOverview();
+    _recordOverviewTicks();
   }
 
   Future<void> _loadAssets() async {
     _assets = await _api.getCryptoAssets(top: true, pageSize: 25);
+    for (final a in _assets) {
+      tickTape.record(a.id, a.currentPrice);
+    }
+  }
+
+  void _recordOverviewTicks() {
+    for (final a in _overview?.trending ?? const []) {
+      tickTape.record(a.id, a.currentPrice);
+    }
   }
 
   Future<void> _loadWatchlist() async {
@@ -322,6 +368,27 @@ class CryptoMarketProvider extends ChangeNotifier {
     final response = await _api.getCryptoNews();
     _news = response.results;
     _newsCategories = response.categories;
+  }
+
+  Future<void> refreshLiveQuotes() async {
+    if (_liveBusy) return;
+    _liveBusy = true;
+    try {
+      await Future.wait([
+        _tryLoad(_loadOverview),
+        _tryLoad(_loadAssets),
+        _tryLoad(_loadPortfolio),
+      ]);
+    } finally {
+      _liveBusy = false;
+      notifyListeners();
+    }
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> refreshPortfolio() async {

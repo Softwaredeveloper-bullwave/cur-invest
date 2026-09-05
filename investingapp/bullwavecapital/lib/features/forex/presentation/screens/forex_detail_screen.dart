@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -11,6 +13,7 @@ import '../../../../core/utils/formatters.dart';
 import '../../../../core/widgets/custom_app_bar.dart';
 import '../../../../core/widgets/custom_dialog.dart';
 import '../../../../core/widgets/loading_card.dart';
+import '../../../../core/widgets/live_tick_price.dart';
 import '../../../../models/forex_models.dart';
 import '../../../../models/stock_model.dart';
 import '../provider/forex_market_provider.dart';
@@ -31,11 +34,21 @@ class _ForexDetailScreenState extends State<ForexDetailScreen> {
   bool _loading = true;
   bool _loadingChart = true;
   String? _error;
+  Timer? _quoteTimer;
 
   @override
   void initState() {
     super.initState();
     _load();
+    _quoteTimer = Timer.periodic(const Duration(seconds: 8), (_) {
+      unawaited(_refreshQuote());
+    });
+  }
+
+  @override
+  void dispose() {
+    _quoteTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -66,6 +79,16 @@ class _ForexDetailScreenState extends State<ForexDetailScreen> {
       return;
     }
     await _loadChart(_period);
+  }
+
+  Future<void> _refreshQuote() async {
+    if (!mounted || _loading) return;
+    try {
+      final pair = await BullwaveApi.instance.getForexPair(widget.pairId);
+      if (!mounted || pair.currentPrice <= 0) return;
+      setState(() => _pair = pair);
+      context.read<ForexMarketProvider>().tickTape.record(pair.id, pair.currentPrice);
+    } catch (_) {}
   }
 
   Future<void> _loadChart(String period) async {
@@ -165,11 +188,13 @@ class _ForexDetailScreenState extends State<ForexDetailScreen> {
                   children: [
                     Text(pair.name, style: context.typeSecondary(14)),
                     const SizedBox(height: 6),
-                    Text(
-                      pair.currentPrice >= 10
+                    LiveTickPrice(
+                      value: pair.currentPrice,
+                      text: pair.currentPrice >= 10
                           ? pair.currentPrice.toStringAsFixed(3)
                           : pair.currentPrice.toStringAsFixed(5),
                       style: context.typeHeading.copyWith(fontSize: 32),
+                      textAlign: TextAlign.start,
                     ),
                     Text(
                       IndexFormatter.formatPercent(pair.change24hPct),

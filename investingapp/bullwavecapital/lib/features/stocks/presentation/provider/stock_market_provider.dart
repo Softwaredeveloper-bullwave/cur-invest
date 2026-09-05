@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/api/auth_session_guard.dart';
 import '../../../../core/api/api_exception.dart';
 import '../../../../core/api/bullwave_api.dart';
+import '../../../../core/widgets/live_tick_price.dart';
 import '../../../../models/market_index_model.dart';
 import '../../../../models/stock_model.dart';
 
@@ -26,10 +27,12 @@ class StockMarketProvider extends ChangeNotifier {
   bool _usingDemoData = false;
   final Map<String, List<CandleModel>> _candlesCache = {};
   Timer? _refreshTimer;
+  final TickTape tickTape = TickTape();
+  bool _liveBusy = false;
 
   StockMarketProvider() {
-    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
-      if (_initialized && _searchQuery.isEmpty) {
+    _refreshTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+      if (_initialized && _searchQuery.isEmpty && !_liveBusy) {
         _refreshLive(silent: true, fast: true);
       }
     });
@@ -197,6 +200,8 @@ class StockMarketProvider extends ChangeNotifier {
   }
 
   Future<void> _refreshLive({bool silent = false, bool fast = true}) async {
+    if (_liveBusy) return;
+    _liveBusy = true;
     if (!silent) {
       _isLoading = true;
       notifyListeners();
@@ -219,6 +224,12 @@ class StockMarketProvider extends ChangeNotifier {
       if (_watchlistStocks.isNotEmpty) {
         _mergeStocks(_watchlistStocks);
       }
+      for (final s in _stocks) {
+        tickTape.record(s.symbol, s.ltp);
+      }
+      for (final i in _marketIndices) {
+        tickTape.record('idx:${i.shortName}', i.value);
+      }
     } on ApiException catch (e) {
       if (_stocks.isEmpty) {
         _marketError = e.message;
@@ -229,6 +240,8 @@ class StockMarketProvider extends ChangeNotifier {
         _marketError = 'Could not load live market data. Pull to refresh.';
         await _trySearchFallback();
       }
+    } finally {
+      _liveBusy = false;
     }
     if (!silent) {
       _isLoading = false;

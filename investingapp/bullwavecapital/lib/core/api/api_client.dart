@@ -215,10 +215,34 @@ class ApiClient {
       }
 
       return _decode(response, path);
-    } catch (error, stack) {
-      if (error is! ApiException) _report(error, stack, path);
+    } on ApiException {
       rethrow;
+    } on TimeoutException catch (error, stack) {
+      final wrapped = ApiException(
+        0,
+        'Server is taking too long to respond. Please try again.',
+      );
+      _report(error, stack, path);
+      throw wrapped;
+    } catch (error, stack) {
+      final wrapped = ApiException(0, _friendlyTransportError(error));
+      _report(error, stack, path);
+      throw wrapped;
     }
+  }
+
+  String _friendlyTransportError(Object error) {
+    final text = error.toString().toLowerCase();
+    if (kIsWeb &&
+        (text.contains('failed to fetch') ||
+            text.contains('xmlhttprequest') ||
+            text.contains('clientexception'))) {
+      return 'Cannot reach the server from this browser. '
+          'Chrome/web needs the API to allow this page origin (CORS). '
+          'Use Android/iOS, or deploy the CORS update and restart the app.';
+    }
+    return 'Cannot reach the server at ${ApiConfig.baseUrl}. '
+        'Check Wi-Fi/VPN and try again.';
   }
 
   Future<dynamic> get(

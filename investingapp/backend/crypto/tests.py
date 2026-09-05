@@ -160,3 +160,31 @@ class CryptoOptionChainApiTests(TestCase):
     def test_unknown_asset_404(self):
         resp = self.client.get('/api/v1/crypto/assets/cardano/options/')
         self.assertEqual(resp.status_code, 404)
+
+
+class CoinDcxUnmappedAssetTests(TestCase):
+    def test_usd1_resolves_from_coindcx_ticker(self):
+        from crypto.providers.coindcx import CoinDCXProvider
+
+        provider = CoinDCXProvider()
+        tickers = {
+            'USD1USDT': {
+                'market': 'USD1USDT',
+                'last_price': '0.9994',
+                'change_24_hour': '-0.02',
+                'high': '1.001',
+                'low': '0.998',
+                'volume': '1500000',
+            }
+        }
+        with patch.object(provider, '_tickers', return_value=tickers), patch.object(
+            provider._cg,
+            'get_asset',
+            side_effect=CryptoProviderError('not found', retryable=False, status_code=404),
+        ):
+            row = provider.get_asset('usd1')
+        self.assertEqual(row['id'], 'usd1')
+        self.assertEqual(row['symbol'], 'USD1')
+        self.assertGreater(float(row['current_price']), 0)
+        self.assertEqual(row['provider'], 'coindcx')
+

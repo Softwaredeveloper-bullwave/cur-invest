@@ -167,18 +167,34 @@ class CoinDCXProvider(BaseCryptoProvider):
         return data
 
     def _tickers(self) -> dict[str, dict]:
-        rows = self._get('/exchange/ticker', cache_key='crypto:cdx:ticker', ttl=self.cache_seconds)
+        rows = self._get('/exchange/ticker', cache_key='crypto:cdx:ticker', ttl=8)
         if not isinstance(rows, list):
             return {}
         return {str(r.get('market') or ''): r for r in rows if r.get('market')}
 
+    def _ticker_for_unmapped(self, asset_id: str, tickers: dict[str, dict]) -> dict | None:
+        """Match a CoinDCX USDT/INR market for coins not in ASSET_MAP (USD1, etc.)."""
+        raw = (asset_id or '').strip()
+        if not raw:
+            return None
+        upper = raw.upper().replace('/', '').replace('-', '')
+        for suffix in ('USDT', 'INR'):
+            if upper.endswith(suffix) and len(upper) > len(suffix):
+                upper = upper[: -len(suffix)]
+                break
+        for market in (f'{upper}USDT', f'{upper}INR'):
+            hit = tickers.get(market)
+            if hit:
+                return hit
+        needle = raw.lower()
+        for market, ticker in tickers.items():
+            meta = _meta_from_market(str(market))
+            if meta['id'] == needle or meta['symbol'].lower() == needle:
+                return ticker
+        return None
+
     def _row_from_ticker(self, asset_id: str, ticker: dict, *, vs_currency: str = 'usd') -> dict[str, Any]:
-        meta = ASSET_MAP.get(asset_id) or {
-            'symbol': (ticker.get('market') or '').replace('USDT', ''),
-            'name': ticker.get('market'),
-            'market': ticker.get('market'),
-            'pair': f"B-{(ticker.get('market') or '').replace('USDT', '')}_USDT",
-        }
+        meta = ASSET_MAP.get(asset_id) or _meta_from_market(str(ticker.get('market') or ''))
         price = _dec(ticker.get('last_price')) or Decimal('0')
         chg = _dec(ticker.get('change_24_hour')) or Decimal('0')
         high = _dec(ticker.get('high'))
@@ -362,22 +378,39 @@ class CoinDCXProvider(BaseCryptoProvider):
                 'provider': self.name,
             }
         else:
-            # Unknown id — try CoinGecko detail, overlay CoinDCX price by symbol if possible
-            try:
-                row = self._cg.get_asset(aid or asset_id, vs_currency=vs_currency)
-            except CryptoProviderError as exc:
-                raise CryptoProviderError(f'Asset not found: {asset_id}', retryable=False, status_code=404) from exc
-            sym = (row.get('symbol') or '').upper()
-            market = f'{sym}USDT'
-            if market in tickers:
-                overlay = self._row_from_ticker(row['id'], tickers[market], vs_currency=vs_currency)
-                row['current_price'] = overlay['current_price']
-                row['price_change_percentage_24h'] = overlay['price_change_percentage_24h']
-                row['high_24h'] = overlay['high_24h']
-                row['low_24h'] = overlay['low_24h']
-                row['total_volume'] = overlay['total_volume']
-                row['provider'] = self.name
-            return row
+            # Listed on CoinDCX (e.g. USD1USDT) but not in ASSET_MAP / CoinGecko.
+            ticker = self._ticker_for_unmapped(aid or asset_id, tickers)
+            if ticker:
+                market = str(ticker.get('market') or '')
+                extra = _meta_from_market(market)
+                aid = extra['id']
+                row = self._row_from_ticker(aid, ticker, vs_currency=vs_currency)
+                row['symbol'] = extra.get('symbol') or row.get('symbol')
+                row['name'] = extra.get('name') or extra.get('symbol') or row.get('name')
+            else:
+                try:
+                    row = self._cg.get_asset(aid or asset_id, vs_currency=vs_currency)
+                except CryptoProviderError as exc:
+                    raise CryptoProviderError(
+                        f'Asset not found: {asset_id}',
+                        retryable=False,
+                        status_code=404,
+                    ) from exc
+                sym = (row.get('symbol') or '').upper()
+                market = f'{sym}USDT'
+                if market in tickers:
+                    overlay = self._row_from_ticker(
+                        row['id'], tickers[market], vs_currency=vs_currency
+                    )
+                    row['current_price'] = overlay['current_price']
+                    row['price_change_percentage_24h'] = overlay[
+                        'price_change_percentage_24h'
+                    ]
+                    row['high_24h'] = overlay['high_24h']
+                    row['low_24h'] = overlay['low_24h']
+                    row['total_volume'] = overlay['total_volume']
+                    row['provider'] = self.name
+                return row
 
         try:
             cg = self._cg.get_asset(aid, vs_currency=vs_currency)
@@ -607,6 +640,25 @@ class CoinDCXProvider(BaseCryptoProvider):
                         }
                     )
         tickers = self._tickers()
+        seen = {(str(r.get('id') or '').lower(), str(r.get('symbol') or '').upper()) for r in results}
+        for market, t in tickers.items():
+            if not str(market).endswith('USDT'):
+                continue
+            meta = _meta_from_market(str(market))
+            key = (meta['id'], meta['symbol'].upper())
+            if key in seen:
+                continue
+            if q in meta['id'] or q in meta['symbol'].lower() or q in (meta.get('name') or '').lower():
+                results.append(
+                    {
+                        'id': meta['id'],
+                        'symbol': meta['symbol'],
+                        'name': meta.get('name') or meta['symbol'],
+                        'image_url': '',
+                        'market_cap_rank': None,
+                    }
+                )
+                seen.add(key)
         enriched = []
         for item in results[:40]:
             row = dict(item)

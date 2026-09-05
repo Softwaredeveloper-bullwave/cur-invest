@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/config/app_env.dart';
 import '../../../../core/config/dev_config.dart';
-import '../../../../core/api/api_config.dart';
 import '../../../../core/api/api_exception.dart';
 import '../../../../core/security/app_lock_service.dart';
 import '../../../../core/api/bullwave_api.dart';
@@ -295,9 +294,9 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
       return false;
     } catch (e) {
-      _error = AppEnv.isRelease
-          ? 'Cannot reach the server. Check your internet connection and try again.'
-          : 'Cannot reach server at ${ApiConfig.baseUrl}. Check Wi‑Fi/VPN, then restart the app (full rebuild on macOS: stop flutter run and start again). (${e.runtimeType})';
+      _error = e.toString().trim().isNotEmpty
+          ? e.toString()
+          : 'Cannot reach the server. Check your internet connection and try again.';
       _isLoading = false;
       notifyListeners();
       return false;

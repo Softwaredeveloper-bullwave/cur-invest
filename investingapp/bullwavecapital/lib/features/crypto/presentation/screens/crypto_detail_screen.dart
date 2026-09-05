@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -10,6 +12,7 @@ import '../../../../core/theme/theme_a.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/widgets/custom_app_bar.dart';
 import '../../../../core/widgets/loading_card.dart';
+import '../../../../core/widgets/live_tick_price.dart';
 import '../../../../core/widgets/custom_dialog.dart';
 import '../../../../core/widgets/scroll_reveal.dart';
 import '../../../../models/crypto_models.dart';
@@ -33,6 +36,7 @@ class _CryptoDetailScreenState extends State<CryptoDetailScreen> {
   bool _loadingAsset = true;
   bool _loadingChart = true;
   String? _error;
+  Timer? _quoteTimer;
 
   String get _resolvedId {
     final raw = widget.assetId.trim();
@@ -55,7 +59,16 @@ class _CryptoDetailScreenState extends State<CryptoDetailScreen> {
   @override
   void initState() {
     super.initState();
-    _load();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+    _quoteTimer = Timer.periodic(const Duration(seconds: 8), (_) {
+      unawaited(_refreshQuote());
+    });
+  }
+
+  @override
+  void dispose() {
+    _quoteTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -66,16 +79,8 @@ class _CryptoDetailScreenState extends State<CryptoDetailScreen> {
     });
     final api = BullwaveApi.instance;
     final id = _resolvedId;
-    final providerAssets = context.read<CryptoMarketProvider>().assets;
-    CryptoAssetModel? cached;
-    for (final a in providerAssets) {
-      if (a.id.toLowerCase() == id ||
-          a.symbol.toLowerCase() == id ||
-          a.symbol.toLowerCase() == widget.assetId.trim().toLowerCase()) {
-        cached = a;
-        break;
-      }
-    }
+    final market = context.read<CryptoMarketProvider>();
+    final cached = market.findAsset(id) ?? market.findAsset(widget.assetId);
 
     try {
       final asset = await api.getCryptoAsset(id);
@@ -119,6 +124,16 @@ class _CryptoDetailScreenState extends State<CryptoDetailScreen> {
     }
 
     await _loadChart(_period);
+  }
+
+  Future<void> _refreshQuote() async {
+    if (!mounted || _loadingAsset) return;
+    try {
+      final asset = await BullwaveApi.instance.getCryptoAsset(_resolvedId);
+      if (!mounted || asset.currentPrice <= 0) return;
+      setState(() => _asset = asset);
+      context.read<CryptoMarketProvider>().tickTape.record(asset.id, asset.currentPrice);
+    } catch (_) {}
   }
 
   Future<void> _loadChart(String period) async {
@@ -279,9 +294,11 @@ class _CryptoDetailScreenState extends State<CryptoDetailScreen> {
                         const SizedBox(height: 16),
                         Text(_asset!.name, style: context.typeSecondary(14)),
                         const SizedBox(height: 4),
-                        Text(
-                          _formatUsd(_asset!.currentPrice),
+                        LiveTickPrice(
+                          value: _asset!.currentPrice,
+                          text: _formatUsd(_asset!.currentPrice),
                           style: context.typeHeading.copyWith(fontSize: 32),
+                          textAlign: TextAlign.start,
                         ),
                         Text(
                           IndexFormatter.formatPercent(_asset!.change24hPct),
