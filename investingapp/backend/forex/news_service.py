@@ -1,4 +1,4 @@
-"""Forex news via RSS (+ optional NewsAPI). Keys stay in .env — Flutter never sees them."""
+"""Forex news via MarketAux, RSS, or NewsAPI. Keys stay in .env — Flutter never sees them."""
 
 from __future__ import annotations
 
@@ -17,21 +17,44 @@ from django.utils import timezone
 
 from .health import record_provider_call
 from .models import ForexNewsArticle
+from .pairs import PAIR_BY_ID, normalize_pair_id
 
 logger = logging.getLogger('bullwave.forex')
 IST = ZoneInfo('Asia/Kolkata')
 
 FOREX_FEEDS = (
-    ('ForexLive', 'https://www.forexlive.com/feed/rss/'),
+    ('InvestingLive', 'https://investinglive.com/feed/rss/'),
     ('FXStreet', 'https://www.fxstreet.com/rss/news'),
-    ('DailyFX', 'https://www.dailyfx.com/feeds/market-news'),
+    ('Investing.com', 'https://www.investing.com/rss/news_1.rss'),
 )
 
 CATEGORIES = ('All', 'USD', 'EUR', 'GBP', 'JPY', 'INR', 'Majors', 'Central Banks', 'Market Analysis')
 
 RSS_HEADERS = {
-    'User-Agent': 'CapitalBullWave/1.0 (forex-news; +https://capitalbullwave.com)',
+    'User-Agent': (
+        'Mozilla/5.0 (compatible; CapitalBullWave/1.0; +https://capitalbullwave.com)'
+    ),
     'Accept': 'application/rss+xml, application/xml, text/xml, */*',
+}
+
+_CATEGORY_KEYWORDS = {
+    'usd': ('usd', 'dollar', 'dxy', 'greenback', 'usdinr', 'usdjpy', 'eurusd', 'gbpusd'),
+    'eur': ('eur', 'euro', 'eurusd', 'eurgbp', 'eurjpy', 'eurinr'),
+    'gbp': ('gbp', 'pound', 'sterling', 'gbpusd', 'gbpjpy', 'gbpinr'),
+    'jpy': ('jpy', 'yen', 'usdjpy', 'eurjpy', 'gbpjpy'),
+    'inr': ('inr', 'rupee', 'usdinr', 'eurinr', 'gbpinr'),
+    'majors': ('eurusd', 'gbpusd', 'usdjpy', 'usdchf', 'audusd', 'usdcad', 'nzdusd', 'major'),
+    'central banks': (
+        'fed',
+        'ecb',
+        'boe',
+        'boj',
+        'rbi',
+        'fomc',
+        'interest rate',
+        'rate hike',
+        'rate cut',
+    ),
 }
 
 
@@ -107,31 +130,121 @@ def _entry_image(entry) -> str:
     return _first_http_url(match.group(1) if match else '')
 
 
+def _article_blob(article: dict) -> str:
+    related = ' '.join(str(item) for item in (article.get('related_pairs') or []))
+    return (
+        f"{article.get('title') or ''} {article.get('summary') or ''} "
+        f"{article.get('category') or ''} {related}"
+    ).lower()
+
+
+def _article_matches_category(article: dict, wanted: str) -> bool:
+    if not wanted or wanted in {'all', '*'}:
+        return True
+    if (article.get('category') or '').lower() == wanted:
+        return True
+    keywords = _CATEGORY_KEYWORDS.get(wanted)
+    blob = _article_blob(article)
+    if not keywords:
+        return wanted in blob
+    return any(token in blob for token in keywords)
+
+
 def fetch_forex_news(*, category: str | None = None, force: bool = False) -> list[dict]:
     articles = _load_all_articles(force=force)
     wanted = (category or '').strip().lower()
     if wanted and wanted not in {'all', '*'}:
-        articles = [a for a in articles if (a.get('category') or '').lower() == wanted]
+        articles = [a for a in articles if _article_matches_category(a, wanted)]
     return articles
+
+
+def _news_api_key() -> str:
+    return (
+        (getattr(settings, 'FOREX_NEWS_API_KEY', '') or '')
+        or (getattr(settings, 'MARKETAUX_API_TOKEN', '') or '')
+    ).strip()
 
 
 def _load_all_articles(*, force: bool = False) -> list[dict]:
     cache_minutes = int(getattr(settings, 'FOREX_NEWS_CACHE_MINUTES', 15) or 15)
-    cache_key = 'forex:news:corpus:v1'
+    cache_key = 'forex:news:corpus:v3'
     if not force:
         cached = cache.get(cache_key)
-        if cached is not None:
+        if cached:
             return cached
     by_id: dict[str, dict] = {}
+    provider = (getattr(settings, 'FOREX_NEWS_PROVIDER', 'rss') or 'rss').lower()
+    api_key = _news_api_key()
+    if provider == 'marketaux' and api_key:
+        for row in _fetch_marketaux():
+            by_id[row['id']] = row
     for row in _fetch_rss():
-        by_id[row['id']] = row
-    if (getattr(settings, 'FOREX_NEWS_PROVIDER', 'rss') or 'rss').lower() == 'newsapi':
-        if (getattr(settings, 'FOREX_NEWS_API_KEY', '') or '').strip():
-            for row in _fetch_newsapi():
-                by_id.setdefault(row['id'], row)
+        by_id.setdefault(row['id'], row)
+    if provider == 'newsapi' and api_key:
+        for row in _fetch_newsapi():
+            by_id.setdefault(row['id'], row)
+    if not by_id:
+        for row in _articles_from_db():
+            by_id[row['id']] = row
     articles = sorted(by_id.values(), key=lambda a: a.get('published_at') or '', reverse=True)[:80]
-    cache.set(cache_key, articles, cache_minutes * 60)
+    if articles:
+        cache.set(cache_key, articles, cache_minutes * 60)
     return articles
+
+
+def _articles_from_db() -> list[dict]:
+    try:
+        return [
+            {
+                'id': a.id,
+                'title': a.title,
+                'summary': a.summary,
+                'image_url': a.image_url,
+                'source': a.source,
+                'published_at': a.published_at.isoformat(),
+                'category': a.category,
+                'related_pairs': a.related_pairs,
+                'external_url': a.external_url,
+                'stale': True,
+            }
+            for a in ForexNewsArticle.objects.all()[:50]
+        ]
+    except Exception:
+        return []
+
+
+def _pairs_from_entities(entities) -> list[str]:
+    found: list[str] = []
+    for entity in entities or []:
+        if not isinstance(entity, dict):
+            continue
+        kind = (entity.get('type') or entity.get('asset_type') or '').lower()
+        if kind and kind not in {'currency', 'forex'}:
+            continue
+        symbol = (entity.get('symbol') or '').replace('/', '').replace('-', '').replace('_', '')
+        pair_id = normalize_pair_id(symbol)
+        if pair_id in PAIR_BY_ID and pair_id not in found:
+            found.append(pair_id)
+    return found[:6]
+
+
+def _persist_article(row: dict, published: datetime) -> None:
+    try:
+        ForexNewsArticle.objects.update_or_create(
+            id=row['id'],
+            defaults={
+                'title': row['title'],
+                'summary': row['summary'],
+                'image_url': row.get('image_url') or '',
+                'source': row['source'],
+                'published_at': published,
+                'category': row['category'],
+                'related_pairs': row.get('related_pairs') or [],
+                'external_url': row['external_url'],
+            },
+        )
+    except Exception:
+        logger.debug('Could not persist forex news row', exc_info=True)
 
 
 def _fetch_rss() -> list[dict]:
@@ -218,8 +331,99 @@ def _fetch_rss() -> list[dict]:
         ]
 
 
+def _fetch_marketaux() -> list[dict]:
+    api_key = _news_api_key()
+    base = (
+        getattr(settings, 'FOREX_NEWS_API_BASE_URL', '') or 'https://api.marketaux.com/v1'
+    ).rstrip('/')
+    started = timezone.now()
+    try:
+        with httpx.Client(timeout=20, follow_redirects=True) as client:
+            resp = client.get(
+                f'{base}/news/all',
+                params={
+                    'api_token': api_key,
+                    'entity_types': 'currency',
+                    'search': 'forex OR EURUSD OR "US dollar" OR rupee',
+                    'language': 'en',
+                    'limit': 10,
+                },
+                headers={'User-Agent': 'CapitalBullWave/1.0 (forex-news)'},
+            )
+        elapsed = int((timezone.now() - started).total_seconds() * 1000)
+        if resp.status_code >= 400:
+            logger.warning('MarketAux forex news failed: %s %s', resp.status_code, resp.text[:200])
+            record_provider_call(
+                service='news',
+                endpoint='marketaux',
+                success=False,
+                status_code=resp.status_code,
+                response_ms=elapsed,
+                error_type='http_error',
+                error_message=f'MarketAux HTTP {resp.status_code}',
+                provider_name='marketaux',
+            )
+            return []
+        payload = resp.json() if resp.content else {}
+        articles: list[dict] = []
+        for item in payload.get('data') or []:
+            if not isinstance(item, dict):
+                continue
+            title = _clean_html(item.get('title') or '')
+            if not title:
+                continue
+            link = item.get('url') or ''
+            summary = _clean_html(item.get('snippet') or item.get('description') or '')[:600]
+            related = _pairs_from_entities(item.get('entities'))
+            published_raw = item.get('published_at')
+            try:
+                published = (
+                    datetime.fromisoformat(str(published_raw).replace('Z', '+00:00'))
+                    if published_raw
+                    else timezone.now()
+                )
+            except Exception:
+                published = timezone.now()
+            aid = (item.get('uuid') or _stable_id(link, title))[:32]
+            source = (item.get('source') or 'MarketAux')[:120]
+            blob = f'{title} {summary} {" ".join(related)}'
+            row = {
+                'id': aid,
+                'title': title[:400],
+                'summary': summary,
+                'image_url': (item.get('image_url') or '')[:1000],
+                'source': source,
+                'published_at': published.isoformat(),
+                'category': _category_for(blob, blob),
+                'related_pairs': related,
+                'external_url': link[:500],
+            }
+            articles.append(row)
+            _persist_article(row, published)
+        record_provider_call(
+            service='news',
+            endpoint='marketaux',
+            success=True,
+            status_code=resp.status_code,
+            response_ms=elapsed,
+            provider_name='marketaux',
+        )
+        return articles
+    except Exception as exc:
+        record_provider_call(
+            service='news',
+            endpoint='marketaux',
+            success=False,
+            error_type=type(exc).__name__,
+            error_message=str(exc)[:400],
+            provider_name='marketaux',
+        )
+        logger.debug('Forex MarketAux fetch failed', exc_info=True)
+        return []
+
+
 def _fetch_newsapi() -> list[dict]:
-    api_key = (getattr(settings, 'FOREX_NEWS_API_KEY', '') or '').strip()
+    api_key = _news_api_key()
     try:
         with httpx.Client(timeout=20, follow_redirects=True) as client:
             resp = client.get(

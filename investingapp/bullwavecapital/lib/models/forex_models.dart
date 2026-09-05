@@ -161,6 +161,7 @@ class ForexNewsModel {
     this.source = '',
     required this.publishedAt,
     this.category = '',
+    this.relatedPairs = const [],
     this.externalUrl = '',
   });
 
@@ -171,6 +172,7 @@ class ForexNewsModel {
   final String source;
   final DateTime publishedAt;
   final String category;
+  final List<String> relatedPairs;
   final String externalUrl;
 
   factory ForexNewsModel.fromJson(Map<String, dynamic> json) => ForexNewsModel(
@@ -181,6 +183,11 @@ class ForexNewsModel {
         source: (_pick(json, 'source', 'source') ?? '').toString(),
         publishedAt: _date(_pick(json, 'publishedAt', 'published_at')),
         category: (_pick(json, 'category', 'category') ?? '').toString(),
+        relatedPairs: (json['relatedPairs'] as List<dynamic>? ??
+                json['related_pairs'] as List<dynamic>? ??
+                const [])
+            .map((e) => e.toString())
+            .toList(),
         externalUrl: (_pick(json, 'externalUrl', 'external_url') ?? '').toString(),
       );
 }

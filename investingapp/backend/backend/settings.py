@@ -359,8 +359,15 @@ FOREX_API_BASE_URL = _clean_env(
 )
 FOREX_API_TIMEOUT = config('FOREX_API_TIMEOUT', default=20, cast=int)
 FOREX_MARKET_CACHE_SECONDS = config('FOREX_MARKET_CACHE_SECONDS', default=60, cast=int)
-FOREX_NEWS_PROVIDER = _clean_env(config('FOREX_NEWS_PROVIDER', default='rss')).lower() or 'rss'
-FOREX_NEWS_API_KEY = _ascii_env(config('FOREX_NEWS_API_KEY', default=''))
+MARKETAUX_API_TOKEN = _ascii_env(config('MARKETAUX_API_TOKEN', default=''))
+FOREX_NEWS_API_KEY = _ascii_env(config('FOREX_NEWS_API_KEY', default='')) or MARKETAUX_API_TOKEN
+FOREX_NEWS_API_BASE_URL = _clean_env(
+    config('FOREX_NEWS_API_BASE_URL', default='https://api.marketaux.com/v1'),
+    strip_trailing_slash=True,
+)
+FOREX_NEWS_PROVIDER = _clean_env(
+    config('FOREX_NEWS_PROVIDER', default='marketaux' if FOREX_NEWS_API_KEY else 'rss')
+).lower() or ('marketaux' if FOREX_NEWS_API_KEY else 'rss')
 FOREX_NEWS_CACHE_MINUTES = config('FOREX_NEWS_CACHE_MINUTES', default=15, cast=int)
 FOREX_USD_INR_RATE = config('FOREX_USD_INR_RATE', default='83')
 FOREX_TRADING_ENABLED = config('FOREX_TRADING_ENABLED', default=False, cast=bool)

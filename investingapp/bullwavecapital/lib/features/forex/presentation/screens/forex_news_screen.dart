@@ -21,18 +21,39 @@ class ForexNewsScreen extends StatefulWidget {
 class _ForexNewsScreenState extends State<ForexNewsScreen> {
   String? _category;
 
+  static const _keywords = {
+    'usd': ['usd', 'dollar', 'dxy', 'greenback', 'usdinr', 'usdjpy', 'eurusd', 'gbpusd'],
+    'eur': ['eur', 'euro', 'eurusd', 'eurgbp', 'eurjpy', 'eurinr'],
+    'gbp': ['gbp', 'pound', 'sterling', 'gbpusd', 'gbpjpy', 'gbpinr'],
+    'jpy': ['jpy', 'yen', 'usdjpy', 'eurjpy', 'gbpjpy'],
+    'inr': ['inr', 'rupee', 'usdinr', 'eurinr', 'gbpinr'],
+    'majors': ['eurusd', 'gbpusd', 'usdjpy', 'usdchf', 'audusd', 'usdcad', 'nzdusd', 'major'],
+    'central banks': ['fed', 'ecb', 'boe', 'boj', 'rbi', 'fomc', 'interest rate', 'rate hike', 'rate cut'],
+  };
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ForexMarketProvider>().loadNews();
+      context.read<ForexMarketProvider>().loadNews(refresh: true);
     });
+  }
+
+  bool _matches(ForexNewsModel article, String wanted) {
+    if (article.category.toLowerCase() == wanted) return true;
+    final blob =
+        '${article.title} ${article.summary} ${article.category} ${article.relatedPairs.join(' ')}'
+            .toLowerCase();
+    final keys = _keywords[wanted];
+    if (keys == null) return blob.contains(wanted);
+    return keys.any(blob.contains);
   }
 
   List<ForexNewsModel> _filtered(List<ForexNewsModel> articles) {
     final wanted = _category?.toLowerCase();
     if (wanted == null || wanted == 'all') return articles;
-    return articles.where((a) => a.category.toLowerCase() == wanted).toList();
+    final matched = articles.where((a) => _matches(a, wanted)).toList();
+    return matched.isEmpty ? articles : matched;
   }
 
   @override
@@ -65,6 +86,19 @@ class _ForexNewsScreenState extends State<ForexNewsScreen> {
                   }).toList(),
                 ),
               ),
+              if (provider.error != null && provider.news.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                  child: Text(
+                    provider.error!,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: AppColors.red,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
               Expanded(
                 child: provider.isLoading && provider.news.isEmpty
                     ? const Padding(padding: EdgeInsets.all(16), child: LoadingList(itemCount: 4))

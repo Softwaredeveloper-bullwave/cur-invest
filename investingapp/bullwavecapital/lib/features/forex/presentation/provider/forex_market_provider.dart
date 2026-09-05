@@ -7,6 +7,7 @@ import '../../../../core/api/bullwave_api.dart';
 import '../../../../core/widgets/live_tick_price.dart';
 import '../../../../models/forex_models.dart';
 import '../../data/forex_live_fallback.dart';
+import '../../data/forex_news_fallback.dart';
 
 class ForexMarketProvider extends ChangeNotifier {
   ForexMarketProvider() {
@@ -86,11 +87,12 @@ class ForexMarketProvider extends ChangeNotifier {
         _portfolio = await _api.getForexPortfolio();
       }),
       _try(() async {
-        final response = await _api.getForexNews();
-        _news = response.results;
-        _newsCategories = response.categories;
+        await _loadNewsInternal(refresh: false);
       }),
     ]);
+    if (_news.isEmpty) {
+      await _fillNewsFromFallback();
+    }
     _initialized = _overview != null || _pairs.isNotEmpty;
     if (_overview == null && _pairs.isEmpty) {
       try {
@@ -162,18 +164,40 @@ class ForexMarketProvider extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
-      final response = await _api.getForexNews(refresh: refresh);
-      _news = response.results;
-      _newsCategories = response.categories;
-      _error = null;
+      await _loadNewsInternal(refresh: refresh);
+      if (_news.isEmpty) {
+        await _fillNewsFromFallback();
+      }
+      _error = _news.isEmpty ? 'No forex headlines yet. Pull to refresh.' : null;
     } on ApiException catch (e) {
-      _error = _msg(e);
+      await _fillNewsFromFallback();
+      _error = _news.isEmpty ? e.message : null;
     } catch (_) {
-      _error = 'Market data is temporarily unavailable. Please try again.';
+      await _fillNewsFromFallback();
+      _error = _news.isEmpty
+          ? 'Market data is temporarily unavailable. Please try again.'
+          : null;
     } finally {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  Future<void> _loadNewsInternal({required bool refresh}) async {
+    final response = await _api.getForexNews(refresh: refresh);
+    _news = response.results;
+    _newsCategories = response.categories;
+  }
+
+  Future<void> _fillNewsFromFallback() async {
+    try {
+      final articles = await ForexNewsFallback.load();
+      if (articles.isEmpty) return;
+      _news = articles;
+      if (_newsCategories.isEmpty) {
+        _newsCategories = ForexNewsFallback.categories;
+      }
+    } catch (_) {}
   }
 
   Future<void> loadMovers(String type) async {

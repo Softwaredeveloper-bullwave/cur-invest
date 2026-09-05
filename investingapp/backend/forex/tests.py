@@ -1,6 +1,7 @@
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from django.contrib.auth import get_user_model
+from django.test import SimpleTestCase, override_settings
 from rest_framework.test import APITestCase
 
 from forex.pairs import FOREX_PAIRS
@@ -106,3 +107,65 @@ class ForexApiTests(APITestCase):
     def test_unknown_pair_options_404(self):
         resp = self.client.get('/api/v1/forex/pairs/usdchf/options/')
         self.assertEqual(resp.status_code, 404)
+
+
+class ForexMarketauxNewsTests(SimpleTestCase):
+    @override_settings(
+        FOREX_NEWS_PROVIDER='marketaux',
+        FOREX_NEWS_API_KEY='test-token',
+        MARKETAUX_API_TOKEN='test-token',
+        FOREX_NEWS_API_BASE_URL='https://api.marketaux.com/v1',
+    )
+    @patch('forex.news_service.record_provider_call')
+    @patch('forex.news_service.cache')
+    @patch('forex.news_service._fetch_rss', return_value=[])
+    @patch('forex.news_service._persist_article')
+    @patch('forex.news_service.httpx.Client')
+    def test_marketaux_maps_currency_news(
+        self, client_cls, _persist, _rss, cache_mock, _health
+    ):
+        from forex.news_service import fetch_forex_news
+
+        cache_mock.get.return_value = None
+        response = MagicMock()
+        response.status_code = 200
+        response.content = b'{}'
+        response.json.return_value = {
+            'data': [
+                {
+                    'uuid': 'abc123forexnews0000000000000001',
+                    'title': 'Euro jumps after ECB comments',
+                    'snippet': 'EURUSD rallied as traders priced in policy.',
+                    'url': 'https://example.com/eurusd-ecb',
+                    'image_url': 'https://example.com/chart.png',
+                    'source': 'FXWire',
+                    'published_at': '2026-09-05T04:00:00.000000Z',
+                    'entities': [
+                        {'symbol': 'EURUSD', 'type': 'currency'},
+                        {'symbol': 'AAPL', 'type': 'equity'},
+                    ],
+                }
+            ]
+        }
+        client_cls.return_value.__enter__.return_value.get.return_value = response
+
+        articles = fetch_forex_news()
+        self.assertEqual(len(articles), 1)
+        self.assertEqual(articles[0]['title'], 'Euro jumps after ECB comments')
+        self.assertEqual(articles[0]['related_pairs'], ['eurusd'])
+        self.assertEqual(articles[0]['source'], 'FXWire')
+        request_kwargs = client_cls.return_value.__enter__.return_value.get.call_args.kwargs
+        self.assertEqual(request_kwargs['params']['entity_types'], 'currency')
+        self.assertIn('forex', request_kwargs['params']['search'].lower())
+
+    def test_usd_chip_matches_dollar_headline(self):
+        from forex.news_service import _article_matches_category
+
+        article = {
+            'title': 'US dollar strengthens against the yen',
+            'summary': 'Traders bought USD after data.',
+            'category': 'Market Analysis',
+            'related_pairs': ['usdjpy'],
+        }
+        self.assertTrue(_article_matches_category(article, 'usd'))
+        self.assertFalse(_article_matches_category(article, 'inr'))

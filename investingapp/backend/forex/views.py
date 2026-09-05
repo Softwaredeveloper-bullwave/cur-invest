@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from decimal import Decimal, InvalidOperation
 
 from rest_framework import status
@@ -29,6 +30,8 @@ from .serializers import (
 )
 from .services import ForexService
 from .trading_provider import ForexTradingDisabled, get_trading_provider
+
+logger = logging.getLogger('bullwave.forex')
 
 
 _GENERIC_FOREX_ERROR = 'Forex market data is temporarily unavailable. Please try again.'
@@ -232,6 +235,7 @@ class ForexNewsView(APIView):
             articles = fetch_forex_news(category=category, force=force)
             return Response({'results': articles, 'categories': list(CATEGORIES)})
         except Exception:
+            logger.exception('Forex news feed failed')
             return Response({'results': [], 'categories': list(CATEGORIES)})
 
 

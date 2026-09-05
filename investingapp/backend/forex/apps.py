@@ -14,4 +14,6 @@ class ForexConfig(AppConfig):
         from django.conf import settings
 
         provider = (getattr(settings, 'FOREX_DATA_PROVIDER', 'auto') or 'auto').lower()
+        news = (getattr(settings, 'FOREX_NEWS_PROVIDER', 'rss') or 'rss').lower()
         logger.info('Forex market data provider: %s', provider)
+        logger.info('Forex news provider: %s', news)
