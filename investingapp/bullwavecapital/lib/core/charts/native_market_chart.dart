@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -44,6 +45,7 @@ class _NativeMarketChartState extends State<NativeMarketChart> {
   int _visibleCount = 80;
   int _endIndex = 0;
   double _pinchStartVisible = 80;
+  Timer? _liveClock;
 
   static const _bg = Color(0xFF0B0E11);
   static const _grid = Color(0x14FFFFFF);
@@ -55,7 +57,14 @@ class _NativeMarketChartState extends State<NativeMarketChart> {
   static const _ema = Color(0xFFE879F9);
   static const _bb = Color(0x66FFFFFF);
 
-  List<CandleModel> get _all => normalizeCandles(widget.candles);
+  List<CandleModel> get _all => applyLiveTick(
+        normalizeCandles(widget.candles),
+        lastPrice: widget.lastPrice,
+        intervalLabel: widget.intervalLabel,
+      );
+
+  Duration get _barInterval =>
+      inferCandleInterval(_all, label: widget.intervalLabel);
 
   /// Dart [num.clamp] throws `Invalid argument: 8` when lower > upper
   /// (FX daily series often has fewer than 8 candles).
@@ -77,24 +86,43 @@ class _NativeMarketChartState extends State<NativeMarketChart> {
   }
 
   void _resetWindow() {
-    final len = widget.candles.length;
+    final len = _all.length;
     _endIndex = 0;
     _visibleCount = len == 0 ? 80 : (len < 80 ? len : 80);
+  }
+
+  void _ensureLiveClock() {
+    final live = widget.lastPrice != null && widget.lastPrice! > 0;
+    if (live && _liveClock == null) {
+      _liveClock = Timer.periodic(const Duration(seconds: 1), (_) {
+        if (mounted) setState(() {});
+      });
+    } else if (!live && _liveClock != null) {
+      _liveClock!.cancel();
+      _liveClock = null;
+    }
   }
 
   @override
   void initState() {
     super.initState();
     _resetWindow();
+    _ensureLiveClock();
   }
 
   @override
   void didUpdateWidget(covariant NativeMarketChart oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.candles.length != widget.candles.length ||
-        oldWidget.intervalLabel != widget.intervalLabel) {
+    if (oldWidget.intervalLabel != widget.intervalLabel) {
       _resetWindow();
     }
+    _ensureLiveClock();
+  }
+
+  @override
+  void dispose() {
+    _liveClock?.cancel();
+    super.dispose();
   }
 
   @override
@@ -113,11 +141,16 @@ class _NativeMarketChartState extends State<NativeMarketChart> {
     }
 
     final all = _all;
-    final intraday = isIntradayInterval(widget.intervalLabel);
+    final barInterval = _barInterval;
     final sma20 = widget.showSma ? smaValues(candles, 20) : null;
     final sma50 = widget.showSma ? smaValues(candles, 50) : null;
     final ema20 = widget.showEma ? emaValues(candles, 20) : null;
     final bb = widget.showBollinger ? bollingerBands(candles) : null;
+    final forming = widget.lastPrice != null && widget.lastPrice! > 0;
+    final liveEdge = _endIndex <= 0 || _endIndex >= all.length;
+    final countdown = forming && liveEdge
+        ? formingCountdownLabel(barInterval, alignToBucket(candles.last.time, barInterval))
+        : null;
 
     return SizedBox(
       height: widget.height,
@@ -190,7 +223,8 @@ class _NativeMarketChartState extends State<NativeMarketChart> {
                                 bbLower: bb?.lower,
                                 hoverIndex: _hoverIndex,
                                 lastPrice: widget.lastPrice,
-                                intraday: intraday,
+                                forming: forming && liveEdge,
+                                interval: barInterval,
                                 mainHeight: mainH,
                                 volumeHeight: volH,
                                 panOffset: 0,
@@ -223,7 +257,7 @@ class _NativeMarketChartState extends State<NativeMarketChart> {
                           child: CustomPaint(
                             painter: _TimeAxisPainter(
                               candles: candles,
-                              intraday: intraday,
+                              interval: barInterval,
                             ),
                             size: Size.infinite,
                           ),
@@ -234,6 +268,28 @@ class _NativeMarketChartState extends State<NativeMarketChart> {
                   ),
                 ],
               ),
+              if (countdown != null)
+                Positioned(
+                  left: 8,
+                  top: 6,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xCC1E2329),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: const Color(0xFF1E2329)),
+                    ),
+                    child: Text(
+                      'LIVE  $countdown',
+                      style: TextStyle(
+                        color: candles.last.isBullish ? _green : _red,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.4,
+                      ),
+                    ),
+                  ),
+                ),
               if (widget.enableZoom && all.length > 8)
                 Positioned(
                   right: 66,
@@ -328,7 +384,8 @@ class _MarketChartPainter extends CustomPainter {
   final List<double?>? bbLower;
   final int? hoverIndex;
   final double? lastPrice;
-  final bool intraday;
+  final bool forming;
+  final Duration interval;
   final double mainHeight;
   final double volumeHeight;
   final double panOffset;
@@ -344,7 +401,8 @@ class _MarketChartPainter extends CustomPainter {
     this.bbLower,
     this.hoverIndex,
     this.lastPrice,
-    required this.intraday,
+    this.forming = false,
+    this.interval = const Duration(minutes: 15),
     required this.mainHeight,
     required this.volumeHeight,
     this.panOffset = 0,
@@ -496,40 +554,46 @@ class _MarketChartPainter extends CustomPainter {
       for (var i = 0; i < count; i++) {
         final c = candles[i];
         final x = gap * i + gap / 2;
+        final isFormingBar = forming && i == count - 1;
         final color = c.isBullish
             ? _NativeMarketChartState._green
             : _NativeMarketChartState._red;
+        final wickW = isFormingBar ? 1.8 : 1.0;
+        final barW = isFormingBar ? (bodyW * 1.08).clamp(2.0, 14.0) : bodyW;
 
         canvas.drawLine(
           Offset(x, yMain(c.high)),
           Offset(x, yMain(c.low)),
           Paint()
             ..color = color
-            ..strokeWidth = 1,
+            ..strokeWidth = wickW,
         );
 
         final top = yMain(math.max(c.open, c.close));
         final bottom = yMain(math.min(c.open, c.close));
         canvas.drawRect(
           Rect.fromLTRB(
-            x - bodyW / 2,
+            x - barW / 2,
             top,
-            x + bodyW / 2,
-            math.max(bottom, top + 2),
+            x + barW / 2,
+            math.max(bottom, top + (isFormingBar ? 2.5 : 2)),
           ),
           Paint()..color = color,
         );
       }
     }
 
-    // Last price line
+    // Last price line follows the forming close.
     final lp = lastPrice ?? candles.last.close;
     final lpY = yMain(lp);
+    final lpColor = candles.last.isBullish
+        ? _NativeMarketChartState._green
+        : _NativeMarketChartState._red;
     canvas.drawLine(
       Offset(0, lpY),
       Offset(size.width, lpY),
       Paint()
-        ..color = _NativeMarketChartState._green.withValues(alpha: 0.45)
+        ..color = lpColor.withValues(alpha: 0.55)
         ..strokeWidth = 1
         ..style = PaintingStyle.stroke,
     );
@@ -623,7 +687,13 @@ class _PriceAxisPainter extends CustomPainter {
       Rect.fromLTWH(0, lpY - 8, size.width - 2, 16),
       const Radius.circular(3),
     );
-    canvas.drawRRect(rect, Paint()..color = _NativeMarketChartState._green);
+    canvas.drawRRect(
+      rect,
+      Paint()
+        ..color = candles.last.isBullish
+            ? _NativeMarketChartState._green
+            : _NativeMarketChartState._red,
+    );
     tp.paint(canvas, Offset(4, lpY - 7));
   }
 
@@ -647,9 +717,9 @@ class _PriceAxisPainter extends CustomPainter {
 
 class _TimeAxisPainter extends CustomPainter {
   final List<CandleModel> candles;
-  final bool intraday;
+  final Duration interval;
 
-  _TimeAxisPainter({required this.candles, required this.intraday});
+  _TimeAxisPainter({required this.candles, required this.interval});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -665,7 +735,7 @@ class _TimeAxisPainter extends CustomPainter {
       final idx = (count - 1) * i ~/ labels;
       final c = candles[idx];
       final x = size.width * i / labels;
-      final label = formatChartTime(c.time, intraday: intraday);
+      final label = formatChartTime(c.time, interval: interval);
       final tp = TextPainter(
         text: TextSpan(text: label, style: style),
         textDirection: TextDirection.ltr,

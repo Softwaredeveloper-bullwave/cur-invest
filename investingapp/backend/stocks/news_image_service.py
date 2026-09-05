@@ -79,7 +79,11 @@ def fetch_news_image(url: str) -> Optional[Tuple[bytes, str]]:
     if cached:
         return cached
 
-    referer = f'{parsed.scheme}://{parsed.hostname}/'
+    referer_host = (parsed.hostname or '').lower()
+    referer = 'https://www.investing.com/' if 'investing.com' in referer_host else (
+        'https://www.fxstreet.com/' if 'fxsstatic.com' in referer_host or 'fxstreet.com' in referer_host
+        else f'{parsed.scheme}://{parsed.hostname}/'
+    )
     headers = {
         **RSS_HEADERS,
         'Referer': referer,

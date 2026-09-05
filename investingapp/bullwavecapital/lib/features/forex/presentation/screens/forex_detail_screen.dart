@@ -35,19 +35,24 @@ class _ForexDetailScreenState extends State<ForexDetailScreen> {
   bool _loadingChart = true;
   String? _error;
   Timer? _quoteTimer;
+  Timer? _chartTimer;
 
   @override
   void initState() {
     super.initState();
     _load();
-    _quoteTimer = Timer.periodic(const Duration(seconds: 8), (_) {
+    _quoteTimer = Timer.periodic(const Duration(seconds: 3), (_) {
       unawaited(_refreshQuote());
+    });
+    _chartTimer = Timer.periodic(const Duration(seconds: 45), (_) {
+      unawaited(_loadChart(_period, silent: true));
     });
   }
 
   @override
   void dispose() {
     _quoteTimer?.cancel();
+    _chartTimer?.cancel();
     super.dispose();
   }
 
@@ -91,11 +96,15 @@ class _ForexDetailScreenState extends State<ForexDetailScreen> {
     } catch (_) {}
   }
 
-  Future<void> _loadChart(String period) async {
-    setState(() {
+  Future<void> _loadChart(String period, {bool silent = false}) async {
+    if (!silent) {
+      setState(() {
+        _period = period;
+        _loadingChart = true;
+      });
+    } else {
       _period = period;
-      _loadingChart = true;
-    });
+    }
     try {
       final chart = await BullwaveApi.instance.getForexChart(widget.pairId, period: period);
       if (!mounted) return;
@@ -212,6 +221,7 @@ class _ForexDetailScreenState extends State<ForexDetailScreen> {
                                   intervalLabel: _period,
                                   candles: _candles,
                                   height: 280,
+                                  lastPrice: pair.currentPrice,
                                 ),
                     ),
                     const SizedBox(height: 12),

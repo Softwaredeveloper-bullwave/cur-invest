@@ -90,7 +90,7 @@ class ForexMarketProvider extends ChangeNotifier {
         await _loadNewsInternal(refresh: false);
       }),
     ]);
-    if (_news.isEmpty) {
+    if (_news.isEmpty || !_news.any(_hasUsableImage)) {
       await _fillNewsFromFallback();
     }
     _initialized = _overview != null || _pairs.isNotEmpty;
@@ -165,7 +165,7 @@ class ForexMarketProvider extends ChangeNotifier {
     notifyListeners();
     try {
       await _loadNewsInternal(refresh: refresh);
-      if (_news.isEmpty) {
+      if (_news.isEmpty || !_news.any(_hasUsableImage)) {
         await _fillNewsFromFallback();
       }
       _error = _news.isEmpty ? 'No forex headlines yet. Pull to refresh.' : null;
@@ -183,6 +183,15 @@ class ForexMarketProvider extends ChangeNotifier {
     }
   }
 
+  bool _hasUsableImage(ForexNewsModel article) {
+    final url = article.imageUrl.trim().toLowerCase();
+    if (url.isEmpty) return false;
+    // Investing.com CDN hotlink-protects (403); those URLs never render in the app.
+    if (url.contains('content-media.investing.com')) return false;
+    if (url.contains('i-invdn-com')) return false;
+    return true;
+  }
+
   Future<void> _loadNewsInternal({required bool refresh}) async {
     final response = await _api.getForexNews(refresh: refresh);
     _news = response.results;
@@ -192,8 +201,9 @@ class ForexMarketProvider extends ChangeNotifier {
   Future<void> _fillNewsFromFallback() async {
     try {
       final articles = await ForexNewsFallback.load();
-      if (articles.isEmpty) return;
-      _news = articles;
+      final withPhotos = articles.where(_hasUsableImage).toList();
+      if (withPhotos.isEmpty && articles.isEmpty) return;
+      _news = withPhotos.isNotEmpty ? withPhotos : articles;
       if (_newsCategories.isEmpty) {
         _newsCategories = ForexNewsFallback.categories;
       }

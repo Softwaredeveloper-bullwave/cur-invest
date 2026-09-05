@@ -8,6 +8,7 @@ class TraderNoteModel {
   final DateTime createdAt;
   final DateTime updatedAt;
   final bool pendingSync;
+  final List<String> imagePaths;
 
   const TraderNoteModel({
     required this.id,
@@ -19,6 +20,7 @@ class TraderNoteModel {
     required this.createdAt,
     required this.updatedAt,
     this.pendingSync = false,
+    this.imagePaths = const [],
   });
 
   bool get isLocalOnly => id.startsWith('local-');
@@ -33,6 +35,7 @@ class TraderNoteModel {
     DateTime? createdAt,
     DateTime? updatedAt,
     bool? pendingSync,
+    List<String>? imagePaths,
   }) {
     return TraderNoteModel(
       id: id ?? this.id,
@@ -44,6 +47,7 @@ class TraderNoteModel {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       pendingSync: pendingSync ?? this.pendingSync,
+      imagePaths: imagePaths ?? this.imagePaths,
     );
   }
 
@@ -57,6 +61,7 @@ class TraderNoteModel {
         'createdAt': createdAt.toIso8601String(),
         'updatedAt': updatedAt.toIso8601String(),
         'pendingSync': pendingSync,
+        'imagePaths': imagePaths,
       };
 
   factory TraderNoteModel.fromJson(Map<String, dynamic> json) {
@@ -66,6 +71,7 @@ class TraderNoteModel {
       return DateTime.tryParse(v?.toString() ?? '') ?? DateTime.now();
     }
 
+    final rawImages = json['imagePaths'] ?? json['image_paths'];
     return TraderNoteModel(
       id: json['id']?.toString() ?? '',
       title: json['title'] as String? ?? '',
@@ -76,12 +82,19 @@ class TraderNoteModel {
       createdAt: asDate(json['createdAt'] ?? json['created_at']),
       updatedAt: asDate(json['updatedAt'] ?? json['updated_at']),
       pendingSync: asBool(json['pendingSync'] ?? json['pending_sync']),
+      imagePaths: [
+        if (rawImages is List)
+          for (final item in rawImages)
+            if (item != null && item.toString().isNotEmpty) item.toString(),
+      ],
     );
   }
 
   String get preview {
     final text = body.trim();
-    if (text.isEmpty) return 'No content yet';
+    if (text.isEmpty) {
+      return imagePaths.isEmpty ? 'No content yet' : 'Photo note';
+    }
     return text.length > 120 ? '${text.substring(0, 120)}…' : text;
   }
 

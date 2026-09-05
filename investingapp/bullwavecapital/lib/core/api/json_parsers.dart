@@ -41,8 +41,7 @@ DateTime _date(dynamic v) {
   final s = v.toString().trim();
   if (s.isEmpty) return DateTime.now();
   try {
-    if (s.length <= 10) return DateTime.parse(s);
-    return DateTime.parse(s);
+    return DateTime.parse(s).toLocal();
   } catch (_) {
     return DateTime.now();
   }

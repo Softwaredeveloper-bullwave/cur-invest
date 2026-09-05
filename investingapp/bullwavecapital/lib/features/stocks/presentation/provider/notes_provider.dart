@@ -100,6 +100,7 @@ class NotesProvider extends ChangeNotifier {
     String symbol = '',
     String category = 'general',
     bool isPinned = false,
+    List<String>? imagePaths,
   }) async {
     final now = DateTime.now();
     TraderNoteModel? existing;
@@ -112,6 +113,7 @@ class NotesProvider extends ChangeNotifier {
       }
     }
     final localId = (id == null || id.isEmpty) ? _newLocalId() : id;
+    final photos = imagePaths ?? existing?.imagePaths ?? const <String>[];
     var draft = TraderNoteModel(
       id: localId,
       title: title,
@@ -122,6 +124,7 @@ class NotesProvider extends ChangeNotifier {
       createdAt: existing?.createdAt ?? now,
       updatedAt: now,
       pendingSync: true,
+      imagePaths: photos,
     );
     _upsert(draft);
     await NotesLocalStore.write(_notes);
@@ -147,12 +150,15 @@ class NotesProvider extends ChangeNotifier {
           isPinned: isPinned,
         );
       }
-      _replace(draft.id, saved.copyWith(pendingSync: false));
+      _replace(
+        draft.id,
+        saved.copyWith(pendingSync: false, imagePaths: photos),
+      );
       _error = null;
       _offline = false;
       await NotesLocalStore.write(_notes);
       notifyListeners();
-      return saved;
+      return saved.copyWith(imagePaths: photos);
     } on ApiException {
       _offline = true;
       _error = null;
@@ -214,7 +220,10 @@ class NotesProvider extends ChangeNotifier {
             isPinned: note.isPinned,
           );
         }
-        _replace(note.id, saved.copyWith(pendingSync: false));
+        _replace(
+          note.id,
+          saved.copyWith(pendingSync: false, imagePaths: note.imagePaths),
+        );
       } catch (_) {
         _offline = true;
         return;
@@ -255,9 +264,18 @@ class NotesProvider extends ChangeNotifier {
         seen.add(note.id);
       }
     }
+    final localById = {for (final note in local) note.id: note};
     for (final note in remote) {
       if (seen.contains(note.id)) continue;
-      merged.add(note.copyWith(pendingSync: false));
+      final localMatch = localById[note.id];
+      merged.add(
+        note.copyWith(
+          pendingSync: false,
+          imagePaths: (localMatch != null && localMatch.imagePaths.isNotEmpty)
+              ? localMatch.imagePaths
+              : note.imagePaths,
+        ),
+      );
       seen.add(note.id);
     }
     return merged;

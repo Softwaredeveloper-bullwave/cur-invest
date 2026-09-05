@@ -11,6 +11,7 @@ import '../../../../core/widgets/loading_card.dart';
 import '../../../../core/widgets/premium_ui_kit.dart';
 import '../../../../models/trader_note_model.dart';
 import '../provider/notes_provider.dart';
+import '../widgets/note_attached_image.dart';
 import '../widgets/note_editor_sheet.dart';
 
 class InvestmentNotesScreen extends StatefulWidget {
@@ -330,6 +331,27 @@ class _NoteCard extends StatelessWidget {
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
           ),
+          if (note.imagePaths.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 72,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: note.imagePaths.length,
+                separatorBuilder: (_, _) => const SizedBox(width: 8),
+                itemBuilder: (_, index) {
+                  return ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: SizedBox(
+                      width: 72,
+                      height: 72,
+                      child: NoteAttachedImage(source: note.imagePaths[index]),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
           const SizedBox(height: 12),
           Wrap(
             spacing: 8,

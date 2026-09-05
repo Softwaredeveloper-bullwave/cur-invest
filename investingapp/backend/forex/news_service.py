@@ -23,9 +23,8 @@ logger = logging.getLogger('bullwave.forex')
 IST = ZoneInfo('Asia/Kolkata')
 
 FOREX_FEEDS = (
-    ('InvestingLive', 'https://investinglive.com/feed/rss/'),
     ('FXStreet', 'https://www.fxstreet.com/rss/news'),
-    ('Investing.com', 'https://www.investing.com/rss/news_1.rss'),
+    ('InvestingLive', 'https://investinglive.com/feed/rss/'),
 )
 
 CATEGORIES = ('All', 'USD', 'EUR', 'GBP', 'JPY', 'INR', 'Majors', 'Central Banks', 'Market Analysis')
@@ -167,7 +166,7 @@ def _news_api_key() -> str:
 
 def _load_all_articles(*, force: bool = False) -> list[dict]:
     cache_minutes = int(getattr(settings, 'FOREX_NEWS_CACHE_MINUTES', 15) or 15)
-    cache_key = 'forex:news:corpus:v3'
+    cache_key = 'forex:news:corpus:v4'
     if not force:
         cached = cache.get(cache_key)
         if cached:

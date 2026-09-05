@@ -25,65 +25,174 @@ List<CandleModel> normalizeCandles(List<CandleModel> candles) {
 int _epochSeconds(DateTime value) =>
     value.toUtc().millisecondsSinceEpoch ~/ Duration.millisecondsPerSecond;
 
-List<double?> smaValues(List<CandleModel> candles, int period) {
-  if (candles.length < period) {
-    return List<double?>.filled(candles.length, null);
+/// Maps a UI period/interval label to the candle size when spacing cannot be inferred.
+Duration intervalFromLabel(String label) {
+  final raw = label.trim();
+  switch (raw) {
+    case '1m':
+      return const Duration(minutes: 1);
+    case '5m':
+      return const Duration(minutes: 5);
+    case '15m':
+      return const Duration(minutes: 15);
+    case '30m':
+      return const Duration(minutes: 30);
+    case '1h':
+    case '1H':
+      return const Duration(hours: 1);
+    case '4h':
+    case '4H':
+      return const Duration(hours: 4);
+    case '1d':
+    case '1D':
+    case '90d':
+      return const Duration(days: 1);
+    case '1w':
+    case '1W':
+      return const Duration(days: 7);
+    case '1M':
+      return const Duration(hours: 1);
+    case '3M':
+    case '1Y':
+    case 'ALL':
+      return const Duration(days: 1);
   }
-  final values = List<double?>.filled(candles.length, null);
-  var sum = 0.0;
-  for (var i = 0; i < candles.length; i++) {
-    sum += candles[i].close;
-    if (i >= period) sum -= candles[i - period].close;
-    if (i >= period - 1) values[i] = sum / period;
-  }
-  return values;
+  return const Duration(minutes: 15);
 }
 
-List<double?> emaValues(List<CandleModel> candles, int period) {
-  if (candles.isEmpty) return const [];
-  final values = List<double?>.filled(candles.length, null);
-  final k = 2 / (period + 1);
-  var ema = candles.first.close;
-  for (var i = 0; i < candles.length; i++) {
-    ema = i == 0 ? candles[i].close : (candles[i].close - ema) * k + ema;
-    if (i >= period - 1) values[i] = ema;
-  }
-  return values;
-}
-
-({List<double?> upper, List<double?> mid, List<double?> lower}) bollingerBands(
+/// Median spacing between bars — this is the real candle size, not the chip label.
+Duration inferCandleInterval(
   List<CandleModel> candles, {
-  int period = 20,
-  double multiplier = 2,
+  String label = '',
 }) {
-  final mid = smaValues(candles, period);
-  final upper = List<double?>.filled(candles.length, null);
-  final lower = List<double?>.filled(candles.length, null);
-  for (var i = period - 1; i < candles.length; i++) {
-    final mean = mid[i];
-    if (mean == null) continue;
-    var variance = 0.0;
-    for (var j = i - period + 1; j <= i; j++) {
-      final d = candles[j].close - mean;
-      variance += d * d;
+  if (candles.length >= 3) {
+    final deltas = <int>[];
+    for (var i = 1; i < candles.length; i++) {
+      final delta = candles[i]
+          .time
+          .toUtc()
+          .difference(candles[i - 1].time.toUtc())
+          .inMilliseconds
+          .abs();
+      if (delta >= 20 * 1000) deltas.add(delta);
     }
-    final std = math.sqrt(variance / period);
-    upper[i] = mean + multiplier * std;
-    lower[i] = mean - multiplier * std;
+    if (deltas.isNotEmpty) {
+      deltas.sort();
+      return Duration(milliseconds: deltas[deltas.length ~/ 2]);
+    }
   }
-  return (upper: upper, mid: mid, lower: lower);
+  return intervalFromLabel(label);
 }
 
-String formatChartTime(DateTime time, {bool intraday = false}) {
-  if (intraday) {
-    final h = time.hour.toString().padLeft(2, '0');
-    final m = time.minute.toString().padLeft(2, '0');
+DateTime alignToBucket(DateTime time, Duration interval) {
+  final step = interval.inMilliseconds;
+  if (step <= 0) return time.toUtc();
+  final ms = time.toUtc().millisecondsSinceEpoch;
+  final aligned = (ms ~/ step) * step;
+  return DateTime.fromMillisecondsSinceEpoch(aligned, isUtc: true);
+}
+
+bool intervalShowsClock(Duration interval) =>
+    interval < const Duration(hours: 20);
+
+String formatChartTime(
+  DateTime time, {
+  bool intraday = false,
+  Duration? interval,
+}) {
+  final local = time.toLocal();
+  final useClock =
+      interval != null ? intervalShowsClock(interval) : intraday;
+  if (useClock) {
+    final h = local.hour.toString().padLeft(2, '0');
+    final m = local.minute.toString().padLeft(2, '0');
     return '$h:$m';
   }
-  return '${time.day.toString().padLeft(2, '0')}/${time.month.toString().padLeft(2, '0')}';
+  return '${local.day.toString().padLeft(2, '0')}/${local.month.toString().padLeft(2, '0')}';
 }
 
 bool isIntradayInterval(String label) {
-  final lower = label.toLowerCase();
-  return lower.endsWith('m') || lower == '1h';
+  return intervalShowsClock(intervalFromLabel(label));
+}
+
+String formingCountdownLabel(Duration interval, DateTime bucketUtc) {
+  if (!intervalShowsClock(interval)) return 'Live';
+  final end = bucketUtc.add(interval);
+  var left = end.difference(DateTime.now().toUtc());
+  if (left.isNegative) left = Duration.zero;
+  final total = left.inSeconds;
+  final hours = total ~/ 3600;
+  final minutes = (total % 3600) ~/ 60;
+  final seconds = total % 60;
+  if (hours > 0) {
+    return '${hours}h ${minutes.toString().padLeft(2, '0')}m';
+  }
+  return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+}
+
+/// Grow / open the current bar from the live last price, like a real trading chart.
+List<CandleModel> applyLiveTick(
+  List<CandleModel> candles, {
+  double? lastPrice,
+  String intervalLabel = '',
+  DateTime? now,
+}) {
+  if (candles.isEmpty ||
+      lastPrice == null ||
+      !lastPrice.isFinite ||
+      lastPrice <= 0) {
+    return candles;
+  }
+  final interval = inferCandleInterval(candles, label: intervalLabel);
+  final clock = (now ?? DateTime.now()).toUtc();
+  final bucket = alignToBucket(clock, interval);
+  final last = candles.last;
+  final lastBucket = alignToBucket(last.time, interval);
+
+  CandleModel grow(CandleModel bar, DateTime openTime) {
+    return CandleModel(
+      time: openTime,
+      open: bar.open,
+      high: math.max(bar.high, lastPrice),
+      low: math.min(bar.low, lastPrice),
+      close: lastPrice,
+      volume: bar.volume,
+    );
+  }
+
+  if (!lastBucket.isBefore(bucket)) {
+    final updated = grow(last, lastBucket);
+    if (updated.close == last.close &&
+        updated.high == last.high &&
+        updated.low == last.low &&
+        _epochSeconds(updated.time) == _epochSeconds(last.time)) {
+      return candles;
+    }
+    return [...candles.sublist(0, candles.length - 1), updated];
+  }
+
+  final open = last.close > 0 ? last.close : lastPrice;
+  return [
+    ...candles,
+    CandleModel(
+      time: bucket,
+      open: open,
+      high: math.max(open, lastPrice),
+      low: math.min(open, lastPrice),
+      close: lastPrice,
+      volume: 0,
+    ),
+  ];
+}
+
+List<CandleModel> liveChartCandles(
+  List<CandleModel> candles, {
+  double? lastPrice,
+  String intervalLabel = '',
+}) {
+  return applyLiveTick(
+    normalizeCandles(candles),
+    lastPrice: lastPrice,
+    intervalLabel: intervalLabel,
+  );
 }

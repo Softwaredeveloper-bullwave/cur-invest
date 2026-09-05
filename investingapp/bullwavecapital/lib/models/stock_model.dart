@@ -84,6 +84,24 @@ class CandleModel {
   });
 
   bool get isBullish => close >= open;
+
+  CandleModel copyWith({
+    DateTime? time,
+    double? open,
+    double? high,
+    double? low,
+    double? close,
+    int? volume,
+  }) {
+    return CandleModel(
+      time: time ?? this.time,
+      open: open ?? this.open,
+      high: high ?? this.high,
+      low: low ?? this.low,
+      close: close ?? this.close,
+      volume: volume ?? this.volume,
+    );
+  }
 }
 
 class StockHoldingModel {

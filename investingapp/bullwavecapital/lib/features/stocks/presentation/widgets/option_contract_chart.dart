@@ -210,7 +210,7 @@ class _OptionContractChartState extends State<OptionContractChart> {
                       candles: _candles,
                       height: widget.height,
                       showVolume: false,
-                      lastPrice: _live ? null : widget.contract.ltp,
+                      lastPrice: widget.contract.ltp,
                     ),
             ),
           ),

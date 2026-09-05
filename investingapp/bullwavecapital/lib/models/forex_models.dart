@@ -27,8 +27,8 @@ DateTime _date(dynamic v) {
 DateTime _chartTime(dynamic v) {
   final ms = _int(v);
   if (ms <= 0) return DateTime.now();
-  if (ms < 100000000000) return DateTime.fromMillisecondsSinceEpoch(ms * 1000);
-  return DateTime.fromMillisecondsSinceEpoch(ms);
+  final millis = ms < 100000000000 ? ms * 1000 : ms;
+  return DateTime.fromMillisecondsSinceEpoch(millis, isUtc: true).toLocal();
 }
 
 List<double> _sparkline(dynamic raw) {

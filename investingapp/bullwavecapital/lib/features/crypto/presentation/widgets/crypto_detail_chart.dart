@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/charts/lightweight_chart.dart';
+import '../../../../core/charts/chart_candle_utils.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../models/stock_model.dart';
 import '../../../stocks/presentation/widgets/dhan_chart_toolbar.dart';
@@ -45,8 +46,13 @@ class _CryptoDetailChartState extends State<CryptoDetailChart> {
 
   CandleModel? get _displayCandle {
     if (_crosshairCandle != null) return _crosshairCandle;
-    if (widget.candles.isEmpty) return null;
-    return widget.candles.last;
+    final series = liveChartCandles(
+      widget.candles,
+      lastPrice: widget.lastPrice,
+      intervalLabel: widget.selectedPeriod,
+    );
+    if (series.isEmpty) return null;
+    return series.last;
   }
 
   String _formatVol(int vol) {

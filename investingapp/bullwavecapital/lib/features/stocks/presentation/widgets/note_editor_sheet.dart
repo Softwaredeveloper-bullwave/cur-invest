@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../core/storage/note_image_store.dart';
 import '../../../../core/theme/colors.dart';
 import '../../../../core/theme/theme_a.dart';
+import '../../../../core/utils/image_pick_helper.dart';
 import '../../../../models/trader_note_model.dart';
 import '../../../education/data/education_ui.dart';
 import '../provider/notes_provider.dart';
+import 'note_attached_image.dart';
 
 class NoteEditorSheet extends StatefulWidget {
   final TraderNoteModel? note;
@@ -42,7 +46,9 @@ class _NoteEditorSheetState extends State<NoteEditorSheet> {
   late final TextEditingController _symbolController;
   late String _category;
   late bool _isPinned;
+  late List<String> _imagePaths;
   bool _isSaving = false;
+  bool _isPickingPhoto = false;
 
   bool get _isEditing => widget.note != null;
 
@@ -55,22 +61,74 @@ class _NoteEditorSheetState extends State<NoteEditorSheet> {
     _symbolController = TextEditingController(text: note?.symbol ?? '');
     _category = note?.category ?? widget.defaultCategory;
     _isPinned = note?.isPinned ?? false;
+    _imagePaths = [...(note?.imagePaths ?? const <String>[])];
+    _symbolController.addListener(_fillSymbolPlaceholder);
   }
 
   @override
   void dispose() {
+    _symbolController.removeListener(_fillSymbolPlaceholder);
     _titleController.dispose();
     _bodyController.dispose();
     _symbolController.dispose();
     super.dispose();
   }
 
+  void _fillSymbolPlaceholder() {
+    final symbol = _symbolController.text.trim().toUpperCase();
+    if (symbol.isEmpty) return;
+    final title = _titleController.text;
+    final body = _bodyController.text;
+    var nextTitle = title;
+    var nextBody = body;
+    if (title.contains('SYMBOL')) {
+      nextTitle = title.replaceAll('SYMBOL', symbol);
+    } else if (RegExp(r'^Stock research — .+$').hasMatch(title)) {
+      nextTitle = 'Stock research — $symbol';
+    }
+    if (body.contains('SYMBOL')) {
+      nextBody = body.replaceAll('SYMBOL', symbol);
+    }
+    if (nextTitle == title && nextBody == body) return;
+    _titleController.value = _titleController.value.copyWith(
+      text: nextTitle,
+      selection: TextSelection.collapsed(offset: nextTitle.length),
+    );
+    if (nextBody != body) {
+      _bodyController.value = _bodyController.value.copyWith(
+        text: nextBody,
+        selection: TextSelection.collapsed(offset: nextBody.length),
+      );
+    }
+  }
+
+  void _applyTemplate(({String title, String body}) template) {
+    final symbol = _symbolController.text.trim().toUpperCase();
+    var title = template.title;
+    var body = template.body;
+    if (symbol.isNotEmpty) {
+      title = title.replaceAll('SYMBOL', symbol);
+      body = body.replaceAll('SYMBOL', symbol);
+    }
+    _titleController.text = title;
+    _bodyController.text = body;
+    setState(() {
+      if (template.title.contains('Stock research')) {
+        _category = 'stock';
+      } else if (template.title.contains('journal')) {
+        _category = 'journal';
+      } else {
+        _category = 'general';
+      }
+    });
+  }
+
   Future<void> _save() async {
     final title = _titleController.text.trim();
     final body = _bodyController.text.trim();
-    if (title.isEmpty && body.isEmpty) {
+    if (title.isEmpty && body.isEmpty && _imagePaths.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Add a title or note content')),
+        const SnackBar(content: Text('Add a title, note, or photo')),
       );
       return;
     }
@@ -83,6 +141,7 @@ class _NoteEditorSheetState extends State<NoteEditorSheet> {
       symbol: _symbolController.text.trim().toUpperCase(),
       category: _category,
       isPinned: _isPinned,
+      imagePaths: _imagePaths,
     );
     if (!mounted) return;
     setState(() => _isSaving = false);
@@ -108,6 +167,77 @@ class _NoteEditorSheetState extends State<NoteEditorSheet> {
           backgroundColor: AppColors.error,
         ),
       );
+    }
+  }
+
+  Future<void> _showPhotoOptions() async {
+    if (_imagePaths.length >= NoteImageStore.maxImages) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('You can attach up to ${NoteImageStore.maxImages} photos'),
+        ),
+      );
+      return;
+    }
+    await showModalBottomSheet<void>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('Choose from gallery'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _addPhoto(ImageSource.gallery);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_camera_outlined),
+              title: const Text('Take a photo'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _addPhoto(ImageSource.camera);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _addPhoto(ImageSource source) async {
+    if (_isPickingPhoto) return;
+    setState(() => _isPickingPhoto = true);
+    try {
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+      if (!mounted) return;
+      final picked = await ImagePickHelper.pickProfileAvatar(
+        context: context,
+        source: source,
+      );
+      if (picked == null) {
+        if (!mounted) return;
+        if (source == ImageSource.camera) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(ImagePickHelper.permissionDeniedMessage(source)),
+            ),
+          );
+        }
+        return;
+      }
+      final stored = await NoteImageStore.persist(picked.bytes);
+      if (!mounted) return;
+      setState(() => _imagePaths = [..._imagePaths, stored]);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(ImagePickHelper.pickFailedMessage(source))),
+      );
+    } finally {
+      if (mounted) setState(() => _isPickingPhoto = false);
     }
   }
 
@@ -200,11 +330,7 @@ class _NoteEditorSheetState extends State<NoteEditorSheet> {
                           template.title,
                           style: ThemeAType.label(size: 12),
                         ),
-                        onPressed: () {
-                          _titleController.text = template.title;
-                          _bodyController.text = template.body;
-                          setState(() => _category = 'general');
-                        },
+                        onPressed: () => _applyTemplate(template),
                       );
                     }).toList(),
                   ),
@@ -253,6 +379,7 @@ class _NoteEditorSheetState extends State<NoteEditorSheet> {
                     const SizedBox(width: 10),
                     Expanded(
                       child: DropdownButtonFormField<String>(
+                        key: ValueKey(_category),
                         initialValue: _category,
                         decoration: InputDecoration(
                           filled: true,
@@ -306,6 +433,121 @@ class _NoteEditorSheetState extends State<NoteEditorSheet> {
                     ),
                   ),
                   textCapitalization: TextCapitalization.sentences,
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Text(
+                      'Photos',
+                      style: ThemeAType.label(size: 12, color: p.textMuted),
+                    ),
+                    const Spacer(),
+                    Text(
+                      '${_imagePaths.length}/${NoteImageStore.maxImages}',
+                      style: ThemeAType.label(size: 12, color: p.textMuted),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  height: 92,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    children: [
+                      ..._imagePaths.asMap().entries.map((entry) {
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 10),
+                          child: Stack(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(14),
+                                child: SizedBox(
+                                  width: 92,
+                                  height: 92,
+                                  child: NoteAttachedImage(source: entry.value),
+                                ),
+                              ),
+                              Positioned(
+                                top: 4,
+                                right: 4,
+                                child: Material(
+                                  color: Colors.black54,
+                                  shape: const CircleBorder(),
+                                  child: InkWell(
+                                    customBorder: const CircleBorder(),
+                                    onTap: () {
+                                      setState(() {
+                                        _imagePaths = [
+                                          for (var i = 0;
+                                              i < _imagePaths.length;
+                                              i++)
+                                            if (i != entry.key) _imagePaths[i],
+                                        ];
+                                      });
+                                    },
+                                    child: const Padding(
+                                      padding: EdgeInsets.all(4),
+                                      child: Icon(
+                                        Icons.close_rounded,
+                                        size: 16,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
+                      if (_imagePaths.length < NoteImageStore.maxImages)
+                        InkWell(
+                          onTap: _isPickingPhoto ? null : _showPhotoOptions,
+                          borderRadius: BorderRadius.circular(14),
+                          child: Container(
+                            width: 92,
+                            height: 92,
+                            decoration: BoxDecoration(
+                              color: p.card,
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(color: p.borderLight),
+                            ),
+                            child: _isPickingPhoto
+                                ? const Center(
+                                    child: SizedBox(
+                                      width: 22,
+                                      height: 22,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    ),
+                                  )
+                                : Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.add_photo_alternate_outlined,
+                                        color: ThemeA.primary,
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Add photo',
+                                        style: ThemeAType.label(
+                                          size: 11,
+                                          color: ThemeA.primary,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Photos stay on this device and are not uploaded with the note.',
+                  style: ThemeAType.label(size: 11, color: p.textMuted),
                 ),
               ],
             ),

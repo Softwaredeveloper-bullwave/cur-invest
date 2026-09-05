@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../../../../core/api/api_exception.dart';
 import '../../../../core/api/bullwave_api.dart';
+import '../../../../core/charts/chart_candle_utils.dart';
 import '../../../../core/constants/routes.dart';
 import '../../../../core/theme/colors.dart';
 import '../../../../core/theme/theme_a.dart';
@@ -37,6 +38,7 @@ class _CryptoDetailScreenState extends State<CryptoDetailScreen> {
   bool _loadingChart = true;
   String? _error;
   Timer? _quoteTimer;
+  Timer? _chartTimer;
 
   String get _resolvedId {
     final raw = widget.assetId.trim();
@@ -60,14 +62,18 @@ class _CryptoDetailScreenState extends State<CryptoDetailScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _load());
-    _quoteTimer = Timer.periodic(const Duration(seconds: 8), (_) {
+    _quoteTimer = Timer.periodic(const Duration(seconds: 3), (_) {
       unawaited(_refreshQuote());
+    });
+    _chartTimer = Timer.periodic(const Duration(seconds: 45), (_) {
+      unawaited(_loadChart(_period, silent: true));
     });
   }
 
   @override
   void dispose() {
     _quoteTimer?.cancel();
+    _chartTimer?.cancel();
     super.dispose();
   }
 
@@ -136,11 +142,15 @@ class _CryptoDetailScreenState extends State<CryptoDetailScreen> {
     } catch (_) {}
   }
 
-  Future<void> _loadChart(String period) async {
-    setState(() {
-      _loadingChart = true;
+  Future<void> _loadChart(String period, {bool silent = false}) async {
+    if (!silent) {
+      setState(() {
+        _loadingChart = true;
+        _period = period;
+      });
+    } else {
       _period = period;
-    });
+    }
     try {
       final chart = await BullwaveApi.instance.getCryptoChart(
         _resolvedId,
@@ -157,6 +167,10 @@ class _CryptoDetailScreenState extends State<CryptoDetailScreen> {
       });
     } catch (_) {
       if (!mounted) return;
+      if (silent) {
+        setState(() => _loadingChart = false);
+        return;
+      }
       final fallback = _candlesFromSparkline(
         _asset,
         fallbackPrice: _asset?.currentPrice,
@@ -182,14 +196,19 @@ class _CryptoDetailScreenState extends State<CryptoDetailScreen> {
         ..add(price);
     }
     if (values.length < 2) return const [];
-    final now = DateTime.now();
+    const interval = Duration(minutes: 15);
+    final end = alignToBucket(DateTime.now(), interval);
     return [
       for (var i = 0; i < values.length; i++)
         CandleModel(
-          time: now.subtract(Duration(minutes: (values.length - 1 - i) * 15)),
+          time: end.subtract(interval * (values.length - 1 - i)),
           open: i == 0 ? values[i] : values[i - 1],
-          high: i == 0 ? values[i] : (values[i] > values[i - 1] ? values[i] : values[i - 1]),
-          low: i == 0 ? values[i] : (values[i] < values[i - 1] ? values[i] : values[i - 1]),
+          high: i == 0
+              ? values[i]
+              : (values[i] > values[i - 1] ? values[i] : values[i - 1]),
+          low: i == 0
+              ? values[i]
+              : (values[i] < values[i - 1] ? values[i] : values[i - 1]),
           close: values[i],
           volume: 0,
         ),

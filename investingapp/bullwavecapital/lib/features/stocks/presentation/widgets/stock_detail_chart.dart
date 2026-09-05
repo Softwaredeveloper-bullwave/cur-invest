@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/charts/lightweight_chart.dart';
+import '../../../../core/charts/chart_candle_utils.dart';
 import '../../../../core/charts/tradingview_chart.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../models/stock_model.dart';
@@ -60,8 +61,13 @@ class _StockDetailChartState extends State<StockDetailChart> {
 
   CandleModel? get _displayCandle {
     if (_crosshairCandle != null) return _crosshairCandle;
-    if (widget.candles.isEmpty) return null;
-    return widget.candles.last;
+    final series = liveChartCandles(
+      widget.candles,
+      lastPrice: widget.lastPrice,
+      intervalLabel: widget.selectedLabel,
+    );
+    if (series.isEmpty) return null;
+    return series.last;
   }
 
   String _formatVol(int vol) {
