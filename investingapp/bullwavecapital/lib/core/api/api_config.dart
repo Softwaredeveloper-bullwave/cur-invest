@@ -6,18 +6,17 @@ import '../config/app_env.dart';
 ///
 /// **Override at build time:**
 /// ```bash
-/// flutter run --dart-define=API_BASE_URL=https://api.capitalbullwave.com/api/v1
+/// flutter run -d chrome --dart-define=API_BASE_URL=http://43.204.159.255/api/v1
 /// ```
 ///
-/// **Legacy host override (no port — nginx serves on 80):**
-/// `flutter run --dart-define=API_HOST=54.252.109.12`
+/// **Host-only override (HTTP on port 80):**
+/// `flutter run --dart-define=API_HOST=43.204.159.255`
 class ApiConfig {
   ApiConfig._();
 
   /// Default backend when no `--dart-define=API_BASE_URL` is passed.
-  /// Use HTTPS — nginx on EC2 redirects HTTP → 301, which breaks Dio POST requests.
-  static const String defaultApiBaseUrl =
-      'https://api.capitalbullwave.com/api/v1';
+  /// Current AWS Elastic IP (HTTP :80) until api.capitalbullwave.com TLS is back.
+  static const String defaultApiBaseUrl = 'http://43.204.159.255/api/v1';
 
   static const String _apiBaseFromEnv = String.fromEnvironment(
     'API_BASE_URL',
@@ -38,11 +37,11 @@ class ApiConfig {
 
     final hostFromDefine = _apiHostFromEnv.trim();
     if (hostFromDefine.isNotEmpty) {
-      return _normalizeBase('https://$hostFromDefine/api/v1');
+      return _normalizeBase('http://$hostFromDefine/api/v1');
     }
 
     if (hostOverride != null && hostOverride!.isNotEmpty) {
-      return _normalizeBase('https://$hostOverride/api/v1');
+      return _normalizeBase('http://$hostOverride/api/v1');
     }
 
     if (kReleaseMode) {

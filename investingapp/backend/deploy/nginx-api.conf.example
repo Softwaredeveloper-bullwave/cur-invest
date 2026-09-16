@@ -9,6 +9,36 @@ upstream bullwave_gunicorn {
     server 127.0.0.1:8000 fail_timeout=0;
 }
 
+# Temporary: AWS Elastic IP over HTTP until api.capitalbullwave.com TLS is restored.
+# Flutter Chrome/web needs CORS on this vhost (Django also sets CORS after restart).
+server {
+    listen 80 default_server;
+    server_name 43.204.159.255 _;
+
+    client_max_body_size 25M;
+
+    location /static/ {
+        alias /home/ubuntu/cur-invest/investingapp/backend/staticfiles/;
+    }
+
+    location /media/ {
+        alias /home/ubuntu/cur-invest/investingapp/backend/media/;
+    }
+
+    location / {
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Origin $http_origin;
+        proxy_redirect off;
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 120s;
+        proxy_read_timeout 120s;
+        proxy_pass http://bullwave_gunicorn;
+    }
+}
+
 server {
     listen 80;
     server_name api.capitalbullwave.com;

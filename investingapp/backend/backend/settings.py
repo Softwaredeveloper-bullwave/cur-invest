@@ -238,9 +238,10 @@ SIMPLE_JWT = {
     'ROTATE_REFRESH_TOKENS': True,
 }
 
-# Flutter Chrome/web uses a random localhost port; production DEBUG=False
-# previously omitted those origins, so the browser blocked login as ClientException.
-CORS_ALLOW_ALL_ORIGINS = config('CORS_ALLOW_ALL_ORIGINS', default=DEBUG, cast=bool)
+# Flutter Chrome/web uses a random localhost port. Production DEBUG=False used
+# to omit those origins, so the browser blocked login as a ClientException.
+# Default True while the API is served from the AWS Elastic IP over HTTP.
+CORS_ALLOW_ALL_ORIGINS = config('CORS_ALLOW_ALL_ORIGINS', default=True, cast=bool)
 CORS_ALLOWED_ORIGINS = config(
     'CORS_ALLOWED_ORIGINS',
     default=(
@@ -262,6 +263,18 @@ CORS_ALLOWED_ORIGIN_REGEXES = config(
     cast=lambda v: [origin.strip() for origin in v.split(',') if origin.strip()],
 )
 CORS_ALLOW_CREDENTIALS = False
+CSRF_TRUSTED_ORIGINS = config(
+    'CSRF_TRUSTED_ORIGINS',
+    default=(
+        'http://localhost:3000,http://127.0.0.1:3000,'
+        'http://localhost:5173,http://127.0.0.1:5173,'
+        'http://localhost:8080,http://127.0.0.1:8080,'
+        'http://43.204.159.255,'
+        'https://app.capitalbullwave.com,https://www.capitalbullwave.com,'
+        'https://capitalbullwave.com,https://api.capitalbullwave.com'
+    ),
+    cast=lambda v: [origin.strip() for origin in v.split(',') if origin.strip()],
+)
 
 CACHES = {
     'default': {

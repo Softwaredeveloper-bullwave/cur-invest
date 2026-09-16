@@ -2,7 +2,7 @@
 <!-- Debug: allow HTTP to AWS backend and local dev hosts -->
 <network-security-config>
     <domain-config cleartextTrafficPermitted="true">
-        <domain includeSubdomains="false">54.252.109.12</domain>
+        <domain includeSubdomains="false">43.204.159.255</domain>
         <domain includeSubdomains="true">10.0.2.2</domain>
         <domain includeSubdomains="true">localhost</domain>
         <domain includeSubdomains="true">127.0.0.1</domain>

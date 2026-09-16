@@ -2,7 +2,7 @@
 <!-- Release: HTTPS preferred; allow cleartext to AWS backend on port 80 -->
 <network-security-config>
     <domain-config cleartextTrafficPermitted="true">
-        <domain includeSubdomains="false">54.252.109.12</domain>
+        <domain includeSubdomains="false">43.204.159.255</domain>
     </domain-config>
     <base-config cleartextTrafficPermitted="false">
         <trust-anchors>

@@ -13,8 +13,7 @@ class AppEnv {
   static bool get allowsDevShortcuts => kDebugMode;
 
   /// Default production API when `--dart-define=API_BASE_URL=...` is omitted.
-  static const String productionApiBaseUrl =
-      'https://api.capitalbullwave.com/api/v1';
+  static const String productionApiBaseUrl = 'http://43.204.159.255/api/v1';
 
   /// Whether OTP console/dev hints may be shown in the UI (debug + profile builds).
   static bool get showDevOtpHints => !kReleaseMode;
