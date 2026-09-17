@@ -30,6 +30,9 @@ chmod -R u+rwX "$BACKEND_DIR/media"
 echo "==> Disk space"
 df -h / /tmp "$BACKEND_DIR" 2>/dev/null || df -h
 
+echo "==> Apply database migrations"
+python manage.py migrate --noinput
+
 echo "==> Django system check"
 python manage.py check
 

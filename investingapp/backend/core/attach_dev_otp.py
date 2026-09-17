@@ -13,6 +13,12 @@ class AttachDevOtpMiddleware:
 
     def __call__(self, request):
         response = self.get_response(request)
+        try:
+            return self._attach(request, response)
+        except Exception:
+            return response
+
+    def _attach(self, request, response):
         if request.method != 'POST':
             return response
         path = request.path.rstrip('/')

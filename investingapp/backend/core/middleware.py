@@ -30,18 +30,21 @@ class RequestLogMiddleware:
                 raise
             except Exception as exc:
                 if not request.path.endswith('/client-errors/') and not is_database_outage_text(exc):
-                    record_error_event(
-                        source='backend',
-                        severity='critical',
-                        message=str(exc) or exc.__class__.__name__,
-                        exception_type=exc.__class__.__name__,
-                        logger_name='django.request',
-                        location=request.path,
-                        method=request.method,
-                        status_code=500,
-                        user=getattr(request, 'user', None),
-                        context={'traceback': traceback.format_exc(limit=12)},
-                    )
+                    try:
+                        record_error_event(
+                            source='backend',
+                            severity='critical',
+                            message=str(exc) or exc.__class__.__name__,
+                            exception_type=exc.__class__.__name__,
+                            logger_name='django.request',
+                            location=request.path,
+                            method=request.method,
+                            status_code=500,
+                            user=getattr(request, 'user', None),
+                            context={'traceback': traceback.format_exc(limit=12)},
+                        )
+                    except Exception:
+                        logger.exception('Failed to persist request error event')
                 raise
             if (
                 response.status_code >= 500

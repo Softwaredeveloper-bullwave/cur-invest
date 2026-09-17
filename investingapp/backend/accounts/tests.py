@@ -57,6 +57,21 @@ class DisabledSmsOtpTests(SimpleTestCase):
         self.assertEqual(response.data['code'], 'database_unavailable')
         self.assertIn('try again', response.data['detail'].lower())
 
+    @patch.object(SendOTPView, '_issue_local_otp', return_value='654321')
+    @patch.object(SendOTPView, '_registration_hint', side_effect=TypeError('boom'))
+    def test_send_otp_recovers_from_unexpected_error(self, _hint_mock, issue_otp_mock):
+        request = APIRequestFactory().post(
+            '/api/v1/auth/send-otp/',
+            {'phone': '8700799173'},
+            format='json',
+        )
+
+        response = SendOTPView.as_view()(request)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['otpMode'], 'console')
+        self.assertEqual(response.data['devOtp'], '654321')
+
 
 @override_settings(**_FLUTTER_WEB_CORS)
 class FlutterWebCorsTests(SimpleTestCase):
