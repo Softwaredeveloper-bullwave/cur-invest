@@ -1,10 +1,11 @@
-from django.test import SimpleTestCase
+from django.test import SimpleTestCase, override_settings
 
 from services.eko_auth import (
     build_eko_auth_headers,
     redact_eko_headers,
     sanitize_eko_payload,
 )
+from services.providers.eko_config import eko_settings
 
 
 class EkoAuthTests(SimpleTestCase):
@@ -40,3 +41,20 @@ class EkoAuthTests(SimpleTestCase):
 
         self.assertEqual(cleaned['account'], '****7890')
         self.assertEqual(cleaned['ifsc'], 'HDFC0001234')
+
+
+class EkoConfigTests(SimpleTestCase):
+    @override_settings(
+        EKO_ENVIRONMENT='production',
+        EKO_BASE_URL='https://api.eko.in:25002/ekoicici',
+        EKO_DEVELOPER_KEY='dev',
+        EKO_ACCESS_KEY='access',
+        EKO_INITIATOR_ID='9616212526',
+        EKO_USER_CODE='23880001',
+        EKO_ORG_SLUG='',
+        EKO_PENNYLESS_PATH='',
+        EKO_PENNYLESS_ENABLED=True,
+    )
+    def test_strips_retired_gateway_port_from_base_url(self):
+        cfg = eko_settings()
+        self.assertEqual(cfg.base_url, 'https://api.eko.in/ekoicici')

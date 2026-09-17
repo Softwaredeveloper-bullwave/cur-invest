@@ -59,7 +59,10 @@ def eko_settings() -> EkoSettings:
     base_default = '' if is_prod else 'https://staging.eko.in/ekoapi'
 
     initiator_id = _env('EKO_INITIATOR_ID')
-    base_url = _env('EKO_BASE_URL', base_default)
+    base_url = _env('EKO_BASE_URL', base_default).rstrip('/')
+    # Retired payment gateway port — KYC/DigiLocker live on the host without :25002.
+    if ':25002' in base_url:
+        base_url = base_url.replace(':25002', '', 1)
     # Penniless routes use an explicit partner slug from Eko — never infer it
     # from the white-label base URL (ekoicici != icici slug for KYC tools).
     org_slug = _env('EKO_ORG_SLUG')

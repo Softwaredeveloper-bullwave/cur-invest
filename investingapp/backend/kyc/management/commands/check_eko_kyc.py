@@ -46,6 +46,14 @@ class Command(BaseCommand):
         self.stdout.write('')
         self.stdout.write(f'EKO_ENVIRONMENT            : {cfg.environment}')
         self.stdout.write(f'EKO_BASE_URL               : {cfg.base_url or "(not set)"}')
+        if ':25002' in (getattr(settings, 'EKO_BASE_URL', '') or ''):
+            self.stdout.write(
+                self.style.WARNING(
+                    'EKO_BASE_URL in .env still has :25002. DigiLocker uses '
+                    'https://api.eko.in/ekoicici (port stripped automatically). '
+                    'Edit .env to remove :25002, then restart.'
+                )
+            )
         self.stdout.write(f'EKO_INITIATOR_ID           : {cfg.initiator_id or "(not set)"}')
         self.stdout.write(f'EKO_USER_CODE              : {cfg.user_code or "(not set)"}')
         self.stdout.write(
