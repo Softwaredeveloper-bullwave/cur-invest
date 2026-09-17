@@ -16,6 +16,9 @@ fi
 # shellcheck disable=SC1091
 source venv/bin/activate
 
+echo "==> Install Python dependencies"
+pip install -r requirements.txt
+
 echo "==> Ensure gunicorn temp directory exists"
 mkdir -p "$BACKEND_DIR/run/tmp"
 chmod 700 "$BACKEND_DIR/run/tmp"
