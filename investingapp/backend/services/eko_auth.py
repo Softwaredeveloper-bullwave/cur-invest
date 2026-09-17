@@ -42,24 +42,38 @@ SENSITIVE_EKO_PAYLOAD_KEYS = frozenset(
 )
 
 
-def build_eko_auth_headers(*, developer_key: str, access_key: str, timestamp_ms: int | None = None) -> dict[str, str]:
-    """Generate Eko `secret-key` + `secret-key-timestamp` for one request."""
+def build_eko_auth_headers(
+    *,
+    developer_key: str,
+    access_key: str,
+    timestamp_ms: int | None = None,
+    hmac_key_mode: str = 'b64_string',
+) -> dict[str, str]:
+    """Generate Eko `secret-key` + `secret-key-timestamp` for one request.
+
+    Official Python sample (developers.eko.in): HMAC key is the base64 *string*
+    of the access key. Some Eko JS samples decode that base64 first. We try
+    ``b64_string`` first and ``raw`` on 401.
+    """
     timestamp = str(timestamp_ms if timestamp_ms is not None else int(round(time.time() * 1000)))
-    encoded_key = base64.b64encode(access_key.encode()).decode()
-    signature = hmac.new(encoded_key.encode(), timestamp.encode(), hashlib.sha256).digest()
+    encoded_key = base64.b64encode(access_key.encode())
+    hmac_key = access_key.encode() if hmac_key_mode == 'raw' else encoded_key
+    signature = hmac.new(hmac_key, timestamp.encode(), hashlib.sha256).digest()
     secret_key = base64.b64encode(signature).decode()
     return {
         'developer_key': developer_key,
         'secret-key': secret_key,
         'secret-key-timestamp': timestamp,
+        'accept': 'application/json',
     }
 
 
-def build_eko_auth_headers_from_config(cfg) -> dict[str, str]:
+def build_eko_auth_headers_from_config(cfg, *, hmac_key_mode: str = 'b64_string') -> dict[str, str]:
     """Build auth headers from an ``EkoSettings`` dataclass."""
     return build_eko_auth_headers(
         developer_key=cfg.developer_key,
         access_key=cfg.access_key,
+        hmac_key_mode=hmac_key_mode,
     )
 
 

@@ -45,7 +45,13 @@ class EkoSettings:
 
 
 def _env(name: str, default: str = '') -> str:
-    return (getattr(settings, name, None) or default).strip()
+    value = (getattr(settings, name, None) or default or '').strip()
+    quotes = {'"', "'", '\u201c', '\u201d', '\u2018', '\u2019'}
+    while len(value) >= 2 and value[0] in quotes and value[-1] in quotes:
+        value = value[1:-1].strip()
+    for ch in ('\ufeff', '\u200b', '\u200c', '\u200d', '\xa0'):
+        value = value.replace(ch, '')
+    return value.strip()
 
 
 def eko_settings() -> EkoSettings:
@@ -63,6 +69,10 @@ def eko_settings() -> EkoSettings:
     # Retired payment gateway port — KYC/DigiLocker live on the host without :25002.
     if ':25002' in base_url:
         base_url = base_url.replace(':25002', '', 1)
+    # Production host with a leftover UAT flag still needs the production key pair.
+    if 'api.eko.in' in base_url and 'staging' not in base_url:
+        if env.lower() not in ('production', 'prod', 'live'):
+            env = 'production'
     # Penniless routes use an explicit partner slug from Eko — never infer it
     # from the white-label base URL (ekoicici != icici slug for KYC tools).
     org_slug = _env('EKO_ORG_SLUG')

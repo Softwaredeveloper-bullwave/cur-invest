@@ -57,11 +57,20 @@ if env.is_file():
     id_set = 'yes' if last.get('CASHFREE_CLIENT_ID') else 'MISSING'
     secret_set = 'yes' if last.get('CASHFREE_CLIENT_SECRET') else 'MISSING'
     aadhaar = last.get('KYC_AADHAAR_PROVIDER', '')
+    eko_dev = 'yes' if last.get('EKO_DEVELOPER_KEY') else 'MISSING'
+    eko_access = 'yes' if last.get('EKO_ACCESS_KEY') else 'MISSING'
+    eko_env = last.get('EKO_ENVIRONMENT', '')
+    eko_url = last.get('EKO_BASE_URL', '')
 print(f'CASHFREE_CLIENT_ID set: {id_set}')
 print(f'CASHFREE_CLIENT_SECRET set: {secret_set}')
 print(f'KYC_AADHAAR_PROVIDER: {aadhaar or "(blank)"}')
+print(f'EKO_DEVELOPER_KEY set: {eko_dev}')
+print(f'EKO_ACCESS_KEY set: {eko_access}')
+print(f'EKO_ENVIRONMENT: {eko_env or "(blank)"}')
+print(f'EKO_BASE_URL: {eko_url or "(blank)"}')
 PY
 python manage.py check_cashfree_secure_id || true
+python manage.py check_eko_kyc || true
 
 echo "==> Restart gunicorn (bullwave)"
 sudo systemctl daemon-reload

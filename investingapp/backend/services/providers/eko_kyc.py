@@ -327,8 +327,28 @@ def is_configured() -> bool:
     return eko_settings().is_configured
 
 
-def _security_headers(cfg) -> dict:
-    return build_eko_auth_headers_from_config(cfg)
+def _security_headers(cfg, *, hmac_key_mode: str = 'b64_string', json_body: bool = False) -> dict:
+    headers = build_eko_auth_headers_from_config(cfg, hmac_key_mode=hmac_key_mode)
+    if json_body:
+        headers['content-type'] = 'application/json'
+    return headers
+
+
+_AUTH_FAILED_HINT = (
+    'Confirm the production EKO_DEVELOPER_KEY + EKO_ACCESS_KEY pair from connect.eko.in '
+    '(not UAT), that DigiLocker is enabled, and that this server IP is allowed.'
+)
+
+
+def _raise_if_unauthorized(response, payload, url) -> None:
+    if response is None or response.status_code != 401:
+        return
+    host = url.split('/v')[0] if '/v' in url else url
+    raise EkoKycError(
+        f'Eko returned Unauthorized at {host}. {_AUTH_FAILED_HINT}'[:280],
+        'auth_failed',
+        eko_meta=_eko_meta_from_payload(payload if isinstance(payload, dict) else {}),
+    )
 
 
 _OTP_REF_KEYS = ('otp_ref_id', 'reference_tid', 'otp_reference_id', 'reference_id', 'tid', 'txn_id', 'ref_id')
@@ -378,25 +398,21 @@ def _request(
         raise EkoKycError('Eko API credentials are not configured.')
 
     url = f'{(base_url or cfg.base_url).rstrip("/")}{path}'
-    headers = _security_headers(cfg)
-    if json_body:
-        headers['content-type'] = 'application/json'
-
-    logger.info('Eko request start %s %s', method, url)
-    if logger.isEnabledFor(logging.DEBUG):
-        safe_keys = []
-        if data:
-            safe_keys = sorted(k for k in data if k not in {'account', 'bank_account', 'ifsc', 'pan_number', 'aadhar', 'otp'})
-        logger.debug('Eko request body keys (no PII): %s client_ref_id=%s', safe_keys, (data or {}).get('client_ref_id', ''))
-
-    response = _execute_eko_http(
-        method=method,
-        url=url,
-        headers=headers,
-        cfg=cfg,
-        json_body=(data or {}) if json_body else None,
-        form_body=None if json_body else (data or {}),
-    )
+    response = None
+    for hmac_key_mode in ('b64_string', 'raw'):
+        headers = _security_headers(cfg, hmac_key_mode=hmac_key_mode, json_body=json_body)
+        logger.info('Eko request start %s %s hmac=%s', method, url, hmac_key_mode)
+        response = _execute_eko_http(
+            method=method,
+            url=url,
+            headers=headers,
+            cfg=cfg,
+            json_body=(data or {}) if json_body else None,
+            form_body=None if json_body else (data or {}),
+        )
+        if response.status_code != 401 or hmac_key_mode == 'raw':
+            break
+        logger.warning('Eko 401 with HMAC mode %s at %s — retrying alternate signature', hmac_key_mode, url)
 
     payload = {}
     try:
@@ -452,17 +468,7 @@ def _request(
         data_payload = dict(payload) if isinstance(payload, dict) else {}
     has_otp_ref = bool(_extract_ref_id(data_payload)) if not check_status else False
 
-    if response.status_code == 401:
-        eko_detail = _safe_error_message(payload, response)
-        host = url.split('/v')[0] if '/v' in url else url
-        raise EkoKycError(
-            (
-                f'Eko rejected the API key at {host}. {eko_detail} '
-                'Set EKO_BASE_URL=https://api.eko.in/ekoicici (no :25002), then restart gunicorn.'
-            )[:280],
-            'auth_failed',
-            eko_meta=_eko_meta_from_payload(payload),
-        )
+    _raise_if_unauthorized(response, payload, url)
     if response.is_error:
         # For OTP-trigger endpoints (check_status=False), Eko can return a
         # non-2xx / "failure-shaped" response that still carries a real
@@ -555,15 +561,19 @@ def _get(path: str, params: dict | None = None, *, check_status: bool = True) ->
         raise EkoKycError('Eko API credentials are not configured.')
 
     url = f'{cfg.base_url.rstrip("/")}{path}'
-    headers = _security_headers(cfg)
-
-    response = _execute_eko_http(
-        method='GET',
-        url=url,
-        headers=headers,
-        cfg=cfg,
-        params=params,
-    )
+    response = None
+    for hmac_key_mode in ('b64_string', 'raw'):
+        headers = _security_headers(cfg, hmac_key_mode=hmac_key_mode)
+        response = _execute_eko_http(
+            method='GET',
+            url=url,
+            headers=headers,
+            cfg=cfg,
+            params=params,
+        )
+        if response.status_code != 401 or hmac_key_mode == 'raw':
+            break
+        logger.warning('Eko GET 401 with HMAC mode %s at %s — retrying alternate signature', hmac_key_mode, url)
 
     payload = {}
     try:
@@ -595,17 +605,7 @@ def _get(path: str, params: dict | None = None, *, check_status: bool = True) ->
         data_payload['_eko_status'] = payload.get('status')
     has_ref = bool(_extract_ref_id(data_payload)) if not check_status else False
 
-    if response.status_code == 401:
-        eko_detail = _safe_error_message(payload, response)
-        host = url.split('/v')[0] if '/v' in url else url
-        raise EkoKycError(
-            (
-                f'Eko rejected the API key at {host}. {eko_detail} '
-                'Set EKO_BASE_URL=https://api.eko.in/ekoicici (no :25002), then restart gunicorn.'
-            )[:280],
-            'auth_failed',
-            eko_meta=_eko_meta_from_payload(payload),
-        )
+    _raise_if_unauthorized(response, payload, url)
     if response.is_error:
         if not (not check_status and has_ref):
             message = _safe_error_message(payload, response)
@@ -875,14 +875,15 @@ def _kyc_base_urls(cfg) -> list[str]:
     """KYC/DigiLocker hosts. Prefer the current API host, never the retired :25002 port."""
     urls: list[str] = []
     primary = (getattr(cfg, 'base_url', '') or '').strip().rstrip('/')
-    if ':25002' in primary:
-        urls.append(primary.replace(':25002', ''))
     if primary:
         urls.append(primary.replace(':25002', '') if ':25002' in primary else primary)
     if getattr(cfg, 'is_production', False):
         canonical = 'https://api.eko.in/ekoicici'
         if canonical not in urls:
-            urls.insert(0, canonical)
+            urls.append(canonical)
+    staging = 'https://staging.eko.in/ekoapi'
+    if staging not in urls:
+        urls.append(staging)
     seen: set[str] = set()
     unique: list[str] = []
     for url in urls:
@@ -1143,6 +1144,7 @@ def create_digilocker_url(*, client_ref_id: str, redirect_url: str) -> dict:
         'redirect_url': redirect_url,
     }
     last_error: EkoKycError | None = None
+    first_auth_error: EkoKycError | None = None
     for base_url in _kyc_base_urls(cfg):
         try:
             result = _request(
@@ -1157,6 +1159,8 @@ def create_digilocker_url(*, client_ref_id: str, redirect_url: str) -> dict:
             last_error = exc
             if exc.code != 'auth_failed':
                 raise
+            if first_auth_error is None:
+                first_auth_error = exc
             logger.warning('DigiLocker auth failed at %s: %s', base_url, exc)
             continue
         digilocker_url = result.get('url') or result.get('digilocker_url') or ''
@@ -1171,6 +1175,8 @@ def create_digilocker_url(*, client_ref_id: str, redirect_url: str) -> dict:
             'reference_id': str(reference_id),
             'verification_id': str(result.get('verification_id') or ''),
         }
+    if first_auth_error:
+        raise first_auth_error
     if last_error:
         raise last_error
     raise EkoKycError('Eko DigiLocker host is not configured.', 'not_configured')

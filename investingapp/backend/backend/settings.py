@@ -20,11 +20,19 @@ def _clean_env(value: str, *, strip_trailing_slash: bool = False) -> str:
     return cleaned
 
 
+def _strip_wrapping_quotes(value: str) -> str:
+    cleaned = (value or '').strip()
+    quotes = {'"', "'", '\u201c', '\u201d', '\u2018', '\u2019'}
+    while len(cleaned) >= 2 and cleaned[0] in quotes and cleaned[-1] in quotes:
+        cleaned = cleaned[1:-1].strip()
+    return cleaned
+
+
 def _ascii_env(value: str) -> str:
     """API keys must be ASCII — rejects copy-paste corruption (e.g. Cyrillic lookalikes)."""
-    cleaned = _clean_env(value)
-    if len(cleaned) >= 2 and cleaned[0] == cleaned[-1] and cleaned[0] in {'"', "'"}:
-        cleaned = cleaned[1:-1].strip()
+    cleaned = _strip_wrapping_quotes(_clean_env(value))
+    for ch in ('\ufeff', '\u200b', '\u200c', '\u200d', '\xa0'):
+        cleaned = cleaned.replace(ch, '')
     if not cleaned:
         return ''
     ascii_only = ''.join(ch for ch in cleaned if ord(ch) < 128)
@@ -531,12 +539,24 @@ if KYC_BANK_REVIEW_MODE not in {'provider', 'manual'}:
     KYC_BANK_REVIEW_MODE = 'provider'
 
 # Verification — Eko Platform Services (https://developers.eko.in) — paste keys in .env
-EKO_DEVELOPER_KEY = _ascii_env(config('EKO_DEVELOPER_KEY', default=''))
-EKO_ACCESS_KEY = _ascii_env(config('EKO_ACCESS_KEY', default=''))
-EKO_INITIATOR_ID = _clean_env(config('EKO_INITIATOR_ID', default=''))
-EKO_USER_CODE = _clean_env(config('EKO_USER_CODE', default=''))
-EKO_ENVIRONMENT = _clean_env(config('EKO_ENVIRONMENT', default='uat'))
-EKO_BASE_URL = _clean_env(config('EKO_BASE_URL', default=''), strip_trailing_slash=True)
+EKO_DEVELOPER_KEY = _dotenv_last_nonempty('EKO_DEVELOPER_KEY') or _ascii_env(
+    config('EKO_DEVELOPER_KEY', default='')
+)
+EKO_ACCESS_KEY = _dotenv_last_nonempty('EKO_ACCESS_KEY') or _ascii_env(
+    config('EKO_ACCESS_KEY', default='')
+)
+EKO_INITIATOR_ID = _dotenv_last_nonempty('EKO_INITIATOR_ID') or _clean_env(
+    config('EKO_INITIATOR_ID', default='')
+)
+EKO_USER_CODE = _dotenv_last_nonempty('EKO_USER_CODE') or _clean_env(
+    config('EKO_USER_CODE', default='')
+)
+EKO_ENVIRONMENT = _dotenv_last_nonempty('EKO_ENVIRONMENT') or _clean_env(
+    config('EKO_ENVIRONMENT', default='uat')
+)
+EKO_BASE_URL = _dotenv_last_nonempty('EKO_BASE_URL') or _clean_env(
+    config('EKO_BASE_URL', default=''), strip_trailing_slash=True
+)
 # Optional override when UPI validate-vpa lives on a different Eko host/port than KYC tools.
 EKO_UPI_BASE_URL = _clean_env(config('EKO_UPI_BASE_URL', default=''), strip_trailing_slash=True)
 EKO_ALLOW_SANDBOX_BYPASS = config('EKO_ALLOW_SANDBOX_BYPASS', default=False, cast=bool)

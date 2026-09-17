@@ -1,3 +1,7 @@
+import base64
+import hashlib
+import hmac
+
 from django.test import SimpleTestCase, override_settings
 
 from services.eko_auth import (
@@ -19,6 +23,18 @@ class EkoAuthTests(SimpleTestCase):
         self.assertEqual(headers['developer_key'], 'dev-key')
         self.assertEqual(headers['secret-key-timestamp'], '1700000000000')
         self.assertTrue(headers['secret-key'])
+        self.assertEqual(headers['accept'], 'application/json')
+        encoded_key = base64.b64encode(b'access-key').decode()
+        expected = base64.b64encode(
+            hmac.new(encoded_key.encode(), b'1700000000000', hashlib.sha256).digest()
+        ).decode()
+        self.assertEqual(headers['secret-key'], expected)
+
+    def test_raw_hmac_mode_differs_from_official_b64_string(self):
+        kwargs = dict(developer_key='dev-key', access_key='access-key', timestamp_ms=1700000000000)
+        official = build_eko_auth_headers(**kwargs, hmac_key_mode='b64_string')
+        raw = build_eko_auth_headers(**kwargs, hmac_key_mode='raw')
+        self.assertNotEqual(official['secret-key'], raw['secret-key'])
 
     def test_redact_eko_headers_hides_secrets(self):
         redacted = redact_eko_headers(
@@ -58,3 +74,35 @@ class EkoConfigTests(SimpleTestCase):
     def test_strips_retired_gateway_port_from_base_url(self):
         cfg = eko_settings()
         self.assertEqual(cfg.base_url, 'https://api.eko.in/ekoicici')
+
+    @override_settings(
+        EKO_ENVIRONMENT='uat',
+        EKO_BASE_URL='https://api.eko.in/ekoicici',
+        EKO_DEVELOPER_KEY='dev',
+        EKO_ACCESS_KEY='access',
+        EKO_INITIATOR_ID='9616212526',
+        EKO_USER_CODE='23880001',
+        EKO_ORG_SLUG='',
+        EKO_PENNYLESS_PATH='',
+        EKO_PENNYLESS_ENABLED=True,
+    )
+    def test_production_host_promotes_uat_environment(self):
+        cfg = eko_settings()
+        self.assertTrue(cfg.is_production)
+        self.assertEqual(cfg.environment, 'production')
+
+    @override_settings(
+        EKO_ENVIRONMENT='production',
+        EKO_BASE_URL='https://api.eko.in/ekoicici',
+        EKO_DEVELOPER_KEY='"dev-key"',
+        EKO_ACCESS_KEY="'access-key'",
+        EKO_INITIATOR_ID='9616212526',
+        EKO_USER_CODE='23880001',
+        EKO_ORG_SLUG='',
+        EKO_PENNYLESS_PATH='',
+        EKO_PENNYLESS_ENABLED=True,
+    )
+    def test_strips_quoted_eko_keys(self):
+        cfg = eko_settings()
+        self.assertEqual(cfg.developer_key, 'dev-key')
+        self.assertEqual(cfg.access_key, 'access-key')
