@@ -1,5 +1,5 @@
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from django.test import SimpleTestCase, override_settings
 
@@ -266,8 +266,8 @@ class FakeVerificationReferenceTests(SimpleTestCase):
 
 
 class AadhaarProviderGuardTests(SimpleTestCase):
-    @override_settings(KYC_AADHAAR_PROVIDER='cashfree', KYC_PROVIDER='cashfree')
-    def test_digilocker_requires_eko_aadhaar_provider(self):
+    @override_settings(KYC_AADHAAR_PROVIDER='manual', KYC_PROVIDER='cashfree')
+    def test_digilocker_rejects_unknown_aadhaar_provider(self):
         from kyc.models import KycProfile
         from kyc.service import start_aadhaar_digilocker_step
 
@@ -277,5 +277,160 @@ class AadhaarProviderGuardTests(SimpleTestCase):
                 pan_status=KycProfile.VerificationStatus.VERIFIED,
                 aadhaar_status=KycProfile.VerificationStatus.PENDING,
             )
-            with self.assertRaises(EkoKycError):
+            with self.assertRaises(EkoKycError) as ctx:
                 start_aadhaar_digilocker_step(user)
+        self.assertEqual(ctx.exception.code, 'unsupported_provider')
+
+    @override_settings(KYC_AADHAAR_PROVIDER='cashfree', KYC_PROVIDER='cashfree')
+    def test_cashfree_digilocker_start_creates_url(self):
+        from kyc.models import KycProfile
+        from kyc.service import start_aadhaar_digilocker_step
+
+        user = SimpleNamespace(id=1, phone='9871013472', name='Test')
+        profile = MagicMock()
+        profile.pan_status = KycProfile.VerificationStatus.VERIFIED
+        profile.aadhaar_status = KycProfile.VerificationStatus.PENDING
+        with patch('kyc.service.get_or_create_profile', return_value=profile), patch(
+            'kyc.service.cashfree_settings'
+        ) as cfg_mock, patch(
+            'kyc.service._digilocker_redirect_url',
+            return_value=('https://api.capitalbullwave.com/api/v1/digilocker/callback/st/', 'st'),
+        ), patch(
+            'kyc.service.cashfree_create_digilocker_url'
+        ) as create_mock, patch(
+            'kyc.service._audit'
+        ):
+            cfg_mock.return_value.is_configured = True
+            create_mock.return_value = {
+                'url': 'https://verification.cashfree.com/dl/abc',
+                'reference_id': '99',
+                'verification_id': 'vid-1',
+                'status': 'PENDING',
+            }
+            result = start_aadhaar_digilocker_step(user)
+
+        self.assertEqual(result.aadhaar_digilocker_url, 'https://verification.cashfree.com/dl/abc')
+        self.assertEqual(result.aadhaar_reference_id, '99')
+        self.assertEqual(result.aadhaar_status, KycProfile.VerificationStatus.PENDING)
+        create_mock.assert_called_once()
+
+    @override_settings(KYC_AADHAAR_PROVIDER='cashfree', KYC_PROVIDER='cashfree')
+    def test_cashfree_digilocker_check_marks_verified(self):
+        from kyc.models import KycProfile
+        from kyc.service import check_aadhaar_digilocker_step
+
+        user = SimpleNamespace(id=1, phone='9871013472', name='Gopal Kumar')
+        profile = MagicMock()
+        profile.pan_status = KycProfile.VerificationStatus.VERIFIED
+        profile.aadhaar_status = KycProfile.VerificationStatus.PENDING
+        profile.aadhaar_reference_id = '99'
+        profile.aadhaar_digilocker_client_ref_id = 'vid-1'
+        profile.aadhaar_digilocker_verification_id = ''
+        profile.pan_name = 'Gopal Kumar'
+        with patch('kyc.service.get_or_create_profile', return_value=profile), patch(
+            'kyc.service.cashfree_get_digilocker_identity'
+        ) as identity_mock, patch('kyc.service._audit'), patch(
+            'kyc.service._sync_user_name_from_kyc'
+        ), patch('kyc.service._sync_user_dob_from_kyc'), patch(
+            'kyc.service._update_overall_status'
+        ):
+            identity_mock.return_value = {
+                'verification_status': 'SUCCESS',
+                'verification_id': 'vid-1',
+                'user_details': {
+                    'name': 'Gopal Kumar',
+                    'eaadhaar': 'Y',
+                    'dob': '1990-01-15',
+                    'aadhaar_number': 'XXXXXXXX1234',
+                },
+                'document_consent': [{'document_type': 'AADHAAR', 'consent': 'Y'}],
+            }
+            result = check_aadhaar_digilocker_step(user)
+
+        self.assertEqual(result.aadhaar_status, KycProfile.VerificationStatus.VERIFIED)
+        self.assertEqual(result.aadhaar_name, 'Gopal Kumar')
+        self.assertEqual(result.aadhaar_last4, '1234')
+        identity_mock.assert_called_once()
+
+
+class CashfreeDigilockerApiTests(SimpleTestCase):
+    def _cfg(self):
+        return SimpleNamespace(
+            is_configured=True,
+            is_production=False,
+            secure_id_base_url='https://sandbox.cashfree.com/verification',
+            client_id='id',
+            client_secret='secret',
+            api_version='2024-12-01',
+        )
+
+    @patch('services.providers.cashfree_secure_id.cashfree_settings')
+    @patch('services.providers.cashfree_secure_id.httpx.Client')
+    def test_create_digilocker_url(self, client_mock, settings_mock):
+        settings_mock.return_value = self._cfg()
+        client_mock.return_value.__enter__.return_value.post.return_value = SimpleNamespace(
+            status_code=200,
+            is_error=False,
+            text='',
+            json=lambda: {
+                'url': 'https://verification.cashfree.com/dl/x',
+                'reference_id': 123,
+                'verification_id': 'vid1',
+                'status': 'PENDING',
+            },
+        )
+        from services.providers.cashfree_secure_id import create_digilocker_url
+
+        result = create_digilocker_url(
+            verification_id='vid1',
+            redirect_url='https://api.capitalbullwave.com/api/v1/digilocker/callback/st/',
+        )
+        self.assertEqual(result['url'], 'https://verification.cashfree.com/dl/x')
+        self.assertEqual(result['reference_id'], '123')
+        self.assertEqual(result['status'], 'PENDING')
+
+    @patch('services.providers.cashfree_secure_id.cashfree_settings')
+    @patch('services.providers.cashfree_secure_id.httpx.Client')
+    def test_get_identity_after_authenticated(self, client_mock, settings_mock):
+        settings_mock.return_value = self._cfg()
+        http = client_mock.return_value.__enter__.return_value
+        http.get.side_effect = [
+            SimpleNamespace(
+                status_code=200,
+                is_error=False,
+                text='',
+                json=lambda: {'status': 'AUTHENTICATED', 'verification_id': 'vid1', 'reference_id': 123},
+            ),
+            SimpleNamespace(
+                status_code=200,
+                is_error=False,
+                text='',
+                json=lambda: {
+                    'name': 'Gopal Kumar',
+                    'dob': '1990-01-15',
+                    'aadhaar_number': 'XXXXXXXX1234',
+                },
+            ),
+        ]
+        from services.providers.cashfree_secure_id import get_digilocker_identity
+
+        result = get_digilocker_identity(verification_id='vid1')
+        self.assertEqual(result['verification_status'], 'SUCCESS')
+        self.assertEqual(result['user_details']['name'], 'Gopal Kumar')
+        self.assertEqual(result['user_details']['aadhaar_number'], 'XXXXXXXX1234')
+
+    @patch('services.providers.cashfree_secure_id.cashfree_settings')
+    @patch('services.providers.cashfree_secure_id.httpx.Client')
+    def test_get_identity_stays_pending(self, client_mock, settings_mock):
+        settings_mock.return_value = self._cfg()
+        client_mock.return_value.__enter__.return_value.get.return_value = SimpleNamespace(
+            status_code=200,
+            is_error=False,
+            text='',
+            json=lambda: {'status': 'PENDING', 'verification_id': 'vid1'},
+        )
+        from services.providers.cashfree_secure_id import get_digilocker_identity
+
+        result = get_digilocker_identity(verification_id='vid1')
+        self.assertEqual(result['verification_status'], 'PENDING')
+        self.assertEqual(result['user_details'], {})

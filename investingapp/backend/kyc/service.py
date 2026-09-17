@@ -23,6 +23,8 @@ from accounts.otp_utils import normalize_phone
 from services.providers.cashfree_config import cashfree_settings
 from services.providers.cashfree_secure_id import (
     CashfreeSecureIdError,
+    create_digilocker_url as cashfree_create_digilocker_url,
+    get_digilocker_identity as cashfree_get_digilocker_identity,
     verify_bank_account as cashfree_verify_bank_account,
     verify_pan as cashfree_verify_pan_direct,
     verify_upi_vpa as cashfree_verify_upi_vpa,
@@ -510,10 +512,11 @@ def _digilocker_redirect_url() -> tuple[str, str]:
 
 
 def start_aadhaar_digilocker_step(user) -> KycProfile:
-    """Create the supported Eko DigiLocker consent journey after PAN."""
-    if aadhaar_provider() != 'eko':
+    """Create the DigiLocker consent journey after PAN (Cashfree or Eko)."""
+    provider = aadhaar_provider()
+    if provider not in {'eko', 'cashfree'}:
         raise EkoKycError(
-            'DigiLocker verification requires KYC_AADHAAR_PROVIDER=eko.',
+            'DigiLocker verification requires KYC_AADHAAR_PROVIDER=eko or cashfree.',
             'unsupported_provider',
         )
 
@@ -522,26 +525,36 @@ def start_aadhaar_digilocker_step(user) -> KycProfile:
         raise ValueError('Verify PAN before Aadhaar verification.')
     if profile.aadhaar_status == KycProfile.VerificationStatus.VERIFIED:
         return profile
-    if not eko_settings().is_configured:
+    if provider == 'cashfree' and not cashfree_settings().is_configured:
+        raise CashfreeSecureIdError(
+            'Cashfree Secure ID is not configured. Paste CASHFREE_CLIENT_ID and CASHFREE_CLIENT_SECRET in .env.',
+            'not_configured',
+        )
+    if provider == 'eko' and not eko_settings().is_configured:
         raise EkoKycError('Eko KYC API is not configured. Paste EKO_* keys in .env.')
     redirect_url, state = _digilocker_redirect_url()
 
-    # Eko enforces a hard 20-character maximum and returns an opaque HTML 403
-    # instead of a validation error when this value is longer.
-    client_ref_id = uuid.uuid4().hex[:20]
+    # Eko enforces a hard 20-character maximum. Cashfree accepts up to 50.
+    client_ref_id = uuid.uuid4().hex[:20 if provider == 'eko' else 32]
 
     _audit(
         user,
         VerificationAuditLog.Step.AADHAAR,
         VerificationAuditLog.Status.STARTED,
-        {'method': 'digilocker'},
+        {'method': 'digilocker', 'provider': provider},
     )
     try:
-        result = create_digilocker_url(
-            client_ref_id=client_ref_id,
-            redirect_url=redirect_url,
-        )
-    except EkoKycError as exc:
+        if provider == 'cashfree':
+            result = cashfree_create_digilocker_url(
+                verification_id=client_ref_id,
+                redirect_url=redirect_url,
+            )
+        else:
+            result = create_digilocker_url(
+                client_ref_id=client_ref_id,
+                redirect_url=redirect_url,
+            )
+    except ProviderError as exc:
         profile.aadhaar_status = KycProfile.VerificationStatus.FAILED
         profile.aadhaar_failure_reason = str(exc)[:280]
         profile.save(update_fields=['aadhaar_status', 'aadhaar_failure_reason'])
@@ -604,7 +617,7 @@ def record_digilocker_callback(*, state: str, verification_id: str = '') -> bool
 
 
 def check_aadhaar_digilocker_step(user, *, verification_id: str = '') -> KycProfile:
-    """Fetch Eko's DigiLocker status and persist verified Aadhaar identity."""
+    """Fetch DigiLocker status and persist verified Aadhaar identity."""
     profile = get_or_create_profile(user)
     if profile.aadhaar_status == KycProfile.VerificationStatus.VERIFIED:
         return profile
@@ -617,14 +630,21 @@ def check_aadhaar_digilocker_step(user, *, verification_id: str = '') -> KycProf
         profile.save(update_fields=['aadhaar_digilocker_verification_id'])
 
     active_verification_id = profile.aadhaar_digilocker_verification_id
+    provider = aadhaar_provider()
 
     try:
-        result = get_digilocker_status(
-            reference_id=profile.aadhaar_reference_id,
-            client_ref_id=profile.aadhaar_digilocker_client_ref_id,
-            verification_id=active_verification_id,
-        )
-    except EkoKycError as exc:
+        if provider == 'cashfree':
+            result = cashfree_get_digilocker_identity(
+                verification_id=profile.aadhaar_digilocker_client_ref_id or active_verification_id,
+                reference_id=profile.aadhaar_reference_id,
+            )
+        else:
+            result = get_digilocker_status(
+                reference_id=profile.aadhaar_reference_id,
+                client_ref_id=profile.aadhaar_digilocker_client_ref_id,
+                verification_id=active_verification_id,
+            )
+    except ProviderError as exc:
         profile.aadhaar_failure_reason = str(exc)[:280]
         profile.save(update_fields=['aadhaar_failure_reason'])
         if 'session_expired' in str(getattr(exc, 'code', '')).lower() or 'expired' in str(exc).lower():
@@ -674,6 +694,9 @@ def check_aadhaar_digilocker_step(user, *, verification_id: str = '') -> KycProf
     profile.aadhaar_verified_at = timezone.now()
     profile.aadhaar_digilocker_url = ''
     profile.aadhaar_digilocker_state_digest = ''
+    aadhaar_digits = re.sub(r'\D', '', str(details.get('aadhaar_number') or ''))
+    if len(aadhaar_digits) >= 4:
+        profile.aadhaar_last4 = aadhaar_digits[-4:]
     aadhaar_dob = _parse_provider_dob(details)
     if aadhaar_dob:
         profile.aadhaar_dob = aadhaar_dob
@@ -1546,7 +1569,8 @@ def _update_overall_status(profile: KycProfile):
     user = profile.user
     from .identity_review_service import identity_review_pending, manual_final_approval_required
 
-    aadhaar_required = aadhaar_provider() == 'eko'
+    explicit_aadhaar = (getattr(settings, 'KYC_AADHAAR_PROVIDER', '') or '').strip().lower()
+    aadhaar_required = aadhaar_provider() == 'eko' or explicit_aadhaar == 'cashfree'
     aadhaar_verified = profile.aadhaar_status == KycProfile.VerificationStatus.VERIFIED
     aadhaar_failed = aadhaar_required and profile.aadhaar_status == KycProfile.VerificationStatus.FAILED
     aadhaar_ok = (not aadhaar_required) or aadhaar_verified

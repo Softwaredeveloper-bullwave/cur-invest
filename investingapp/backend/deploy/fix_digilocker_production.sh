@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Enable DigiLocker Aadhaar on AWS (Eko requires an HTTPS callback).
+# Enable DigiLocker Aadhaar on AWS (Cashfree requires an HTTPS callback).
 # Run ON THE SERVER:
 #   bash ~/cur-invest/investingapp/backend/deploy/fix_digilocker_production.sh
 set -euo pipefail
@@ -43,9 +43,9 @@ upsert_env DIGILOCKER_PUBLIC_URL "$HTTPS_URL"
 remove_env LOCAL_DEV_TUNNEL_URL
 upsert_env AI_SKIP_STARTUP_PROBE 1
 
-echo "==> Ensure Eko Aadhaar provider"
-grep -q '^KYC_AADHAAR_PROVIDER=' "$ENV_FILE" || upsert_env KYC_AADHAAR_PROVIDER eko
-grep -q '^KYC_PROVIDER=' "$ENV_FILE" || upsert_env KYC_PROVIDER eko
+echo "==> Route DigiLocker Aadhaar through Cashfree"
+upsert_env KYC_AADHAAR_PROVIDER cashfree
+grep -q '^KYC_PROVIDER=' "$ENV_FILE" || upsert_env KYC_PROVIDER cashfree
 
 echo "==> Install nginx server_name for ${DOMAIN}"
 bash "$BACKEND_DIR/deploy/install_nginx_api.sh"
@@ -85,10 +85,8 @@ else
 fi
 
 echo ""
-echo "Done. DigiLocker callback URL is now:"
+echo "Done. Cashfree DigiLocker redirect_url is:"
 echo "  ${HTTPS_URL}/api/v1/digilocker/callback/<state>/"
 echo ""
-echo "In Eko Connect, the DigiLocker redirect URL must allow:"
-echo "  ${HTTPS_URL}/api/v1/digilocker/callback/"
-echo ""
+echo "Whitelist this server's public IP in the Cashfree Secure ID dashboard."
 echo "Retry Aadhaar in the Flutter app."

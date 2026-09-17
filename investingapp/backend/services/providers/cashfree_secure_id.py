@@ -1,8 +1,9 @@
-"""Cashfree Secure ID — PAN, bank, and UPI verification."""
+"""Cashfree Secure ID — PAN, bank, UPI, and DigiLocker Aadhaar verification."""
 
 from __future__ import annotations
 
 import logging
+import re
 import uuid
 from datetime import datetime, timezone
 
@@ -64,6 +65,14 @@ def _extract_error_code(data: dict, status_code: int, message: str) -> str:
 
 
 def _post(path: str, payload: dict, *, timeout: float = 45) -> dict:
+    return _handle_response(_send('POST', path, json=payload, timeout=timeout))
+
+
+def _get(path: str, params: dict | None = None, *, timeout: float = 45) -> dict:
+    return _handle_response(_send('GET', path, params=params, timeout=timeout))
+
+
+def _send(method: str, path: str, *, timeout: float = 45, **kwargs):
     cfg = cashfree_settings()
     if not cfg.is_configured:
         raise CashfreeSecureIdError('Cashfree Secure ID credentials are not configured.', 'not_configured')
@@ -71,7 +80,9 @@ def _post(path: str, payload: dict, *, timeout: float = 45) -> dict:
     url = f'{cfg.secure_id_base_url.rstrip("/")}{path}'
     try:
         with httpx.Client(timeout=timeout) as client:
-            response = client.post(url, json=payload, headers=_headers(cfg))
+            if method == 'GET':
+                return client.get(url, params=kwargs.get('params'), headers=_headers(cfg))
+            return client.post(url, json=kwargs.get('json'), headers=_headers(cfg))
     except httpx.TimeoutException as exc:
         raise CashfreeSecureIdError(
             'Cashfree is taking too long to respond. Please try again in a moment.',
@@ -80,11 +91,19 @@ def _post(path: str, payload: dict, *, timeout: float = 45) -> dict:
     except httpx.HTTPError as exc:
         raise CashfreeSecureIdError(f'Cashfree connection failed: {exc}', 'connection_failed') from exc
 
+
+def _handle_response(response) -> dict:
+    cfg = cashfree_settings()
     data = {}
     try:
-        data = response.json()
+        parsed = response.json()
+        if isinstance(parsed, dict):
+            data = parsed
     except Exception:
         pass
+
+    if response.status_code == 202:
+        return {**data, 'status': data.get('status') or 'PENDING'}
 
     if response.status_code == 401:
         raise CashfreeSecureIdError(
@@ -228,6 +247,97 @@ def verify_upi_vpa(
         'verification_method': 'upi_penny_drop',
         'ifsc': data.get('ifsc') or '',
         'bank_account': data.get('bank_account') or '',
+    }
+
+
+def create_digilocker_url(*, verification_id: str, redirect_url: str, user_flow: str = 'signup') -> dict:
+    """Create Cashfree DigiLocker consent URL (Aadhaar)."""
+    vid = re.sub(r'[^A-Za-z0-9._-]', '', verification_id or '')[:50]
+    if not vid:
+        raise CashfreeSecureIdError('DigiLocker verification id is missing.', 'invalid_request')
+    payload = {
+        'verification_id': vid,
+        'document_requested': ['AADHAAR'],
+        'redirect_url': redirect_url,
+        'user_flow': user_flow if user_flow in {'signin', 'signup'} else 'signup',
+    }
+    data = _post('/digilocker', payload)
+    url = (data.get('url') or '').strip()
+    reference_id = data.get('reference_id')
+    if not url or reference_id in (None, ''):
+        raise CashfreeSecureIdError(
+            data.get('message') or 'Cashfree did not return a DigiLocker URL.',
+            'digilocker_session_failed',
+        )
+    return {
+        'url': url,
+        'reference_id': str(reference_id),
+        'verification_id': str(data.get('verification_id') or vid),
+        'status': str(data.get('status') or 'PENDING'),
+    }
+
+
+def get_digilocker_identity(*, verification_id: str = '', reference_id: str = '') -> dict:
+    """Poll Cashfree DigiLocker and fetch Aadhaar after AUTHENTICATED."""
+    params = {}
+    if verification_id:
+        params['verification_id'] = verification_id
+    if reference_id:
+        params['reference_id'] = reference_id
+    if not params:
+        raise CashfreeSecureIdError('Start DigiLocker verification first.', 'invalid_request')
+
+    status_data = _get('/digilocker', params)
+    status_value = str(status_data.get('status') or '').upper()
+    vid = str(status_data.get('verification_id') or verification_id or '')
+    ref = str(status_data.get('reference_id') or reference_id or '')
+
+    if status_value in {'EXPIRED', 'CONSENT_DENIED', 'FAILED', 'CANCELLED', 'REJECTED'}:
+        return {
+            'verification_status': status_value,
+            'verification_id': vid,
+            'user_details': {},
+            'document_consent': [],
+        }
+    if status_value not in {'AUTHENTICATED', 'SUCCESS', 'VERIFIED', 'COMPLETED'}:
+        return {
+            'verification_status': 'PENDING',
+            'verification_id': vid,
+            'user_details': {},
+            'document_consent': [],
+        }
+
+    doc_params = {}
+    if vid:
+        doc_params['verification_id'] = vid
+    if ref:
+        doc_params['reference_id'] = ref
+    try:
+        document = _get('/digilocker/document/AADHAAR', doc_params)
+    except CashfreeSecureIdError as exc:
+        lowered = str(exc).lower()
+        if exc.code == 'pending' or 'not ready' in lowered or 'not available' in lowered:
+            return {
+                'verification_status': 'PENDING',
+                'verification_id': vid,
+                'user_details': {},
+                'document_consent': [],
+            }
+        raise
+
+    name = (document.get('name') or '').strip()
+    dob = document.get('dob') or document.get('date_of_birth') or ''
+    aadhaar_number = str(document.get('aadhaar_number') or document.get('uid') or '')
+    return {
+        'verification_status': 'SUCCESS' if name else 'PENDING',
+        'verification_id': vid,
+        'user_details': {
+            'name': name,
+            'eaadhaar': 'Y' if name else 'N',
+            'dob': dob,
+            'aadhaar_number': aadhaar_number,
+        },
+        'document_consent': [{'document_type': 'AADHAAR', 'consent': 'Y'}] if name else [],
     }
 
 
