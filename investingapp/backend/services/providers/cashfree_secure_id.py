@@ -19,6 +19,9 @@ ACCEPTABLE_NAME_MATCHES = frozenset(
 BANK_NAME_REJECT_MATCHES = frozenset({'NO_MATCH', 'POOR_PARTIAL_MATCH'})
 
 
+DIGILOCKER_API_VERSION = '2023-12-18'
+
+
 class CashfreeSecureIdError(Exception):
     def __init__(self, message, code=''):
         super().__init__(message)
@@ -29,13 +32,16 @@ def is_configured() -> bool:
     return cashfree_settings().is_configured
 
 
-def _headers(cfg) -> dict:
-    return {
+def _headers(cfg, *, api_version: str | None = None, omit_api_version: bool = False) -> dict:
+    headers = {
         'x-client-id': cfg.client_id,
         'x-client-secret': cfg.client_secret,
-        'x-api-version': cfg.api_version,
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
     }
+    if not omit_api_version:
+        headers['x-api-version'] = api_version or cfg.api_version
+    return headers
 
 
 def _extract_error_code(data: dict, status_code: int, message: str) -> str:
@@ -64,25 +70,66 @@ def _extract_error_code(data: dict, status_code: int, message: str) -> str:
     return ''
 
 
-def _post(path: str, payload: dict, *, timeout: float = 45) -> dict:
-    return _handle_response(_send('POST', path, json=payload, timeout=timeout))
+def _post(
+    path: str,
+    payload: dict,
+    *,
+    timeout: float = 45,
+    api_version: str | None = None,
+    omit_api_version: bool = False,
+) -> dict:
+    return _handle_response(
+        _send(
+            'POST',
+            path,
+            json=payload,
+            timeout=timeout,
+            api_version=api_version,
+            omit_api_version=omit_api_version,
+        )
+    )
 
 
-def _get(path: str, params: dict | None = None, *, timeout: float = 45) -> dict:
-    return _handle_response(_send('GET', path, params=params, timeout=timeout))
+def _get(
+    path: str,
+    params: dict | None = None,
+    *,
+    timeout: float = 45,
+    api_version: str | None = None,
+    omit_api_version: bool = False,
+) -> dict:
+    return _handle_response(
+        _send(
+            'GET',
+            path,
+            params=params,
+            timeout=timeout,
+            api_version=api_version,
+            omit_api_version=omit_api_version,
+        )
+    )
 
 
-def _send(method: str, path: str, *, timeout: float = 45, **kwargs):
+def _send(
+    method: str,
+    path: str,
+    *,
+    timeout: float = 45,
+    api_version: str | None = None,
+    omit_api_version: bool = False,
+    **kwargs,
+):
     cfg = cashfree_settings()
     if not cfg.is_configured:
         raise CashfreeSecureIdError('Cashfree Secure ID credentials are not configured.', 'not_configured')
 
     url = f'{cfg.secure_id_base_url.rstrip("/")}{path}'
+    headers = _headers(cfg, api_version=api_version, omit_api_version=omit_api_version)
     try:
         with httpx.Client(timeout=timeout) as client:
             if method == 'GET':
-                return client.get(url, params=kwargs.get('params'), headers=_headers(cfg))
-            return client.post(url, json=kwargs.get('json'), headers=_headers(cfg))
+                return client.get(url, params=kwargs.get('params'), headers=headers)
+            return client.post(url, json=kwargs.get('json'), headers=headers)
     except httpx.TimeoutException as exc:
         raise CashfreeSecureIdError(
             'Cashfree is taking too long to respond. Please try again in a moment.',
@@ -255,13 +302,51 @@ def create_digilocker_url(*, verification_id: str, redirect_url: str, user_flow:
     vid = re.sub(r'[^A-Za-z0-9._-]', '', verification_id or '')[:50]
     if not vid:
         raise CashfreeSecureIdError('DigiLocker verification id is missing.', 'invalid_request')
+    if redirect_url and not redirect_url.lower().startswith('https://'):
+        raise CashfreeSecureIdError(
+            'Cashfree DigiLocker requires an HTTPS redirect URL (https://api.capitalbullwave.com).',
+            'public_redirect_required',
+        )
     payload = {
         'verification_id': vid,
         'document_requested': ['AADHAAR'],
         'redirect_url': redirect_url,
         'user_flow': user_flow if user_flow in {'signin', 'signup'} else 'signup',
     }
-    data = _post('/digilocker', payload)
+    cfg = cashfree_settings()
+    header_attempts = [
+        {'api_version': DIGILOCKER_API_VERSION, 'omit_api_version': False},
+        {'api_version': None, 'omit_api_version': True},
+        {'api_version': cfg.api_version, 'omit_api_version': False},
+    ]
+    data = None
+    last_error = None
+    seen = set()
+    for attempt in header_attempts:
+        key = (attempt['api_version'], attempt['omit_api_version'])
+        if key in seen:
+            continue
+        seen.add(key)
+        try:
+            data = _post('/digilocker', payload, **attempt)
+            break
+        except CashfreeSecureIdError as exc:
+            last_error = exc
+            logger.warning(
+                'Cashfree DigiLocker create failed (version=%s omit=%s code=%s): %s',
+                attempt['api_version'] or '-',
+                attempt['omit_api_version'],
+                getattr(exc, 'code', ''),
+                exc,
+            )
+            if _is_generic_cashfree_failure(exc):
+                continue
+            raise CashfreeSecureIdError(_digilocker_create_error_message(exc), _digilocker_create_error_code(exc)) from exc
+    if data is None:
+        raise CashfreeSecureIdError(
+            _digilocker_create_error_message(last_error),
+            _digilocker_create_error_code(last_error),
+        )
     url = (data.get('url') or '').strip()
     reference_id = data.get('reference_id')
     if not url or reference_id in (None, ''):
@@ -277,6 +362,59 @@ def create_digilocker_url(*, verification_id: str, redirect_url: str, user_flow:
     }
 
 
+def _is_generic_cashfree_failure(exc: CashfreeSecureIdError | None) -> bool:
+    if exc is None:
+        return False
+    lowered = f'{getattr(exc, "code", "")} {exc}'.lower()
+    return any(
+        token in lowered
+        for token in (
+            'something went wrong',
+            'try after some time',
+            'verification_failed',
+            'internal_error',
+            'temporarily unavailable',
+        )
+    )
+
+
+def _digilocker_create_error_code(exc: CashfreeSecureIdError | None) -> str:
+    code = (getattr(exc, 'code', '') or '').lower()
+    if code in {'ip_not_whitelisted', 'access_denied', 'auth_failed', 'not_configured', 'insufficient_balance', 'rate_limit'}:
+        return code
+    if '404' in str(exc) or 'not found' in str(exc).lower():
+        return 'digilocker_not_enabled'
+    if _is_generic_cashfree_failure(exc):
+        return 'digilocker_unavailable'
+    return code or 'digilocker_session_failed'
+
+
+def _digilocker_create_error_message(exc: CashfreeSecureIdError | None) -> str:
+    original = str(exc or '').strip()
+    code = _digilocker_create_error_code(exc)
+    if code == 'ip_not_whitelisted' or code == 'access_denied':
+        return original or 'Whitelist this server IP in the Cashfree Secure ID dashboard, then retry.'
+    if code == 'auth_failed':
+        return original or 'Invalid Cashfree client ID or secret.'
+    if code == 'insufficient_balance':
+        return 'Cashfree wallet balance is too low to start DigiLocker. Add sandbox credits and retry.'
+    if code == 'digilocker_not_enabled':
+        return (
+            'Cashfree DigiLocker is not enabled on this Secure ID account. '
+            'Open Verification Suite → DigiLocker and request activation. '
+            'Use Secure ID keys, not Payment Gateway keys.'
+        )
+    if code == 'digilocker_unavailable' or _is_generic_cashfree_failure(exc):
+        cfg = cashfree_settings()
+        host = cfg.secure_id_base_url
+        return (
+            'Cashfree could not create a DigiLocker session. '
+            f'Using {host}. TEST keys must use sandbox; whitelist 43.204.159.255 in Secure ID; '
+            'and ask Cashfree to enable DigiLocker on this merchant if it is still off.'
+        )
+    return original or 'Cashfree did not return a DigiLocker URL.'
+
+
 def get_digilocker_identity(*, verification_id: str = '', reference_id: str = '') -> dict:
     """Poll Cashfree DigiLocker and fetch Aadhaar after AUTHENTICATED."""
     params = {}
@@ -287,7 +425,7 @@ def get_digilocker_identity(*, verification_id: str = '', reference_id: str = ''
     if not params:
         raise CashfreeSecureIdError('Start DigiLocker verification first.', 'invalid_request')
 
-    status_data = _get('/digilocker', params)
+    status_data = _get('/digilocker', params, api_version=DIGILOCKER_API_VERSION)
     status_value = str(status_data.get('status') or '').upper()
     vid = str(status_data.get('verification_id') or verification_id or '')
     ref = str(status_data.get('reference_id') or reference_id or '')
@@ -313,7 +451,7 @@ def get_digilocker_identity(*, verification_id: str = '', reference_id: str = ''
     if ref:
         doc_params['reference_id'] = ref
     try:
-        document = _get('/digilocker/document/AADHAAR', doc_params)
+        document = _get('/digilocker/document/AADHAAR', doc_params, api_version=DIGILOCKER_API_VERSION)
     except CashfreeSecureIdError as exc:
         lowered = str(exc).lower()
         if exc.code == 'pending' or 'not ready' in lowered or 'not available' in lowered:

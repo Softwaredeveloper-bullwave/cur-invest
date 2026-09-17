@@ -98,7 +98,7 @@ class _AadhaarVerificationScreenState extends State<AadhaarVerificationScreen>
         !uri.hasScheme ||
         !const {'https', 'http'}.contains(uri.scheme.toLowerCase())) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Eko returned an invalid DigiLocker URL')),
+        const SnackBar(content: Text('Invalid DigiLocker URL')),
       );
       return;
     }

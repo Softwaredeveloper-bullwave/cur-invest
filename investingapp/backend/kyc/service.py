@@ -511,6 +511,14 @@ def _digilocker_redirect_url() -> tuple[str, str]:
     )
 
 
+def _cashfree_digilocker_redirect_url() -> str:
+    """Stable HTTPS return URL. Cashfree appends verification_id after consent."""
+    public_url = (getattr(settings, 'BACKEND_PUBLIC_URL', '') or '').rstrip('/')
+    tunnel_url = (getattr(settings, 'LOCAL_DEV_TUNNEL_URL', '') or '').rstrip('/')
+    base = _digilocker_callback_base(public_url, tunnel_url) or _production_digilocker_https_base()
+    return f'{base}/api/v1/digilocker/return/'
+
+
 def start_aadhaar_digilocker_step(user) -> KycProfile:
     """Create the DigiLocker consent journey after PAN (Cashfree or Eko)."""
     provider = aadhaar_provider()
@@ -532,7 +540,11 @@ def start_aadhaar_digilocker_step(user) -> KycProfile:
         )
     if provider == 'eko' and not eko_settings().is_configured:
         raise EkoKycError('Eko KYC API is not configured. Paste EKO_* keys in .env.')
-    redirect_url, state = _digilocker_redirect_url()
+    if provider == 'cashfree':
+        redirect_url = _cashfree_digilocker_redirect_url()
+        state = ''
+    else:
+        redirect_url, state = _digilocker_redirect_url()
 
     # Eko enforces a hard 20-character maximum. Cashfree accepts up to 50.
     client_ref_id = uuid.uuid4().hex[:20 if provider == 'eko' else 32]
@@ -613,6 +625,22 @@ def record_digilocker_callback(*, state: str, verification_id: str = '') -> bool
     if verification_id:
         profile.aadhaar_digilocker_verification_id = verification_id[:255]
         profile.save(update_fields=['aadhaar_digilocker_verification_id'])
+    return True
+
+
+def record_digilocker_return(*, verification_id: str = '') -> bool:
+    """Record Cashfree's browser redirect using verification_id (no JWT)."""
+    vid = (verification_id or '').strip()
+    if not vid:
+        return False
+    profile = (
+        KycProfile.objects.filter(aadhaar_digilocker_client_ref_id=vid).first()
+        or KycProfile.objects.filter(aadhaar_digilocker_verification_id=vid).first()
+    )
+    if profile is None:
+        return False
+    profile.aadhaar_digilocker_verification_id = vid[:255]
+    profile.save(update_fields=['aadhaar_digilocker_verification_id'])
     return True
 
 

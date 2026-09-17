@@ -23,10 +23,32 @@ def _clean_env(value: str, *, strip_trailing_slash: bool = False) -> str:
 def _ascii_env(value: str) -> str:
     """API keys must be ASCII — rejects copy-paste corruption (e.g. Cyrillic lookalikes)."""
     cleaned = _clean_env(value)
+    if len(cleaned) >= 2 and cleaned[0] == cleaned[-1] and cleaned[0] in {'"', "'"}:
+        cleaned = cleaned[1:-1].strip()
     if not cleaned:
         return ''
     ascii_only = ''.join(ch for ch in cleaned if ord(ch) < 128)
     return ascii_only.strip()
+
+
+def _dotenv_last_nonempty(key: str) -> str:
+    """Last non-empty assignment in backend/.env wins — blank template lines do not wipe keys."""
+    if not _env_file.is_file():
+        return ''
+    found = ''
+    try:
+        lines = _env_file.read_text(encoding='utf-8', errors='replace').splitlines()
+    except OSError:
+        return ''
+    prefix = f'{key}='
+    for raw in lines:
+        line = raw.strip()
+        if not line or line.startswith('#') or not line.startswith(prefix):
+            continue
+        value = _ascii_env(line.split('=', 1)[1])
+        if value:
+            found = value
+    return found
 
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-dev-key-change-in-production')
 DEBUG = config('DEBUG', default=True, cast=bool)
@@ -471,11 +493,21 @@ RAZORPAY_KEY_SECRET = config('RAZORPAY_KEY_SECRET', default='')
 RAZORPAY_WEBHOOK_SECRET = config('RAZORPAY_WEBHOOK_SECRET', default='')
 
 # Verification & Payments — Cashfree (credentials from env only)
-CASHFREE_CLIENT_ID = config('CASHFREE_CLIENT_ID', default='')
-CASHFREE_CLIENT_SECRET = config('CASHFREE_CLIENT_SECRET', default='')
-CASHFREE_ENVIRONMENT = config('CASHFREE_ENVIRONMENT', default='')
-CASHFREE_ENV = config('CASHFREE_ENV', default='sandbox')
-CASHFREE_API_VERSION = config('CASHFREE_API_VERSION', default='2022-10-26')
+CASHFREE_CLIENT_ID = _dotenv_last_nonempty('CASHFREE_CLIENT_ID') or _ascii_env(
+    config('CASHFREE_CLIENT_ID', default='')
+)
+CASHFREE_CLIENT_SECRET = _dotenv_last_nonempty('CASHFREE_CLIENT_SECRET') or _ascii_env(
+    config('CASHFREE_CLIENT_SECRET', default='')
+)
+CASHFREE_ENVIRONMENT = _dotenv_last_nonempty('CASHFREE_ENVIRONMENT') or _clean_env(
+    config('CASHFREE_ENVIRONMENT', default='')
+)
+CASHFREE_ENV = _dotenv_last_nonempty('CASHFREE_ENV') or _clean_env(
+    config('CASHFREE_ENV', default='sandbox')
+)
+CASHFREE_API_VERSION = _dotenv_last_nonempty('CASHFREE_API_VERSION') or _clean_env(
+    config('CASHFREE_API_VERSION', default='2024-12-01')
+)
 CASHFREE_PAYMENT_API_VERSION = config('CASHFREE_PAYMENT_API_VERSION', default='2023-08-01')
 CASHFREE_PAYMENTS_BASE_URL = config('CASHFREE_PAYMENTS_BASE_URL', default='')
 CASHFREE_PAYOUTS_BASE_URL = config('CASHFREE_PAYOUTS_BASE_URL', default='')

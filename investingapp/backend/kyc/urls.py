@@ -17,6 +17,7 @@ from .email_action_views import (
 from .fno_views import FnoMeView, FnoSubmitView
 from .views import (
     AadhaarDigiLockerCallbackView,
+    AadhaarDigiLockerReturnView,
     CheckAadhaarDigiLockerView,
     KycStatusView,
     NameMatchView,
@@ -41,6 +42,11 @@ urlpatterns = [
         'digilocker/callback/<str:state>/',
         AadhaarDigiLockerCallbackView.as_view(),
         name='digilocker-callback',
+    ),
+    path(
+        'digilocker/return/',
+        AadhaarDigiLockerReturnView.as_view(),
+        name='digilocker-return',
     ),
     path('verify-bank/', VerifyBankView.as_view(), name='verify-bank'),
     path('upload-selfie/', UploadSelfieView.as_view(), name='upload-selfie'),

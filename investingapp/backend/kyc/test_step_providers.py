@@ -388,6 +388,8 @@ class CashfreeDigilockerApiTests(SimpleTestCase):
         self.assertEqual(result['url'], 'https://verification.cashfree.com/dl/x')
         self.assertEqual(result['reference_id'], '123')
         self.assertEqual(result['status'], 'PENDING')
+        headers = client_mock.return_value.__enter__.return_value.post.call_args.kwargs['headers']
+        self.assertEqual(headers['x-api-version'], '2023-12-18')
 
     @patch('services.providers.cashfree_secure_id.cashfree_settings')
     @patch('services.providers.cashfree_secure_id.httpx.Client')
@@ -434,3 +436,54 @@ class CashfreeDigilockerApiTests(SimpleTestCase):
         result = get_digilocker_identity(verification_id='vid1')
         self.assertEqual(result['verification_status'], 'PENDING')
         self.assertEqual(result['user_details'], {})
+
+    @patch('services.providers.cashfree_secure_id.cashfree_settings')
+    @patch('services.providers.cashfree_secure_id.httpx.Client')
+    def test_create_url_maps_generic_500(self, client_mock, settings_mock):
+        settings_mock.return_value = self._cfg()
+        client_mock.return_value.__enter__.return_value.post.return_value = SimpleNamespace(
+            status_code=500,
+            is_error=True,
+            text='{"message":"something went wrong, please try after some time"}',
+            json=lambda: {
+                'type': 'internal_error',
+                'code': 'verification_failed',
+                'message': 'something went wrong, please try after some time',
+            },
+        )
+        from services.providers.cashfree_secure_id import create_digilocker_url
+
+        with self.assertRaises(CashfreeSecureIdError) as ctx:
+            create_digilocker_url(
+                verification_id='vid1',
+                redirect_url='https://api.capitalbullwave.com/api/v1/digilocker/return/',
+            )
+        self.assertEqual(ctx.exception.code, 'digilocker_unavailable')
+        self.assertIn('sandbox.cashfree.com', str(ctx.exception))
+        self.assertGreaterEqual(client_mock.return_value.__enter__.return_value.post.call_count, 2)
+
+
+class CashfreeTestKeyRoutingTests(SimpleTestCase):
+    @override_settings(
+        CASHFREE_CLIENT_ID='TEST111332480f0ed98d8cc715d0879284233111',
+        CASHFREE_CLIENT_SECRET='cfsk_ma_test_example',
+        CASHFREE_ENVIRONMENT='production',
+        CASHFREE_ENV='production',
+        SECURE_ID_BASE_URL='https://api.cashfree.com/verification',
+        CASHFREE_API_VERSION='2024-12-01',
+        CASHFREE_PAYMENT_API_VERSION='2023-08-01',
+        CASHFREE_PAYMENTS_BASE_URL='',
+        CASHFREE_PAYOUTS_BASE_URL='',
+        CASHFREE_PAYMENT_WEBHOOK_SECRET='',
+        CASHFREE_PAYOUT_WEBHOOK_SECRET='',
+        CASHFREE_WEBHOOK_SECRET='',
+        SECURE_ID_API_KEY='',
+        SECURE_ID_API_SECRET='',
+    )
+    def test_test_keys_force_sandbox_host(self):
+        from services.providers.cashfree_config import cashfree_settings
+
+        cfg = cashfree_settings()
+        self.assertFalse(cfg.is_production)
+        self.assertEqual(cfg.environment, 'sandbox')
+        self.assertEqual(cfg.secure_id_base_url, 'https://sandbox.cashfree.com/verification')

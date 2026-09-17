@@ -28,11 +28,26 @@ class CashfreeSettings:
 
 
 def _env(name: str, default: str = '') -> str:
-    return (getattr(settings, name, None) or default).strip()
+    import os
+
+    value = (getattr(settings, name, None) or os.environ.get(name) or default or '').strip()
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in {'"', "'"}:
+        value = value[1:-1].strip()
+    return value
+
+
+def _is_test_credential(value: str) -> bool:
+    text = (value or '').strip().lower()
+    return text.startswith('test') or text.startswith('cfsk_ma_test_') or '_test_' in text
 
 
 def cashfree_settings() -> CashfreeSettings:
     env = _env('CASHFREE_ENVIRONMENT') or _env('CASHFREE_ENV', 'sandbox')
+    client_id = _env('CASHFREE_CLIENT_ID') or _env('SECURE_ID_API_KEY')
+    client_secret = _env('CASHFREE_CLIENT_SECRET') or _env('SECURE_ID_API_SECRET')
+    # TEST keys must hit sandbox even if .env still says production.
+    if _is_test_credential(client_id) or _is_test_credential(client_secret):
+        env = 'sandbox'
     is_prod = env.lower() in ('production', 'prod', 'live')
 
     secure_id_default = (
@@ -51,14 +66,15 @@ def cashfree_settings() -> CashfreeSettings:
         else 'https://payout-gamma.cashfree.com/payout/v1'
     )
 
-    client_id = _env('CASHFREE_CLIENT_ID') or _env('SECURE_ID_API_KEY')
-    client_secret = _env('CASHFREE_CLIENT_SECRET') or _env('SECURE_ID_API_SECRET')
-
     return CashfreeSettings(
         client_id=client_id,
         client_secret=client_secret,
         environment=env,
-        secure_id_base_url=_env('SECURE_ID_BASE_URL', secure_id_default),
+        secure_id_base_url=(
+            secure_id_default
+            if (not is_prod and 'sandbox' not in _env('SECURE_ID_BASE_URL', secure_id_default).lower())
+            else _env('SECURE_ID_BASE_URL', secure_id_default)
+        ),
         payments_base_url=_env('CASHFREE_PAYMENTS_BASE_URL', payments_default),
         payouts_base_url=_env('CASHFREE_PAYOUTS_BASE_URL', payouts_default),
         api_version=_env('CASHFREE_API_VERSION', '2024-12-01'),

@@ -9,10 +9,12 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         cfg = cashfree_settings()
-        self.stdout.write(f'Client ID: {cfg.client_id}')
+        self.stdout.write(f'Client ID: {(cfg.client_id[:8] + "...") if cfg.client_id else "MISSING"}')
+        self.stdout.write(f'Client secret: {"set" if cfg.client_secret else "MISSING"}')
         self.stdout.write(f'Environment: {cfg.environment}')
         self.stdout.write(f'Base URL: {cfg.secure_id_base_url}')
         self.stdout.write(f'API version: {cfg.api_version}')
+        self.stdout.write(f'Configured: {cfg.is_configured}')
 
         probe = _cashfree_secure_id_probe()
         if probe.get('reachable'):

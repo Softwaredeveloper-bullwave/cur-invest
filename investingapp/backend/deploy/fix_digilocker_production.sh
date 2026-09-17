@@ -46,6 +46,18 @@ upsert_env AI_SKIP_STARTUP_PROBE 1
 echo "==> Route DigiLocker Aadhaar through Cashfree"
 upsert_env KYC_AADHAAR_PROVIDER cashfree
 grep -q '^KYC_PROVIDER=' "$ENV_FILE" || upsert_env KYC_PROVIDER cashfree
+upsert_env CASHFREE_ENVIRONMENT sandbox
+upsert_env CASHFREE_ENV sandbox
+upsert_env CASHFREE_API_VERSION 2024-12-01
+if [[ -n "${CASHFREE_CLIENT_ID:-}" && -n "${CASHFREE_CLIENT_SECRET:-}" ]]; then
+  upsert_env CASHFREE_CLIENT_ID "$CASHFREE_CLIENT_ID"
+  upsert_env CASHFREE_CLIENT_SECRET "$CASHFREE_CLIENT_SECRET"
+  echo "Cashfree TEST keys written from the shell environment."
+fi
+if ! grep -q '^CASHFREE_CLIENT_ID=.\+' "$ENV_FILE"; then
+  echo "WARN: CASHFREE_CLIENT_ID is empty in $ENV_FILE"
+  echo "  Export CASHFREE_CLIENT_ID and CASHFREE_CLIENT_SECRET, then rerun this script."
+fi
 
 echo "==> Install nginx server_name for ${DOMAIN}"
 bash "$BACKEND_DIR/deploy/install_nginx_api.sh"

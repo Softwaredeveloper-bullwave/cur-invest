@@ -26,6 +26,7 @@ from .service import (
     get_or_create_profile,
     name_match_step,
     record_digilocker_callback,
+    record_digilocker_return,
     resend_aadhaar_otp_step,
     resend_sender_otp_step,
     send_aadhaar_otp_step,
@@ -192,6 +193,42 @@ class AadhaarDigiLockerCallbackView(APIView):
             f'<div class="badge">BullWave KYC</div>'
             f'<h2>{title}</h2><p>{message}</p>'
             '</div>'
+            '<script>setTimeout(function(){try{window.close();}catch(e){}},2500);</script>'
+            '</body></html>'
+        )
+
+
+class AadhaarDigiLockerReturnView(APIView):
+    """Cashfree redirects here with ?verification_id= after DigiLocker consent."""
+
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    def get(self, request):
+        verification_id = (
+            request.query_params.get('verification_id')
+            or request.query_params.get('verificationId')
+            or ''
+        )
+        accepted = record_digilocker_return(verification_id=str(verification_id or '').strip())
+        app_return_url = digilocker_app_return_url(verification_id=verification_id) if accepted else ''
+        if app_return_url:
+            from django.shortcuts import redirect
+
+            return redirect(app_return_url)
+
+        title = 'DigiLocker complete' if accepted else 'Verification link expired'
+        message = (
+            'You can close this tab and return to the BullWave app. '
+            'Tap “Check verification status” on the Aadhaar screen.'
+            if accepted
+            else 'This verification link is invalid or expired. Start again from the BullWave app.'
+        )
+        return HttpResponse(
+            '<!doctype html><html><head><meta charset="utf-8">'
+            '<meta name="viewport" content="width=device-width,initial-scale=1">'
+            f'<title>{title}</title></head><body>'
+            f'<h2>{title}</h2><p>{message}</p>'
             '<script>setTimeout(function(){try{window.close();}catch(e){}},2500);</script>'
             '</body></html>'
         )

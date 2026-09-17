@@ -39,6 +39,30 @@ python manage.py check
 echo "==> SMS config"
 python manage.py check_sms || true
 
+echo "==> Cashfree Secure ID"
+python - <<'PY'
+from pathlib import Path
+env = Path('.env')
+id_set = secret_set = aadhaar = ''
+if env.is_file():
+    last = {}
+    for raw in env.read_text(encoding='utf-8', errors='replace').splitlines():
+        line = raw.strip()
+        if not line or line.startswith('#') or '=' not in line:
+            continue
+        key, _, value = line.partition('=')
+        value = value.split('#', 1)[0].strip().strip('"').strip("'")
+        if value:
+            last[key.strip()] = value
+    id_set = 'yes' if last.get('CASHFREE_CLIENT_ID') else 'MISSING'
+    secret_set = 'yes' if last.get('CASHFREE_CLIENT_SECRET') else 'MISSING'
+    aadhaar = last.get('KYC_AADHAAR_PROVIDER', '')
+print(f'CASHFREE_CLIENT_ID set: {id_set}')
+print(f'CASHFREE_CLIENT_SECRET set: {secret_set}')
+print(f'KYC_AADHAAR_PROVIDER: {aadhaar or "(blank)"}')
+PY
+python manage.py check_cashfree_secure_id || true
+
 echo "==> Restart gunicorn (bullwave)"
 sudo systemctl daemon-reload
 sudo systemctl restart bullwave
