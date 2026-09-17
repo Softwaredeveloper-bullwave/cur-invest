@@ -519,6 +519,16 @@ def _cashfree_digilocker_redirect_url() -> str:
     return f'{base}/api/v1/digilocker/return/'
 
 
+def _digilocker_session_provider(profile) -> str:
+    """Provider that created the in-progress DigiLocker session."""
+    if profile.aadhaar_digilocker_state_digest:
+        return 'eko'
+    url = (getattr(profile, 'aadhaar_digilocker_url', '') or '').lower()
+    if 'cashfree' in url:
+        return 'cashfree'
+    return aadhaar_provider()
+
+
 def start_aadhaar_digilocker_step(user) -> KycProfile:
     """Create the DigiLocker consent journey after PAN (Cashfree or Eko)."""
     provider = aadhaar_provider()
@@ -534,10 +544,13 @@ def start_aadhaar_digilocker_step(user) -> KycProfile:
     if profile.aadhaar_status == KycProfile.VerificationStatus.VERIFIED:
         return profile
     if provider == 'cashfree' and not cashfree_settings().is_configured:
-        raise CashfreeSecureIdError(
-            'Cashfree Secure ID is not configured. Paste CASHFREE_CLIENT_ID and CASHFREE_CLIENT_SECRET in .env.',
-            'not_configured',
-        )
+        if eko_settings().is_configured:
+            provider = 'eko'
+        else:
+            raise CashfreeSecureIdError(
+                'Cashfree Secure ID is not configured. Paste CASHFREE_CLIENT_ID and CASHFREE_CLIENT_SECRET in .env.',
+                'not_configured',
+            )
     if provider == 'eko' and not eko_settings().is_configured:
         raise EkoKycError('Eko KYC API is not configured. Paste EKO_* keys in .env.')
     if provider == 'cashfree':
@@ -557,10 +570,22 @@ def start_aadhaar_digilocker_step(user) -> KycProfile:
     )
     try:
         if provider == 'cashfree':
-            result = cashfree_create_digilocker_url(
-                verification_id=client_ref_id,
-                redirect_url=redirect_url,
-            )
+            try:
+                result = cashfree_create_digilocker_url(
+                    verification_id=client_ref_id,
+                    redirect_url=redirect_url,
+                )
+            except CashfreeSecureIdError as exc:
+                if not eko_settings().is_configured:
+                    raise
+                logger.warning('Cashfree DigiLocker failed, falling back to Eko: %s', exc)
+                provider = 'eko'
+                redirect_url, state = _digilocker_redirect_url()
+                client_ref_id = uuid.uuid4().hex[:20]
+                result = create_digilocker_url(
+                    client_ref_id=client_ref_id,
+                    redirect_url=redirect_url,
+                )
         else:
             result = create_digilocker_url(
                 client_ref_id=client_ref_id,
@@ -595,7 +620,7 @@ def start_aadhaar_digilocker_step(user) -> KycProfile:
         response_meta={
             'stage': 'digilocker_url_created',
             'reference_id': result['reference_id'],
-            'provider': aadhaar_provider(),
+            'provider': provider,
             'provider_billed': True,
         },
     )
@@ -658,7 +683,7 @@ def check_aadhaar_digilocker_step(user, *, verification_id: str = '') -> KycProf
         profile.save(update_fields=['aadhaar_digilocker_verification_id'])
 
     active_verification_id = profile.aadhaar_digilocker_verification_id
-    provider = aadhaar_provider()
+    provider = _digilocker_session_provider(profile)
 
     try:
         if provider == 'cashfree':

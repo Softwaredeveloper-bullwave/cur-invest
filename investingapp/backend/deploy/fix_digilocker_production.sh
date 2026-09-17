@@ -43,21 +43,9 @@ upsert_env DIGILOCKER_PUBLIC_URL "$HTTPS_URL"
 remove_env LOCAL_DEV_TUNNEL_URL
 upsert_env AI_SKIP_STARTUP_PROBE 1
 
-echo "==> Route DigiLocker Aadhaar through Cashfree"
-upsert_env KYC_AADHAAR_PROVIDER cashfree
-grep -q '^KYC_PROVIDER=' "$ENV_FILE" || upsert_env KYC_PROVIDER cashfree
-upsert_env CASHFREE_ENVIRONMENT sandbox
-upsert_env CASHFREE_ENV sandbox
-upsert_env CASHFREE_API_VERSION 2024-12-01
-if [[ -n "${CASHFREE_CLIENT_ID:-}" && -n "${CASHFREE_CLIENT_SECRET:-}" ]]; then
-  upsert_env CASHFREE_CLIENT_ID "$CASHFREE_CLIENT_ID"
-  upsert_env CASHFREE_CLIENT_SECRET "$CASHFREE_CLIENT_SECRET"
-  echo "Cashfree TEST keys written from the shell environment."
-fi
-if ! grep -q '^CASHFREE_CLIENT_ID=.\+' "$ENV_FILE"; then
-  echo "WARN: CASHFREE_CLIENT_ID is empty in $ENV_FILE"
-  echo "  Export CASHFREE_CLIENT_ID and CASHFREE_CLIENT_SECRET, then rerun this script."
-fi
+echo "==> Route DigiLocker Aadhaar through Eko (Cashfree TEST merchants often lack DigiLocker)"
+upsert_env KYC_AADHAAR_PROVIDER eko
+grep -q '^KYC_PROVIDER=' "$ENV_FILE" || upsert_env KYC_PROVIDER eko
 
 echo "==> Install nginx server_name for ${DOMAIN}"
 bash "$BACKEND_DIR/deploy/install_nginx_api.sh"
@@ -97,8 +85,8 @@ else
 fi
 
 echo ""
-echo "Done. Cashfree DigiLocker redirect_url is:"
+echo "Done. DigiLocker callback URL is:"
 echo "  ${HTTPS_URL}/api/v1/digilocker/callback/<state>/"
 echo ""
-echo "Whitelist this server's public IP in the Cashfree Secure ID dashboard."
+echo "Aadhaar DigiLocker uses Eko. Ask Eko to enable DigiLocker on this production account."
 echo "Retry Aadhaar in the Flutter app."

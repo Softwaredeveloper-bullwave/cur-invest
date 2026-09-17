@@ -315,6 +315,42 @@ class AadhaarProviderGuardTests(SimpleTestCase):
         create_mock.assert_called_once()
 
     @override_settings(KYC_AADHAAR_PROVIDER='cashfree', KYC_PROVIDER='cashfree')
+    def test_cashfree_digilocker_falls_back_to_eko(self):
+        from kyc.models import KycProfile
+        from kyc.service import start_aadhaar_digilocker_step
+
+        user = SimpleNamespace(id=1, phone='9871013472', name='Test')
+        profile = MagicMock()
+        profile.pan_status = KycProfile.VerificationStatus.VERIFIED
+        profile.aadhaar_status = KycProfile.VerificationStatus.PENDING
+        with patch('kyc.service.get_or_create_profile', return_value=profile), patch(
+            'kyc.service.cashfree_settings'
+        ) as cf_cfg, patch('kyc.service.eko_settings') as eko_cfg, patch(
+            'kyc.service._cashfree_digilocker_redirect_url',
+            return_value='https://api.capitalbullwave.com/api/v1/digilocker/return/',
+        ), patch(
+            'kyc.service._digilocker_redirect_url',
+            return_value=('https://api.capitalbullwave.com/api/v1/digilocker/callback/st/', 'st'),
+        ), patch(
+            'kyc.service.cashfree_create_digilocker_url',
+            side_effect=CashfreeSecureIdError('something went wrong', 'digilocker_unavailable'),
+        ), patch(
+            'kyc.service.create_digilocker_url'
+        ) as eko_create, patch('kyc.service._audit'):
+            cf_cfg.return_value.is_configured = True
+            eko_cfg.return_value.is_configured = True
+            eko_create.return_value = {
+                'url': 'https://digilocker.eko.in/session/abc',
+                'reference_id': 'eko-1',
+                'verification_id': 'eko-vid',
+            }
+            result = start_aadhaar_digilocker_step(user)
+
+        self.assertEqual(result.aadhaar_digilocker_url, 'https://digilocker.eko.in/session/abc')
+        self.assertEqual(result.aadhaar_reference_id, 'eko-1')
+        eko_create.assert_called_once()
+
+    @override_settings(KYC_AADHAAR_PROVIDER='cashfree', KYC_PROVIDER='cashfree')
     def test_cashfree_digilocker_check_marks_verified(self):
         from kyc.models import KycProfile
         from kyc.service import check_aadhaar_digilocker_step
@@ -326,6 +362,8 @@ class AadhaarProviderGuardTests(SimpleTestCase):
         profile.aadhaar_reference_id = '99'
         profile.aadhaar_digilocker_client_ref_id = 'vid-1'
         profile.aadhaar_digilocker_verification_id = ''
+        profile.aadhaar_digilocker_state_digest = ''
+        profile.aadhaar_digilocker_url = 'https://verification.cashfree.com/dl/abc'
         profile.pan_name = 'Gopal Kumar'
         with patch('kyc.service.get_or_create_profile', return_value=profile), patch(
             'kyc.service.cashfree_get_digilocker_identity'

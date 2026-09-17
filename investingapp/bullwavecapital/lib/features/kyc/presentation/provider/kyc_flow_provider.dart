@@ -146,9 +146,8 @@ class KycFlowProvider extends ChangeNotifier {
         e.code == 'digilocker_not_enabled' ||
         lowered.contains('something went wrong') ||
         lowered.contains('try after some time')) {
-      return 'Cashfree could not start DigiLocker. '
-          'TEST keys must use sandbox, whitelist 43.204.159.255 in Secure ID, '
-          'and DigiLocker must be enabled on this merchant.';
+      return 'Cashfree DigiLocker is not enabled on these TEST keys. '
+          'BullWave will use Eko DigiLocker instead. Pull the latest API and retry.';
     }
     return e.message;
   }
