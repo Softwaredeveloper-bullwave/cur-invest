@@ -1,21 +1,22 @@
 # /etc/nginx/sites-available/bullwave-api
-# sudo ln -sf /etc/nginx/sites-available/bullwave-api /etc/nginx/sites-enabled/
-# sudo nginx -t && sudo systemctl reload nginx
+# Installed by deploy/install_nginx_api.sh
 #
-# Certbot (first time):
-#   sudo certbot --nginx -d api.capitalbullwave.com
+# HTTP Elastic IP keeps Flutter on http://43.204.159.255
+# HTTPS api.capitalbullwave.com is the DigiLocker callback.
 
 upstream bullwave_gunicorn {
     server 127.0.0.1:8000 fail_timeout=0;
 }
 
-# Temporary: AWS Elastic IP over HTTP until api.capitalbullwave.com TLS is restored.
-# Flutter Chrome/web needs CORS on this vhost (Django also sets CORS after restart).
 server {
     listen 80 default_server;
     server_name 43.204.159.255 _;
 
     client_max_body_size 25M;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/html;
+    }
 
     location /static/ {
         alias /home/ubuntu/cur-invest/investingapp/backend/staticfiles/;
@@ -57,6 +58,10 @@ server {
 
     client_max_body_size 25M;
 
+    location /.well-known/acme-challenge/ {
+        root /var/www/html;
+    }
+
     location / {
         return 301 https://$host$request_uri;
     }
@@ -66,11 +71,9 @@ server {
     listen 443 ssl http2;
     server_name api.capitalbullwave.com;
 
-    # certbot fills these paths after --nginx
     ssl_certificate /etc/letsencrypt/live/api.capitalbullwave.com/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/api.capitalbullwave.com/privkey.pem;
-    include /etc/letsencrypt/options-ssl-nginx.conf;
-    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
 
     client_max_body_size 25M;
 
@@ -83,10 +86,23 @@ server {
     }
 
     location / {
+        if ($request_method = OPTIONS) {
+            add_header Access-Control-Allow-Origin $http_origin always;
+            add_header Access-Control-Allow-Methods "GET, POST, PUT, PATCH, DELETE, OPTIONS" always;
+            add_header Access-Control-Allow-Headers "Authorization, Content-Type, Accept, Origin" always;
+            add_header Access-Control-Max-Age 86400 always;
+            add_header Content-Length 0;
+            return 204;
+        }
+        proxy_hide_header Access-Control-Allow-Origin;
+        add_header Access-Control-Allow-Origin $http_origin always;
+        add_header Access-Control-Allow-Methods "GET, POST, PUT, PATCH, DELETE, OPTIONS" always;
+        add_header Access-Control-Allow-Headers "Authorization, Content-Type, Accept, Origin" always;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header Origin $http_origin;
         proxy_redirect off;
         proxy_connect_timeout 60s;
         proxy_send_timeout 120s;

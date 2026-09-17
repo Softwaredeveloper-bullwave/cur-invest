@@ -47,22 +47,28 @@ echo "==> Ensure Eko Aadhaar provider"
 grep -q '^KYC_AADHAAR_PROVIDER=' "$ENV_FILE" || upsert_env KYC_AADHAAR_PROVIDER eko
 grep -q '^KYC_PROVIDER=' "$ENV_FILE" || upsert_env KYC_PROVIDER eko
 
+echo "==> Install nginx server_name for ${DOMAIN}"
+bash "$BACKEND_DIR/deploy/install_nginx_api.sh"
+
+sudo apt-get update -qq
+sudo DEBIAN_FRONTEND=noninteractive apt-get install -y certbot python3-certbot-nginx
+
 if [[ ! -f /etc/letsencrypt/live/${DOMAIN}/fullchain.pem ]]; then
-  echo "==> No SSL certificate for ${DOMAIN}. Issuing with certbot."
-  echo "    DNS A record must already point ${DOMAIN} -> this server (43.204.159.255)."
-  sudo apt-get update -qq
-  sudo DEBIAN_FRONTEND=noninteractive apt-get install -y certbot python3-certbot-nginx
-  if ! sudo certbot --nginx -d "$DOMAIN" --non-interactive --agree-tos -m "$ADMIN_EMAIL" --redirect; then
+  echo "==> Issue certificate with webroot (nginx already has server_name ${DOMAIN})"
+  sudo mkdir -p /var/www/html
+  if ! sudo certbot certonly --webroot -w /var/www/html -d "$DOMAIN" --non-interactive --agree-tos -m "$ADMIN_EMAIL"; then
     echo ""
-    echo "Certbot failed. DigiLocker cannot work over http://43.204.159.255."
-    echo "1. At your DNS provider, create:  A  ${DOMAIN}  43.204.159.255"
-    echo "2. Open AWS security group ports 80 and 443"
-    echo "3. Rerun this script"
+    echo "Certbot could not issue a certificate."
+    echo "DNS already looks correct if ping shows 43.204.159.255 (100% ping loss is normal on EC2)."
+    echo "Open AWS security group inbound TCP 80 and 443, then rerun this script."
     exit 1
   fi
 else
   echo "==> SSL certificate already present for ${DOMAIN}"
 fi
+
+echo "==> Enable HTTPS nginx vhost using the saved certificate"
+bash "$BACKEND_DIR/deploy/install_nginx_api.sh"
 
 echo "==> Restart bullwave"
 sudo systemctl daemon-reload
