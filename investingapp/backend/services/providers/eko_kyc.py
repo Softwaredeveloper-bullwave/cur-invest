@@ -382,7 +382,7 @@ def _request(
     if json_body:
         headers['content-type'] = 'application/json'
 
-    logger.info('Eko request start %s %s', method, url if base_url else path)
+    logger.info('Eko request start %s %s', method, url)
     if logger.isEnabledFor(logging.DEBUG):
         safe_keys = []
         if data:
@@ -453,8 +453,13 @@ def _request(
     has_otp_ref = bool(_extract_ref_id(data_payload)) if not check_status else False
 
     if response.status_code == 401:
+        eko_detail = _safe_error_message(payload, response)
+        host = url.split('/v')[0] if '/v' in url else url
         raise EkoKycError(
-            'Invalid Eko developer key or secret key.',
+            (
+                f'Eko rejected the API key at {host}. {eko_detail} '
+                'Set EKO_BASE_URL=https://api.eko.in/ekoicici (no :25002), then restart gunicorn.'
+            )[:280],
             'auth_failed',
             eko_meta=_eko_meta_from_payload(payload),
         )
@@ -591,8 +596,13 @@ def _get(path: str, params: dict | None = None, *, check_status: bool = True) ->
     has_ref = bool(_extract_ref_id(data_payload)) if not check_status else False
 
     if response.status_code == 401:
+        eko_detail = _safe_error_message(payload, response)
+        host = url.split('/v')[0] if '/v' in url else url
         raise EkoKycError(
-            'Invalid Eko developer key or secret key.',
+            (
+                f'Eko rejected the API key at {host}. {eko_detail} '
+                'Set EKO_BASE_URL=https://api.eko.in/ekoicici (no :25002), then restart gunicorn.'
+            )[:280],
             'auth_failed',
             eko_meta=_eko_meta_from_payload(payload),
         )
@@ -861,6 +871,27 @@ def mobile_from_upi_vpa(vpa: str) -> str:
     return ''
 
 
+def _kyc_base_urls(cfg) -> list[str]:
+    """KYC/DigiLocker hosts. Prefer the current API host, never the retired :25002 port."""
+    urls: list[str] = []
+    primary = (getattr(cfg, 'base_url', '') or '').strip().rstrip('/')
+    if ':25002' in primary:
+        urls.append(primary.replace(':25002', ''))
+    if primary:
+        urls.append(primary.replace(':25002', '') if ':25002' in primary else primary)
+    if getattr(cfg, 'is_production', False):
+        canonical = 'https://api.eko.in/ekoicici'
+        if canonical not in urls:
+            urls.insert(0, canonical)
+    seen: set[str] = set()
+    unique: list[str] = []
+    for url in urls:
+        if url and url not in seen:
+            seen.add(url)
+            unique.append(url)
+    return unique
+
+
 def _eko_upi_base_urls(cfg) -> list[str]:
     """Payment/UPI APIs may be routed on a different Eko host than KYC tools."""
     urls: list[str] = []
@@ -1104,31 +1135,45 @@ def verify_upi_vpa(
 def create_digilocker_url(*, client_ref_id: str, redirect_url: str) -> dict:
     """Create Eko's consent-based DigiLocker Aadhaar verification journey."""
     cfg = eko_settings()
-    result = _request(
-        'POST',
-        DIGILOCKER_CREATE_PATH,
-        {
-            'initiator_id': cfg.initiator_id,
-            'user_code': cfg.user_code,
-            'client_ref_id': client_ref_id,
-            'document_requested': ['AADHAAR'],
-            'redirect_url': redirect_url,
-        },
-        check_status=False,
-        json_body=True,
-    )
-    digilocker_url = result.get('url') or result.get('digilocker_url') or ''
-    reference_id = result.get('reference_id')
-    if not digilocker_url or reference_id in (None, ''):
-        raise EkoKycError(
-            'Eko did not return a DigiLocker verification URL and reference.',
-            'digilocker_session_failed',
-        )
-    return {
-        'url': digilocker_url,
-        'reference_id': str(reference_id),
-        'verification_id': str(result.get('verification_id') or ''),
+    payload = {
+        'initiator_id': cfg.initiator_id,
+        'user_code': cfg.user_code,
+        'client_ref_id': client_ref_id,
+        'document_requested': ['AADHAAR'],
+        'redirect_url': redirect_url,
     }
+    last_error: EkoKycError | None = None
+    for base_url in _kyc_base_urls(cfg):
+        try:
+            result = _request(
+                'POST',
+                DIGILOCKER_CREATE_PATH,
+                payload,
+                check_status=False,
+                json_body=True,
+                base_url=base_url,
+            )
+        except EkoKycError as exc:
+            last_error = exc
+            if exc.code != 'auth_failed':
+                raise
+            logger.warning('DigiLocker auth failed at %s: %s', base_url, exc)
+            continue
+        digilocker_url = result.get('url') or result.get('digilocker_url') or ''
+        reference_id = result.get('reference_id')
+        if not digilocker_url or reference_id in (None, ''):
+            raise EkoKycError(
+                'Eko did not return a DigiLocker verification URL and reference.',
+                'digilocker_session_failed',
+            )
+        return {
+            'url': digilocker_url,
+            'reference_id': str(reference_id),
+            'verification_id': str(result.get('verification_id') or ''),
+        }
+    if last_error:
+        raise last_error
+    raise EkoKycError('Eko DigiLocker host is not configured.', 'not_configured')
 
 
 def _normalize_digilocker_status_value(raw) -> str:

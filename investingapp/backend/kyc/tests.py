@@ -80,6 +80,8 @@ class EkoDigiLockerTests(SimpleTestCase):
             initiator_id='9999999999',
             user_code='USER1',
             org_slug='',
+            is_production=True,
+            base_url='https://api.eko.in:25002/ekoicici',
         )
         request_mock.return_value = {
             'url': 'https://digilocker.example/session',
@@ -96,6 +98,10 @@ class EkoDigiLockerTests(SimpleTestCase):
         self.assertEqual(payload['document_requested'], ['AADHAAR'])
         self.assertTrue(request_mock.call_args.kwargs['json_body'])
         self.assertFalse(request_mock.call_args.kwargs['check_status'])
+        self.assertEqual(
+            request_mock.call_args.kwargs.get('base_url'),
+            'https://api.eko.in/ekoicici',
+        )
 
     @patch('services.providers.eko_kyc._get')
     @patch('services.providers.eko_kyc.eko_settings')
