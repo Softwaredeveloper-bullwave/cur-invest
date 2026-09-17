@@ -550,6 +550,11 @@ REFERRAL_REWARD_AMOUNT = config('REFERRAL_REWARD_AMOUNT', default=500, cast=int)
 APP_SHARE_URL = config('APP_SHARE_URL', default='https://bullwave.in')
 # Public URL for email action links (approve/reject). Use your deployed API URL or ngrok in dev.
 BACKEND_PUBLIC_URL = _clean_env(config('BACKEND_PUBLIC_URL', default='http://127.0.0.1:8000'), strip_trailing_slash=True)
+# HTTPS host DigiLocker redirects to when BACKEND_PUBLIC_URL is http:// (Elastic IP).
+DIGILOCKER_PUBLIC_URL = _clean_env(
+    config('DIGILOCKER_PUBLIC_URL', default='https://api.capitalbullwave.com'),
+    strip_trailing_slash=True,
+)
 # HTTPS tunnel for local DigiLocker callbacks (localtunnel / ngrok). Example: https://abc123.loca.lt
 LOCAL_DEV_TUNNEL_URL = _clean_env(config('LOCAL_DEV_TUNNEL_URL', default=''), strip_trailing_slash=True)
 

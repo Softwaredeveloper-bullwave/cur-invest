@@ -134,14 +134,12 @@ class KycFlowProvider extends ChangeNotifier {
       return 'DigiLocker session expired. Tap “Start a new verification” and complete consent again.';
     }
     if (e.code == 'public_redirect_required') {
-      return 'DigiLocker needs an HTTPS callback URL.\n\n'
-          'Production (recommended): on AWS run '
-          'bash deploy/fix_digilocker_production.sh and set '
-          'BACKEND_PUBLIC_URL=https://api.capitalbullwave.com — then use the app '
-          'with the default API (no local tunnel).\n\n'
-          'Local dev: run backend/scripts/run_dev_with_digilocker.sh, then restart '
-          'Flutter with --dart-define=API_BASE_URL=https://YOUR-TUNNEL.loca.lt/api/v1 '
-          'on a physical device.';
+      return 'DigiLocker needs an HTTPS callback.\n\n'
+          'On AWS run:\n'
+          'bash ~/cur-invest/investingapp/backend/deploy/fix_digilocker_production.sh\n\n'
+          'That sets BACKEND_PUBLIC_URL=https://api.capitalbullwave.com and issues '
+          'an SSL certificate. Point DNS A record api.capitalbullwave.com to '
+          '43.204.159.255 first, then retry this screen.';
     }
     return e.message;
   }

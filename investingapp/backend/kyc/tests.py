@@ -224,6 +224,22 @@ class DigiLockerRedirectTests(SimpleTestCase):
         self.assertTrue(state)
 
     @override_settings(
+        BACKEND_PUBLIC_URL='http://43.204.159.255',
+        LOCAL_DEV_TUNNEL_URL='',
+        DIGILOCKER_PUBLIC_URL='https://api.capitalbullwave.com',
+        EKO_DIGILOCKER_REDIRECT_URL='',
+        APP_SHARE_URL='https://bullwave.in',
+    )
+    def test_http_elastic_ip_uses_production_https_callback(self):
+        redirect_url, state = _digilocker_redirect_url()
+        self.assertTrue(
+            redirect_url.startswith(
+                'https://api.capitalbullwave.com/api/v1/digilocker/callback/'
+            )
+        )
+        self.assertTrue(state)
+
+    @override_settings(
         BACKEND_PUBLIC_URL='http://127.0.0.1:8000',
         LOCAL_DEV_TUNNEL_URL='',
         EKO_DIGILOCKER_REDIRECT_URL='https://bullwave.in',

@@ -459,6 +459,13 @@ def _is_localhost_public_url(url: str) -> bool:
     return host in {'127.0.0.1', 'localhost', '0.0.0.0', '::1'}
 
 
+def _production_digilocker_https_base() -> str:
+    configured = (getattr(settings, 'DIGILOCKER_PUBLIC_URL', '') or '').rstrip('/')
+    if configured.startswith('https://') and not _is_localhost_public_url(configured):
+        return configured
+    return 'https://api.capitalbullwave.com'
+
+
 def _digilocker_callback_base(public_url: str, tunnel_url: str) -> str:
     """Pick HTTPS base for DigiLocker callback — production API beats local tunnel."""
     if public_url.startswith('https://') and not _is_localhost_public_url(public_url):
@@ -467,6 +474,10 @@ def _digilocker_callback_base(public_url: str, tunnel_url: str) -> str:
         return tunnel_url
     if public_url.startswith('https://'):
         return public_url
+    host = (urlparse(public_url).hostname or '').lower()
+    # Flutter may call the AWS Elastic IP over HTTP; DigiLocker still needs HTTPS.
+    if host and not _is_localhost_public_url(public_url):
+        return _production_digilocker_https_base()
     return ''
 
 
