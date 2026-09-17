@@ -11,9 +11,15 @@ from django.conf import settings
 from django.core import signing
 from django.utils import timezone
 
-from kyc.notifications import EmailDeliveryError, send_plain_email
+from kyc.notifications import EmailDeliveryError
 
-from .email_otp_service import EmailOtpError, normalize_email, _EMAIL_REGEX, _delivery_mode
+from .email_otp_service import (
+    EmailOtpError,
+    normalize_email,
+    _EMAIL_REGEX,
+    _delivery_mode,
+    _send_email_otp_message,
+)
 from .models import PendingEmailOTP, User
 
 logger = logging.getLogger('bullwave.accounts')
@@ -46,16 +52,8 @@ def send_web_email_otp(email: str) -> dict:
 
     if mode == 'email':
         try:
-            send_plain_email(
-                to_email=email,
-                subject='Your BullWave email verification code',
-                text_body=(
-                    f'Your BullWave verification code is {otp}.\n\n'
-                    f'It expires in {settings.OTP_EXPIRY_MINUTES} minutes.\n\n'
-                    'If you did not request this, you can ignore this email.'
-                ),
-            )
-        except EmailDeliveryError as exc:
+            _send_email_otp_message(email, otp)
+        except Exception as exc:
             logger.error('Web email OTP delivery failed for %s: %s', email, exc)
             detail = str(exc)
             if '535' in detail or 'BadCredentials' in detail or 'Username and Password not accepted' in detail:
@@ -63,6 +61,8 @@ def send_web_email_otp(email: str) -> dict:
                     'Gmail SMTP login failed. Set EMAIL_HOST_PASSWORD to a Gmail App Password '
                     'in investingapp/backend/.env, then restart Django.'
                 )
+            elif isinstance(exc, EmailDeliveryError):
+                detail = str(exc)
             raise EmailOtpError(detail, 'email_delivery_failed') from exc
 
     logger.info('Web email OTP issued for %s mode=%s', email, mode)

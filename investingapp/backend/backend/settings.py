@@ -32,7 +32,14 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-dev-key-change-in-pro
 DEBUG = config('DEBUG', default=True, cast=bool)
 # Open admin-panel APIs without JWT while DEBUG=True (disable before go-live).
 ADMIN_PANEL_DEV_NO_AUTH = DEBUG and config('ADMIN_PANEL_DEV_NO_AUTH', default=True, cast=bool)
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,10.0.2.2').split(',')
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in config('ALLOWED_HOSTS', default='localhost,127.0.0.1,10.0.2.2').split(',')
+    if host.strip()
+]
+for _host in ('43.204.159.255', 'api.capitalbullwave.com'):
+    if _host not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(_host)
 if DEBUG:
     ALLOWED_HOSTS = ['*']
 
@@ -553,15 +560,24 @@ ADMIN_KYC_EMAIL = _clean_env(config('ADMIN_KYC_EMAIL', default=''))
 ADMIN_FNO_EMAIL = _clean_env(config('ADMIN_FNO_EMAIL', default=''))
 # Phone for auto-created Django reviewer used by email Approve/Reject links (optional)
 KYC_EMAIL_REVIEWER_PHONE = _clean_env(config('KYC_EMAIL_REVIEWER_PHONE', default=''))
-EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
-EMAIL_HOST = _clean_env(config('EMAIL_HOST', default=''))
+EMAIL_HOST = _clean_env(config('EMAIL_HOST', default='smtp.gmail.com'))
 EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
 EMAIL_HOST_USER = _clean_env(config('EMAIL_HOST_USER', default=''))
 _raw_email_password = _clean_env(config('EMAIL_HOST_PASSWORD', default=''))
 # Gmail app passwords are 16 chars; copy-paste often adds spaces or dashes.
 EMAIL_HOST_PASSWORD = _raw_email_password.replace(' ', '').replace('-', '')
 EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
-DEFAULT_FROM_EMAIL = _clean_env(config('DEFAULT_FROM_EMAIL', default='noreply@bullwave.app'))
+DEFAULT_FROM_EMAIL = (
+    _clean_env(config('DEFAULT_FROM_EMAIL', default=''))
+    or EMAIL_HOST_USER
+    or 'noreply@bullwave.app'
+)
+_default_email_backend = (
+    'django.core.mail.backends.smtp.EmailBackend'
+    if EMAIL_HOST_USER and EMAIL_HOST_PASSWORD
+    else 'django.core.mail.backends.console.EmailBackend'
+)
+EMAIL_BACKEND = config('EMAIL_BACKEND', default=_default_email_backend)
 
 # Production email via API key (recommended over Gmail SMTP)
 # Brevo: https://app.brevo.com/settings/keys/api

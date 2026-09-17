@@ -52,10 +52,13 @@ else
   exit 1
 fi
 
-echo "==> Public health (nginx + SSL)"
-if curl -sf https://api.capitalbullwave.com/health/ | head -c 300; then
+echo "==> Public health (Elastic IP HTTP, then domain SSL)"
+if curl -sf http://43.204.159.255/health/ | head -c 300; then
   echo ""
-  echo "OK: public API is up"
+  echo "OK: Elastic IP API is up"
+elif curl -sf https://api.capitalbullwave.com/health/ | head -c 300; then
+  echo ""
+  echo "OK: public HTTPS API is up"
 else
   echo ""
   echo "WARN: public URL still failing — check nginx:"

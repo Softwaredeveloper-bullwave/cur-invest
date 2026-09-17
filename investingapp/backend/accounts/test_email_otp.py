@@ -14,7 +14,12 @@ class EmailOtpServiceTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(phone='9876543210', password='test-pass')
 
-    @override_settings(DEBUG=True, OTP_EXPIRY_MINUTES=10)
+    @override_settings(
+        DEBUG=True,
+        OTP_EXPIRY_MINUTES=10,
+        EMAIL_HOST_USER='',
+        EMAIL_HOST_PASSWORD='',
+    )
     @patch('accounts.email_otp_service.email_delivery_chain', return_value=[])
     def test_send_email_otp_console_mode_in_debug(self, _chain_mock):
         payload = send_email_otp(user=self.user, email='test@example.com')
@@ -25,7 +30,12 @@ class EmailOtpServiceTests(TestCase):
         self.assertEqual(self.user.email, 'test@example.com')
         self.assertFalse(self.user.email_verified)
 
-    @override_settings(DEBUG=True, OTP_EXPIRY_MINUTES=10)
+    @override_settings(
+        DEBUG=True,
+        OTP_EXPIRY_MINUTES=10,
+        EMAIL_HOST_USER='',
+        EMAIL_HOST_PASSWORD='',
+    )
     @patch('accounts.email_otp_service.email_delivery_chain', return_value=[])
     def test_verify_email_otp_marks_user_verified(self, _chain_mock):
         payload = send_email_otp(user=self.user, email='verify@example.com')
@@ -38,7 +48,7 @@ class EmailOtpServiceTests(TestCase):
         self.assertTrue(user.email_verified)
         self.assertEqual(user.email, 'verify@example.com')
 
-    @override_settings(DEBUG=True)
+    @override_settings(DEBUG=True, EMAIL_HOST_USER='', EMAIL_HOST_PASSWORD='')
     @patch('accounts.email_otp_service.email_delivery_chain', return_value=[])
     def test_verify_email_otp_rejects_wrong_code(self, _chain_mock):
         send_email_otp(user=self.user, email='wrong@example.com')
@@ -52,7 +62,12 @@ class EmailOtpViewTests(TestCase):
         self.user = User.objects.create_user(phone='9123456789', password='test-pass')
         self.factory = APIRequestFactory()
 
-    @override_settings(DEBUG=True, OTP_EXPIRY_MINUTES=10)
+    @override_settings(
+        DEBUG=True,
+        OTP_EXPIRY_MINUTES=10,
+        EMAIL_HOST_USER='',
+        EMAIL_HOST_PASSWORD='',
+    )
     @patch('accounts.email_otp_service.email_delivery_chain', return_value=[])
     def test_send_email_otp_view(self, _chain_mock):
         request = self.factory.post(
@@ -68,7 +83,12 @@ class EmailOtpViewTests(TestCase):
         self.assertEqual(response.data['otpMode'], 'console')
         self.assertFalse(response.data['user']['emailVerified'])
 
-    @override_settings(DEBUG=True, OTP_EXPIRY_MINUTES=10)
+    @override_settings(
+        DEBUG=True,
+        OTP_EXPIRY_MINUTES=10,
+        EMAIL_HOST_USER='',
+        EMAIL_HOST_PASSWORD='',
+    )
     @patch('accounts.email_otp_service.email_delivery_chain', return_value=[])
     def test_verify_email_otp_view(self, _chain_mock):
         send_payload = send_email_otp(user=self.user, email='api-verify@example.com')
@@ -84,3 +104,19 @@ class EmailOtpViewTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.data['user']['emailVerified'])
+
+    @override_settings(
+        DEBUG=False,
+        EMAIL_HOST_USER='bullwaveteam5@gmail.com',
+        EMAIL_HOST_PASSWORD='app-password',
+        DEFAULT_FROM_EMAIL='bullwaveteam5@gmail.com',
+        OTP_EXPIRY_MINUTES=5,
+    )
+    @patch('django.core.mail.send_mail')
+    def test_send_email_otp_uses_gmail_smtp(self, send_mail_mock):
+        payload = send_email_otp(user=self.user, email='inbox@example.com')
+
+        self.assertEqual(payload['otpMode'], 'email')
+        self.assertNotIn('devOtp', payload)
+        send_mail_mock.assert_called_once()
+        self.assertEqual(send_mail_mock.call_args.kwargs['recipient_list'], ['inbox@example.com'])

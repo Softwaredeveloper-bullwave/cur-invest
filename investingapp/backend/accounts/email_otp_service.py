@@ -29,16 +29,52 @@ def normalize_email(email: str) -> str:
     return (email or '').strip().lower()
 
 
+def _smtp_ready() -> bool:
+    return bool(
+        (getattr(settings, 'EMAIL_HOST_USER', '') or '').strip()
+        and (getattr(settings, 'EMAIL_HOST_PASSWORD', '') or '').strip()
+    )
+
+
 def _delivery_mode() -> str:
-    """Email OTP is sent to the inbox when Brevo/SMTP is configured.
+    """Email OTP is sent to the inbox when Gmail SMTP or Brevo is configured.
 
     Local DEBUG with no mail keys still uses console so tests/dev work.
     """
-    if email_delivery_chain():
+    if _smtp_ready() or email_delivery_chain():
         return 'email'
     if getattr(settings, 'DEBUG', False):
         return 'console'
     return ''
+
+
+def _send_email_otp_message(email: str, otp: str) -> None:
+    minutes = int(getattr(settings, 'OTP_EXPIRY_MINUTES', 5))
+    body = (
+        f'Your BullWave verification code is {otp}.\n\n'
+        f'It expires in {minutes} minutes.\n\n'
+        'If you did not request this, you can ignore this email.'
+    )
+    if _smtp_ready():
+        from django.core.mail import send_mail
+
+        from_email = (
+            (getattr(settings, 'EMAIL_HOST_USER', '') or '').strip()
+            or (getattr(settings, 'DEFAULT_FROM_EMAIL', '') or '').strip()
+        )
+        send_mail(
+            subject='Your BullWave email verification code',
+            message=body,
+            from_email=from_email,
+            recipient_list=[email],
+            fail_silently=False,
+        )
+        return
+    send_plain_email(
+        to_email=email,
+        subject='Your BullWave email verification code',
+        text_body=body,
+    )
 
 
 def _issue_local_otp(*, user: User, email: str) -> str:
@@ -84,28 +120,21 @@ def send_email_otp(*, user: User, email: str) -> dict:
 
     if mode == 'email':
         try:
-            send_plain_email(
-                to_email=email,
-                subject='Your BullWave email verification code',
-                text_body=(
-                    f'Your BullWave verification code is {otp}.\n\n'
-                    f'It expires in {settings.OTP_EXPIRY_MINUTES} minutes.\n\n'
-                    'If you did not request this, you can ignore this email.'
-                ),
-            )
-        except EmailDeliveryError as exc:
+            _send_email_otp_message(email, otp)
+        except Exception as exc:
             logger.error('Email OTP delivery failed for user=%s: %s', user.pk, exc)
             detail = str(exc)
             if '535' in detail or 'BadCredentials' in detail or 'Username and Password not accepted' in detail:
                 detail = (
                     'Gmail SMTP login failed. Set EMAIL_HOST_PASSWORD to a Gmail App Password '
-                    '(Google Account → Security → App passwords), not a Brevo API key. Then restart Django.'
+                    '(Google Account → Security → App passwords). Then restart Django.'
                 )
-            elif 'No email provider' in detail or 'not configured' in detail.lower():
-                detail = (
-                    'Gmail SMTP is not configured. Add EMAIL_HOST_USER and EMAIL_HOST_PASSWORD '
-                    '(Gmail App Password) in investingapp/backend/.env and restart Django.'
-                )
+            elif isinstance(exc, EmailDeliveryError):
+                if 'No email provider' in detail or 'not configured' in detail.lower():
+                    detail = (
+                        'Gmail SMTP is not configured. Add EMAIL_HOST_USER and EMAIL_HOST_PASSWORD '
+                        '(Gmail App Password) in investingapp/backend/.env and restart Django.'
+                    )
             raise EmailOtpError(detail, 'email_delivery_failed') from exc
 
     logger.info('Email OTP issued for user=%s mode=%s', user.pk, mode)
