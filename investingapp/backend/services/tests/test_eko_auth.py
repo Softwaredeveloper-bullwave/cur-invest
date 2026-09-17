@@ -2,6 +2,8 @@ import base64
 import hashlib
 import hmac
 
+from types import SimpleNamespace
+
 from django.test import SimpleTestCase, override_settings
 
 from services.eko_auth import (
@@ -10,6 +12,7 @@ from services.eko_auth import (
     sanitize_eko_payload,
 )
 from services.providers.eko_config import eko_settings
+from services.providers.eko_kyc import EkoKycError, _ensure_eko_credentials
 
 
 class EkoAuthTests(SimpleTestCase):
@@ -106,3 +109,17 @@ class EkoConfigTests(SimpleTestCase):
         cfg = eko_settings()
         self.assertEqual(cfg.developer_key, 'dev-key')
         self.assertEqual(cfg.access_key, 'access-key')
+
+
+class EkoCredentialGuardTests(SimpleTestCase):
+    def test_truncated_uuid_access_key_is_rejected(self):
+        cfg = SimpleNamespace(
+            is_configured=True,
+            access_key='69095f1a-1234-1234-1234-12345678901',
+            developer_key='a' * 32,
+        )
+        self.assertEqual(len(cfg.access_key), 35)
+        with self.assertRaises(EkoKycError) as ctx:
+            _ensure_eko_credentials(cfg)
+        self.assertEqual(ctx.exception.code, 'auth_failed')
+        self.assertIn('truncated', str(ctx.exception).lower())

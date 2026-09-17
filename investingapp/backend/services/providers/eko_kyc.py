@@ -327,6 +327,17 @@ def is_configured() -> bool:
     return eko_settings().is_configured
 
 
+def _ensure_eko_credentials(cfg) -> None:
+    if not cfg.is_configured:
+        raise EkoKycError('Eko API credentials are not configured.')
+    if '-' in (cfg.access_key or '') and len(cfg.access_key) != 36:
+        raise EkoKycError(
+            'EKO_ACCESS_KEY is truncated. Paste the full 36-character UUID from '
+            'connect.eko.in into investingapp/backend/.env and restart gunicorn.',
+            'auth_failed',
+        )
+
+
 def _security_headers(cfg, *, hmac_key_mode: str = 'b64_string', json_body: bool = False) -> dict:
     headers = build_eko_auth_headers_from_config(cfg, hmac_key_mode=hmac_key_mode)
     if json_body:
@@ -394,8 +405,7 @@ def _request(
     let the caller decide from the actual data returned.
     """
     cfg = eko_settings()
-    if not cfg.is_configured:
-        raise EkoKycError('Eko API credentials are not configured.')
+    _ensure_eko_credentials(cfg)
 
     url = f'{(base_url or cfg.base_url).rstrip("/")}{path}'
     headers = _security_headers(cfg, json_body=json_body)
@@ -560,8 +570,7 @@ def _execute_eko_http(
 def _get(path: str, params: dict | None = None, *, check_status: bool = True) -> dict:
     """Like _request() but for GET endpoints that take query params, not a body."""
     cfg = eko_settings()
-    if not cfg.is_configured:
-        raise EkoKycError('Eko API credentials are not configured.')
+    _ensure_eko_credentials(cfg)
 
     url = f'{cfg.base_url.rstrip("/")}{path}'
     headers = _security_headers(cfg)
