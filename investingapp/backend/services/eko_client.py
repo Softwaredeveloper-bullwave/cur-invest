@@ -139,8 +139,8 @@ def _safe_error_message(envelope: dict, response: httpx.Response) -> str:
     if body.startswith('<') or 'text/html' in content_type:
         if response.status_code == 403:
             return (
-                'Eko rejected the request. Check credential scope, IP whitelist, '
-                'timestamp, and request field limits.'
+                'Eko returned HTTP 403. Ask Eko Connect to enable the product and whitelist '
+                'this server IP (43.204.159.255).'
             )
         return (
             f'Eko returned HTTP {response.status_code} from an invalid or unsupported API route. '

@@ -133,6 +133,34 @@ class EkoDigiLockerTests(SimpleTestCase):
             'https://staging.eko.in/ekoapi',
         )
 
+    @patch('services.providers.eko_kyc._request')
+    @patch('services.providers.eko_kyc.eko_settings')
+    def test_create_url_retries_form_encoding_after_403(self, settings_mock, request_mock):
+        settings_mock.return_value = SimpleNamespace(
+            initiator_id='9999999999',
+            user_code='USER1',
+            org_slug='',
+            is_production=True,
+            base_url='https://api.eko.in/ekoicici',
+        )
+        request_mock.side_effect = [
+            EkoKycError('Eko returned HTTP 403', 'eko_forbidden'),
+            {
+                'url': 'https://digilocker.example/session',
+                'reference_id': 99,
+            },
+        ]
+
+        result = create_digilocker_url(
+            client_ref_id='DL-1',
+            redirect_url='https://api.example.com/callback',
+        )
+
+        self.assertEqual(result['reference_id'], '99')
+        self.assertEqual(request_mock.call_count, 2)
+        self.assertFalse(request_mock.call_args.kwargs['json_body'])
+        self.assertEqual(request_mock.call_args.args[2]['document_requested'], 'AADHAAR')
+
     @patch('services.providers.eko_kyc._get')
     @patch('services.providers.eko_kyc.eko_settings')
     def test_status_prefers_verification_id(self, settings_mock, get_mock):

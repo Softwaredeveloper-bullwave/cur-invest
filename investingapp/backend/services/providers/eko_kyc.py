@@ -398,21 +398,16 @@ def _request(
         raise EkoKycError('Eko API credentials are not configured.')
 
     url = f'{(base_url or cfg.base_url).rstrip("/")}{path}'
-    response = None
-    for hmac_key_mode in ('b64_string', 'raw'):
-        headers = _security_headers(cfg, hmac_key_mode=hmac_key_mode, json_body=json_body)
-        logger.info('Eko request start %s %s hmac=%s', method, url, hmac_key_mode)
-        response = _execute_eko_http(
-            method=method,
-            url=url,
-            headers=headers,
-            cfg=cfg,
-            json_body=(data or {}) if json_body else None,
-            form_body=None if json_body else (data or {}),
-        )
-        if response.status_code != 401 or hmac_key_mode == 'raw':
-            break
-        logger.warning('Eko 401 with HMAC mode %s at %s — retrying alternate signature', hmac_key_mode, url)
+    headers = _security_headers(cfg, json_body=json_body)
+    logger.info('Eko request start %s %s', method, url)
+    response = _execute_eko_http(
+        method=method,
+        url=url,
+        headers=headers,
+        cfg=cfg,
+        json_body=(data or {}) if json_body else None,
+        form_body=None if json_body else (data or {}),
+    )
 
     payload = {}
     try:
@@ -469,6 +464,12 @@ def _request(
     has_otp_ref = bool(_extract_ref_id(data_payload)) if not check_status else False
 
     _raise_if_unauthorized(response, payload, url)
+    if response.status_code == 403:
+        raise EkoKycError(
+            _safe_error_message(payload, response)[:280],
+            'eko_forbidden',
+            eko_meta=_eko_meta_from_payload(payload if isinstance(payload, dict) else {}),
+        )
     if response.is_error:
         # For OTP-trigger endpoints (check_status=False), Eko can return a
         # non-2xx / "failure-shaped" response that still carries a real
@@ -497,8 +498,8 @@ def _safe_error_message(payload: dict, response) -> str:
     if body.startswith('<') or 'text/html' in content_type:
         if response.status_code == 403:
             return (
-                'Eko rejected the request. Check credential scope, IP whitelist, '
-                'timestamp, and request field limits.'
+                'Eko returned HTTP 403. Ask Eko Connect to enable DigiLocker and whitelist '
+                'this server IP (43.204.159.255).'
             )
         return (
             f'Eko returned HTTP {response.status_code} from an invalid or unsupported API route. '
@@ -524,18 +525,20 @@ def _execute_eko_http(
 ) -> httpx.Response:
     timeout = _eko_http_timeout(cfg)
     last_timeout: httpx.HTTPError | None = None
+    request_headers = dict(headers or {})
+    request_headers.setdefault('User-Agent', 'BullWave-KYC/1.0')
     for attempt in range(2):
         try:
             with httpx.Client(timeout=timeout) as client:
                 if method.upper() == 'GET':
-                    return client.get(url, params=params or {}, headers=headers)
+                    return client.get(url, params=params or {}, headers=request_headers)
                 return client.request(
                     method,
                     url,
                     json=json_body,
                     data=form_body,
                     params=params,
-                    headers=headers,
+                    headers=request_headers,
                 )
         except (httpx.ReadTimeout, httpx.ConnectTimeout, httpx.WriteTimeout) as exc:
             last_timeout = exc
@@ -561,19 +564,14 @@ def _get(path: str, params: dict | None = None, *, check_status: bool = True) ->
         raise EkoKycError('Eko API credentials are not configured.')
 
     url = f'{cfg.base_url.rstrip("/")}{path}'
-    response = None
-    for hmac_key_mode in ('b64_string', 'raw'):
-        headers = _security_headers(cfg, hmac_key_mode=hmac_key_mode)
-        response = _execute_eko_http(
-            method='GET',
-            url=url,
-            headers=headers,
-            cfg=cfg,
-            params=params,
-        )
-        if response.status_code != 401 or hmac_key_mode == 'raw':
-            break
-        logger.warning('Eko GET 401 with HMAC mode %s at %s — retrying alternate signature', hmac_key_mode, url)
+    headers = _security_headers(cfg)
+    response = _execute_eko_http(
+        method='GET',
+        url=url,
+        headers=headers,
+        cfg=cfg,
+        params=params,
+    )
 
     payload = {}
     try:
@@ -606,6 +604,12 @@ def _get(path: str, params: dict | None = None, *, check_status: bool = True) ->
     has_ref = bool(_extract_ref_id(data_payload)) if not check_status else False
 
     _raise_if_unauthorized(response, payload, url)
+    if response.status_code == 403:
+        raise EkoKycError(
+            _safe_error_message(payload, response)[:280],
+            'eko_forbidden',
+            eko_meta=_eko_meta_from_payload(payload if isinstance(payload, dict) else {}),
+        )
     if response.is_error:
         if not (not check_status and has_ref):
             message = _safe_error_message(payload, response)
@@ -910,6 +914,44 @@ def _eko_upi_base_urls(cfg) -> list[str]:
     return urls
 
 
+def _is_retryable_digilocker_error(exc: EkoKycError) -> bool:
+    """401/403/missing-route can be host or content-type — try the next attempt."""
+    code = (exc.code or '').lower()
+    if code in {'auth_failed', 'eko_forbidden', '403', 'eko_route_not_found'}:
+        return True
+    message = str(exc).lower()
+    return any(
+        token in message
+        for token in (
+            'unauthorized',
+            'credential scope',
+            'ip whitelist',
+            'forbidden',
+            'unsupported api route',
+            'no mapping rule',
+            'http 403',
+        )
+    )
+
+
+def _is_forbidden_or_route_error(exc: EkoKycError) -> bool:
+    code = (exc.code or '').lower()
+    if code in {'eko_forbidden', '403', 'eko_route_not_found'}:
+        return True
+    message = str(exc).lower()
+    return any(
+        token in message
+        for token in (
+            'http 403',
+            'forbidden',
+            'credential scope',
+            'ip whitelist',
+            'unsupported api route',
+            'no mapping rule',
+        )
+    )
+
+
 def _is_mapping_rule_error(exc: EkoKycError) -> bool:
     return exc.code == 'eko_route_not_found' or 'no mapping rule matched' in str(exc).lower()
 
@@ -1136,45 +1178,58 @@ def verify_upi_vpa(
 def create_digilocker_url(*, client_ref_id: str, redirect_url: str) -> dict:
     """Create Eko's consent-based DigiLocker Aadhaar verification journey."""
     cfg = eko_settings()
-    payload = {
+    json_payload = {
         'initiator_id': cfg.initiator_id,
         'user_code': cfg.user_code,
         'client_ref_id': client_ref_id,
         'document_requested': ['AADHAAR'],
         'redirect_url': redirect_url,
     }
+    form_payload = {
+        **json_payload,
+        'document_requested': 'AADHAAR',
+    }
     last_error: EkoKycError | None = None
     first_auth_error: EkoKycError | None = None
     for base_url in _kyc_base_urls(cfg):
-        try:
-            result = _request(
-                'POST',
-                DIGILOCKER_CREATE_PATH,
-                payload,
-                check_status=False,
-                json_body=True,
-                base_url=base_url,
-            )
-        except EkoKycError as exc:
-            last_error = exc
-            if exc.code != 'auth_failed':
-                raise
-            if first_auth_error is None:
-                first_auth_error = exc
-            logger.warning('DigiLocker auth failed at %s: %s', base_url, exc)
-            continue
-        digilocker_url = result.get('url') or result.get('digilocker_url') or ''
-        reference_id = result.get('reference_id')
-        if not digilocker_url or reference_id in (None, ''):
-            raise EkoKycError(
-                'Eko did not return a DigiLocker verification URL and reference.',
-                'digilocker_session_failed',
-            )
-        return {
-            'url': digilocker_url,
-            'reference_id': str(reference_id),
-            'verification_id': str(result.get('verification_id') or ''),
-        }
+        encodings = ((json_payload, True), (form_payload, False))
+        for body, json_body in encodings:
+            try:
+                result = _request(
+                    'POST',
+                    DIGILOCKER_CREATE_PATH,
+                    body,
+                    check_status=False,
+                    json_body=json_body,
+                    base_url=base_url,
+                )
+            except EkoKycError as exc:
+                last_error = exc
+                if json_body and _is_forbidden_or_route_error(exc):
+                    logger.warning(
+                        'DigiLocker JSON failed at %s (%s) — retrying form encoding',
+                        base_url,
+                        exc.code or exc,
+                    )
+                    continue
+                if not _is_retryable_digilocker_error(exc):
+                    raise
+                if first_auth_error is None:
+                    first_auth_error = exc
+                logger.warning('DigiLocker auth/forbidden at %s: %s', base_url, exc)
+                break
+            digilocker_url = result.get('url') or result.get('digilocker_url') or ''
+            reference_id = result.get('reference_id')
+            if not digilocker_url or reference_id in (None, ''):
+                raise EkoKycError(
+                    'Eko did not return a DigiLocker verification URL and reference.',
+                    'digilocker_session_failed',
+                )
+            return {
+                'url': digilocker_url,
+                'reference_id': str(reference_id),
+                'verification_id': str(result.get('verification_id') or ''),
+            }
     if first_auth_error:
         raise first_auth_error
     if last_error:

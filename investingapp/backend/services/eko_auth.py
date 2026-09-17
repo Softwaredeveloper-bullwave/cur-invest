@@ -51,9 +51,9 @@ def build_eko_auth_headers(
 ) -> dict[str, str]:
     """Generate Eko `secret-key` + `secret-key-timestamp` for one request.
 
-    Official Python sample (developers.eko.in): HMAC key is the base64 *string*
-    of the access key. Some Eko JS samples decode that base64 first. We try
-    ``b64_string`` first and ``raw`` on 401.
+    Official Python/Java/PHP samples (developers.eko.in): HMAC key is the
+    base64 *string* of the access key. Do not decode it first — that is the
+    documented cause of HTTP 403.
     """
     timestamp = str(timestamp_ms if timestamp_ms is not None else int(round(time.time() * 1000)))
     encoded_key = base64.b64encode(access_key.encode())
