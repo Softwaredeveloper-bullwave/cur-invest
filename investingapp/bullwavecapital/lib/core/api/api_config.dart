@@ -14,8 +14,7 @@ import '../config/app_env.dart';
 class ApiConfig {
   ApiConfig._();
 
-  /// Default backend when no `--dart-define=API_BASE_URL` is passed.
-  /// Current AWS Elastic IP (HTTP :80) until api.capitalbullwave.com TLS is back.
+  /// Native apps and Flutter Chrome talk to the AWS Elastic IP directly.
   static const String defaultApiBaseUrl = 'http://43.204.159.255/api/v1';
 
   static const String _apiBaseFromEnv = String.fromEnvironment(
@@ -52,21 +51,7 @@ class ApiConfig {
   }
 
   static String get _apiHost {
-    final fromEnv = _apiBaseFromEnv.trim();
-    if (fromEnv.isNotEmpty) {
-      return Uri.parse(fromEnv).host;
-    }
-    final hostFromDefine = _apiHostFromEnv.trim();
-    if (hostFromDefine.isNotEmpty) {
-      return hostFromDefine;
-    }
-    if (hostOverride != null && hostOverride!.isNotEmpty) {
-      return hostOverride!;
-    }
-    if (kReleaseMode) {
-      return Uri.parse(AppEnv.productionApiBaseUrl).host;
-    }
-    return Uri.parse(defaultApiBaseUrl).host;
+    return Uri.parse(baseUrl).host;
   }
 
   static bool get isProductionApi =>

@@ -150,9 +150,11 @@ class SendOTPView(APIView):
 
         try:
             registration_hint = self._registration_hint(phone)
-            if not settings.SMS_OTP_ENABLED:
+            # Phone OTP: show in the Flutter app (devOtp). Live SMS is opt-in.
+            if not settings.SMS_OTP_ENABLED or getattr(settings, 'SMS_EXPOSE_DEV_OTP', True):
                 otp = self._issue_local_otp(phone)
-                logger.info('[BullWave OTP] Phone: %s | OTP: %s | SMS disabled (dev mode)', phone, otp)
+                logger.warning('[BullWave OTP] Phone: %s | OTP: %s | shown in app', phone, otp)
+                print(f'[BullWave OTP] Phone: {phone} | OTP: {otp}', flush=True)
                 return Response(
                     {
                         'success': True,
@@ -262,9 +264,12 @@ class SendOTPView(APIView):
                 'otpMode': 'console' if not live else 'sms',
                 **registration_hint,
             }
-            if not live:
+            expose = (not live) or getattr(settings, 'SMS_EXPOSE_DEV_OTP', False)
+            if expose:
+                payload['otpMode'] = 'console'
                 payload['devOtp'] = otp
-                logger.info('[BullWave OTP] Phone: %s | OTP: %s | console mode', phone, otp)
+                logger.warning('[BullWave OTP] Phone: %s | OTP: %s | console mode', phone, otp)
+                print(f'[BullWave OTP] Phone: {phone} | OTP: {otp}', flush=True)
             return Response(payload)
         except DatabaseError:
             logger.exception('Database error during send-otp for %s', phone)

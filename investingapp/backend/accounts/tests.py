@@ -79,3 +79,14 @@ class FlutterWebCorsTests(SimpleTestCase):
         )
         self.assertNotEqual(response.get('Access-Control-Allow-Origin'), 'https://evil.example')
 
+    def test_ensure_cors_middleware_allows_flutter_chrome_when_django_cors_is_off(self):
+        origin = 'http://localhost:62004'
+        response = self.client.options(
+            '/api/v1/auth/send-otp/',
+            HTTP_ORIGIN=origin,
+            HTTP_ACCESS_CONTROL_REQUEST_METHOD='POST',
+            HTTP_ACCESS_CONTROL_REQUEST_HEADERS='content-type',
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Access-Control-Allow-Origin'], origin)
+

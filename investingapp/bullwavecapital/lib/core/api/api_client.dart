@@ -121,7 +121,7 @@ class ApiClient {
     );
   }
 
-  String _friendlyServerError(int statusCode, [dynamic body]) {
+  String _friendlyServerError(int statusCode, [dynamic body, String path = '']) {
     if (body is Map) {
       final detail = body['detail'];
       if (detail is String && detail.isNotEmpty) {
@@ -129,6 +129,9 @@ class ApiClient {
       }
     }
     if (statusCode == 404) {
+      if (path.contains('/auth/')) {
+        return 'This login API is missing on AWS. Update the backend (send-email-otp) and restart gunicorn.';
+      }
       return 'This market API is not available on the live server yet. '
           'Deploy the latest backend and run migrate, or the app will use a live fallback.';
     }
@@ -152,7 +155,7 @@ class ApiClient {
       } catch (_) {
         final error = ApiException(
           response.statusCode,
-          _friendlyServerError(response.statusCode, body),
+          _friendlyServerError(response.statusCode, body, path),
         );
         if (response.statusCode >= 500) {
           _report(
@@ -173,9 +176,11 @@ class ApiClient {
           message = detail;
         } else if (detail is List && detail.isNotEmpty) {
           message = detail.first.toString();
+        } else if (response.statusCode == 404) {
+          message = _friendlyServerError(response.statusCode, body, path);
         }
-      } else if (response.statusCode >= 500) {
-        message = _friendlyServerError(response.statusCode, body);
+      } else {
+        message = _friendlyServerError(response.statusCode, body, path);
       }
       final error = ApiException(response.statusCode, message);
       if (response.statusCode >= 500) {

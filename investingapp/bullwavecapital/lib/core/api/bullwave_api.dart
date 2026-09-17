@@ -82,9 +82,15 @@ class BullwaveApi {
             )
             as Map<String, dynamic>;
     return SendOtpResult(
-      devOtp: data['devOtp']?.toString(),
-      otpMode: data['otpMode']?.toString() ?? 'console',
-      isRegistered: data['isRegistered'] as bool? ?? false,
+      devOtp: data['devOtp']?.toString() ??
+          data['dev_otp']?.toString() ??
+          data['otp']?.toString(),
+      otpMode: data['otpMode']?.toString() ??
+          data['otp_mode']?.toString() ??
+          'console',
+      isRegistered: data['isRegistered'] as bool? ??
+          data['is_registered'] as bool? ??
+          false,
     );
   }
 

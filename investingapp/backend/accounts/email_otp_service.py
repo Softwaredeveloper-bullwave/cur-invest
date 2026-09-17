@@ -30,9 +30,13 @@ def normalize_email(email: str) -> str:
 
 
 def _delivery_mode() -> str:
+    """Email OTP is sent to the inbox when Brevo/SMTP is configured.
+
+    Local DEBUG with no mail keys still uses console so tests/dev work.
+    """
     if email_delivery_chain():
         return 'email'
-    if settings.DEBUG:
+    if getattr(settings, 'DEBUG', False):
         return 'console'
     return ''
 

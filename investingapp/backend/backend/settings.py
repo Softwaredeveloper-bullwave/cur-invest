@@ -134,8 +134,10 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'core.api_cors.EnsureApiCorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'corsheaders.middleware.CorsMiddleware',
+    'core.attach_dev_otp.AttachDevOtpMiddleware',
     'core.middleware.RequestLogMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -248,6 +250,7 @@ CORS_ALLOWED_ORIGINS = config(
         'http://localhost:3000,http://127.0.0.1:3000,'
         'http://localhost:5173,http://127.0.0.1:5173,'
         'http://localhost:8080,http://127.0.0.1:8080,'
+        'http://43.204.159.255,'
         'https://app.capitalbullwave.com,https://www.capitalbullwave.com,'
         'https://capitalbullwave.com'
     ),
@@ -262,6 +265,14 @@ CORS_ALLOWED_ORIGIN_REGEXES = config(
     ),
     cast=lambda v: [origin.strip() for origin in v.split(',') if origin.strip()],
 )
+_LOCAL_WEB_CORS = (
+    r'^https?://localhost:\d+$',
+    r'^https?://127\.0\.0\.1:\d+$',
+    r'^https?://\[::1\]:\d+$',
+)
+for _pattern in _LOCAL_WEB_CORS:
+    if _pattern not in CORS_ALLOWED_ORIGIN_REGEXES:
+        CORS_ALLOWED_ORIGIN_REGEXES.append(_pattern)
 CORS_ALLOW_CREDENTIALS = False
 CSRF_TRUSTED_ORIGINS = config(
     'CSRF_TRUSTED_ORIGINS',
@@ -284,9 +295,10 @@ CACHES = {
 }
 
 OTP_EXPIRY_MINUTES = config('OTP_EXPIRY_MINUTES', default=5, cast=int)
-SMS_OTP_ENABLED = config('SMS_OTP_ENABLED', default=True, cast=bool)
-# When SMS is off or provider falls back to console, return devOtp in API (for AWS/demo).
-SMS_EXPOSE_DEV_OTP = config('SMS_EXPOSE_DEV_OTP', default=not SMS_OTP_ENABLED, cast=bool)
+# Phone OTP is shown in the app until 2Factor/MSG91 is enabled.
+SMS_OTP_ENABLED = config('SMS_OTP_ENABLED', default=False, cast=bool)
+# Return phone OTP as devOtp in the API (Flutter Verify Phone screen).
+SMS_EXPOSE_DEV_OTP = config('SMS_EXPOSE_DEV_OTP', default=True, cast=bool)
 
 # AI assistant — default: Ollama (local, free). See ai/ollama_client.py
 AI_PROVIDER = config('AI_PROVIDER', default='ollama')
